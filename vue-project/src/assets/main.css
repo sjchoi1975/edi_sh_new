@@ -1,0 +1,96 @@
+@import './base.css';
+
+#app {
+  /* max-width: 1280px; */
+  /* margin: 0 auto; */
+  padding: 0;
+  font-weight: normal;
+}
+
+a {
+  text-decoration: none;
+  /* color: hsla(160, 100%, 37%, 1); REMOVED */
+  transition: 0.4s;
+  padding: 3px;
+}
+
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    /* display: flex; */
+    /* place-items: center; */
+  }
+
+  #app {
+    /* display: grid; */
+    /* grid-template-columns: 1fr 1fr; */
+    /* padding: 0 2rem; */
+  }
+}
+
+/* ========================================== */
+/* TopNavigationBar 메뉴 텍스트 색상 강제 지정 */
+/* ========================================== */
+
+/* 최상위 메뉴 아이템 링크 및 그 내부 요소들 - 라벨 텍스트 수정 및 #app 추가 */
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > a.p-menuitem-link span.p-menubar-item-label,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > a.p-menuitem-link,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > a.p-menuitem-link span,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > a.p-menuitem-link .p-menuitem-icon,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > a.p-menuitem-link .p-submenu-icon {
+  color: #ffffff !important;
+}
+
+/* 최상위 메뉴 아이템 호버 시 배경색 변경 */
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content:hover {
+  background-color: hsla(160, 100%, 37%, 0.8) !important; /* 기존 hover 효과와 유사하게 변경 */
+}
+
+/* 하위 메뉴 아이템 링크 색상 (기본값 또는 다른 색상으로 설정 가능) */
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link span,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link .p-menuitem-icon,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link .p-submenu-icon {
+  color: #495057; /* PrimeVue 기본 메뉴 아이템 텍스트 색상과 유사하게 설정 */
+}
+
+/* 하위 메뉴 아이템 호버 시 배경색 및 텍스트 색상 */
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover {
+  background-color: #e9ecef; /* PrimeVue 기본 호버 배경색과 유사하게 설정 */
+}
+
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover span,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover .p-menuitem-icon,
+#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover .p-submenu-icon {
+  color: #495057; /* PrimeVue 기본 호버 텍스트 색상과 유사하게 설정 */
+}
+
+/* 현재 활성화된(선택된) 최상위 메뉴 아이템은 배경색을 다르게 표시 */
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content {
+    background-color: hsla(160, 100%, 30%, 1) !important; /* 더 어두운 녹색으로 변경 */
+}
+
+/* 부모 메뉴 아이템 (.p-menuitem-active) 내부의 p-menuitem-link 요소들 색상을 흰색으로 유지 - 라벨 텍스트 수정 및 #app 추가 */
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > a.p-menuitem-link span.p-menubar-item-label,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > a.p-menuitem-link,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > a.p-menuitem-link span,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > a.p-menuitem-link .p-menuitem-icon,
+#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > a.p-menuitem-link .p-submenu-icon {
+  color: #ffffff !important;
+}
+
+/* 드롭다운(서브메뉴) 관련 규칙은 주석 처리됨 */
+/* ... */

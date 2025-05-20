@@ -1,0 +1,16 @@
+test1@test.com 관리자
+
+test5@test.com 이용자 / 승인
+test6@test.com 이용자 / 미승인
+
+npx supabase link --project-ref 'vaeolqywqckiwwtspxfp'
+vaeolqywqckiwwtspxfp
+
+
+npx supabase functions deploy register-user --project-ref 'vaeolqywqckiwwtspxfp'
+
+vaeolqywqckiwwtspxfp
+
+
+
+color: hsla(160, 100%, 37%, 1);
