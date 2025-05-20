@@ -392,23 +392,26 @@ const saveCompany = async () => {
   try {
     loading.value = true;
     
-    // 관리자 계정으로 신규 사용자 생성 (Admin API 활용)
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email: newCompany.email,
-      password: newCompany.password,
-      email_confirm: true,  // 이메일 인증 자동 처리
-      user_metadata: {
+    // 서버리스 함수로 계정 생성 요청
+    const response = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: newCompany.email,
+        password: newCompany.password,
         company_name: newCompany.company_name
-      }
+      })
     });
-    
-    if (authError) {
-      console.error('Authentication 사용자 생성 오류:', authError);
-      throw authError;
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast.add({ severity: 'error', summary: '오류', detail: result.error || '계정 생성 실패', life: 3000 });
+      loading.value = false;
+      return;
     }
-    
-    // 생성된 사용자의 UID
-    const userId = authUser.user.id;
+
+    // 생성된 사용자 ID
+    const userId = result.user.id;
     
     // companies 테이블에 데이터 저장 (user_id 연결)
     const { data, error: insertError } = await supabase
