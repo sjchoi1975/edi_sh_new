@@ -17,6 +17,8 @@ import AdminSettlementMonthView from '../views/admin/AdminSettlementMonthView.vu
 import AdminPerformanceInputView from '../views/admin/AdminPerformanceInputView.vue'
 import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vue'
 import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
+import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedView.vue'
+import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 
@@ -52,10 +54,16 @@ const router = createRouter({
     //   component: () => import('../views/AboutView.vue')
     // },
     { // <<< 여기에 새로운 Companies 라우트 추가
-      path: '/admin/companies', // 경로 유지
-      name: 'admin-companies',   // 이름 유지 (또는 더 명확하게 admin-companies-list 등으로 변경 가능)
-      component: AdminCompaniesView, // AdminCompaniesView 컴포넌트로 변경
-      meta: { requiresAuth: true, role: 'admin' } // 관리자 역할 명시
+      path: '/admin/companies/approved',
+      name: 'admin-companies-approved',
+      component: AdminCompaniesApprovedView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/companies/pending',
+      name: 'admin-companies-pending',
+      component: AdminCompaniesPendingView,
+      meta: { requiresAuth: true, role: 'admin' }
     },
     {
       path: '/admin/notices',

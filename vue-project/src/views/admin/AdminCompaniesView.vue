@@ -3,89 +3,99 @@
     <h2>업체 목록</h2>
     <ConfirmDialog></ConfirmDialog>
     <Toast />
-    <TabView @tab-change="onTabChange">
-      <TabPanel header="승인 업체 목록">
-        <DataTable :value="approvedCompanies" :paginator="true" :rows="10" 
-                   :loading="loading" responsiveLayout="scroll" v-model:filters="filters" 
-                   filterDisplay="menu" :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']">
-          <template #header>
-            <div class="table-header">
-              <span class="p-input-icon-left">
-                <i class="pi pi-search"></i>
-                <InputText v-model="filters['global'].value" placeholder="전체 검색" />
-              </span>
-              <div>
-                <Button label="신규 업체 추가" icon="pi pi-plus" class="p-button-success" @click="openNewCompanyDialog" />
-              </div>
-            </div>
-          </template>
-          <template #empty>
-            승인된 업체가 없습니다.
-          </template>
-          <template #loading>
-            승인된 업체 목록을 불러오는 중입니다...
-          </template>
-          <Column field="company_group" header="구분" sortable :editor="getTextEditor"></Column>
-          <Column field="company_name" header="업체명" sortable>
-            <template #body="slotProps">
-              <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
-            </template>
-          </Column>
-          <Column field="business_registration_number" header="사업자등록번호" :editor="getTextEditor"></Column>
-          <Column field="representative_name" header="대표자" :editor="getTextEditor"></Column>
-          <Column field="business_address" header="사업장소재지" :editor="getTextEditor"></Column>
-          <Column field="default_commission_grade" header="수수료 등급" :editor="getDropdownEditor">
-            <template #editor="{ data, field }">
-              <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" />
-            </template>
-          </Column>
-          <Column field="assigned_pharmacist_contact" header="관리자" :editor="getTextEditor"></Column>
-          <Column field="remarks" header="비고" :editor="getTextEditor"></Column>
-          <Column field="approval_status" header="승인 처리" :exportable="false" style="min-width:10rem">
-            <template #body="slotProps">
-              <Button label="승인 취소" icon="pi pi-times" class="p-button-rounded p-button-warning p-button-sm" @click="confirmApprovalChange(slotProps.data, 'pending')" />
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-      <TabPanel header="미승인 업체 목록">
-        <DataTable :value="pendingCompanies" :paginator="true" :rows="10" 
-                   :loading="loading" responsiveLayout="scroll" v-model:filters="filters" 
-                   filterDisplay="menu" :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']">
-          <template #header>
-             <div class="table-header">
-              <span class="p-input-icon-left">
-                <i class="pi pi-search"></i>
-                <InputText v-model="filters['global'].value" placeholder="전체 검색" />
-              </span>
-            </div>
-          </template>
-          <template #empty>
-            미승인 업체가 없습니다.
-          </template>
-          <template #loading>
-            미승인 업체 목록을 불러오는 중입니다...
-          </template>
-          <Column field="company_group" header="구분" sortable></Column>
-          <Column field="company_name" header="업체명" sortable>
-            <template #body="slotProps">
-              <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
-            </template>
-          </Column>
-          <Column field="business_registration_number" header="사업자등록번호"></Column>
-          <Column field="representative_name" header="대표자"></Column>
-          <Column field="business_address" header="사업장소재지"></Column>
-          <Column field="default_commission_grade" header="수수료 등급"></Column>
-          <Column field="assigned_pharmacist_contact" header="관리자"></Column>
-          <Column field="remarks" header="비고"></Column>
-          <Column field="approval_status" header="승인 처리" :exportable="false" style="min-width:10rem">
-            <template #body="slotProps">
-              <Button label="승인" icon="pi pi-check" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-    </TabView>
+    <DataTable
+      v-if="$route.meta.companyStatus === 'approved'"
+      :value="approvedCompanies"
+      :paginator="true"
+      :rows="10"
+      :loading="loading"
+      responsiveLayout="scroll"
+      v-model:filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
+    >
+      <template #header>
+        <div class="table-header">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <InputText v-model="filters['global'].value" placeholder="전체 검색" />
+          </span>
+          <div>
+            <Button label="신규 업체 추가" icon="pi pi-plus" class="p-button-success" @click="openNewCompanyDialog" />
+          </div>
+        </div>
+      </template>
+      <template #empty>
+        승인된 업체가 없습니다.
+      </template>
+      <template #loading>
+        승인된 업체 목록을 불러오는 중입니다...
+      </template>
+      <Column field="company_group" header="구분" sortable :editor="getTextEditor"></Column>
+      <Column field="company_name" header="업체명" sortable>
+        <template #body="slotProps">
+          <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
+        </template>
+      </Column>
+      <Column field="business_registration_number" header="사업자등록번호" :editor="getTextEditor"></Column>
+      <Column field="representative_name" header="대표자" :editor="getTextEditor"></Column>
+      <Column field="business_address" header="사업장소재지" :editor="getTextEditor"></Column>
+      <Column field="default_commission_grade" header="수수료 등급" :editor="getDropdownEditor">
+        <template #editor="{ data, field }">
+          <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" />
+        </template>
+      </Column>
+      <Column field="assigned_pharmacist_contact" header="관리자" :editor="getTextEditor"></Column>
+      <Column field="remarks" header="비고" :editor="getTextEditor"></Column>
+      <Column field="approval_status" header="승인 처리" :exportable="false" style="min-width:10rem">
+        <template #body="slotProps">
+          <Button label="승인 취소" icon="pi pi-times" class="p-button-rounded p-button-warning p-button-sm" @click="confirmApprovalChange(slotProps.data, 'pending')" />
+        </template>
+      </Column>
+    </DataTable>
+    <DataTable
+      v-else-if="$route.meta.companyStatus === 'pending'"
+      :value="pendingCompanies"
+      :paginator="true"
+      :rows="10"
+      :loading="loading"
+      responsiveLayout="scroll"
+      v-model:filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
+    >
+      <template #header>
+        <div class="table-header">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <InputText v-model="filters['global'].value" placeholder="전체 검색" />
+          </span>
+        </div>
+      </template>
+      <template #empty>
+        미승인 업체가 없습니다.
+      </template>
+      <template #loading>
+        미승인 업체 목록을 불러오는 중입니다...
+      </template>
+      <Column field="company_group" header="구분" sortable></Column>
+      <Column field="company_name" header="업체명" sortable>
+        <template #body="slotProps">
+          <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
+        </template>
+      </Column>
+      <Column field="business_registration_number" header="사업자등록번호"></Column>
+      <Column field="representative_name" header="대표자"></Column>
+      <Column field="business_address" header="사업장소재지"></Column>
+      <Column field="default_commission_grade" header="수수료 등급"></Column>
+      <Column field="assigned_pharmacist_contact" header="관리자"></Column>
+      <Column field="remarks" header="비고"></Column>
+      <Column field="approval_status" header="승인 처리" :exportable="false" style="min-width:10rem">
+        <template #body="slotProps">
+          <Button label="승인" icon="pi pi-check" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
+        </template>
+      </Column>
+    </DataTable>
 
     <!-- 신규 업체 추가 다이얼로그 -->
     <Dialog v-model:visible="newCompanyDialog" header="신규 업체 추가" :style="{ width: '80vw' }" :modal="true">

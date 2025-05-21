@@ -1,13 +1,16 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
-import { RouterView } from 'vue-router';
+import { ref, onMounted, nextTick, computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 import router from './router';
 import TopNavigationBar from './components/TopNavigationBar.vue';
+import SideNavigationBar from './components/SideNavigationBar.vue';
 
 const user = ref(null);
 const userEmail = ref('');
 const userType = ref(''); // 'admin', 'user', or ''
+const route = useRoute();
+const isSideNavExpanded = ref(false);
 
 console.log('[App.vue] Script setup: Initializing');
 
@@ -77,6 +80,50 @@ const handleRedirect = async (currentSession) => {
     }
   }
 };
+
+// 대메뉴/중메뉴 구조(TopNavigationBar용, SideNavigationBar와 동일하게 유지)
+const adminMenuTree = [
+  { label: '공지사항 관리', children: [ { label: '공지사항 목록', path: '/admin/notices' } ] },
+  { label: '업체 관리', children: [ { label: '업체 목록', path: '/admin/companies' } ] },
+  { label: '제품 관리', children: [ { label: '제품 목록', path: '/admin/products' } ] },
+  { label: '거래처 관리', children: [ { label: '거래처 목록', path: '/admin/clients' } ] },
+  { label: '문전약국 관리', children: [ { label: '문전약국 목록', path: '/admin/pharmacies' } ] },
+  { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
+  { label: '실적 관리', children: [ { label: '정산월 관리', path: '/admin/settlement-months' }, { label: '실적 입력', path: '/admin/performance-input' }, { label: '내역 조회', path: '/admin/performance-list' } ] },
+  { label: '정산내역서 관리', children: [ { label: '월별 정산 목록', path: '/admin/settlement-statements' } ] }
+];
+const userMenuTree = [
+  { label: '공지사항 조회', children: [ { label: '공지사항 목록', path: '/notices' } ] },
+  { label: '제품 조회', children: [ { label: '제품 목록', path: '/products' } ] },
+  { label: '거래처 조회', children: [ { label: '거래처 목록', path: '/clients' } ] },
+  { label: '실적 관리', children: [ { label: '실적 등록', path: '/performance/register' }, { label: '등록 현황', path: '/performance/list' }, { label: '증빙 파일 제출', path: '/performance/upload' } ] },
+  { label: '정산내역서 조회', children: [ { label: '월별 정산 목록', path: '/settlements' } ] },
+  { label: '내 정보', children: [ { label: '내 정보', path: '/my-info' } ] }
+];
+const menuTree = computed(() => userType.value === 'admin' ? adminMenuTree : userMenuTree);
+
+const breadcrumbMenu = computed(() => {
+  const currentPath = route.path;
+  for (const menu of menuTree.value) {
+    for (const child of menu.children) {
+      if (currentPath.startsWith(child.path)) {
+        return menu.label;
+      }
+    }
+  }
+  return '';
+});
+const breadcrumbSubMenu = computed(() => {
+  const currentPath = route.path;
+  for (const menu of menuTree.value) {
+    for (const child of menu.children) {
+      if (currentPath.startsWith(child.path)) {
+        return child.label;
+      }
+    }
+  }
+  return '';
+});
 
 onMounted(async () => {
   console.log('[App.vue] onMounted: Component mounted. Registering onAuthStateChange.');
@@ -154,87 +201,28 @@ const handleLogout = async () => {
 
 <template>
   <div id="app-container">
-    <TopNavigationBar v-if="user" :userRole="userType" :userEmail="userEmail" @logout="handleLogout" />
+    <SideNavigationBar v-if="user" :userRole="userType" :userEmail="userEmail" @logout="handleLogout" />
+    <TopNavigationBar v-if="user" :breadcrumbMenu="breadcrumbMenu" :breadcrumbSubMenu="breadcrumbSubMenu" @logout="handleLogout" />
     <div class="main-content">
-      <!-- <RouterView :key="router.currentRoute.value.fullPath" /> -->
       <RouterView />
     </div>
   </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-/* .user-info 관련 스타일은 TopNavigationBar.vue로 이동되었거나 그곳에서 관리 */
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-
 #app-container {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
+  background: #f8f9fa;
+  font-size: 14px;
+  font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
 }
-
 .main-content {
-  flex-grow: 1;
-  padding: 1rem; /* 기본 패딩 유지 */
+  margin-left: 220px;
+  margin-top: 56px;
+  padding: 16px 16px 0 16px;
+  background: #f8f9fa;
+  min-height: calc(100vh - 56px);
+  box-sizing: border-box;
 }
 </style>
 
