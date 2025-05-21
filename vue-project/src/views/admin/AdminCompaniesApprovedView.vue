@@ -264,6 +264,29 @@ const saveCompany = async () => {
 
   try {
     loading.value = true;
+    // 1. 이메일(아이디) 중복 체크
+    const { data: emailDup } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('email', newCompany.email)
+      .maybeSingle();
+    if (emailDup) {
+      toast.add({ severity: 'error', summary: '오류', detail: '동일한 아이디(이메일)가 이미 등록되어 있습니다.', life: 3000 });
+      loading.value = false;
+      return;
+    }
+    // 2. 사업자등록번호 중복 체크
+    const { data: brnDup } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('business_registration_number', newCompany.business_registration_number)
+      .maybeSingle();
+    if (brnDup) {
+      toast.add({ severity: 'error', summary: '오류', detail: '동일한 사업자등록번호가 이미 등록되어 있습니다.', life: 3000 });
+      loading.value = false;
+      return;
+    }
+    // 3. Auth 계정 생성 및 companies 테이블 저장(기존과 동일)
     const response = await fetch('/api/create-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -280,9 +303,10 @@ const saveCompany = async () => {
       return;
     }
     const userId = result.user.id;
+    const { password, ...companyData } = newCompany;
     const { data, error: insertError } = await supabase
       .from('companies')
-      .insert([{ ...newCompany, user_id: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+      .insert([{ ...companyData, user_id: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
       .select();
     if (insertError) throw insertError;
     toast.add({ severity: 'success', summary: '성공', detail: '신규 업체가 성공적으로 추가되었습니다.', life: 3000 });
