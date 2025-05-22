@@ -11,4 +11,13 @@
 
 <style scoped>
 /* 필요한 경우 여기에 스타일 추가 */
+body.no-main-padding .main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 </style> 
