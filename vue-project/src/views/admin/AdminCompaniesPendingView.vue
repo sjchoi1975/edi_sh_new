@@ -51,7 +51,6 @@
     <Dialog v-model:visible="companyDetailDialog" header="업체 상세 정보 및 수정" :style="{ width: '60vw' }" :modal="true">
       <div class="p-fluid">
         <div class="dialog-section">
-          <h3>계정 정보</h3>
           <div class="p-grid p-formgrid">
             <div class="p-field p-col-12 p-md-4">
               <label for="detail_email">아이디(이메일)</label>
@@ -63,7 +62,6 @@
           </div>
         </div>
         <div class="dialog-section">
-          <h3>업체 정보</h3>
           <div class="p-grid p-formgrid">
             <div class="p-field p-col-12 p-md-4">
               <label for="detail_company_name">업체명</label>
@@ -144,7 +142,6 @@
           </div>
         </div>
         <div class="dialog-section">
-          <h3>관리 정보</h3>
           <div class="p-grid p-formgrid">
             <div class="p-field p-col-12 p-md-4">
               <label for="detail_company_group">구분</label>
@@ -185,7 +182,6 @@
           </div>
         </div>
         <div class="dialog-section">
-          <h3>등록 정보</h3>
           <div class="p-grid p-formgrid">
             <div class="p-field p-col-12 p-md-4">
               <label>등록일시</label>

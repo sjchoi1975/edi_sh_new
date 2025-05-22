@@ -1,6 +1,5 @@
 <template>
   <div class="signup-root">
-    <div class="signup-left"></div>
     <div class="signup-right">
       <div class="signup-logo">신일제약 실적관리 시스템</div>
       <form class="signup-form" @submit.prevent="handleSignup">
@@ -47,6 +46,7 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
+import { onMounted, onUnmounted } from 'vue';
 
 const formData = ref({
   email: '',
@@ -122,30 +122,27 @@ const handleSignup = async () => {
 const goToLogin = () => {
   router.push('/login');
 };
+
+onMounted(() => {
+  document.body.classList.add('no-main-padding');
+});
+
+onUnmounted(() => {
+  document.body.classList.remove('no-main-padding');
+});
 </script>
 
 <style scoped>
-html, body, #app, .signup-root {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100vw;
-  height: 100vh;
-}
 .signup-root {
   display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
   width: 100vw;
   background: #f7f7f9;
   font-size: 13px;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.signup-left {
-  flex: 1;
-  background: #eaeaea;
 }
 .signup-right {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -153,14 +150,17 @@ html, body, #app, .signup-root {
   background: #fff;
   min-width: 400px;
   box-shadow: 0 0 16px 0 rgba(0,0,0,0.04);
-  width: 100vw;
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 32px 32px 32px;
+  border-radius: 12px;
   position: relative;
 }
 .signup-logo {
-  font-size: 1.8rem;
+  font-size: 1.8em;
   font-weight: bold;
-  color: #6db56e;
-  margin-bottom: 3rem;
+  color: #5fa56b;
+  margin-bottom: 2rem;
   letter-spacing: 2px;
 }
 .signup-form {
@@ -174,7 +174,7 @@ html, body, #app, .signup-root {
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 .form-row label {
   width: 140px;
@@ -192,7 +192,7 @@ html, body, #app, .signup-root {
 .button-row {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 0.7rem;
 }
 .signup-btn {
   flex: 1;
@@ -209,10 +209,11 @@ html, body, #app, .signup-root {
   font-size: 0.95rem;
 }
 .login-link {
-  margin-top: 1rem;
-  text-align: right;
+  margin-top: 0.5rem;
+  text-align: center;
   color: #1976d2;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  margin-bottom: 2.8rem;
 }
 .login-link a {
   color: #1976d2;
@@ -225,16 +226,10 @@ html, body, #app, .signup-root {
   left: 0;
   width: 100%;
   color: #888;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-align: center;
 }
 @media (max-width: 900px) {
-  .signup-root {
-    flex-direction: column;
-  }
-  .signup-left {
-    display: none;
-  }
   .signup-right {
     min-width: unset;
     width: 100vw;
@@ -242,10 +237,5 @@ html, body, #app, .signup-root {
   .signup-form {
     max-width: 98vw;
   }
-}
-:global(main-content) {
-  margin-left: 0px !important;
-  margin-top: 0px !important;
-  padding: 0px 0px 0 0px !important;
 }
 </style> 

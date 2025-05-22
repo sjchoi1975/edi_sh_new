@@ -16,6 +16,10 @@ git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "로그인 회원정보 못찾는 오류 해결"
+git commit -m "로그인, 회원가입 화면만 별도 스타일 적용"
 git push origin main
 
+
+#5fa56b
+
+https://www.sinilpharm.com/medicines/generic_medicines.php?part_idx=2

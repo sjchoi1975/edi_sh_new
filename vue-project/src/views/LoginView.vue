@@ -1,6 +1,5 @@
 <template>
   <div class="login-root">
-    <div class="login-left"></div>
     <div class="login-right">
       <div class="login-logo">신일제약 실적관리 시스템</div>
       <form class="login-form" @submit.prevent="handleLogin">
@@ -21,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
@@ -83,6 +82,14 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
+
+onMounted(() => {
+  document.body.classList.add('no-main-padding');
+});
+
+onUnmounted(() => {
+  document.body.classList.remove('no-main-padding');
+});
 </script>
 
 <style scoped>
@@ -94,19 +101,13 @@ html, body, #app, .login-root {
 }
 .login-root {
   display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
   background: #f7f7f9;
   font-size: 13px;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.login-left {
-  flex: 1;
-  background: url('/login-bg.jpg') no-repeat center center;
-  background-size: cover;
 }
 .login-right {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -114,12 +115,14 @@ html, body, #app, .login-root {
   background: #fff;
   min-width: 400px;
   box-shadow: 0 0 16px 0 rgba(0,0,0,0.04);
+  padding: 40px 32px 32px 32px;
+  border-radius: 12px;
 }
 .login-logo {
-  font-size: 1.8rem;
+  font-size: 1.7rem;
   font-weight: bold;
-  color: #6db56e;
-  margin-bottom: 4rem;
+  color: #5fa56b;
+  margin-bottom: 3rem;
   letter-spacing: 2px;
 }
 .login-form {
@@ -156,23 +159,16 @@ html, body, #app, .login-root {
 .copyright {
   margin-top: 3rem;
   color: #888;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-align: center;
 }
 @media (max-width: 900px) {
   .login-root {
     flex-direction: column;
   }
-  .login-left {
-    display: none;
-  }
   .login-right {
     min-width: unset;
     width: 100vw;
   }
-}
-:global(.main-content), div.main-content {
-  margin: 0 !important;
-  padding: 0 !important;
 }
 </style> 

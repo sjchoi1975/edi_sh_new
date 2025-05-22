@@ -94,3 +94,9 @@ a {
 
 /* 드롭다운(서브메뉴) 관련 규칙은 주석 처리됨 */
 /* ... */
+
+/* 로그인/회원가입 화면에서 main-content 여백 제거 */
+body.no-main-padding .main-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
