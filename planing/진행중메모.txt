@@ -16,6 +16,6 @@ git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "로그인,회원관리 UI 적용"
+git commit -m "로그인 회원정보 못찾는 오류 해결"
 git push origin main
 

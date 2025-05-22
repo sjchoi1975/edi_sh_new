@@ -68,6 +68,7 @@ const handleLogin = async () => {
     }
     if (companyRow.approval_status !== 'approved') {
       alert('미승인 회원입니다. 관리자에게 승인을 요청해주세요.');
+      await supabase.auth.signOut();
       loading.value = false;
       return;
     }

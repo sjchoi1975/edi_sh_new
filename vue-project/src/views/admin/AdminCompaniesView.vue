@@ -576,6 +576,17 @@ const hideDialog = () => {
   submitted.value = false;
 };
 
+// 신규 업체 추가 시 빈 문자열을 null로 변환하는 함수 추가
+function toNullIfEmpty(obj) {
+  const result = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = obj[key] === '' ? null : obj[key];
+    }
+  }
+  return result;
+}
+
 const saveCompany = async () => {
   submitted.value = true;
   passwordsDoNotMatch.value = newCompany.password !== confirmPassword.value;
@@ -615,31 +626,10 @@ const saveCompany = async () => {
     const userId = result.user.id;
     
     // companies 테이블에 데이터 저장 (user_id 연결)
+    const { password, ...companyData } = newCompany;
     const { data, error: insertError } = await supabase
       .from('companies')
-      .insert([{
-        company_name: newCompany.company_name,
-        business_registration_number: newCompany.business_registration_number,
-        representative_name: newCompany.representative_name,
-        contact_person_name: newCompany.contact_person_name,
-        mobile_phone: newCompany.mobile_phone,
-        mobile_phone_2: newCompany.mobile_phone_2,
-        approval_status: newCompany.approval_status,
-        status: 'active',
-        user_type: 'user',
-        email: newCompany.email,
-        landline_phone: newCompany.landline_phone,
-        business_address: newCompany.business_address,
-        receive_email: newCompany.receive_email,
-        default_commission_grade: newCompany.default_commission_grade,
-        remarks: newCompany.remarks,
-        company_group: newCompany.company_group,
-        assigned_pharmacist_contact: newCompany.assigned_pharmacist_contact,
-        registration_request_date: new Date().toISOString(),
-        user_id: userId,  // Auth 사용자와 연결
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
+      .insert([{ ...toNullIfEmpty(companyData), user_id: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
       .select();
 
     if (insertError) throw insertError;

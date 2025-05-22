@@ -403,6 +403,17 @@ const hideDialog = () => {
   submitted.value = false;
 };
 
+// 신규 업체 추가 시 빈 문자열을 null로 변환하는 함수 추가
+function toNullIfEmpty(obj) {
+  const result = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = obj[key] === '' ? null : obj[key];
+    }
+  }
+  return result;
+}
+
 const saveCompany = async () => {
   submitted.value = true;
   passwordsDoNotMatch.value = newCompany.password !== confirmPassword.value;
@@ -460,7 +471,7 @@ const saveCompany = async () => {
     const { password, ...companyData } = newCompany;
     const { data, error: insertError } = await supabase
       .from('companies')
-      .insert([{ ...companyData, user_id: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+      .insert([{ ...toNullIfEmpty(companyData), user_id: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
       .select();
     if (insertError) throw insertError;
     toast.add({ severity: 'success', summary: '성공', detail: '신규 업체가 성공적으로 추가되었습니다.', life: 3000 });
