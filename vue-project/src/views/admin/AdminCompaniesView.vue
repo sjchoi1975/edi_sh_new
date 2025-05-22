@@ -965,4 +965,12 @@ h3 {
   font-size: 1rem;
   line-height: 1.5;
 }
+
+input,
+button,
+.p-inputtext,
+.p-button {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
 </style>
