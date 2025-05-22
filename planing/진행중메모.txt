@@ -1,9 +1,6 @@
-test1@test.com 관리자
-
 npx supabase link --project-ref 'vaeolqywqckiwwtspxfp'
 vaeolqywqckiwwtspxfp
 npx supabase functions deploy register-user --project-ref 'vaeolqywqckiwwtspxfp'
-
 
 SUPABASE_URL
 https://vaeolqywqckiwwtspxfp.supabase.co
@@ -15,55 +12,10 @@ SUPABASE_ANON_KEY
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZW9scXl3cWNraXd3dHNweGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwNDg0MTIsImV4cCI6MjA2MjYyNDQxMn0.Br2-nlOUu2j7_44O5k_lDWAzxTMVnvOQINhNJyYZb30
 
 
-
 git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "업체 관리 - 업체 상세, 수정 추가"
+git commit -m "로그인,회원관리 UI 적용"
 git push origin main
-
-
-Supabase 콘솔 → Table Editor → companies 테이블 → Policies(정책) 탭
-"Admin can read all company data via user_metadata" 정책 오른쪽 ... 클릭 → Edit(수정)
-
-(((auth.jwt() -> 'user_metadata'::text) ->> 'user_type'::text) = 'admin'::text)
--> true
-
-
-
-
-
-1. companies 테이블 컬럼명
-id_login → email로 다시 변경
-(컬럼명만 바꾸면 됩니다. 데이터는 그대로 유지)
-2. RLS 정책(Policy)
-"Admin can read all company data via user_metadata"
-현재: true (모든 인증 사용자 허용)
-복원:
-Apply to .env.local
-즉, admin만 전체 SELECT 허용으로 다시 변경
-[정리]
-컬럼명 email로 복원
-정책 조건도 admin만 허용으로 복원
-이렇게 하면 아까 정상 동작하던 상태로 돌아갑니다!
-[추가 안내]
-컬럼명 바꾼 후,
-프론트엔드 코드에서도 .eq('id_login', ...) → .eq('email', ...)로 다시 바꿔야 합니다.
-정책 바꾼 후,
-Vite 서버 재시작, 브라우저 새로고침 추천
-
-
-현재 작업 중인 폴더(프로젝트) 전체 백업
-(혹시 나중에 참고할 내용이 있으면 따로 복사해두세요.)
-깃허브에서 정상 동작하는 버전 다운로드
-GitHub에서 "Code" → "Download ZIP" 클릭
-또는 git clone 명령어 사용
-기존 폴더(프로젝트) 전체 삭제 후, 다운로드 받은 코드로 교체
-.env.local 등 환경설정 파일도 정상적으로 복사/적용
-npm install
-의존성 설치
-npm run dev
-개발 서버 실행
-
 

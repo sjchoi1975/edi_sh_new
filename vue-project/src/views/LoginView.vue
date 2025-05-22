@@ -49,8 +49,8 @@ const handleLogin = async () => {
   try {
     const { data: companyRow } = await supabase
       .from('companies')
-      .select('id, approval_status')
-      .eq('email', email.value)
+      .select('id, approval_status, user_type')
+      .eq('email', email.value.trim().toLowerCase())
       .maybeSingle();
     if (!companyRow) {
       alert('아이디(이메일) 정보가 없습니다. 다시 확인해주세요.');
@@ -71,7 +71,11 @@ const handleLogin = async () => {
       loading.value = false;
       return;
     }
-    router.push('/notices');
+    if (companyRow.user_type === 'admin') {
+      router.push('/admin/notices');
+    } else {
+      router.push('/notices');
+    }
   } catch (error) {
     alert('로그인 중 오류가 발생했습니다.');
   } finally {

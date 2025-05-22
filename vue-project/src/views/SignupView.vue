@@ -79,8 +79,9 @@ const handleSignup = async () => {
     return;
   }
   try {
+    const emailLower = formData.value.email.trim().toLowerCase();
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: formData.value.email,
+      email: emailLower,
       password: formData.value.password,
       options: {
         data: {
@@ -96,7 +97,7 @@ const handleSignup = async () => {
         .insert([
           {
             user_id: authData.user.id,
-            email: formData.value.email,
+            email: emailLower,
             company_name: formData.value.companyName,
             business_registration_number: formData.value.businessRegistrationNumber,
             representative_name: formData.value.representativeName,

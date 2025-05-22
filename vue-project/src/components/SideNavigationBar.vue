@@ -22,7 +22,7 @@
           <div class="side-nav-profile-role">{{ userRole === 'admin' ? '관리자' : '사용자' }}</div>
         </div>
       </div>
-      <button class="side-nav-logout" @click="$emit('logout')">로그아웃</button>
+      <button class="side-nav-logout" @click="handleLogout">로그아웃</button>
     </div>
   </nav>
 </template>
@@ -30,6 +30,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { supabase } from '@/supabase';
 
 const props = defineProps({
   userRole: { type: String, required: true },
@@ -115,6 +116,11 @@ const breadcrumbSubMenu = computed(() => {
   }
   return '';
 });
+
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+  router.push('/login');
+};
 </script>
 
 <style scoped>
