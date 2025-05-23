@@ -1,82 +1,147 @@
 <template>
-    <div class="notice-edit-view">
-      <h2>공지사항 수정</h2>
-      <form @submit.prevent="handleUpdate">
-        <div class="form-row">
-          <label>제목</label>
-          <input v-model="form.title" required />
+  <div class="notice-create-view">
+    <h2 style="margin-top:0;">공지사항 수정</h2>
+    <form @submit.prevent="handleSubmit" class="notice-form">
+      <div class="form-row">
+        <label>제목</label>
+        <div class="readonly-box">
+          <input v-model="title" type="text" required style="background:transparent; border:none; width:100%; font-size:1rem;" />
         </div>
-        <div class="form-row">
-          <label>내용</label>
-          <textarea v-model="form.content" rows="8" required />
+      </div>
+      <div class="form-row">
+        <label>내용</label>
+        <div class="readonly-box content">
+          <textarea v-model="content" rows="12" required style="background:transparent; border:none; width:100%; font-size:1rem; resize:vertical;" />
         </div>
-        <div class="form-row">
-          <label>
-            <input type="checkbox" v-model="form.is_pinned" />
-            상단 고정
-          </label>
-        </div>
-        <div class="form-row" v-if="fileList && fileList.length">
-          <label>첨부파일</label>
-          <div v-for="(file, idx) in fileList" :key="idx" style="margin-bottom:4px;">
-            <a :href="file" :download="getFileName(file)">
-              {{ getFileName(file) }}
+      </div>
+      <div class="form-row">
+        <label>
+          <input type="checkbox" v-model="isPinned" />
+          상단 고정(필수공지)
+        </label>
+      </div>
+      <div class="form-row file-row">
+        <label class="file-label" for="fileInput">파일 첨부</label>
+        <input
+          id="fileInput"
+          type="file"
+          multiple
+          @change="onFileChange"
+          ref="fileInput"
+          style="display:none"
+        />
+        <div v-if="files.length" class="readonly-box file-list">
+          <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
+            <a
+              :href="f.url"
+              class="file-link"
+              :download="f.name"
+            >
+              {{ f.name }}
             </a>
-            <button type="button" @click="removeFile(idx)">X</button>
+            <span class="file-remove" @click="removeFile(idx)">삭제</span>
           </div>
         </div>
-        <input type="file" multiple @change="onFileChange" />
-        <div class="btn-row">
-          <button type="submit">저장</button>
-          <button type="button" @click="goBack">취소</button>
-          <button type="button" @click="handleDelete">삭제</button>
-        </div>
-      </form>
-    </div>
-  </template>
+      </div>
+      <div class="btn-row" style="justify-content: flex-end;">
+        <button class="btn-cancel" type="button" @click="goList">취소</button>
+        <button class="btn-primary" type="submit">저장</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { supabase } from '@/supabase';
+
+const route = useRoute();
+const router = useRouter();
+const title = ref('');
+const content = ref('');
+const isPinned = ref(false);
+const files = ref([]);
+const fileInput = ref(null);
+
+onMounted(async () => {
+  const { data, error } = await supabase
+    .from('notices')
+    .select('*')
+    .eq('id', route.params.id)
+    .single();
   
-  <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRoute, useRouter } from 'vue-router';
-  import { supabase } from '@/supabase';
+  if (error) {
+    alert('데이터 로드 실패: ' + error.message);
+    router.push('/admin/notices');
+    return;
+  }
+
+  title.value = data.title;
+  content.value = data.content;
+  isPinned.value = data.is_pinned;
   
-  const route = useRoute();
-  const router = useRouter();
-  const form = ref({
-    title: '',
-    content: '',
-    is_pinned: false,
-  });
-  
-  const fileList = ref([]);
-  const newFiles = ref([]);
-  
-  onMounted(async () => {
-    const { data } = await supabase
-      .from('notices')
-      .select('*')
-      .eq('id', route.params.id)
-      .single();
-    if (data) {
-      form.value = {
-        title: data.title,
-        content: data.content,
-        is_pinned: !!data.is_pinned,
-      };
-      if (data.file_url) {
-        if (Array.isArray(data.file_url)) {
-          fileList.value = [...data.file_url];
-        } else if (typeof data.file_url === 'string') {
-          fileList.value = [data.file_url];
-        }
+  // 기존 파일 URL들을 files 배열에 추가
+  if (data.file_url) {
+    let fileUrls = [];
+    // 문자열이면 파싱
+    if (typeof data.file_url === 'string') {
+      try {
+        fileUrls = JSON.parse(data.file_url);
+      } catch {
+        fileUrls = [data.file_url];
       }
+    } else if (Array.isArray(data.file_url)) {
+      fileUrls = data.file_url;
     }
-  });
-  
-  async function handleUpdate() {
-    let uploadedUrls = [];
-    for (const f of newFiles.value) {
-      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    
+    // URL 배열을 files 배열로 변환
+    files.value = fileUrls.map(url => ({
+      name: getFileName(url),
+      url: url
+    }));
+  }
+});
+
+function sanitizeFileName(name) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+function onFileChange(e) {
+  const selected = Array.from(e.target.files);
+  files.value = files.value.concat(selected).slice(0, 5);
+  e.target.value = '';
+}
+
+function removeFile(idx) {
+  files.value.splice(idx, 1);
+}
+
+function getFileName(url) {
+  if (!url) return '';
+  try {
+    const fileName = url.split('/').pop();
+    const decodedName = decodeURIComponent(fileName);
+    return decodedName.replace(/^\d+_/, '');
+  } catch {
+    return url;
+  }
+}
+
+const handleSubmit = async () => {
+  if (!title.value.trim() || !content.value.trim()) {
+    alert('제목과 내용을 입력하세요.');
+    return;
+  }
+
+  let fileUrls = [];
+  for (const f of files.value) {
+    if (f.url) {
+      // 기존 파일은 URL 그대로 사용
+      fileUrls.push(f.url);
+    } else {
+      // 새로 추가된 파일은 업로드
+      const safeName = sanitizeFileName(f.name);
       const filePath = `attachments/${Date.now()}_${safeName}`;
       const { data, error } = await supabase.storage
         .from('notices')
@@ -88,84 +153,125 @@
       const url = data?.path
         ? supabase.storage.from('notices').getPublicUrl(data.path).data.publicUrl
         : null;
-      if (url) uploadedUrls.push(url);
-    }
-
-    const finalFileList = [
-      ...fileList.value.filter(f => typeof f === 'string' && f.startsWith('http')),
-      ...uploadedUrls
-    ];
-
-    const { error } = await supabase
-      .from('notices')
-      .update({
-        title: form.value.title,
-        content: form.value.content,
-        is_pinned: form.value.is_pinned,
-        updated_at: new Date().toISOString(),
-        file_url: finalFileList
-      })
-      .eq('id', route.params.id);
-
-    if (error) {
-      alert('수정 실패: ' + error.message);
-    } else {
-      alert('수정되었습니다.');
-      router.push(`/notices/${route.params.id}`);
-    }
-  }
-  
-  function goBack() {
-    router.back();
-  }
-  
-  async function handleDelete() {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('notices').delete().eq('id', route.params.id);
-    if (error) {
-      alert('삭제 실패: ' + error.message);
-    } else {
-      alert('삭제되었습니다.');
-      router.push('/admin/notices');
+      fileUrls.push(url);
     }
   }
 
-  function getFileName(url) {
-    try {
-      const name = decodeURIComponent(url.split('/').pop().split('?')[0]);
-      // 타임스탬프_원본명 패턴이면 _ 뒤만 보여주기
-      const parts = name.split('_');
-      if (parts.length > 1 && /^\d{10,}$/.test(parts[0])) {
-        return parts.slice(1).join('_');
-      }
-      return name;
-    } catch {
-      return '첨부파일';
-    }
-  }
+  const { error: updateError } = await supabase
+    .from('notices')
+    .update({
+      title: title.value,
+      content: content.value,
+      is_pinned: isPinned.value,
+      file_url: fileUrls
+    })
+    .eq('id', route.params.id);
 
-  function removeFile(idx) {
-    fileList.value.splice(idx, 1);
+  if (updateError) {
+    alert('수정 실패: ' + updateError.message);
+  } else {
+    alert('수정되었습니다.');
+    router.push('/admin/notices');
   }
+};
 
-  function onFileChange(e) {
-    const files = Array.from(e.target.files);
-    newFiles.value.push(...files);
-  }
-  </script>
-  
-  <style scoped>
-  .notice-edit-view {
-    max-width: 700px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-  }
-  .form-row {
-    margin-bottom: 1rem;
-  }
-  .btn-row {
-    margin-top: 1.5rem;
-    display: flex;
-    gap: 1rem;
-  }
-  </style>
+function goList() {
+  router.push('/admin/notices');
+}
+</script>
+
+<style scoped>
+.notice-create-view {
+  max-width: 960px;
+  margin: 1rem auto;
+  padding: 2rem 2rem 2rem 2rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.notice-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1.0rem;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.btn-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+.file-label {
+  display: inline-block;
+  background: #f8f8f8;
+  color: #333;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+  margin-right: 0;
+  white-space: nowrap;
+  border: 1px solid #ccc;
+  padding: 4px 12px;
+}
+.file-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-top: 1rem;
+  width: auto;
+  margin-left: 0;
+}
+.file-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 0;
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 1.0rem;
+}
+.file-remove {
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.85em;
+  margin-left: 4px;
+}
+.file-remove:hover {
+  text-decoration: underline;
+}
+.file-link {
+  color: #3498db;
+  font-size: 1.0rem;
+  text-decoration: none;
+}
+.file-link:hover {
+  font-size: 1.0rem;
+  text-decoration: underline;
+}
+.readonly-box {
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #333;
+}
+.readonly-box.content {
+  min-height: 120px;
+  white-space: pre-line;
+}
+</style>

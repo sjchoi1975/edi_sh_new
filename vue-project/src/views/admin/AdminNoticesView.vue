@@ -2,16 +2,15 @@
   <div class="admin-notices-view">
     <div class="notices-header">공지사항 목록</div>
     <div class="table-container">
-      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="10" responsiveLayout="scroll" class="custom-table">
+      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="10" :rowsPerPageOptions="[10, 20, 50, 100]" responsiveLayout="scroll" class="custom-table">
         <template #header>
           <div class="table-header">
             <span class="p-input-icon-left">
               <!--<i class="pi pi-search"></i> -->
               <InputText v-model="search" placeholder="제목 검색" />
             </span>
-            <button class="btn-primary" @click="goCreate">
-              <!--<i class="pi pi-plus"></i> -->등록
-            </button>
+            <button class="btn-primary" @click="goCreate">등록</button>
+              <!--<i class="pi pi-plus"></i> -->
           </div>
         </template>
         <Column field="is_pinned" header="필수" :sortable="true">
@@ -169,9 +168,8 @@ onMounted(async () => {
   background: #66f;
   color: #fff;
   border-radius: 2px;
-  padding: 4px 8px;
+  padding: 2px 8px;
   font-size: 0.85rem;
-  font-weight: 400;
   display: inline-block;
 }
 
@@ -232,16 +230,9 @@ onMounted(async () => {
   align-items: center;
   margin-bottom: 0.5rem;
 }
+
 .top-btns {
   display: flex;
   gap: 0.5rem;
-}
-.btn-delete {
-  background: #e74c3c;
-  color: #fff;
-}
-.btn-edit {
-  background: #ffe600;
-  color: #222;
 }
 </style> 

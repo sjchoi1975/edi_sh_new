@@ -227,11 +227,57 @@ const handleLogout = async () => {
 </style>
 
 <style>
-/* 전역 스타일은 여기에 유지 */
+/* 기본 스타일 */
 body {
   margin: 0;
-  font-family: var(--font-family); /* PrimeVue 테마나 index.html에서 설정된 폰트 사용 */
-  background-color: #f8f9fa; /* 밝은 회색 배경 */
-  color: #333; /* 기본 텍스트 색상 */
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* 전역 테이블 스타일 */
+.p-datatable {
+  /* 테이블 전체 스타일 */
+  font-size: 1.0rem;
+}
+
+/* 페이지네이션 기본 설정 */
+.p-datatable .p-paginator {
+  padding: 1.0rem !important;
+}
+.p-datatable .p-paginator .p-paginator-current {
+  margin-right: 0.5rem !important;
+}
+.p-datatable .p-paginator .p-dropdown {
+  min-width: 4rem !important;
+}
+
+/* 헤더 스타일 */
+.p-datatable .p-datatable-thead > tr > th {
+  padding: 0.5rem 1rem !important;
+  background: #f8f9fa !important;  /* 연한 회색 배경 */
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+}
+
+/* 본문 스타일 */
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.2rem 1rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  color: #333 !important;
+}
+
+/* 짝수 행 배경색 */
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: #fafafa !important;
+}
+
+/* 호버 효과 */
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #f5f5f5 !important;
 }
 </style>

@@ -35,11 +35,11 @@
               <a
                 :href="f.url"
                 class="file-link"
-                :download="getFileName(f.url)"
+                :download="f.name"
               >
-                {{ getFileName(f.url) }}
+                {{ f.name }}
               </a>
-              <span class="file-remove" @click="removeFile(idx)">×</span>
+              <span class="file-remove" @click="removeFile(idx)">삭제</span>
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@
 
   function onFileChange(e) {
     const selected = Array.from(e.target.files);
-    files.value = files.value.concat(selected).slice(0, 5);
+    files.value = files.value.concat(selected).slice(0, 10);
     e.target.value = '';
   }
 
@@ -128,8 +128,9 @@
   function getFileName(url) {
     if (!url) return '';
     try {
-      const raw = decodeURIComponent(url.split('/').pop());
-      return raw.replace(/^[0-9]+_/, '');
+      const fileName = url.split('/').pop();
+      const decodedName = decodeURIComponent(fileName);
+      return decodedName.replace(/^\d+_/, '');
     } catch {
       return url;
     }
@@ -155,7 +156,7 @@
     flex-direction: column;
     margin-top: 1.0rem;
     gap: 0.5rem;
-    font-size: 1rem;
+    font-size: 1.0rem;
     font-weight: 600;
   }
   input[type='text'],
@@ -176,14 +177,14 @@
     display: inline-block;
     background: #f8f8f8;
     color: #333;
-    border-radius: 4px;
+    border-radius: 2px;
     cursor: pointer;
     font-size: 0.85rem;
     margin-bottom: 0;
     margin-right: 0;
     white-space: nowrap;
     border: 1px solid #ccc;
-    padding: 6px 18px;
+    padding: 4px 12px;
   }
   input[type='file'] {
     display: none;
@@ -208,12 +209,12 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 4px;
-    font-size: 0.97rem;
+    font-size: 1.0rem;
   }
   .file-remove {
     color: #e74c3c;
     cursor: pointer;
-    font-weight: bold;
+    font-size: 0.85rem;
     margin-left: 4px;
   }
   .file-remove:hover {
@@ -221,9 +222,11 @@
   }
   .file-link {
     color: #3498db;
+    font-size: 1.0rem;
     text-decoration: none;
   }
   .file-link:hover {
+    font-size: 1.0rem;
     text-decoration: underline;
   }
   .readonly-box {

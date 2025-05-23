@@ -26,7 +26,13 @@
         <label>첨부 파일</label>
         <div class="readonly-box file-list">
           <div v-for="(url, idx) in notice.file_url" :key="url">
-            <a :href="url" target="_blank" class="file-link">{{ getFileName(url) }}</a>
+            <a
+              :href="url"
+              class="file-link"
+              :download="getFileName(url)"
+            >
+              {{ getFileName(url) }}
+            </a>
           </div>
         </div>
       </div>
@@ -68,7 +74,12 @@ onMounted(async () => {
 function getFileName(url) {
   if (!url) return '';
   try {
-    return decodeURIComponent(url.split('/').pop());
+    // URL에서 마지막 부분만 추출
+    const fileName = url.split('/').pop();
+    // URL 디코딩
+    const decodedName = decodeURIComponent(fileName);
+    // 타임스탬프_ 제거
+    return decodedName.replace(/^\d+_/, '');
   } catch {
     return url;
   }

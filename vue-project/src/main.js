@@ -24,6 +24,15 @@ app.use(PrimeVue, {
       darkModeSelector: '.my-dark-mode',
       cssLayer: true
     }
+  },
+  ripple: true,
+  inputStyle: 'filled',
+  // DataTable 전역 설정 추가
+  datatable: {
+    rows: 20,  // 기본 페이지 크기
+    paginator: {
+      rowsPerPageOptions: [20, 50, 100]  // 페이지 크기 옵션
+    }
   }
 });
 
