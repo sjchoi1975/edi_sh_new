@@ -1,0 +1,27 @@
+.btn-primary { background: #5fa56b; color: #fff; }
+.btn-edit    { background: #ffe600; color: #222; }
+.btn-delete  { background: #e74c3c; color: #fff; }
+.btn-list    { background: #e0e0e0; color: #333; }
+.btn-cancel  { background: #e0e0e0; color: #333; }
+
+button,
+.btn-primary,
+.btn-edit,
+.btn-delete,
+.btn-list,
+.btn-cancel {
+  padding: 6px 24px;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 0px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+button:hover,
+.btn-primary:hover,
+.btn-edit:hover,
+.btn-delete:hover,
+.btn-list:hover,
+.btn-cancel:hover {
+  opacity: 0.9;
+}

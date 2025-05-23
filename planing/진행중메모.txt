@@ -16,10 +16,14 @@ git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "로그인, 회원가입 화면만 별도 스타일 적용"
+git commit -m "로그인, 회원가입 이미지 제거"
 git push origin main
 
 
+녹색(메뉴바 선택)
 #5fa56b
+
+링크 파란색
+#1976d2;
 
 https://www.sinilpharm.com/medicines/generic_medicines.php?part_idx=2

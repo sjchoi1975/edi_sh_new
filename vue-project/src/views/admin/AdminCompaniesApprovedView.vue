@@ -688,7 +688,7 @@ const resetCompanyPassword = async () => {
   background: #f4f8f6;
 }
 .company-link {
-  font-weight: 700;
+  font-weight: 500;
   color: #1976d2;
   text-decoration: underline;
   cursor: pointer;

@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -121,6 +121,42 @@ const handleLogout = async () => {
   await supabase.auth.signOut();
   router.push('/login');
 };
+
+const titleTemplate = (row) => {
+  return h(
+    'a',
+    {
+      style: 'color:#1976d2;text-decoration:underline;cursor:pointer;',
+      onClick: () => router.push(`/notices/${row.id}`)
+    },
+    row.title
+  );
+};
+
+function goToDetail(id) {
+  router.push(`/notices/${id}`);
+}
+
+const files = ref([]); // 여러 파일 저장
+
+function onFileChange(e) {
+  const selected = Array.from(e.target.files);
+  // 기존 파일 + 새로 선택한 파일 합치기, 최대 5개
+  files.value = files.value.concat(selected).slice(0, 5);
+  // input value 초기화(같은 파일 다시 선택 가능)
+  e.target.value = '';
+}
+
+function removeFile(idx) {
+  files.value.splice(idx, 1);
+}
+
+onMounted(() => {
+  window.__goToNotice = (id) => {
+    router.push(`/notices/${id}`);
+  };
+  // ...기존 데이터 불러오기 코드...
+});
 </script>
 
 <style scoped>
@@ -165,7 +201,7 @@ const handleLogout = async () => {
   align-items: center;
   font-size: 15px;
   color: #222;
-  font-weight: 700;
+  font-weight: bold;
   background: #fff;
   border-radius: 6px;
   cursor: pointer;
@@ -173,12 +209,12 @@ const handleLogout = async () => {
   gap: 10px;
 }
 .side-nav-section-icon {
-  font-size: 1.1rem;
+  font-size: 1.0rem;
   color: #222;
   font-weight: 700;
 }
 .side-nav-section-label.open, .side-nav-section-label:hover {
-  background: #f3f6f4;
+  background: #fff;
   color: #222;
 }
 .side-nav-sub-list {
@@ -194,7 +230,7 @@ const handleLogout = async () => {
   height: 34px;
   color: #222;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   background: #fff;
   border-radius: 0 6px 6px 0;
   margin-bottom: 1px;
@@ -267,5 +303,24 @@ const handleLogout = async () => {
 }
 .side-nav-logout:hover {
   color: #388e3c;
+}
+.file-list {
+  margin-top: 6px;
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  font-size: 0.97rem;
+}
+.file-remove {
+  color: #e74c3c;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 4px;
+}
+.file-remove:hover {
+  text-decoration: underline;
 }
 </style> 

@@ -21,6 +21,12 @@ import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedVie
 import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
+import { ref, onMounted } from 'vue'
+
+function sanitizeFileName(name) {
+  // 한글, 공백, 특수문자 제거 → 영문, 숫자, 언더스코어, 점만 남김
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +75,12 @@ const router = createRouter({
       path: '/admin/notices',
       name: 'admin-notices',
       component: AdminNoticesView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/notices/create',
+      name: 'admin-notice-create',
+      component: () => import('@/views/admin/AdminNoticeCreateView.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
     // 추가된 관리자 라우트
@@ -137,6 +149,23 @@ const router = createRouter({
       name: 'user-notices',
       component: NoticesView,
       meta: { requiresAuth: true, role: 'user' } // 일반 사용자 역할 명시 (선택적이지만 권장)
+    },
+    {
+      path: '/notices/:id',
+      name: 'NoticeDetail',
+      component: () => import('@/views/NoticeDetailView.vue')
+    },
+    {
+      path: '/admin/notices/:id',
+      name: 'AdminNoticeDetail',
+      component: () => import('@/views/admin/AdminNoticeDetailView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/notices/:id/edit',
+      name: 'AdminNoticeEdit',
+      component: () => import('@/views/admin/AdminNoticeEditView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
     }
   ]
 })
@@ -197,5 +226,49 @@ router.beforeEach(async (to, from, next) => {
   }
 });
 
+const files = ref([]); // 여러 파일 저장
+const fileNames = ref([]);
+
+function onFileChange(e) {
+  files.value = Array.from(e.target.files).slice(0, 5); // 최대 5개
+  fileNames.value = files.value.map(f => f.name);
+}
+
+async function uploadFiles() {
+  let fileUrls = [];
+  for (const f of files.value) {
+    const safeName = sanitizeFileName(f.name);
+    const filePath = `attachments/${Date.now()}_${safeName}`;
+    const { data, error } = await supabase.storage
+      .from('notices')
+      .upload(filePath, f);
+    if (error) {
+      alert('파일 업로드 실패: ' + error.message);
+      return;
+    }
+    const url = data?.path
+      ? supabase.storage.from('notices').getPublicUrl(data.path).data.publicUrl
+      : null;
+    fileUrls.push(url);
+  }
+
+  const { error: insertError } = await supabase.from('notices').insert([
+    {
+      title: title.value,
+      content: content.value,
+      is_pinned: isPinned.value,
+      view_count: 0,
+      file_url: fileUrls // 배열 또는 문자열
+    }
+  ]);
+}
+
+const userType = ref('');
+
+onMounted(async () => {
+  // 기존 공지사항 데이터 불러오는 코드 아래에 추가
+  const { data: { session } } = await supabase.auth.getSession();
+  userType.value = session?.user?.user_metadata?.user_type || '';
+});
 
 export default router

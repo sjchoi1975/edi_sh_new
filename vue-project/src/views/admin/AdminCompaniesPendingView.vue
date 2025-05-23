@@ -437,7 +437,7 @@ const resetCompanyPassword = async () => {
   background: #f4f8f6;
 }
 .company-link {
-  font-weight: 700;
+  font-weight: 500;
   color: #1976d2;
   text-decoration: underline;
   cursor: pointer;
@@ -503,7 +503,6 @@ input,
 button,
 .p-inputtext,
 .p-button {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding: 6px 12px 6px 12px !important;  
 }
 </style> 
