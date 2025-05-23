@@ -219,7 +219,7 @@ const handleLogout = async () => {
 .main-content {
   margin-left: 220px;
   margin-top: 56px;
-  padding: 16px 16px 0 16px;
+  padding: 16px 16px 0px 16px;
   background: #f8f9fa;
   min-height: calc(100vh - 56px);
   box-sizing: border-box;
@@ -244,7 +244,7 @@ body {
 
 /* 페이지네이션 기본 설정 */
 .p-datatable .p-paginator {
-  padding: 1.0rem !important;
+  padding: 0.5rem !important;
 }
 .p-datatable .p-paginator .p-paginator-current {
   margin-right: 0.5rem !important;
@@ -255,9 +255,9 @@ body {
 
 /* 헤더 스타일 */
 .p-datatable .p-datatable-thead > tr > th {
-  padding: 0.5rem 1rem !important;
+  padding: 0.5rem 2rem !important;
   background: #f8f9fa !important;  /* 연한 회색 배경 */
-  font-size: 0.9rem !important;
+  font-size: 0.85rem !important;
   font-weight: 600 !important;
   color: #333 !important;
   border-bottom: 2px solid #dee2e6 !important;
@@ -265,8 +265,8 @@ body {
 
 /* 본문 스타일 */
 .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.2rem 1rem !important;
-  font-size: 0.9rem !important;
+  padding: 0.2rem 2rem !important;
+  font-size: 0.85rem !important;
   font-weight: 400 !important;
   color: #333 !important;
 }
@@ -279,5 +279,66 @@ body {
 /* 호버 효과 */
 .p-datatable .p-datatable-tbody > tr:hover {
   background: #f5f5f5 !important;
+}
+
+/* 테이블 컨테이너가 항상 화면을 채우고, 아래에 여백만 남게 */
+.admin-notices-view, .table-container {
+  min-height: calc(100vh - 120px); /* 헤더/사이드바 높이에 따라 조정 */
+  display: flex;
+  flex-direction: column;
+}
+.table-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 160px); /* 헤더+사이드+상단여백+하단여백 */
+  margin-bottom: 24px; /* 좌우 여백과 동일하게 */
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.03);
+  border: 1.5px solid #e0e0e0;
+  min-height: 0;
+  padding: 24px 24px 0 24px;
+  overflow-y: auto; /* 내부 스크롤 */
+}
+
+/* 행수 선택(20 등) 폰트/패딩 전역 조절 */
+:root {
+  --paginator-dropdown-font-size: 0.95rem;
+  --paginator-dropdown-height: 32px;
+  --paginator-dropdown-padding: 2px 8px;
+}
+:deep(.p-paginator .p-dropdown) {
+  font-size: var(--paginator-dropdown-font-size);
+  height: var(--paginator-dropdown-height);
+  min-width: 60px;
+}
+:deep(.p-paginator .p-dropdown-label) {
+  font-size: var(--paginator-dropdown-font-size);
+  padding: var(--paginator-dropdown-padding);
+}
+
+/* App.vue 또는 main.css에 추가 */
+.p-datatable .p-paginator {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+  background: #fff;
+  border-top: none !important;   /* 연한 선 제거 */
+  z-index: 10;
+  box-shadow: none;
+  padding: 12px 0 0 0;
+}
+
+.p-datatable {
+  flex: 1 1 auto;
+  min-height: 100%;   /* 이 부분이 핵심! */
+  background: #fff;
+}
+
+html, body, #app, .main-content {
+  height: 100vh;
+  overflow: hidden;
 }
 </style>

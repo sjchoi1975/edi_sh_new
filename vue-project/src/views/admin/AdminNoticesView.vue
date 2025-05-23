@@ -2,7 +2,7 @@
   <div class="admin-notices-view">
     <div class="notices-header">공지사항 목록</div>
     <div class="table-container">
-      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="10" :rowsPerPageOptions="[10, 20, 50, 100]" responsiveLayout="scroll" class="custom-table">
+      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="20" :rowsPerPageOptions="[10, 20, 50, 100]" scrollable scrollHeight="600px" responsiveLayout="scroll" class="custom-table">
         <template #header>
           <div class="table-header">
             <span class="p-input-icon-left">
