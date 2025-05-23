@@ -105,7 +105,7 @@ html, body, #app, .login-root {
   align-items: center;
   min-height: 100vh;
   background: #f7f7f9;
-  font-size: 13px;
+  font-size: 1rem;
 }
 .login-right {
   display: flex;
@@ -116,14 +116,14 @@ html, body, #app, .login-root {
   min-width: 400px;
   box-shadow: 0 0 16px 0 rgba(0,0,0,0.04);
   padding: 40px 32px 32px 32px;
-  border-radius: 12px;
+  border-radius: 4px;
 }
 .login-logo {
-  font-size: 1.7rem;
+  font-size: 2rem;
   font-weight: bold;
   color: #5fa56b;
   margin-bottom: 3rem;
-  letter-spacing: 2px;
+  letter-spacing: 0px;
 }
 .login-form {
   width: 100%;
@@ -133,7 +133,7 @@ html, body, #app, .login-root {
   gap: 1.2rem;
 }
 .form-group label {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   margin-bottom: 0.3rem;
   color: #222;
@@ -145,21 +145,19 @@ html, body, #app, .login-root {
 }
 .login-btn {
   width: 100%;
-  border: none !important;
   margin-bottom: 0.5rem;
   font-size: 1rem;
 }
 .signup-btn {
   width: 100%;
-  background: #3b82f6 !important;
-  color: #fff !important;
-  border: none !important;
+  background: #3b82f6;
+  color: #fff;
   font-size: 1rem;
 }
 .copyright {
   margin-top: 3rem;
   color: #888;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 @media (max-width: 900px) {

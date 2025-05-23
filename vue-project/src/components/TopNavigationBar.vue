@@ -5,11 +5,6 @@
       <span class="breadcrumb-sep">&gt;</span>
       <span class="breadcrumb-submenu">{{ breadcrumbSubMenu }}</span>
     </div>
-    <div class="top-nav-actions">
-      <i class="pi pi-bell top-nav-icon"></i>
-      <i class="pi pi-user top-nav-icon"></i>
-      <a href="#" class="top-nav-logout" @click.prevent="$emit('logout')">로그아웃</a>
-    </div>
   </header>
 </template>
 
@@ -43,7 +38,7 @@ const emit = defineEmits(['logout']);
   display: flex;
   align-items: center;
   margin-left: 18px;
-  font-size: 14px;
+  font-size: 1.1rem;
   gap: 6px;
 }
 .breadcrumb-menu {
@@ -58,29 +53,5 @@ const emit = defineEmits(['logout']);
 .breadcrumb-submenu {
   color: #222;
   font-weight: 700;
-}
-.top-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.top-nav-icon {
-  font-size: 1.25rem;
-  color: #5fa56b;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.top-nav-icon:hover {
-  color: #388e3c;
-}
-.top-nav-logout {
-  color: #5fa56b;
-  font-size: 14px;
-  text-decoration: underline;
-  cursor: pointer;
-  margin-left: 8px;
-}
-.top-nav-logout:hover {
-  color: #388e3c;
 }
 </style> 

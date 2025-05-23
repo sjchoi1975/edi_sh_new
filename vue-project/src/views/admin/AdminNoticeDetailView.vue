@@ -27,9 +27,9 @@
         <div class="readonly-box file-list">
           <div v-for="(url, idx) in notice.file_url" :key="url">
             <a
-              :href="url"
+              href="#"
               class="file-link"
-              :download="getFileName(url)"
+              @click.prevent="downloadFile(url, getFileName(url))"
             >
               {{ getFileName(url) }}
             </a>
@@ -101,74 +101,15 @@ async function handleDelete() {
     alert('삭제 실패: ' + error.message);
   }
 }
-</script>
 
-<style scoped>
-.notice-detail-view {
-  max-width: 960px;
-  margin: 1rem auto;
-  padding: 1.5rem 2rem 2rem 2rem;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+async function downloadFile(url, name) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-.top-btns {
-  display: flex;
-  gap: 0.5rem;
-}
-.notice-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.form-row {
-  display: flex;
-  flex-direction: column;
-  margin-top: 1.0rem;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-.readonly-box {
-  background: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 1rem;
-  font-weight: 400;
-  color: #333;
-}
-.readonly-box.content {
-  min-height: 120px;
-  white-space: pre-line;
-}
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.file-link {
-  color: #1976d2;
-  text-decoration: underline;
-  font-size: 0.98rem;
-}
-.btn-row {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-}
-.top-btns {
-  justify-content: flex-end;
-  margin-bottom: 0.5rem;
-}
-.bottom-btns {
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-</style> 
+</script> 

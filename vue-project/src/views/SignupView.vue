@@ -140,7 +140,7 @@ onUnmounted(() => {
   min-height: 100vh;
   width: 100vw;
   background: #f7f7f9;
-  font-size: 13px;
+  font-size: 1rem;
 }
 .signup-right {
   display: flex;
@@ -153,15 +153,15 @@ onUnmounted(() => {
   width: 100%;
   max-width: 480px;
   padding: 40px 32px 32px 32px;
-  border-radius: 12px;
+  border-radius: 1rem;
   position: relative;
 }
 .signup-logo {
-  font-size: 1.8em;
+  font-size: 2em;
   font-weight: bold;
   color: #5fa56b;
   margin-bottom: 2rem;
-  letter-spacing: 2px;
+  letter-spacing: 0px;
 }
 .signup-form {
   width: 100%;
@@ -169,25 +169,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-}
-.form-row {
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  margin-bottom: 0.1rem;
-}
-.form-row label {
-  width: 140px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #222;
-  text-align: right;
-}
-.form-row input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  font-size: 0.95rem;
 }
 .button-row {
   display: flex;
@@ -199,14 +180,14 @@ onUnmounted(() => {
   background: #3b82f6 !important;
   color: #fff !important;
   border: none !important;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .cancel-btn {
   flex: 1;
   background: #e0e0e0 !important;
   color: #222 !important;
   border: none !important;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .login-link {
   margin-top: 0.5rem;
@@ -215,7 +196,7 @@ onUnmounted(() => {
   font-size: 0.85rem;
   margin-bottom: 2.8rem;
 }
-.login-link a {
+.login-link {
   color: #1976d2;
   text-decoration: underline;
   cursor: pointer;
@@ -226,7 +207,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   color: #888;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   text-align: center;
 }
 @media (max-width: 900px) {

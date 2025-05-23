@@ -172,14 +172,14 @@ onMounted(() => {
   flex-direction: column;
   border-right: 1px solid #e5e7eb;
   z-index: 1000;
-  font-size: 14px;
+  font-size: 1.1rem;
 }
 .side-nav-logo {
   height: 56px;
   display: flex;
   align-items: center;
   font-weight: bold;
-  font-size: 1.18rem;
+  font-size: 1.5rem;
   color: #5fa56b;
   padding-left: 28px;
   border-bottom: 1px solid #e5e7eb;
@@ -199,9 +199,9 @@ onMounted(() => {
   height: 40px;
   display: flex;
   align-items: center;
-  font-size: 15px;
+  font-size: 1.1rem;
   color: #222;
-  font-weight: bold;
+  font-weight: 700;
   background: #fff;
   border-radius: 6px;
   cursor: pointer;
@@ -209,13 +209,23 @@ onMounted(() => {
   gap: 10px;
 }
 .side-nav-section-icon {
-  font-size: 1.0rem;
+  font-size: 1.1rem;
   color: #222;
   font-weight: 700;
 }
-.side-nav-section-label.open, .side-nav-section-label:hover {
+.side-nav-section-icon:hover {
+  font-size: 1.1rem;
+  background: #fff;
+  color: #5fa56b;
+  font-weight: 700;
+}
+.side-nav-section-label.open {
   background: #fff;
   color: #222;
+}
+.side-nav-section-label:hover {
+  background: #fff;
+  color: #5fa56b;
 }
 .side-nav-sub-list {
   list-style: none;
@@ -229,7 +239,7 @@ onMounted(() => {
   padding: 0 0 0 44px;
   height: 34px;
   color: #222;
-  font-size: 14px;
+  font-size: 1.0rem;
   font-weight: 700;
   background: #fff;
   border-radius: 0 6px 6px 0;
@@ -253,8 +263,9 @@ onMounted(() => {
   width: calc(100% - 24px);
 }
 .side-nav-sub-item:hover .side-nav-sub-label {
-  background: #eaf6ee;
-  color: #5fa56b;
+  background: #5fa56b;
+  color: #fff;
+  width: calc(100% - 24px);
 }
 .side-nav-bottom {
   border-top: 1px solid #e5e7eb;
@@ -270,31 +281,30 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 .side-nav-profile-icon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: #222;
-  margin-right: 10px;
+  margin-left: 10px;
+  margin-right: 20px;
 }
 .side-nav-profile-info {
   display: flex;
   flex-direction: column;
 }
 .side-nav-profile-email {
-  font-size: 13px;
+  font-size: 1rem;
   color: #222;
   font-weight: 500;
 }
 .side-nav-profile-role {
-  font-size: 12px;
+  font-size: 1rem;
   color: #444;
 }
 .side-nav-logout {
   background: none;
   border: none;
   color: #4caf50;
-  font-size: 13px;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 8px;
-  margin: 8px auto 0 auto;
   text-decoration: underline;
   transition: color 0.15s;
   display: block;
@@ -302,7 +312,7 @@ onMounted(() => {
   text-align: center;
 }
 .side-nav-logout:hover {
-  color: #388e3c;
+  color: #266429;
 }
 .file-list {
   margin-top: 6px;
@@ -312,7 +322,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   margin-bottom: 2px;
-  font-size: 0.97rem;
+  font-size: 1rem;
 }
 .file-remove {
   color: #e74c3c;

@@ -1,7 +1,7 @@
 .btn-primary { background: #5fa56b !important; color: #fff !important; }
 .btn-edit    { background: #ffe600 !important; color: #222 !important; }
 .btn-delete  { background: #e74c3c !important; color: #fff !important; }
-.btn-list    { background: #e0e0e0 !important; color: #333 !important; }
+.btn-list    { background: #5fa56b !important; color: #fff !important; }
 .btn-cancel  { background: #e0e0e0 !important; color: #333 !important; }
 
 button,
@@ -12,7 +12,7 @@ button,
 .btn-cancel {
   padding: 6px 24px !important;
   margin-left: 8px !important;
-  font-size: 0.85rem !important;
+  font-size: 1.0rem !important;
   border: none !important;
   border-radius: 2px !important;
   cursor: pointer !important;

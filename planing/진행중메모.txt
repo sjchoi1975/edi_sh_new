@@ -16,7 +16,7 @@ git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "로그인, 회원가입 이미지 제거"
+git commit -m "공지사항 작업중 3"
 git push origin main
 
 
@@ -27,3 +27,13 @@ git push origin main
 #1976d2;
 
 https://www.sinilpharm.com/medicines/generic_medicines.php?part_idx=2
+
+  min-height: calc(100vh - 120px); /* 헤더/사이드바 높이에 따라 조정 */
+
+
+목록 정렬도 맞춰줘.
+테이블 헤더는 모두 가운데 정렬이야 (이건 모든 테이블 공통이야)
+
+, 본문 모두 가운데 정렬로 해줘.
+제목 본문만 빼고
+제목도 헤더는 가운데 정렬이야

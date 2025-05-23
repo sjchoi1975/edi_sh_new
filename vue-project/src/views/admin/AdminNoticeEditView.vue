@@ -32,13 +32,7 @@
         />
         <div v-if="files.length" class="readonly-box file-list">
           <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
-            <a
-              :href="f.url"
-              class="file-link"
-              :download="f.name"
-            >
-              {{ f.name }}
-            </a>
+            <span class="file-link">{{ f.name }}</span>
             <span class="file-remove" @click="removeFile(idx)">삭제</span>
           </div>
         </div>
@@ -109,7 +103,7 @@ function sanitizeFileName(name) {
 
 function onFileChange(e) {
   const selected = Array.from(e.target.files);
-  files.value = files.value.concat(selected).slice(0, 5);
+  files.value = files.value.concat(selected).slice(0, 10);
   e.target.value = '';
 }
 
@@ -179,99 +173,3 @@ function goList() {
   router.push('/admin/notices');
 }
 </script>
-
-<style scoped>
-.notice-create-view {
-  max-width: 960px;
-  margin: 1rem auto;
-  padding: 2rem 2rem 2rem 2rem;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-.notice-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.form-row {
-  display: flex;
-  flex-direction: column;
-  margin-top: 1.0rem;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-.btn-row {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  justify-content: flex-end;
-}
-.file-label {
-  display: inline-block;
-  background: #f8f8f8;
-  color: #333;
-  border-radius: 2px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-bottom: 0;
-  margin-right: 0;
-  white-space: nowrap;
-  border: 1px solid #ccc;
-  padding: 4px 12px;
-}
-.file-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 16px;
-  margin-top: 1rem;
-  width: auto;
-  margin-left: 0;
-}
-.file-list {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: 0;
-}
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-  font-size: 1.0rem;
-}
-.file-remove {
-  color: #e74c3c;
-  cursor: pointer;
-  font-size: 0.85em;
-  margin-left: 4px;
-}
-.file-remove:hover {
-  text-decoration: underline;
-}
-.file-link {
-  color: #3498db;
-  font-size: 1.0rem;
-  text-decoration: none;
-}
-.file-link:hover {
-  font-size: 1.0rem;
-  text-decoration: underline;
-}
-.readonly-box {
-  background: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 1rem;
-  font-weight: 400;
-  color: #333;
-}
-.readonly-box.content {
-  min-height: 120px;
-  white-space: pre-line;
-}
-</style>
