@@ -34,12 +34,17 @@ app.use(PrimeVue, {
   theme: Aura, // 여기만 남기세요!
   ripple: true,
   inputStyle: 'filled',
-  // DataTable 전역 설정 추가
+
+// 전역 설정 안됨!!! 컴퍼넌트마다 지정해줘야 함!!!
   datatable: {
-    rows: 20,  // 기본 페이지 크기
-    paginator: {
-      rowsPerPageOptions: [20, 50, 100]  // 페이지 크기 옵션
-    }
+    paginator: true,
+    rows: 20,
+    rowsPerPageOptions: [20, 50, 100],
+    scrollable: true,
+    scrollHeight: '680px',
+    loading: false,
+    responsiveLayout: 'scroll',
+    filterDisplay: 'menu'
   }
 });
 

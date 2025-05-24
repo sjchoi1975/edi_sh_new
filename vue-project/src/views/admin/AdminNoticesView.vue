@@ -2,7 +2,19 @@
   <div class="admin-notices-view">
     <div class="header-title">공지사항 목록</div>
     <div class="table-container">
-      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="210" :rowsPerPageOptions="[10, 20, 50, 100]" scrollable scrollHeight="600px" responsiveLayout="scroll" class="custom-table">
+
+
+      <DataTable
+        :value="filteredNotices"
+        paginator
+        :rows="20"
+        :rowsPerPageOptions="[20, 50, 100]"
+        scrollable
+        scrollHeight="680px"
+        v-model:filters="filters"
+        :globalFilterFields="['title']"
+        class="custom-table"
+      >
         <template #header>
           <div class="table-header">
             <span class="p-input-icon-left">
@@ -11,12 +23,12 @@
             <button class="btn-primary" @click="goCreate">등록</button>
           </div>
         </template>
-        <Column field="is_pinned" header="필수" :headerStyle="{ width: '11%' }" :sortable="true">
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: '11%' }" :sortable="false">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
           </template>
         </Column>
-        <Column field="title" header="제목" :headerStyle="{ width: '40%' }" :sortable="true">
+        <Column field="title" header="제목" :headerStyle="{ width: '40%' }" :sortable="false">
           <template #body="slotProps">
             <a
               href="#"
@@ -34,8 +46,8 @@
             </span>
           </template>
         </Column>
-        <Column field="view_count" header="조회수" :headerStyle="{ width: '11%' }" :sortable="true" />
-        <Column field="created_at" header="작성일시" :headerStyle="{ width: '16%' }" :sortable="true">
+        <Column field="view_count" header="조회수" :headerStyle="{ width: '11%' }" :sortable="false" />
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: '16%' }" :sortable="false">
           <template #body="slotProps">
             {{ formatKST(slotProps.data.created_at) }}
           </template>
@@ -66,6 +78,10 @@ const loading = ref(false);
 const router = useRouter();
 const userType = ref('');
 const search = ref('');
+
+const filters = ref({
+  'global': { value: null, matchMode: 'contains' }
+});
 
 function goCreate() {
   router.push('/admin/notices/create');
@@ -118,7 +134,8 @@ onMounted(async () => {
     .select('id, title, created_at, is_pinned, view_count, file_url')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false });
-  if (!error && data) {
+  console.log('공지사항 데이터:', data); // ← 이 줄만 추가!  
+      if (!error && data) {
     notices.value = data.map(n => {
       let count = 0;
       try {
@@ -133,5 +150,10 @@ onMounted(async () => {
   loading.value = false;
   const { data: { session } } = await supabase.auth.getSession();
   userType.value = session?.user?.user_metadata?.user_type || '';
+});
+import { watch } from 'vue';
+
+watch(filteredNotices, (val) => {
+  console.log('filteredNotices:', val);
 });
 </script>

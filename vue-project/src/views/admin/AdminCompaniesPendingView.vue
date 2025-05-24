@@ -6,13 +6,14 @@
       <Toast />
       <DataTable
         :value="pendingCompanies"
-        :paginator="true"
-        :rows="10"
-        :rowsPerPageOptions="[10, 20, 50, 100]"
-        :loading="loading"
-        responsiveLayout="scroll"
+        paginator
+        :rows="20"
+        :rowsPerPageOptions="[20, 50, 100]"
+        editMode="cell"
+        @cell-edit-complete="onCellEditComplete"
+        scrollable
+        scrollHeight="680px"
         v-model:filters="filters"
-        filterDisplay="menu"
         :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="custom-table"
       >
@@ -21,6 +22,9 @@
             <span class="p-input-icon-left">
               <InputText v-model="filters['global'].value" placeholder="업체명, 사업자등록번호, 대표자명 검색" style="width: 280px" />
             </span>
+            <div>
+              <Button label="신규 업체 추가" icon="pi pi-plus" class="p-button-success" @click="goCreate" />
+            </div>            
           </div>
         </template>
         <template #empty>
@@ -29,19 +33,30 @@
         <template #loading>
           미승인 업체 목록을 불러오는 중입니다...
         </template>
-        <Column field="company_group" header="구분" sortable></Column>
-        <Column field="company_name" header="업체명" sortable>
+
+
+
+
+
+
+
+        <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
             <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호"></Column>
-        <Column field="representative_name" header="대표자"></Column>
-        <Column field="business_address" header="사업장소재지"></Column>
-        <Column field="default_commission_grade" header="수수료 등급"></Column>
-        <Column field="assigned_pharmacist_contact" header="관리자"></Column>
-        <Column field="remarks" header="비고"></Column>
-        <Column field="approval_status" header="승인 처리" :exportable="false" style="min-width:10rem">
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="representative_name" header="대표자" :headerStyle="{ width: '8%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="business_address" header="사업장소재지" :headerStyle="{ width: '24%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="default_commission_grade" header="수수료 등급" :headerStyle="{ width: '8%' }" :sortable="true" :editor="getDropdownEditor">
+          <template #editor="{ data, field }">
+            <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" />
+          </template>
+        </Column>
+        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: '8%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%' }" :exportable="false" style="min-width:10rem">
           <template #body="slotProps">
             <Button label="승인" icon="pi pi-check" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
           </template>
@@ -256,7 +271,6 @@ onMounted(() => {
   fetchCompanies();
 });
 
-function getTextEditor() { return {}; }
 function getDropdownEditor() { return {}; }
 
 const openCompanyDetailDialog = (company) => {
@@ -367,4 +381,16 @@ const resetCompanyPassword = async () => {
     loading.value = false;
   }
 };
+
+function getTextEditor(slotProps) {
+  return h(InputText, {
+    modelValue: slotProps.data[slotProps.field],
+    'onUpdate:modelValue': value => slotProps.data[slotProps.field] = value
+  });
+}
+
+function onCellEditComplete(event) {
+  // event.data, event.field, event.newValue 등 활용
+  // 예: 서버에 저장 등
+}
 </script> 
