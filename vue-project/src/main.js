@@ -1,30 +1,37 @@
-import '@/assets/buttons.css';
-import './assets/main.css'
+// import '@primevue/themes/aura/theme.css';
+import 'primeicons/primeicons.css';
 
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
+// 기타 전역 CSS
+import '@/assets/buttons.css';
+import './assets/main.css';
+
+// JS/라이브러리 import
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
 
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
-import 'primeicons/primeicons.css';
-
-// PrimeVue 서비스 추가
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 
-const app = createApp(App)
+// aura 테마 : 최신, 깔끔, 밝은 느낌
+// import '@primevue/themes/aura/theme.css';
 
-app.use(router)
+// lara 테마 : PrimeVue 공식 기본 테마, 다양한 색상(blue, teal, purple 등) 변형 가능
+// import '@primevue/themes/lara/theme.css';
+
+// material 테마 : 구글 머티리얼 스타일
+// import '@primevue/themes/material/theme.css';
+
+// nora 테마 : 심플하고 미니멀한 스타일
+// import '@primevue/themes/nora/theme.css';
+
+const app = createApp(App);
+
+app.use(router);
 app.use(PrimeVue, {
-  theme: {
-    preset: Aura,
-    options: {
-      prefix: 'p',
-      darkModeSelector: '.my-dark-mode',
-      cssLayer: true
-    }
-  },
+  theme: Aura, // 여기만 남기세요!
   ripple: true,
   inputStyle: 'filled',
   // DataTable 전역 설정 추가
@@ -40,4 +47,4 @@ app.use(PrimeVue, {
 app.use(ConfirmationService);
 app.use(ToastService);
 
-app.mount('#app')
+app.mount('#app');

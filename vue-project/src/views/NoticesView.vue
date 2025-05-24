@@ -1,69 +1,147 @@
 <template>
-  <div class="notices-view">
-    <h1>공지사항</h1>
-    <p>사용자를 위한 공지사항 목록입니다.</p>
-    <DataTable :value="notices" :loading="loading" responsiveLayout="scroll">
-      <Column field="title" header="제목">
-        <template #body="slotProps">
-          <a
-            href="#"
-            style="color:#1976d2;text-decoration:underline;cursor:pointer;"
-            @click.prevent="goToDetail(slotProps.data.id)"
-          >
-            {{ slotProps.data.title }}
-          </a>
+  <div class="admin-notices-view">
+    <div class="header-title">공지사항 목록</div>
+    <div class="table-container">
+      <DataTable :value="filteredNotices" :loading="loading" :paginator="true" :rows="20" :rowsPerPageOptions="[10, 20, 50, 100]" scrollable scrollHeight="600px" responsiveLayout="scroll" class="custom-table">
+        <template #header>
+          <div class="table-header">
+            <span class="p-input-icon-left">
+              <InputText v-model="search" placeholder="제목 검색" />
+            </span>
+
+          </div>
         </template>
-      </Column>
-      <Column field="created_at" header="작성일" :body="formatDate" />
-      <Column field="is_pinned" header="고정" :body="pinTemplate" />
-      <Column field="view_count" header="조회수" />
-    </DataTable>
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: '15%' }" :sortable="true">
+          <template #body="slotProps">
+            <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
+          </template>
+        </Column>
+        <Column field="title" header="제목" :headerStyle="{ width: '50%' }" :sortable="true">
+          <template #body="slotProps">
+            <a
+              href="#"
+              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
+              @click.prevent="goToDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.title }}
+            </a>
+          </template>
+        </Column>
+        <Column field="file_count" header="첨부파일" :headerStyle="{ width: '15%' }">
+          <template #body="slotProps">
+            <span>
+              {{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}
+            </span>
+          </template>
+        </Column>
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: '20%' }" :sortable="true">
+          <template #body="slotProps">
+            {{ formatKST(slotProps.data.created_at) }}
+          </template>
+        </Column>
+      </DataTable>
+    </div>
   </div>
 </template>
 
+
+
+
+
+
+
+
+
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import { useRouter } from 'vue-router';
+import InputText from 'primevue/inputtext';
 
 const notices = ref([]);
 const loading = ref(false);
 const router = useRouter();
-
-const formatDate = (row) => {
-  if (!row.created_at) return '';
-  return new Date(row.created_at).toLocaleDateString();
-};
-
-const pinTemplate = (row) => row.is_pinned ? '고정' : '';
+const search = ref('');
 
 function goToDetail(id) {
   router.push(`/notices/${id}`);
 }
 
+function formatKST(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  // UTC → KST 변환
+  date.setHours(date.getHours() + 9);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
+const filteredNotices = computed(() => {
+  if (!search.value) return notices.value;
+  return notices.value.filter(n =>
+    n.title?.includes(search.value) ||
+    formatKST(n.created_at)?.includes(search.value)
+  );
+});
+
 onMounted(async () => {
   loading.value = true;
   const { data, error } = await supabase
     .from('notices')
-    .select('id, title, created_at, is_pinned, view_count')
+    .select('id, title, created_at, is_pinned, file_url')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false });
-  if (!error) notices.value = data;
+  if (!error && data) {
+    notices.value = data.map(n => {
+      let count = 0;
+      try {
+        const arr = JSON.parse(n.file_url || '[]');
+        count = Array.isArray(arr) ? arr.length : 0;
+      } catch {
+        count = 0;
+      }
+      return { ...n, file_count: count };
+    });
+  }
   loading.value = false;
 });
 </script>
 
 <style scoped>
-.notices-view {
-  padding: 1.5rem;
-  max-width: 900px;
-  margin: 0 auto;
+.admin-notices-view {
+  padding: 20px;
 }
-.custom-table :deep(.p-datatable-thead > tr > th),
-.custom-table :deep(.p-datatable-tbody > tr > td) {
-  font-size: 14px;
-  padding: 10px 8px;
+
+.header-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.table-container {
+  margin-top: 20px;
+}
+
+.custom-table {
+  width: 100%;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.required-badge {
+  background-color: #ff4444;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
 }
 </style>

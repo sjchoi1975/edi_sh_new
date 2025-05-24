@@ -165,15 +165,39 @@ onUnmounted(() => {
 }
 .signup-form {
   width: 100%;
-  max-width: 420px;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
 }
+.signup-form .form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 0rem;
+  gap: 0.5rem;
+}
+.signup-form .form-row label {
+  width: 180px;
+  min-width: 140px;
+  text-align: right;
+  margin-right: 1rem;
+  font-weight: 600;
+}
+.signup-form .form-row input,
+.signup-form .form-row .p-inputtext {
+  flex: 1 1 0;
+  min-width: 260px;
+  max-width: 340px;
+  height: 32px;
+  font-size: 1rem;
+  padding: 6px 12px;
+  box-sizing: border-box;
+}
 .button-row {
   display: flex;
   gap: 1rem;
-  margin-top: 0.7rem;
+  margin-top: 2rem;
 }
 .signup-btn {
   flex: 1;
@@ -193,8 +217,8 @@ onUnmounted(() => {
   margin-top: 0.5rem;
   text-align: center;
   color: #1976d2;
-  font-size: 0.85rem;
-  margin-bottom: 2.8rem;
+  font-size: 0.9rem;
+  margin-bottom: 4rem;
 }
 .login-link {
   color: #1976d2;
@@ -203,11 +227,11 @@ onUnmounted(() => {
 }
 .copyright {
   position: absolute;
-  bottom: 24px;
+  bottom: 2rem;
   left: 0;
   width: 100%;
   color: #888;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 @media (max-width: 900px) {

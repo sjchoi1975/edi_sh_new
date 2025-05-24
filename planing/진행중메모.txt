@@ -16,7 +16,7 @@ git
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "공지사항 작업중 3"
+git commit -m "공지사항 작업중 4"
 git push origin main
 
 

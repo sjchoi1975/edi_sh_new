@@ -6,7 +6,7 @@ import AdminNoticesView from '../views/admin/AdminNoticesView.vue'
 import NoticesView from '../views/NoticesView.vue'
 
 // 새로 추가된 관리자용 컴포넌트 import
-import AdminCompaniesView from '../views/admin/AdminCompaniesView.vue'
+// import AdminCompaniesView from '../views/admin/AdminCompaniesView.vue' 삭제
 // import AdminApprovalRequestsView from '../views/admin/AdminApprovalRequestsView.vue' // 삭제
 import AdminProductsView from '../views/admin/AdminProductsView.vue'
 import AdminClientsView from '../views/admin/AdminClientsView.vue'
@@ -19,6 +19,8 @@ import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vu
 import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
 import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedView.vue'
 import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
+import AdminCompanyCreateView from '../views/admin/AdminCompanyCreateView.vue'
+import AdminCompanyDetailView from '../views/admin/AdminCompanyDetailView.vue'
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 import { ref, onMounted } from 'vue'
@@ -165,6 +167,18 @@ const router = createRouter({
       path: '/admin/notices/:id/edit',
       name: 'AdminNoticeEdit',
       component: () => import('@/views/admin/AdminNoticeEditView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+        {
+      path: '/admin/companies/create',
+      name: 'admin-company-create',
+      component: AdminCompanyCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/companies/:id',
+      name: 'admin-company-detail',
+      component: AdminCompanyDetailView,
       meta: { requiresAuth: true, role: 'admin' }
     }
   ]

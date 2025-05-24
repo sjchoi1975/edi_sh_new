@@ -6,11 +6,9 @@
         <template #header>
           <div class="table-header">
             <span class="p-input-icon-left">
-              <!--<i class="pi pi-search"></i> -->
-              <InputText v-model="search" placeholder="제목 검색" />
+              <InputText v-model="search" placeholder="제목 검색" style="width: 280px" />
             </span>
             <button class="btn-primary" @click="goCreate">등록</button>
-              <!--<i class="pi pi-plus"></i> -->
           </div>
         </template>
         <Column field="is_pinned" header="필수" :headerStyle="{ width: '11%' }" :sortable="true">
@@ -49,9 +47,6 @@
             </div>
           </template>
         </Column>
-
-
-
       </DataTable>
     </div>
   </div>
