@@ -17,7 +17,7 @@ PS C:\_D\edi_sh_new>
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "공지사항 작업중 5"
+git commit -m "공지사항 작업중 6"
 git push origin main
 
 

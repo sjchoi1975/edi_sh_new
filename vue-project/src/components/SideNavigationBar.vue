@@ -203,7 +203,7 @@ onMounted(() => {
   color: #222;
   font-weight: 700;
   background: #fff;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   gap: 10px;
@@ -242,14 +242,14 @@ onMounted(() => {
   font-size: 1.0rem;
   font-weight: 700;
   background: #fff;
-  border-radius: 0 6px 6px 0;
+  border-radius: 4px;
   margin-bottom: 1px;
   transition: background 0.15s, color 0.15s;
 }
 .side-nav-sub-label {
   display: inline-block;
   padding: 4px 24px 4px 10px;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: background 0.15s, color 0.15s;
 }
 .side-nav-sub-label.active-bg {

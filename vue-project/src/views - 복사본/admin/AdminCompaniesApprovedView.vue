@@ -1,11 +1,11 @@
 <template>
   <div class="admin-companies-view">
-    <div class="header-title">미승인 업체 목록</div>
+    <div class="header-title">승인 업체 목록</div>
     <div class="table-container">
       <ConfirmDialog></ConfirmDialog>
       <Toast />
       <DataTable
-        :value="pendingCompanies"
+        :value="approvedCompanies"
         paginator
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -23,27 +23,20 @@
               <InputText v-model="filters['global'].value" placeholder="업체명, 사업자등록번호, 대표자명 검색" style="width: 280px" />
             </span>
             <div>
-              <button class="btn-primary" @click="goCreate">등록</button>
-            </div>            
+              <Button label="등록" class="p-button-success" @click="goCreate" />
+            </div>
           </div>
         </template>
         <template #empty>
-          미승인 업체가 없습니다.
+          승인된 업체가 없습니다.
         </template>
         <template #loading>
-          미승인 업체 목록을 불러오는 중입니다...
+          승인된 업체 목록을 불러오는 중입니다...
         </template>
-
-
-
-
-
-
-
         <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
-            <span class="company-link" @click="goToDetail(slotProps.data)">{{ slotProps.data.company_name }}</span>
+            <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
           </template>
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
@@ -58,7 +51,7 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%' }" :exportable="false" style="min-width:10rem">
           <template #body="slotProps">
-            <Button label="승인" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
+            <Button label="취소" icon="pi pi-times" class="p-button-rounded p-button-warning p-button-sm" @click="confirmApprovalChange(slotProps.data, 'pending')" />
           </template>
         </Column>
       </DataTable>
@@ -67,34 +60,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, watch } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
 import InputText from 'primevue/inputtext';
-import Dropdown from 'primevue/dropdown';
+import { h } from 'vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { supabase } from '@/supabase';
 import Textarea from 'primevue/textarea';
-import Dialog from 'primevue/dialog';
-import { watch } from 'vue';
+import Password from 'primevue/password';
 import { useRouter } from 'vue-router';
 
-const pendingCompanies = ref([]);
+const approvedCompanies = ref([]);
 const loading = ref(false);
 const filters = ref({
     'global': { value: null, matchMode: 'contains' },
 });
+const commissionGrades = [
+  { name: 'A', value: 'A' },
+  { name: 'B', value: 'B' },
+  { name: 'C', value: 'C' }
+];
 const confirm = useConfirm();
 const toast = useToast();
-const companyDetailDialog = ref(false);
-const selectedCompany = reactive({});
-const isEditing = ref(false);
-const hasChanges = ref(false);
-const originalCompanyDetail = ref({});
 const router = useRouter();
 
 const fetchCompanies = async () => {
@@ -104,7 +96,7 @@ const fetchCompanies = async () => {
       .from('companies')
       .select('*');
     if (error) throw error;
-    pendingCompanies.value = (data || []).filter(company => company.user_type === 'user' && company.approval_status === 'pending');
+    approvedCompanies.value = (data || []).filter(company => company.user_type === 'user' && company.approval_status === 'approved');
   } catch (err) {
     toast.add({ severity: 'error', summary: '오류', detail: err.message || '업체 정보를 불러오는데 실패했습니다.', life: 3000 });
   } finally {
@@ -118,9 +110,15 @@ onMounted(() => {
 
 function getDropdownEditor() { return {}; }
 
-function goCreate() {
-    router.push('/admin/companies/create?from=pending');
-}
+const goCreate = () => {
+  router.push('/admin/companies/create?from=approved');
+};
+
+const companyDetailDialog = ref(false);
+const selectedCompany = reactive({});
+const isEditing = ref(false);
+const hasChanges = ref(false);
+const originalCompanyDetail = ref({});
 
 const openCompanyDetailDialog = (company) => {
   Object.assign(selectedCompany, company);
@@ -129,22 +127,18 @@ const openCompanyDetailDialog = (company) => {
   isEditing.value = false;
   hasChanges.value = false;
 };
-
 const closeCompanyDetailDialog = () => {
   companyDetailDialog.value = false;
 };
-
 const startEditCompanyDetail = () => {
   isEditing.value = true;
   hasChanges.value = false;
 };
-
 const cancelEditCompanyDetail = () => {
   Object.assign(selectedCompany, JSON.parse(JSON.stringify(originalCompanyDetail.value)));
   isEditing.value = false;
   hasChanges.value = false;
 };
-
 const saveCompanyDetail = async () => {
   try {
     loading.value = true;
@@ -213,6 +207,29 @@ const confirmApprovalChange = (company, newStatus) => {
   });
 };
 
+// 날짜 포맷 함수 및 최종 수정자 함수 추가
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+};
+const getLastModifiedBy = (company) => {
+  if (!company) return '';
+  if (company.user_type === 'admin') {
+    return `관리자(${company.email})`;
+  } else {
+    return `${company.company_name}(${company.email})`;
+  }
+};
+// 비밀번호 초기화 기능
 const resetCompanyPassword = async () => {
   try {
     loading.value = true;
@@ -241,10 +258,5 @@ function getTextEditor(slotProps) {
 function onCellEditComplete(event) {
   // event.data, event.field, event.newValue 등 활용
   // 예: 서버에 저장 등
-}
-
-function goToDetail(company) {
-  const from = company.approval_status === 'approved' ? 'approved' : 'pending';
-  router.push(`/admin/companies/${company.id}?from=${from}`);
 }
 </script> 

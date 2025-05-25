@@ -5,12 +5,18 @@ import { supabase } from '@/supabase';
 import router from './router';
 import TopNavigationBar from './components/TopNavigationBar.vue';
 import SideNavigationBar from './components/SideNavigationBar.vue';
+import Toast from 'primevue/toast';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
+import { useToast } from 'primevue/usetoast';
 
 const user = ref(null);
 const userEmail = ref('');
 const userType = ref(''); // 'admin', 'user', or ''
 const route = useRoute();
 const isSideNavExpanded = ref(false);
+const dialogVisible = ref(false);
+const toast = useToast();
 
 console.log('[App.vue] Script setup: Initializing');
 
@@ -197,6 +203,18 @@ const handleLogout = async () => {
     alert('로그아웃 중 예외 발생: ' + error.message);
   }
 };
+
+const handleCancel = () => {
+  // 여기에 취소 처리 로직을 추가해야 합니다.
+  console.log('[App.vue] handleCancel: Cancel clicked');
+  dialogVisible.value = false;
+};
+
+// 처리 성공 시
+toast.add({ severity: 'success', summary: '성공', detail: '업체 상태가 성공적으로 변경되었습니다.', life: 3000 });
+
+// 처리 실패 시
+toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했습니다.', life: 3000 });
 </script>
 
 <template>
@@ -206,6 +224,14 @@ const handleLogout = async () => {
     <div class="main-content">
       <RouterView />
     </div>
+    <Toast />
+    <Dialog v-model:visible="dialogVisible" header="업체 승인 취소 확인" :modal="true" :closable="false">
+      <div>스엽사인 업체를 승인 취소 처리하시겠습니까?</div>
+      <template #footer>
+        <Button label="취소" @click="dialogVisible = false" />
+        <Button label="승인 취소" @click="handleCancel" />
+      </template>
+    </Dialog>
   </div>
 </template>
 

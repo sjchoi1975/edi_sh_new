@@ -1,45 +1,42 @@
 <template>
-  <div class="notice-detail-view">
-    <div class="detail-header">
-      <h2>공지사항 상세</h2>
-      <div class="top-btns">
-        <button class="btn-delete" type="button" @click="handleDelete">삭제</button>
-        <button class="btn-edit" type="button" @click="goEdit">수정</button>
-      </div>
-    </div>
-    <form class="notice-form">
+  <div class="board_960">
+    <div class="form-title">공지사항 상세</div>
+    <div class="notice-form grid-form" style="overflow-y:auto; max-height:70vh;">
       <div class="form-row">
-        <label>제목</label>
-        <div class="readonly-box">{{ notice.title }}</div>
-      </div>
-      <div class="form-row">
-        <label>내용</label>
-        <div class="readonly-box content">{{ notice.content }}</div>
-      </div>
-      <div class="form-row">
-        <label>
-          <input type="checkbox" :checked="notice.is_pinned" disabled />
-          상단 고정(필수공지)
-        </label>
-      </div>
-      <div class="form-row" v-if="notice.file_url && notice.file_url.length">
-        <label>첨부 파일</label>
-        <div class="readonly-box file-list">
-          <div v-for="(url, idx) in notice.file_url" :key="url">
-            <a
-              href="#"
-              class="file-link"
-              @click.prevent="downloadFile(url, getFileName(url))"
-            >
-              {{ getFileName(url) }}
-            </a>
-          </div>
+        <div class="form-col col-3">
+          <label>제목</label>
+          <span class="input-readonly">{{ notice.title }}</span>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end;">
+      <div class="form-row">
+        <div class="form-col col-3">
+          <label>내용</label>
+          <span class="input-readonly" style="white-space: pre-line; min-height: 200px; display: block;">{{ notice.content }}</span>
+        </div>
+      </div>
+      <div class="form-row" style="justify-content: flex-start;">
+        <div class="form-col" style="display: flex; align-items: center; width: auto; flex: none;">
+          <span style="margin:0;">필수 공지 (상단 고정)</span>
+          <input type="checkbox" :checked="notice.is_pinned" disabled style="width:16px; height:16px; margin-left:8px;" />
+        </div>
+      </div>
+      <div class="form-row file-row">
+        <div class="form-col col-3">
+          <label>첨부 파일</label>
+          <div v-if="notice.file_url && notice.file_url.length" class="file-list">
+            <div v-for="(url, idx) in notice.file_url" :key="url" class="file-item">
+              <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
+            </div>
+          </div>
+          <div v-else class="input-readonly">첨부 파일 없음</div>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem; gap: 0.5rem;">
+        <button class="btn-delete" type="button" @click="handleDelete">삭제</button>
+        <button class="btn-edit" type="button" @click="goEdit">수정</button>
         <button class="btn-list" type="button" @click="goList">목록</button>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -74,12 +71,9 @@ onMounted(async () => {
 function getFileName(url) {
   if (!url) return '';
   try {
-    // URL에서 마지막 부분만 추출
     const fileName = url.split('/').pop();
-    // URL 디코딩
     const decodedName = decodeURIComponent(fileName);
-    // 타임스탬프_ 제거
-    return decodedName.replace(/^\d+_/, '');
+    return decodedName.replace(/^[0-9]+_/, '');
   } catch {
     return url;
   }
@@ -100,16 +94,5 @@ async function handleDelete() {
   } else {
     alert('삭제 실패: ' + error.message);
   }
-}
-
-async function downloadFile(url, name) {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = name;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }
 </script> 

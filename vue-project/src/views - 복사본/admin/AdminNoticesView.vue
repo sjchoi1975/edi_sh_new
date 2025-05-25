@@ -52,6 +52,13 @@
             {{ formatKST(slotProps.data.created_at) }}
           </template>
         </Column>
+        <Column field="btn-row" header="수정" :headerStyle="{ width: '11%' }">
+          <template #body="slotProps">
+            <div class="btn-row" v-if="userType === 'admin'">
+              <button class="btn-edit" @click="goEdit(slotProps.data.id)">수정</button>
+            </div>
+          </template>
+        </Column>
       </DataTable>
     </div>
   </div>

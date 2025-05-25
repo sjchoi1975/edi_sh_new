@@ -21,6 +21,10 @@ import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedVie
 import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
 import AdminCompanyCreateView from '../views/admin/AdminCompanyCreateView.vue'
 import AdminCompanyDetailView from '../views/admin/AdminCompanyDetailView.vue'
+import AdminCompanyEditView from '../views/admin/AdminCompanyEditView.vue'
+import AdminProductCreateView from '../views/admin/AdminProductCreateView.vue'
+import AdminClientsCreateView from '../views/admin/AdminClientsCreateView.vue'
+import AdminPharmaciesCreateView from '../views/admin/AdminPharmaciesCreateView.vue'
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 import { ref, onMounted } from 'vue'
@@ -99,15 +103,69 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/products/create',
+      name: 'admin-product-create',
+      component: AdminProductCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/products/:id',
+      name: 'admin-product-detail',
+      component: () => import('@/views/admin/AdminProductDetailView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/products/:id/edit',
+      name: 'admin-product-edit',
+      component: () => import('@/views/admin/AdminProductEditView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/admin/clients',
       name: 'admin-clients',
       component: AdminClientsView,
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/clients/create',
+      name: 'admin-clients-create',
+      component: AdminClientsCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/clients/:id',
+      name: 'admin-clients-detail',
+      component: () => import('@/views/admin/AdminClientsDetailView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/clients/:id/edit',
+      name: 'admin-clients-edit',
+      component: () => import('@/views/admin/AdminClientsEditView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/admin/pharmacies',
       name: 'admin-pharmacies',
       component: AdminPharmaciesView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/pharmacies/create',
+      name: 'admin-pharmacies-create',
+      component: AdminPharmaciesCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/pharmacies/:id',
+      name: 'admin-pharmacies-detail',
+      component: () => import('@/views/admin/AdminPharmaciesDetailView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/pharmacies/:id/edit',
+      name: 'admin-pharmacies-edit',
+      component: () => import('@/views/admin/AdminPharmaciesEditView.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
@@ -179,6 +237,12 @@ const router = createRouter({
       path: '/admin/companies/:id',
       name: 'admin-company-detail',
       component: AdminCompanyDetailView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/companies/:id/edit',
+      name: 'admin-company-edit',
+      component: AdminCompanyEditView,
       meta: { requiresAuth: true, role: 'admin' }
     }
   ]

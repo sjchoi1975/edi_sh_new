@@ -23,7 +23,7 @@
               <InputText v-model="filters['global'].value" placeholder="업체명, 사업자등록번호, 대표자명 검색" style="width: 280px" />
             </span>
             <div>
-              <button class="btn-primary" @click="goCreate">등록</button>
+              <Button label="등록" class="p-button-success" @click="goCreate" />
             </div>            
           </div>
         </template>
@@ -43,7 +43,7 @@
         <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
-            <span class="company-link" @click="goToDetail(slotProps.data)">{{ slotProps.data.company_name }}</span>
+            <span class="company-link" @click="openCompanyDetailDialog(slotProps.data)">{{ slotProps.data.company_name }}</span>
           </template>
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
@@ -58,11 +58,168 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%' }" :exportable="false" style="min-width:10rem">
           <template #body="slotProps">
-            <Button label="승인" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
+            <Button label="승인" icon="pi pi-check" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
           </template>
         </Column>
       </DataTable>
     </div>
+    <Dialog v-model:visible="companyDetailDialog" header="업체 상세 정보 및 수정" :style="{ width: '60vw' }" :modal="true">
+      <div class="p-fluid">
+        <div class="dialog-section">
+          <div class="p-grid p-formgrid">
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_email">아이디(이메일)</label>
+              <span class="detail-text">{{ selectedCompany.email }}</span>
+            </div>
+            <div class="p-field p-col-12 p-md-4" style="display: flex; align-items: flex-end;">
+              <Button label="비밀번호 초기화" class="p-button-warning" @click="resetCompanyPassword" style="margin-top: 1.5rem;" />
+            </div>
+          </div>
+        </div>
+        <div class="dialog-section">
+          <div class="p-grid p-formgrid">
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_company_name">업체명</label>
+              <template v-if="isEditing">
+                <InputText id="detail_company_name" v-model="selectedCompany.company_name" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.company_name }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_business_registration_number">사업자등록번호</label>
+              <span class="detail-text">{{ selectedCompany.business_registration_number }}</span>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_representative_name">대표자</label>
+              <template v-if="isEditing">
+                <InputText id="detail_representative_name" v-model="selectedCompany.representative_name" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.representative_name }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-8">
+              <label for="detail_business_address">사업장 소재지</label>
+              <template v-if="isEditing">
+                <InputText id="detail_business_address" v-model="selectedCompany.business_address" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.business_address }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_landline_phone">유선전화</label>
+              <template v-if="isEditing">
+                <InputText id="detail_landline_phone" v-model="selectedCompany.landline_phone" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.landline_phone }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_contact_person_name">담당자</label>
+              <template v-if="isEditing">
+                <InputText id="detail_contact_person_name" v-model="selectedCompany.contact_person_name" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.contact_person_name }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_mobile_phone">휴대폰 번호</label>
+              <template v-if="isEditing">
+                <InputText id="detail_mobile_phone" v-model="selectedCompany.mobile_phone" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.mobile_phone }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_mobile_phone_2">휴대폰 번호 2</label>
+              <template v-if="isEditing">
+                <InputText id="detail_mobile_phone_2" v-model="selectedCompany.mobile_phone_2" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.mobile_phone_2 }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_receive_email">이메일(수신용)</label>
+              <template v-if="isEditing">
+                <InputText id="detail_receive_email" v-model="selectedCompany.receive_email" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.receive_email }}</span>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-section">
+          <div class="p-grid p-formgrid">
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_company_group">구분</label>
+              <template v-if="isEditing">
+                <InputText id="detail_company_group" v-model="selectedCompany.company_group" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.company_group }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_default_commission_grade">수수료 등급</label>
+              <template v-if="isEditing">
+                <Dropdown id="detail_default_commission_grade" v-model="selectedCompany.default_commission_grade" :options="commissionGrades" optionLabel="name" optionValue="value" placeholder="등급 선택" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.default_commission_grade }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label for="detail_assigned_pharmacist_contact">관리자</label>
+              <template v-if="isEditing">
+                <InputText id="detail_assigned_pharmacist_contact" v-model="selectedCompany.assigned_pharmacist_contact" />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.assigned_pharmacist_contact }}</span>
+              </template>
+            </div>
+            <div class="p-field p-col-12">
+              <label for="detail_remarks">비고</label>
+              <template v-if="isEditing">
+                <Textarea id="detail_remarks" v-model="selectedCompany.remarks" rows="3" autoResize />
+              </template>
+              <template v-else>
+                <span class="detail-text">{{ selectedCompany.remarks }}</span>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-section">
+          <div class="p-grid p-formgrid">
+            <div class="p-field p-col-12 p-md-4">
+              <label>등록일시</label>
+              <span class="detail-text">{{ formatDateTime(selectedCompany.created_at) }}</span>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label>최종 수정일시</label>
+              <span class="detail-text">{{ formatDateTime(selectedCompany.updated_at) }}</span>
+            </div>
+            <div class="p-field p-col-12 p-md-4">
+              <label>최종 수정자</label>
+              <span class="detail-text">{{ getLastModifiedBy(selectedCompany) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <Button v-if="isEditing" label="취소" icon="pi pi-times" class="p-button-secondary" @click="cancelEditCompanyDetail" />
+        <Button v-if="isEditing" label="저장" icon="pi pi-check" class="p-button-success" :disabled="!hasChanges" @click="saveCompanyDetail" />
+        <Button v-if="!isEditing" label="수정" icon="pi pi-pencil" class="p-button-info" @click="startEditCompanyDetail" />
+        <Button label="닫기" icon="pi pi-times" class="p-button-secondary" :disabled="isEditing" @click="closeCompanyDetailDialog" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -81,7 +238,6 @@ import { supabase } from '@/supabase';
 import Textarea from 'primevue/textarea';
 import Dialog from 'primevue/dialog';
 import { watch } from 'vue';
-import { useRouter } from 'vue-router';
 
 const pendingCompanies = ref([]);
 const loading = ref(false);
@@ -95,7 +251,6 @@ const selectedCompany = reactive({});
 const isEditing = ref(false);
 const hasChanges = ref(false);
 const originalCompanyDetail = ref({});
-const router = useRouter();
 
 const fetchCompanies = async () => {
   loading.value = true;
@@ -119,7 +274,7 @@ onMounted(() => {
 function getDropdownEditor() { return {}; }
 
 function goCreate() {
-    router.push('/admin/companies/create?from=pending');
+  router.push('/admin/companies/create?from=pending');
 }
 
 const openCompanyDetailDialog = (company) => {
@@ -241,10 +396,5 @@ function getTextEditor(slotProps) {
 function onCellEditComplete(event) {
   // event.data, event.field, event.newValue 등 활용
   // 예: 서버에 저장 등
-}
-
-function goToDetail(company) {
-  const from = company.approval_status === 'approved' ? 'approved' : 'pending';
-  router.push(`/admin/companies/${company.id}?from=${from}`);
 }
 </script> 

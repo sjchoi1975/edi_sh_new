@@ -1,39 +1,44 @@
 <template>
-  <div class="board_960">
-    <div class="form-title">공지사항 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form" style="overflow-y:auto; max-height:70vh;">
+  <div class="notice-create-view">
+    <h2 style="margin-top:0;">공지사항 수정</h2>
+    <form @submit.prevent="handleSubmit" class="notice-form">
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>제목 <span class="required">*</span></label>
-          <input v-model="title" type="text" required />
+        <label>제목</label>
+        <div class="readonly-box">
+          <input v-model="title" type="text" required style="background:transparent; border:none; width:100%; font-size:1rem;" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>내용 <span class="required">*</span></label>
-          <textarea v-model="content" required style="min-height:200px;"></textarea>
+        <label>내용</label>
+        <div class="readonly-box content">
+          <textarea v-model="content" rows="12" required style="background:transparent; border:none; width:100%; font-size:1rem; resize:vertical;" />
         </div>
       </div>
-      <div class="form-row" style="justify-content: flex-start;">
-        <div class="form-col" style="display: flex; align-items: center; width: auto; flex: none;">
-          <span style="margin:0;">필수 공지 (상단 고정)</span>
-          <input type="checkbox" v-model="isPinned" style="width:16px; height:16px; margin-left:8px;" />
-        </div>
+      <div class="form-row">
+        <label>
+          <input type="checkbox" v-model="isPinned" />
+          상단 고정(필수공지)
+        </label>
       </div>
       <div class="form-row file-row">
-        <div class="form-col col-3">
-          <label class="file-label" for="fileInput">파일 첨부</label>
-          <input id="fileInput" type="file" multiple @change="onFileChange" ref="fileInput" style="display:none" />
-          <div v-if="files.length" class="file-list">
-            <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
-              <a :href="f.url || ''" class="file-link" :download="f.name">{{ f.name }}</a>
-              <span class="file-remove" @click="removeFile(idx)">삭제</span>
-            </div>
+        <label class="file-label" for="fileInput">파일 첨부</label>
+        <input
+          id="fileInput"
+          type="file"
+          multiple
+          @change="onFileChange"
+          ref="fileInput"
+          style="display:none"
+        />
+        <div v-if="files.length" class="readonly-box file-list">
+          <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
+            <span class="file-link">{{ f.name }}</span>
+            <span class="file-remove" @click="removeFile(idx)">삭제</span>
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem;">
-        <button class="btn-cancel" type="button" @click="goDetail">취소</button>
+      <div class="btn-row" style="justify-content: flex-end;">
+        <button class="btn-cancel" type="button" @click="goList">취소</button>
         <button class="btn-primary" type="submit">저장</button>
       </div>
     </form>
@@ -59,17 +64,21 @@ onMounted(async () => {
     .select('*')
     .eq('id', route.params.id)
     .single();
+  
   if (error) {
     alert('데이터 로드 실패: ' + error.message);
     router.push('/admin/notices');
     return;
   }
+
   title.value = data.title;
   content.value = data.content;
   isPinned.value = data.is_pinned;
+  
   // 기존 파일 URL들을 files 배열에 추가
   if (data.file_url) {
     let fileUrls = [];
+    // 문자열이면 파싱
     if (typeof data.file_url === 'string') {
       try {
         fileUrls = JSON.parse(data.file_url);
@@ -79,6 +88,8 @@ onMounted(async () => {
     } else if (Array.isArray(data.file_url)) {
       fileUrls = data.file_url;
     }
+    
+    // URL 배열을 files 배열로 변환
     files.value = fileUrls.map(url => ({
       name: getFileName(url),
       url: url
@@ -86,15 +97,8 @@ onMounted(async () => {
   }
 });
 
-function getFileName(url) {
-  if (!url) return '';
-  try {
-    const fileName = url.split('/').pop();
-    const decodedName = decodeURIComponent(fileName);
-    return decodedName.replace(/^[0-9]+_/, '');
-  } catch {
-    return url;
-  }
+function sanitizeFileName(name) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 function onFileChange(e) {
@@ -107,15 +111,31 @@ function removeFile(idx) {
   files.value.splice(idx, 1);
 }
 
+function getFileName(url) {
+  if (!url) return '';
+  try {
+    const fileName = url.split('/').pop();
+    const decodedName = decodeURIComponent(fileName);
+    return decodedName.replace(/^\d+_/, '');
+  } catch {
+    return url;
+  }
+}
+
 const handleSubmit = async () => {
   if (!title.value.trim() || !content.value.trim()) {
     alert('제목과 내용을 입력하세요.');
     return;
   }
-  let fileUrls = files.value.map(f => f.url || '');
+
+  let fileUrls = [];
   for (const f of files.value) {
-    if (!f.url) {
-      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    if (f.url) {
+      // 기존 파일은 URL 그대로 사용
+      fileUrls.push(f.url);
+    } else {
+      // 새로 추가된 파일은 업로드
+      const safeName = sanitizeFileName(f.name);
       const filePath = `attachments/${Date.now()}_${safeName}`;
       const { data, error } = await supabase.storage
         .from('notices')
@@ -130,6 +150,7 @@ const handleSubmit = async () => {
       fileUrls.push(url);
     }
   }
+
   const { error: updateError } = await supabase
     .from('notices')
     .update({
@@ -139,6 +160,7 @@ const handleSubmit = async () => {
       file_url: fileUrls
     })
     .eq('id', route.params.id);
+
   if (updateError) {
     alert('수정 실패: ' + updateError.message);
   } else {
@@ -147,7 +169,7 @@ const handleSubmit = async () => {
   }
 };
 
-function goDetail() {
-  router.push(`/admin/notices/${route.params.id}`);
+function goList() {
+  router.push('/admin/notices');
 }
 </script>
