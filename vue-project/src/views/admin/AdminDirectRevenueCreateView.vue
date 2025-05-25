@@ -1,6 +1,6 @@
 <template>
   <div class="board_960">
-    <div class="form-title">문전약국 등록</div>
+    <div class="form-title">직거래매출 등록</div>
     <form @submit.prevent="handleSubmit" class="notice-form grid-form">
       <div class="form-row">
         <div class="form-col col-2">
@@ -8,8 +8,8 @@
           <input v-model="pharmacyCode" type="text" />
         </div>
         <div class="form-col col-2">
-          <label>약국명 <span class="required">*</span></label>
-          <input v-model="name" type="text" required />
+          <label>약국명</label>
+          <input v-model="pharmacyName" type="text" />
         </div>
       </div>
       <div class="form-row">
@@ -24,17 +24,24 @@
           <input v-model="address" type="text" />
         </div>
         <div class="form-col col-2">
-          <label>상태</label>
-          <select v-model="status">
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
+          <label>표준코드 <span class="required">*</span></label>
+          <input v-model="standardCode" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
-          <input v-model="remarks" type="text" />
+        <div class="form-col col-2">
+          <label>제품명</label>
+          <input v-model="productName" type="text" />
+        </div>
+        <div class="form-col col-2">
+          <label>매출액 <span class="required">*</span></label>
+          <input v-model="salesAmount" type="text" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col col-2">
+          <label>매출일자 <span class="required">*</span></label>
+          <input v-model="salesDate" type="text" required />
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
@@ -51,36 +58,41 @@ import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
 const pharmacyCode = ref('');
-const name = ref('');
+const pharmacyName = ref('');
 const businessNumber = ref('');
 const address = ref('');
-const status = ref('active');
+const standardCode = ref('');
+const productName = ref('');
+const salesAmount = ref('');
+const salesDate = ref('');
 const remarks = ref('');
 const router = useRouter();
 
 const handleSubmit = async () => {
-  if (!name.value || !businessNumber.value) {
-    alert('필수 항목(약국명, 사업자등록번호)을 모두 입력하세요.');
+  if (!businessNumber.value || !standardCode.value || !salesAmount.value || !salesDate.value) {
+    alert('필수 항목을 모두 입력하세요.');
     return;
   }
   const dataToInsert = {
     pharmacy_code: pharmacyCode.value,
-    name: name.value,
+    pharmacy_name: pharmacyName.value,
     business_registration_number: businessNumber.value,
     address: address.value,
-    status: status.value,
-    remarks: remarks.value
+    standard_code: standardCode.value,
+    product_name: productName.value,
+    sales_amount: salesAmount.value === '' ? null : Number(salesAmount.value),
+    sales_date: salesDate.value
   };
-  const { error } = await supabase.from('pharmacies').insert([dataToInsert]);
+  const { error } = await supabase.from('direct_sales').insert([dataToInsert]);
   if (error) {
     alert('등록 실패: ' + error.message);
   } else {
     alert('등록되었습니다.');
-    router.push('/admin/pharmacies');
+    router.push('/admin/direct-revenue');
   }
 };
 
 function goList() {
-  router.push('/admin/pharmacies');
+  router.push('/admin/direct-revenue');
 }
 </script>

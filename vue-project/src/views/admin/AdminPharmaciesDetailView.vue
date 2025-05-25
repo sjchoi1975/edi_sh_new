@@ -34,10 +34,10 @@
           <span class="input-readonly">{{ pharmacy.remarks }}</span>
         </div>
       </div>
-      <div class="btn-row">
-        <button class="btn-danger" @click="handleDelete">삭제</button>
-        <button class="btn-primary" @click="goEdit">수정</button>
-        <button class="btn-cancel" @click="goList">목록</button>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+        <button class="btn-delete" @click="handleDelete">삭제</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
+        <button class="btn-primary" @click="goList">목록</button>
       </div>
     </div>
   </div>

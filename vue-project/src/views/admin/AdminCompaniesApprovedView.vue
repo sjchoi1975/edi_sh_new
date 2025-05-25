@@ -34,7 +34,13 @@
         <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
-            <span class="company-link" @click="goToDetail(slotProps.data)">{{ slotProps.data.company_name }}</span>
+            <a
+              href="#"
+              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
+              @click.prevent="goToDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.company_name }}
+            </a>
           </template>
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
@@ -241,8 +247,7 @@ function onCellEditComplete(event) {
   // 예: 서버에 저장 등
 }
 
-function goToDetail(company) {
-  const from = company.approval_status === 'approved' ? 'approved' : 'pending';
-  router.push(`/admin/companies/${company.id}?from=${from}`);
+function goToDetail(id) {
+  router.push(`/admin/companies/${id}`);
 }
 </script> 

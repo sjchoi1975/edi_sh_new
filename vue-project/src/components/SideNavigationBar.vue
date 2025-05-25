@@ -199,19 +199,26 @@ onMounted(() => {
   height: 40px;
   display: flex;
   align-items: center;
-  font-size: 1.1rem;
-  color: #222;
-  font-weight: 700;
+  font-size: 1.15rem;
+  color: #444;
+  font-family: 'Arial Black', 'Pretendard', 'Noto Sans KR', sans-serif !important;
+  font-weight: 900 !important;
   background: #fff;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   gap: 10px;
 }
+
+/* 대매뉴 두껍게 보이기 - 그림자 효과 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+.side-nav-section-label {
+    text-shadow: 0 0 0.05rem #555, 0 0 0.05rem #555;
+  }
+
 .side-nav-section-icon {
-  font-size: 1.1rem;
-  color: #222;
-  font-weight: 700;
+  font-size: 1.15rem;
+  color: #444;
+  font-weight: 700 !important;
 }
 .side-nav-section-icon:hover {
   font-size: 1.1rem;
@@ -221,10 +228,11 @@ onMounted(() => {
 }
 .side-nav-section-label.open {
   background: #fff;
-  color: #222;
+  font-weight: 700;
+  color: #022;
 }
 .side-nav-section-label:hover {
-  background: #fff;
+  background: #eee;
   color: #5fa56b;
 }
 .side-nav-sub-list {

@@ -38,7 +38,13 @@
         </template>
         <Column field="product_name" header="제품명" :headerStyle="{ width: '18%' }">
           <template #body="slotProps">
-            <a href="#" class="company-link" @click.prevent="goToDetail(slotProps.data)">{{ slotProps.data.product_name }}</a>
+            <a
+              href="#"
+              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
+              @click.prevent="goToDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.product_name }}
+            </a>
           </template>
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '10%' }" />
@@ -83,8 +89,8 @@ const filteredProducts = computed(() => {
 function goCreate() {
   router.push('/admin/products/create');
 }
-function goToDetail(product) {
-  router.push(`/admin/products/${product.id}`);
+function goToDetail(id) {
+  router.push(`/admin/products/${id}`);
 }
 
 const fetchProducts = async () => {

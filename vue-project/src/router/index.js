@@ -5,26 +5,27 @@ import SignupView from '../views/SignupView.vue'
 import AdminNoticesView from '../views/admin/AdminNoticesView.vue'
 import NoticesView from '../views/NoticesView.vue'
 
-// 새로 추가된 관리자용 컴포넌트 import
-// import AdminCompaniesView from '../views/admin/AdminCompaniesView.vue' 삭제
-// import AdminApprovalRequestsView from '../views/admin/AdminApprovalRequestsView.vue' // 삭제
-import AdminProductsView from '../views/admin/AdminProductsView.vue'
-import AdminClientsView from '../views/admin/AdminClientsView.vue'
-import AdminPharmaciesView from '../views/admin/AdminPharmaciesView.vue'
-import AdminWholesaleRevenueView from '../views/admin/AdminWholesaleRevenueView.vue'
-import AdminDirectRevenueView from '../views/admin/AdminDirectRevenueView.vue'
-import AdminSettlementMonthView from '../views/admin/AdminSettlementMonthView.vue'
-import AdminPerformanceInputView from '../views/admin/AdminPerformanceInputView.vue'
-import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vue'
-import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
 import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedView.vue'
 import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
 import AdminCompanyCreateView from '../views/admin/AdminCompanyCreateView.vue'
 import AdminCompanyDetailView from '../views/admin/AdminCompanyDetailView.vue'
 import AdminCompanyEditView from '../views/admin/AdminCompanyEditView.vue'
+import AdminProductsView from '../views/admin/AdminProductsView.vue'
 import AdminProductCreateView from '../views/admin/AdminProductCreateView.vue'
+import AdminClientsView from '../views/admin/AdminClientsView.vue'
 import AdminClientsCreateView from '../views/admin/AdminClientsCreateView.vue'
+import AdminPharmaciesView from '../views/admin/AdminPharmaciesView.vue'
 import AdminPharmaciesCreateView from '../views/admin/AdminPharmaciesCreateView.vue'
+import AdminWholesaleRevenueView from '../views/admin/AdminWholesaleRevenueView.vue'
+import AdminWholesaleRevenueCreateView from '../views/admin/AdminWholesaleRevenueCreateView.vue'
+
+import AdminDirectRevenueView from '../views/admin/AdminDirectRevenueView.vue'
+import AdminDirectRevenueCreateView from '../views/admin/AdminDirectRevenueCreateView.vue'
+import AdminPerformanceInputView from '../views/admin/AdminPerformanceInputView.vue'
+import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vue'
+import AdminSettlementMonthView from '../views/admin/AdminSettlementMonthView.vue'
+import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
+
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 import { ref, onMounted } from 'vue'
@@ -175,9 +176,21 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/wholesale-revenue/create',
+      name: 'admin-wholesale-revenue-create',
+      component: AdminWholesaleRevenueCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/admin/direct-revenue',
       name: 'admin-direct-revenue',
       component: AdminDirectRevenueView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/direct-revenue/create',
+      name: 'admin-direct-revenue-create',
+      component: AdminDirectRevenueCreateView,
       meta: { requiresAuth: true, role: 'admin' }
     },
     {

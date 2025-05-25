@@ -24,7 +24,13 @@
         <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '12%' }" />
         <Column field="name" header="약국명" :headerStyle="{ width: '16%' }">
           <template #body="slotProps">
-            <a href="#" class="company-link" @click.prevent="goToDetail(slotProps.data)">{{ slotProps.data.name }}</a>
+            <a
+              href="#"
+              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
+              @click.prevent="goToDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.name }}
+            </a>
           </template>
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" />
@@ -55,8 +61,8 @@ const router = useRouter();
 function goCreate() {
   router.push('/admin/pharmacies/create');
 }
-function goToDetail(pharmacy) {
-  router.push(`/admin/pharmacies/${pharmacy.id}`);
+function goToDetail(id) {
+  router.push(`/admin/pharmacies/${id}`);
 }
 
 const fetchPharmacies = async () => {

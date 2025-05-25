@@ -4,8 +4,8 @@
     <form @submit.prevent="handleSubmit" class="notice-form grid-form">
       <div class="form-row">
         <div class="form-col col-2">
-          <label>거래처코드 <span class="required">*</span></label>
-          <input v-model="clientCode" type="text" required />
+          <label>거래처코드</label>
+          <input v-model="clientCode" type="text" />
         </div>
         <div class="form-col col-2">
           <label>병의원명 <span class="required">*</span></label>
@@ -14,8 +14,8 @@
       </div>
       <div class="form-row">
         <div class="form-col col-2">
-          <label>사업자등록번호</label>
-          <input v-model="businessNumber" type="text" />
+          <label>사업자등록번호 <span class="required">*</span></label>
+          <input v-model="businessNumber" type="text" required />
         </div>
         <div class="form-col col-2">
           <label>원장명</label>
@@ -41,7 +41,7 @@
           <input v-model="remarks" type="text" />
         </div>
       </div>
-      <div class="btn-row">
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-cancel" type="button" @click="goList">취소</button>
         <button class="btn-primary" type="submit">저장</button>
       </div>
@@ -64,7 +64,7 @@ const remarks = ref('');
 const router = useRouter();
 
 const handleSubmit = async () => {
-  if (!clientCode.value || !name.value) {
+  if (!name.value || !businessNumber.value) {
     alert('필수 항목을 모두 입력하세요.');
     return;
   }

@@ -5,17 +5,17 @@
       <div class="form-row">
         <div class="form-col col-2">
           <label>거래처코드</label>
-          <input v-model="clientCode" type="text" required />
+          <input v-model="clientCode" type="text" />
         </div>
         <div class="form-col col-2">
-          <label>병의원명</label>
+          <label>병의원명 <span class="required">*</span></label>
           <input v-model="name" type="text" required />
         </div>
       </div>
       <div class="form-row">
         <div class="form-col col-2">
-          <label>사업자등록번호</label>
-          <input v-model="businessNumber" type="text" />
+          <label>사업자등록번호 <span class="required">*</span></label>
+          <input v-model="businessNumber" type="text" required />
         </div>
         <div class="form-col col-2">
           <label>원장명</label>
@@ -41,7 +41,7 @@
           <input v-model="remarks" type="text" />
         </div>
       </div>
-      <div class="btn-row">
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-cancel" type="button" @click="goDetail">취소</button>
         <button class="btn-primary" type="submit">저장</button>
       </div>

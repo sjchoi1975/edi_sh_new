@@ -58,7 +58,7 @@
           <span class="input-readonly">{{ product.remarks }}</span>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem; gap: 0.5rem;">
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-delete" type="button" @click="handleDelete">삭제</button>
         <button class="btn-edit" type="button" @click="goEdit">수정</button>
         <button class="btn-list" type="button" @click="goList">목록</button>

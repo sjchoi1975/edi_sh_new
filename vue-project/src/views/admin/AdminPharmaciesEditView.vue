@@ -37,7 +37,7 @@
           <input v-model="remarks" type="text" />
         </div>
       </div>
-      <div class="btn-row">
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-cancel" type="button" @click="goDetail">취소</button>
         <button class="btn-primary" type="submit">저장</button>
       </div>
