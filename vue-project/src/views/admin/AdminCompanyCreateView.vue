@@ -217,7 +217,6 @@ const handleSubmit = async () => {
     // 4. companies 테이블에 데이터 저장
     const { error: insertError } = await supabase.from('companies').insert({
       email: email.value,
-      password: '', // 보안상 저장하지 않음
       company_name: companyName.value,
       business_registration_number: businessNumber.value,
       representative_name: representative.value,

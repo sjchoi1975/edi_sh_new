@@ -54,7 +54,9 @@ const adminMenuTree = [
     { label: '제품 목록', path: '/admin/products' }
   ]},
   { label: '거래처 관리', icon: 'pi pi-building', children: [
-    { label: '거래처 목록', path: '/admin/clients' }
+    { label: '거래처 목록', path: '/admin/clients' },
+    { label: '담당업체 지정', path: '/admin/clients/assign-companies' },
+    { label: '문전약국 지정', path: '/admin/clients/assign-pharmacies' }
   ]},
   { label: '문전약국 관리', icon: 'pi pi-home', children: [
     { label: '문전약국 목록', path: '/admin/pharmacies' }

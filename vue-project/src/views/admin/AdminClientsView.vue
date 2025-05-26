@@ -33,11 +33,11 @@
             </a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: '10%' }" />
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" />
-        <Column field="status" header="상태" :headerStyle="{ width: '8%' }">
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: '10%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
+        <Column field="status" header="상태" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
             {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
           </template>

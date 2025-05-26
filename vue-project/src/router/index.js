@@ -146,6 +146,18 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/clients/assign-companies',
+      name: 'admin-clients-assign-companies',
+      component: () => import('@/views/admin/AdminClientsAssignCompaniesView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/clients/assign-pharmacies',
+      name: 'admin-clients-assign-pharmacies',
+      component: () => import('@/views/admin/AdminClientsAssignPharmaciesView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/admin/pharmacies',
       name: 'admin-pharmacies',
       component: AdminPharmaciesView,
