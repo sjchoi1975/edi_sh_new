@@ -4,7 +4,11 @@
     <div class="table-container">
       <div class="table-header">
         <span class="p-input-icon-left">
-          <InputText v-model="filters['global'].value" placeholder="약국코드, 약국명, 사업자번호, 표준코드, 제품명 검색" style="width: 320px" />
+          <InputText
+                v-model="filters['global'].value"
+                placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
+                class="search-input"
+              />
         </span>
         <button class="btn-primary" @click="goCreate">등록</button>
       </div>
@@ -16,7 +20,7 @@
         scrollable
         scrollHeight="680px"
         v-model:filters="filters"
-        :globalFilterFields="['pharmacy_code', 'pharmacy_name', 'business_registration_number', 'standard_code', 'product_name']"
+        :globalFilterFields="['pharmacy_name', 'business_registration_number', 'standard_code', 'product_name']"
         class="custom-table"
       >
         <template #empty>등록된 매출이 없습니다.</template>

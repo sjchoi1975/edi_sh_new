@@ -4,7 +4,11 @@
     <div class="table-container">
       <div class="table-header">
         <span class="p-input-icon-left">
-          <InputText v-model="filters['global'].value" placeholder="거래처코드, 병의원명, 사업자등록번호 검색" style="width: 280px" />
+          <InputText
+            v-model="filters['global'].value"
+            placeholder="거래처코드, 병의원명, 사업자등록번호 검색"
+            class="search-input"
+          />
         </span>
         <button class="btn-primary" @click="goCreate">등록</button>
       </div>

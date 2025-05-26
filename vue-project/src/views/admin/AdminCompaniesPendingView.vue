@@ -20,7 +20,11 @@
         <template #header>
           <div class="table-header">
             <span class="p-input-icon-left">
-              <InputText v-model="filters['global'].value" placeholder="업체명, 사업자등록번호, 대표자명 검색" style="width: 280px" />
+              <InputText
+                v-model="filters['global'].value"
+                placeholder="업체명, 사업자등록번호, 대표자명 검색"
+                class="search-input"
+              />
             </span>
             <div>
               <button class="btn-primary" @click="goCreate">등록</button>

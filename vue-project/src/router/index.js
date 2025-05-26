@@ -3,7 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignupView from '../views/SignupView.vue'
 import AdminNoticesView from '../views/admin/AdminNoticesView.vue'
-import NoticesView from '../views/NoticesView.vue'
+import NoticesView from '@/views/user/NoticesView.vue'
 
 import AdminCompaniesApprovedView from '../views/admin/AdminCompaniesApprovedView.vue'
 import AdminCompaniesPendingView from '../views/admin/AdminCompaniesPendingView.vue'
@@ -233,12 +233,12 @@ const router = createRouter({
       path: '/notices',
       name: 'user-notices',
       component: NoticesView,
-      meta: { requiresAuth: true, role: 'user' } // 일반 사용자 역할 명시 (선택적이지만 권장)
+      meta: { requiresAuth: true, role: 'user' }
     },
     {
       path: '/notices/:id',
       name: 'NoticeDetail',
-      component: () => import('@/views/NoticeDetailView.vue')
+      component: () => import('@/views/user/NoticeDetailView.vue')
     },
     {
       path: '/admin/notices/:id',

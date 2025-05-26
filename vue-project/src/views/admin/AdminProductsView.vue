@@ -11,11 +11,16 @@
             dateFormat="yy-mm"
             showIcon
             placeholder="YYYY-MM"
-            style="width:120px;"
+            inputClass="p-datepicker"
+            :locale="koLocale"
           />
         </span>
         <span class="p-input-icon-left">
-          <InputText v-model="filters['global'].value" placeholder="제품명, 보험코드, 표준코드 검색" style="width: 280px" />
+          <InputText
+                v-model="filters['global'].value"
+                placeholder="제품명, 보험코드 검색"
+                class="search-input"
+              />
         </span>
         <button class="btn-primary" @click="goCreate">등록</button>
       </div>
@@ -27,7 +32,7 @@
         scrollable
         scrollHeight="680px"
         v-model:filters="filters"
-        :globalFilterFields="['base_month', 'product_name', 'insurance_code', 'standard_code']"
+        :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="custom-table"
       >
         <template #empty>
@@ -79,10 +84,22 @@ const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const selectedMonth = ref(new Date()); // Date 객체로 관리
 const router = useRouter();
 
+const koLocale = {
+  firstDayOfWeek: 0,
+  dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+  dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
+  dayNamesMin: ['일', '월', '화', '수', '목', '금', '토'],
+  monthNames: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+  monthNamesShort: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+  today: '오늘',
+  clear: '초기화'
+}
+
 const filteredProducts = computed(() => {
-  const ym = selectedMonth.value
-    ? selectedMonth.value.toISOString().slice(0, 7)
-    : '';
+  if (!selectedMonth.value) return products.value;
+  const year = selectedMonth.value.getFullYear();
+  const month = String(selectedMonth.value.getMonth() + 1).padStart(2, '0');
+  const ym = `${year}-${month}`;
   return products.value.filter(p => p.base_month === ym);
 });
 
