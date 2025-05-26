@@ -25,7 +25,7 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '12%' }" :sortable="true" />
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '8%' }" :sortable="true" />
         <Column field="name" header="병의원명" :headerStyle="{ width: '16%' }" :sortable="true">
           <template #body="slotProps">
             <a
@@ -37,9 +37,9 @@
             </a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" :sortable="true" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: '10%' }" :sortable="true" />
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true" />
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '36%' }" :sortable="true" />
         <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
         <Column field="status" header="상태" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">

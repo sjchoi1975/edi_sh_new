@@ -10,7 +10,6 @@
             class="search-input"
           />
         </span>
-        <button class="btn-primary" @click="goCreate">등록</button>
       </div>
       <DataTable
         :value="clients"
@@ -25,8 +24,8 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '12%' }" :sortable="true" />
-        <Column field="name" header="병의원명" :headerStyle="{ width: '16%' }" :sortable="true">
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="name" header="병의원명" :headerStyle="{ width: '20%' }" :sortable="true">
           <template #body="slotProps">
             <a
               href="#"
@@ -37,15 +36,10 @@
             </a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" :sortable="true" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: '10%' }" :sortable="true" />
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true" />
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '40%' }" :sortable="true" />
         <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
-        <Column field="status" header="상태" :headerStyle="{ width: '8%' }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
-          </template>
-        </Column>
       </DataTable>
     </div>
   </div>
@@ -63,18 +57,49 @@ const clients = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 
-function goCreate() {
-  router.push('/admin/clients/create');
-}
 function goToDetail(id) {
-  router.push(`/admin/clients/${id}`);
+  router.push(`/clients/${id}`);
 }
 
 const fetchClients = async () => {
+  // 1. 로그인한 사용자의 UID
+  const { data: { session } } = await supabase.auth.getSession();
+  const userUid = session?.user?.id;
+
+  // 2. companies 테이블에서 내 업체 id(uuid) 찾기
+  const { data: myCompany, error: companyError } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', userUid)
+    .single();
+
+  if (companyError || !myCompany) {
+    clients.value = [];
+    return;
+  }
+  const companyId = myCompany.id;
+
+  // 3. 매핑 테이블에서 내 거래처 id 목록 추출
+  const { data: assignments, error: assignError } = await supabase
+    .from('client_company_assignments')
+    .select('client_id')
+    .eq('company_id', companyId);
+
+  if (assignError || !assignments || assignments.length === 0) {
+    clients.value = [];
+    return;
+  }
+
+  const clientIds = assignments.map(a => a.client_id);
+
+  // 4. 거래처 테이블에서 해당 id만 조회
   const { data, error } = await supabase
     .from('clients')
     .select('*')
+    .in('id', clientIds)
+    .eq('status', 'active')
     .order('client_code', { ascending: true });
+
   if (!error && data) {
     clients.value = data;
   }

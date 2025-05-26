@@ -281,6 +281,18 @@ const router = createRouter({
       name: 'user-product-detail',
       component: () => import('@/views/user/ProductDetailView.vue'),
       meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/clients',
+      name: 'user-clients',
+      component: () => import('@/views/user/ClientsView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/clients/:id',
+      name: 'user-client-detail',
+      component: () => import('@/views/user/ClientsDetailView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
     }
   ]
 })

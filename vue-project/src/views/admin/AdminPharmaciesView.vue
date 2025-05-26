@@ -25,8 +25,8 @@
       >
         <template #empty>등록된 약국이 없습니다.</template>
         <template #loading>약국 목록을 불러오는 중입니다...</template>
-        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '12%' }" :sortable="true" />
-        <Column field="name" header="약국명" :headerStyle="{ width: '16%' }" :sortable="true">
+        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="name" header="약국명" :headerStyle="{ width: '20%' }" :sortable="true">
           <template #body="slotProps">
             <a
               href="#"
@@ -37,8 +37,8 @@
             </a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '14%' }" :sortable="true" />
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true" />
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '40%' }" :sortable="true" />
         <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
         <Column field="status" header="상태" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">

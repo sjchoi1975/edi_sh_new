@@ -39,8 +39,6 @@
           </div>
         </div>
         <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-          <button class="btn-delete" type="button" @click="handleDelete">삭제</button>
-          <button class="btn-edit" type="button" @click="goEdit">수정</button>
           <button class="btn-list" type="button" @click="goList">목록</button>
         </div>
       </div>
@@ -67,20 +65,7 @@
     }
   });
   
-  function goEdit() {
-    router.push(`/admin/clients/${route.params.id}/edit`);
-  }
   function goList() {
-    router.push('/admin/clients');
-  }
-  async function handleDelete() {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('clients').delete().eq('id', route.params.id);
-    if (!error) {
-      alert('삭제되었습니다.');
-      router.push('/admin/clients');
-    } else {
-      alert('삭제 실패: ' + error.message);
-    }
+    router.push('/clients');
   }
   </script>
