@@ -1,13 +1,19 @@
-.btn-primary { background: #5fa56b !important; color: #fff !important; }
-.btn-edit    { background: #ffe600 !important; color: #222 !important; }
-.btn-delete  { background: #e74c3c !important; color: #fff !important; }
-.btn-list    { background: #5fa56b !important; color: #fff !important; }
-.btn-cancel  { background: #dddddd !important; color: #333 !important; }
-.btn-edit-m  { background: #ffe600 !important; color: #222 !important; }
+/* 색상 지정 (배경색, 글자색) */ 
+.btn-primary   { background: #5fa56b !important; color: #ffffff !important; }
+.btn-primary-m { background: #5fa56b !important; color: #ffffff !important; }
+.btn-add       { background: #1976d2 !important; color: #ffffff !important; }
+.btn-add-m     { background: #ffffff !important; color: #1976d2 !important; }
+.btn-edit      { background: #ffe600 !important; color: #222222 !important; }
+.btn-edit-m    { background: #ffe600 !important; color: #222222 !important; }
+.btn-delete    { background: #e74c3c !important; color: #ffffff !important; }
+.btn-delete-m  { background: #ffffff !important; color: #e74c3c !important; }
+.btn-list      { background: #5fa56b !important; color: #ffffff !important; }
+.btn-cancel    { background: #dddddd !important; color: #333333 !important; }
 
-
+/* 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */ 
 button,
 .btn-primary,
+.btn-add,
 .btn-edit,
 .btn-delete,
 .btn-list,
@@ -21,24 +27,56 @@ button,
   transition: opacity 0.15s !important;
 }
 
+button:hover,
+.btn-primary:hover,
+.btn-add:hover,
+.btn-edit:hover,
+.btn-delete:hover,
+.btn-list:hover,
+.btn-cancel:hover {
+  opacity:  1.0;
+}
+
+/* -m 버튼(테이블 내 사용) 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */
 button-m,
 .btn-primary-m,
+.btn-add-m,
+.btn-delete-m,
 .btn-edit-m {
-  padding: 4px 12px !important;
-  margin-left: 8px !important;
-  font-size: 0.9rem !important;
-  border: none !important;
+  padding: 4px 0px !important;
+  width: 6rem !important;
+  margin-left: 4px !important;
+  margin-right: 4px !important;
+  font-size: 1rem !important;
   border-radius: 2px !important;
   cursor: pointer !important;
   transition: opacity 0.15s !important;
 }
 
-button:hover,
-.btn-primary:hover,
-.btn-edit:hover,
-.btn-edit-m:hover,
-.btn-delete:hover,
-.btn-list:hover,
-.btn-cancel:hover {
-  opacity: 0.9;
+/* -m 버튼 외곽선 */
+.btn-add-m {
+  border: 1px solid #1976d2 !important;
 }
+.btn-delete-m {
+  border: 1px solid #e74c3c !important;
+}
+
+
+/* -m 버튼(테이블 내 사용) hover 설정 */
+.btn-add-m:hover {
+  background: #1976d2 !important;
+  color: #ffffff !important;
+}
+.btn-delete-m:hover {
+  background: #e74c3c !important;
+  color: #ffffff !important;
+}
+
+
+
+
+
+
+
+
+

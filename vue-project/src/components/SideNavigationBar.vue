@@ -102,7 +102,7 @@ function go(item) {
   if (item.path) router.push(item.path);
 }
 function isActive(item) {
-  return route.path.startsWith(item.path);
+  return route.path === item.path;
 }
 function toggleMenu(idx) {
   openMenu.value = openMenu.value === idx ? null : idx;
