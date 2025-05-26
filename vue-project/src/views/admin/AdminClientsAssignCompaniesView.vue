@@ -24,12 +24,12 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '8%' }" />
-        <Column field="name" header="병의원명" :headerStyle="{ width: '14%' }" />
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" />
-        <Column field="address" header="주소" :headerStyle="{ width: '28%' }" />
-        <Column header="업체명" :headerStyle="{ width: '14%' }">
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="name" header="병의원명" :headerStyle="{ width: '14%' }" :sortable="true" />
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '28%' }" :sortable="true" />
+        <Column header="업체명" :headerStyle="{ width: '14%' }" :sortable="true">
           <template #body="slotProps">
             <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
               <div v-for="(company, idx) in slotProps.data.companies" :key="company.id" style="min-height:32px;display:flex;align-items:center;">{{ company.company_name }}</div>
@@ -37,7 +37,7 @@
             <div v-else style="min-height:32px;">-</div>
           </template>
         </Column>
-        <Column header="사업자등록번호" :headerStyle="{ width: '8%' }">
+        <Column header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
             <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
               <div v-for="(company, idx) in slotProps.data.companies" :key="company.id" style="min-height:32px;display:flex;align-items:center;">{{ company.business_registration_number }}</div>

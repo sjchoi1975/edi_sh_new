@@ -43,14 +43,14 @@ const router = createRouter({
       name: 'home',
       component: HomeView
     },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
-    },
+    // {
+    //   path: '/about',
+    //   name: 'about',
+    //   // route level code-splitting
+    //   // this generates a separate chunk (About.[hash].js) for this route
+    //   // which is lazy-loaded when the route is visited.
+    //   component: () => import('../views/AboutView.vue')
+    // },
     {
       path: '/login',
       name: 'login',
@@ -269,6 +269,18 @@ const router = createRouter({
       name: 'admin-company-edit',
       component: AdminCompanyEditView,
       meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/products',
+      name: 'user-products',
+      component: () => import('@/views/user/ProductsView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/products/:id',
+      name: 'user-product-detail',
+      component: () => import('@/views/user/ProductDetailView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
     }
   ]
 })
