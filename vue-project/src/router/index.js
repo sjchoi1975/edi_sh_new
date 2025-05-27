@@ -23,9 +23,11 @@ import AdminDirectRevenueView from '../views/admin/AdminDirectRevenueView.vue'
 import AdminDirectRevenueCreateView from '../views/admin/AdminDirectRevenueCreateView.vue'
 import AdminPerformanceInputView from '../views/admin/AdminPerformanceInputView.vue'
 import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vue'
-import AdminSettlementMonthView from '../views/admin/AdminSettlementMonthView.vue'
+import AdminSettlementMonthsView from '../views/admin/AdminSettlementMonthsView.vue'
+import AdminSettlementMonthsCreateView from '../views/admin/AdminSettlementMonthsCreateView.vue'
+import AdminSettlementMonthsDetailView from '../views/admin/AdminSettlementMonthsDetailView.vue'
+import AdminSettlementMonthsEditView from '../views/admin/AdminSettlementMonthsEditView.vue'
 import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
-
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 import { ref, onMounted } from 'vue'
@@ -208,7 +210,7 @@ const router = createRouter({
     {
       path: '/admin/settlement-month',
       name: 'admin-settlement-month',
-      component: AdminSettlementMonthView,
+      component: AdminSettlementMonthsView,
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
@@ -227,6 +229,30 @@ const router = createRouter({
       path: '/admin/settlement-statements',
       name: 'admin-settlement-statements',
       component: AdminSettlementStatementsView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/settlement-months',
+      name: 'admin-settlement-months',
+      component: AdminSettlementMonthsView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/settlement-months/create',
+      name: 'admin-settlement-months-create',
+      component: AdminSettlementMonthsCreateView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/settlement-months/:id',
+      name: 'admin-settlement-months-detail',
+      component: AdminSettlementMonthsDetailView,
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/settlement-months/:id/edit',
+      name: 'admin-settlement-months-edit',
+      component: AdminSettlementMonthsEditView,
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
@@ -292,6 +318,12 @@ const router = createRouter({
       path: '/clients/:id',
       name: 'user-client-detail',
       component: () => import('@/views/user/ClientsDetailView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/performance/register',
+      name: 'performance-register',
+      component: () => import('@/views/user/PerformanceRegister.vue'),
       meta: { requiresAuth: true, role: 'user' }
     }
   ]

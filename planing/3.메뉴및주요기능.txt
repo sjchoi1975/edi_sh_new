@@ -230,3 +230,6 @@
     2) 거래처 상세
       - 관리자용 "거래처 상세" AdminClientsDetailView.vue 와 동일
       - 삭제, 수정 권한 없으므로 삭제, 수정 버튼 및 관련 기능 제거
+
+
+ :sortable="true"
