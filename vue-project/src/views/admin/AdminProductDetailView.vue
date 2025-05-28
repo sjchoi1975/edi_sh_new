@@ -25,11 +25,11 @@
       <div class="form-row">
         <div class="form-col col-2">
           <label>수수료 등급 A(%)</label>
-          <span class="input-readonly">{{ product.commission_rate_a }}</span>
+          <span class="input-readonly">{{ product.commission_rate_a ? (product.commission_rate_a * 100).toFixed(1) : '-' }}</span>
         </div>
         <div class="form-col col-2">
           <label>수수료 등급 B(%)</label>
-          <span class="input-readonly">{{ product.commission_rate_b }}</span>
+          <span class="input-readonly">{{ product.commission_rate_b ? (product.commission_rate_b * 100).toFixed(1) : '-' }}</span>
         </div>
       </div>
       <div class="form-row">

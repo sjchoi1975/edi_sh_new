@@ -99,8 +99,8 @@ onMounted(async () => {
     productName.value = data.product_name;
     insuranceCode.value = data.insurance_code;
     price.value = data.price;
-    commissionA.value = data.commission_rate_a;
-    commissionB.value = data.commission_rate_b;
+    commissionA.value = data.commission_rate_a ? data.commission_rate_a * 100 : '';
+    commissionB.value = data.commission_rate_b ? data.commission_rate_b * 100 : '';
     standardCode.value = data.standard_code;
     unitPackagingDesc.value = data.unit_packaging_desc;
     unitQuantity.value = data.unit_quantity;
@@ -119,8 +119,8 @@ const handleSubmit = async () => {
     product_name: productName.value,
     insurance_code: insuranceCode.value === '' ? null : Number(insuranceCode.value),
     price: price.value === '' ? null : Number(price.value),
-    commission_rate_a: commissionA.value === '' ? null : Number(commissionA.value),
-    commission_rate_b: commissionB.value === '' ? null : Number(commissionB.value),
+    commission_rate_a: commissionA.value === '' ? null : Number(commissionA.value) / 100,
+    commission_rate_b: commissionB.value === '' ? null : Number(commissionB.value) / 100,
     standard_code: standardCode.value === '' ? null : standardCode.value,
     unit_packaging_desc: unitPackagingDesc.value,
     unit_quantity: unitQuantity.value === '' ? null : Number(unitQuantity.value),

@@ -53,6 +53,7 @@
           @click="onSave" 
           :disabled="!canSave" 
           :class="{ 'disabled-area': !isEditMode }"
+          v-if="isEditMode"
         >{{ isEditMode ? '저장' : '저장' }}</button>
       </div>
       
@@ -60,29 +61,75 @@
         <thead>
           <tr>
             <th style="width:40px;">No</th>
-            <th style="width:12%;">거래처</th>
-            <th style="width:6%;">처방월</th>
-            <th style="width:16%;">제품명</th>
-            <th style="width:8%;">보험코드</th>
-            <th style="width:6%;">약가</th>
-            <th style="width:6%;">처방수량</th>
-            <th style="width:6%;">처방액</th>
-            <th style="width:8%;">처방구분</th>
-            <th style="width:10%;">비고</th>
-            <th style="width:40px;">삭제</th>
-            <th style="width:40px;">추가</th>
+            <th :style="isEditMode ? 'width:12%;' : 'width:13%;'">거래처</th>
+            <th :style="isEditMode ? 'width:6%;' : 'width:6%;'">처방월</th>
+            <th :style="isEditMode ? 'width:18%;' : 'width:18%;'">제품명</th>
+            <th :style="isEditMode ? 'width:8%;' : 'width:8%;'">보험코드</th>
+            <th :style="isEditMode ? 'width:6%;' : 'width:6%;'">약가</th>
+            <th :style="isEditMode ? 'width:6%;' : 'width:6%;'">처방수량</th>
+            <th :style="isEditMode ? 'width:6%;' : 'width:6%;'">처방액</th>
+            <th :style="isEditMode ? 'width:8%;' : 'width:8%;'">처방구분</th>
+            <th :style="isEditMode ? 'width:10%;' : 'width:11%;'">비고</th>
+            <th v-if="isEditMode" style="width:40px;">삭제</th>
+            <th v-if="isEditMode" style="width:40px;">추가</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, rowIdx) in displayRows" :key="rowIdx">
+          <tr v-if="displayRows.length === 0">
+            <td :colspan="isEditMode ? 12 : 10" style="text-align:center;padding:2rem;color:#666;">
+              {{ selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.' }}
+            </td>
+          </tr>
+          <tr v-for="(row, rowIdx) in displayRows" :key="rowIdx" v-else>
             <td style="text-align:center;">{{ rowIdx + 1 }}</td>
             <td style="text-align:left;">
+              <div v-if="isEditMode" class="product-input-container">
+                <input 
+                  v-model="row.client_name" 
+                  :tabindex="isEditMode ? 0 : -1"
+                  :readonly="!isEditMode"
+                  @input="handleClientNameInput(rowIdx, $event)"
+                  @keydown.enter.prevent="applySelectedClientFromSearch(rowIdx)"
+                  @keydown.down.prevent="navigateClientSearchList('down')"
+                  @keydown.up.prevent="navigateClientSearchList('up')"
+                  @focus="handleClientNameFocus(rowIdx)"
+                  @blur="setTimeout(() => hideClientSearchList(rowIdx), 200)"
+                  :class="cellClass(rowIdx, 'client_name')"
+                  autocomplete="off"
+                  style="text-align:left;"
+                />
+                <button 
+                  type="button"
+                  @click="toggleClientDropdown(rowIdx)"
+                  @mousedown.prevent
+                  class="dropdown-arrow-btn product-dropdown-btn"
+                  tabindex="-1"
+                >
+                  <span class="dropdown-arrow">▼</span>
+                </button>
+                <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === rowIdx && clientSearchForRow.results.length > 0" class="search-dropdown hospital-search-dropdown">
+                  <ul>
+                    <li
+                      v-for="(client, index) in clientSearchForRow.results"
+                      :key="client.id"
+                      @click="clickClientFromSearchList(client, rowIdx)"
+                      :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
+                    >
+                      <div class="hospital-info-row">
+                        <span class="hospital-name">{{ client.name }}</span>
+                        <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
+                      </div>
+                      <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
               <input 
+                v-else
                 v-model="row.client_name" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:left;"
+                style="text-align:left; background: #fff !important;"
               />
             </td>
             <td style="text-align:center;">
@@ -90,51 +137,63 @@
                 v-model="row.prescription_month" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="position:relative;text-align:left;">
-              <input
-                v-model="row.product_name_display"
-                :tabindex="isEditMode ? 0 : -1"
-                :readonly="!isEditMode"
-                @input="handleProductNameInput(rowIdx, $event)"
-                @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                @keydown.down.prevent="navigateProductSearchList('down')"
-                @keydown.up.prevent="navigateProductSearchList('up')"
-                @keydown="onArrowKey($event, rowIdx, 'product_name')"
-                @focus="handleProductNameFocus(rowIdx)"
-                @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                :disabled="!isEditMode"
-                :class="[
-                  cellClass(rowIdx, 'product_name'),
-                  { 'disabled-area': !isEditMode }
-                ]"
-                autocomplete="off"
-                style="text-align:left;"
-              />
-              <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="product-search-dropdown">
-                <ul>
-                  <li
-                    v-for="(product, index) in productSearchForRow.results"
-                    :key="product.id"
-                    @click="clickProductFromSearchList(product, rowIdx)"
-                    :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                  >
-                    <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                    <span class="insurance-code">{{ product.insurance_code }}</span>
-                  </li>
-                </ul>
+              <div v-if="isEditMode" class="product-input-container">
+                <input
+                  v-model="row.product_name_display"
+                  :tabindex="isEditMode ? 0 : -1"
+                  :readonly="!isEditMode"
+                  @input="handleProductNameInput(rowIdx, $event)"
+                  @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
+                  @keydown.down.prevent="navigateProductSearchList('down')"
+                  @keydown.up.prevent="navigateProductSearchList('up')"
+                  @keydown="onArrowKey($event, rowIdx, 'product_name')"
+                  @focus="handleProductNameFocus(rowIdx)"
+                  @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
+                  :class="cellClass(rowIdx, 'product_name')"
+                  autocomplete="off"
+                  style="text-align:left;"
+                />
+                <button 
+                  type="button"
+                  @click="toggleProductDropdown(rowIdx)"
+                  @mousedown.prevent
+                  class="dropdown-arrow-btn product-dropdown-btn"
+                  tabindex="-1"
+                >
+                  <span class="dropdown-arrow">▼</span>
+                </button>
+                <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="search-dropdown product-search-dropdown">
+                  <ul>
+                    <li
+                      v-for="(product, index) in productSearchForRow.results"
+                      :key="product.id"
+                      @click="clickProductFromSearchList(product, rowIdx)"
+                      :class="{ 'selected': productSearchForRow.selectedIndex === index }"
+                    >
+                      <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
+                      <span class="insurance-code">{{ product.insurance_code }}</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
+              <input
+                v-else
+                v-model="row.product_name_display"
+                readonly
+                tabindex="-1"
+                style="text-align:left; background: #fff !important;"
+              />
             </td>
             <td style="text-align:center;">
               <input 
                 v-model="row.insurance_code" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="text-align:right;">
@@ -142,8 +201,7 @@
                 v-model="row.price" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:right;"
+                style="text-align:right; background: #fff !important;"
               />
             </td>
             <td style="text-align:right;">
@@ -160,7 +218,7 @@
                   cellClass(rowIdx, 'prescription_qty'),
                   { 'disabled-area': !isEditMode }
                 ]"
-                style="text-align:right;"
+                :style="isEditMode ? 'text-align:right;' : 'text-align:right; background: #fff !important;'"
               />
             </td>
             <td style="text-align:right;">
@@ -168,8 +226,7 @@
                 v-model="row.prescription_amount" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:right;"
+                style="text-align:right; background: #fff !important;"
               />
             </td>
             <td style="text-align:center;">
@@ -190,8 +247,7 @@
                 v-model="row.prescription_type"
                 readonly
                 tabindex="-1"
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="text-align:left;">
@@ -207,25 +263,23 @@
                   cellClass(rowIdx, 'remarks'),
                   { 'disabled-area': !isEditMode }
                 ]"
-                style="text-align:left;"
+                :style="isEditMode ? 'text-align:left;' : 'text-align:left; background: #fff !important;'"
               />
             </td>
-            <td class="action-cell">
+            <td v-if="isEditMode" :class="isEditMode ? 'action-cell' : 'action-cell-disabled'">
               <button 
-                class="btn-delete-m" 
-                @click="confirmDeleteRow(rowIdx)" 
+                :class="isEditMode ? 'btn-delete-m' : 'btn-delete-m-d'"
+                @click="isEditMode ? confirmDeleteRow(rowIdx) : null" 
                 :disabled="displayRows.length === 1 || !isEditMode" 
                 title="행 삭제"
-                :class="{ 'disabled-area': !isEditMode }"
               >－</button>
             </td>
-            <td class="action-cell">
+            <td v-if="isEditMode" :class="isEditMode ? 'action-cell' : 'action-cell-disabled'">
               <button 
-                class="btn-add-m" 
-                @click="confirmAddRowBelow(rowIdx)" 
+                :class="isEditMode ? 'btn-add-m' : 'btn-add-m-d'"
+                @click="isEditMode ? confirmAddRowBelow(rowIdx) : null" 
                 title="아래에 행 추가"
                 :disabled="!isEditMode"
-                :class="{ 'disabled-area': !isEditMode }"
               >＋</button>
             </td>
           </tr>
@@ -235,7 +289,7 @@
             <td colspan="6" style="text-align:center;font-weight:bold;">합계</td>
             <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
             <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
-            <td colspan="4"></td>
+            <td :colspan="isEditMode ? 4 : 2"></td>
           </tr>
         </tfoot>
       </table>
@@ -281,7 +335,16 @@ const currentUserCompanyId = ref(''); // 현재 사용자의 회사 ID
 
 // 계산된 속성
 const canSave = computed(() => {
-  return isEditMode.value && hasChanges.value && displayRows.value.some(row => row.product_id && row.prescription_qty);
+  if (!isEditMode.value || !hasChanges.value) return false;
+  
+  // 유효한 행이 있는지 확인 (제품과 수량이 모두 입력된 행)
+  const validRows = displayRows.value.filter(row => row.product_id && row.prescription_qty);
+  if (validRows.length === 0) return false;
+  
+  // 모든 유효한 행에 거래처가 선택되어 있는지 확인
+  const allRowsHaveClient = validRows.every(row => row.client_name);
+  
+  return allRowsHaveClient;
 });
 
 const currentCell = ref({ row: 0, col: 'product_name' });
@@ -299,6 +362,15 @@ const prescriptionTypeOptions = [
 
 const products = ref([]); // 전체 제품 목록
 const productSearchForRow = ref({
+  query: '',
+  results: [],
+  selectedIndex: -1,
+  show: false,
+  activeRowIndex: -1,
+});
+
+// 거래처 검색 관련
+const clientSearchForRow = ref({
   query: '',
   results: [],
   selectedIndex: -1,
@@ -340,19 +412,26 @@ function updatePrescriptionOptions() {
 
 // 편집 모드 확인 함수
 function checkEditMode() {
+  const prevEditMode = isEditMode.value;
+  
   if (!selectedMonthInfo.value) {
     isEditMode.value = false;
-    return;
+  } else {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const startDate = new Date(selectedMonthInfo.value.start_date);
+    const endDate = new Date(selectedMonthInfo.value.end_date);
+    const todayDate = new Date(todayStr);
+    
+    // 오늘이 제출기간 내에 있는지 확인
+    isEditMode.value = todayDate >= startDate && todayDate <= endDate;
   }
   
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const startDate = new Date(selectedMonthInfo.value.start_date);
-  const endDate = new Date(selectedMonthInfo.value.end_date);
-  const todayDate = new Date(todayStr);
-  
-  // 오늘이 제출기간 내에 있는지 확인
-  isEditMode.value = todayDate >= startDate && todayDate <= endDate;
+  // 편집 모드가 변경되면 변경사항 초기화
+  if (prevEditMode !== isEditMode.value) {
+    hasChanges.value = false;
+    console.log('편집 모드 변경:', { prevEditMode, newEditMode: isEditMode.value, hasChanges: hasChanges.value });
+  }
 }
 
 // 워치어
@@ -391,27 +470,62 @@ watch(displayRows, () => {
 }, { deep: true });
 
 function checkForChanges() {
+  // 편집 모드가 아니면 변경사항 없음
+  if (!isEditMode.value) {
+    hasChanges.value = false;
+    return;
+  }
+  
+  // 원본 데이터와 현재 데이터 모두 없으면 변경사항 없음
   if (!originalData.value.length && !displayRows.value.length) {
     hasChanges.value = false;
     return;
   }
   
-  // 간단한 변경 감지 (실제로는 더 정교한 비교가 필요할 수 있음)
-  const currentDataStr = JSON.stringify(displayRows.value.map(row => ({
-    product_id: row.product_id,
-    prescription_qty: row.prescription_qty,
-    prescription_type: row.prescription_type,
-    remarks: row.remarks
-  })));
+  // 현재 유효한 행들 (제품과 수량이 모두 입력된 행들)
+  const currentValidRows = displayRows.value.filter(row => 
+    row.product_id && 
+    row.prescription_qty && 
+    row.client_name
+  );
   
-  const originalDataStr = JSON.stringify(originalData.value.map(row => ({
-    product_id: row.product_id,
-    prescription_qty: row.prescription_qty,
-    prescription_type: row.prescription_type,
-    remarks: row.remarks
-  })));
+  // 원본 유효한 행들
+  const originalValidRows = originalData.value.filter(row => 
+    row.product_id && 
+    row.prescription_qty && 
+    row.client_name
+  );
   
-  hasChanges.value = currentDataStr !== originalDataStr;
+  // 원본이 없고 현재도 유효한 행이 없으면 변경사항 없음 (초기 상태)
+  if (originalValidRows.length === 0 && currentValidRows.length === 0) {
+    hasChanges.value = false;
+    return;
+  }
+  
+  // 행 개수가 다르면 변경됨
+  if (currentValidRows.length !== originalValidRows.length) {
+    hasChanges.value = true;
+    return;
+  }
+  
+  // 각 행의 내용 비교 (순서 고려)
+  for (let i = 0; i < currentValidRows.length; i++) {
+    const current = currentValidRows[i];
+    const original = originalValidRows[i];
+    
+    if (
+      current.product_id !== original.product_id ||
+      current.prescription_qty !== original.prescription_qty ||
+      current.prescription_type !== original.prescription_type ||
+      (current.remarks || '') !== (original.remarks || '') ||
+      current.client_name !== original.client_name
+    ) {
+      hasChanges.value = true;
+      return;
+    }
+  }
+  
+  hasChanges.value = false;
 }
 
 // 병원 관련 함수들은 제거됨 (모달 방식에서 드롭다운으로 변경)
@@ -421,49 +535,101 @@ async function fetchHospitals() {
   try {
     if (userType.value === 'admin') {
       // 관리자는 모든 병원 조회
-      const { data } = await supabase.from('clients').select('*').eq('status', 'active');
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('병원 조회 오류 (관리자):', error);
+        hospitals.value = [];
+        return;
+      }
+      
       hospitals.value = data || [];
     } else {
       // 일반 사용자는 할당된 병원만 조회
-      if (!currentUserCompanyId.value) return;
+      if (!currentUserCompanyId.value) {
+        hospitals.value = [];
+        return;
+      }
       
-      const { data: assignments } = await supabase
+      const { data: assignments, error: assignError } = await supabase
         .from('client_company_assignments')
         .select('client_id')
         .eq('company_id', currentUserCompanyId.value);
         
+      if (assignError) {
+        console.error('병원 할당 조회 오류:', assignError);
+        hospitals.value = [];
+        return;
+      }
+      
       if (!assignments || assignments.length === 0) {
         hospitals.value = [];
         return;
       }
       
       const clientIds = assignments.map(a => a.client_id);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('clients')
         .select('*')
         .in('id', clientIds)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .order('name', { ascending: true });
         
+      if (error) {
+        console.error('병원 조회 오류 (사용자):', error);
+        hospitals.value = [];
+        return;
+      }
+      
       hospitals.value = data || [];
     }
   } catch (err) {
-    console.error('병원 조회 오류:', err);
+    console.error('병원 조회 예외:', err);
+    hospitals.value = [];
   }
 }
 
 async function fetchProducts() {
-  const { data, error } = await supabase.from('products').select('id, product_name, insurance_code, price').eq('status', 'active');
-  if (!error && data) {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, product_name, insurance_code, price')
+      .eq('status', 'active')
+      .order('product_name', { ascending: true });
+      
+    if (error) {
+      console.error('제품 조회 오류:', error);
+      products.value = [];
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      products.value = [];
+      return;
+    }
+    
+    // 보험코드별로 중복 제거 (보험코드가 있는 것 우선)
     const uniqByInsurance = {};
     const noInsurance = [];
+    
     data.forEach(p => {
       if (p.insurance_code) {
-        if (!uniqByInsurance[p.insurance_code]) uniqByInsurance[p.insurance_code] = p;
+        if (!uniqByInsurance[p.insurance_code]) {
+          uniqByInsurance[p.insurance_code] = p;
+        }
       } else {
         noInsurance.push(p);
       }
     });
+    
     products.value = [...Object.values(uniqByInsurance), ...noInsurance];
+  } catch (err) {
+    console.error('제품 조회 예외:', err);
+    products.value = [];
   }
 }
 
@@ -538,6 +704,143 @@ function hideProductSearchList(rowIndex) {
     productSearchForRow.value.show = false;
     productSearchForRow.value.activeRowIndex = -1;
   }
+}
+
+function toggleProductDropdown(rowIndex) {
+  if (!isEditMode.value) return;
+  
+  // 다른 행의 제품 검색이 열려있으면 차단
+  if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex !== rowIndex) {
+    return;
+  }
+  
+  // 현재 드롭다운이 열려있으면 닫기
+  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIndex) {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.activeRowIndex = -1;
+    return;
+  }
+  
+  // 전체 제품 목록 표시
+  productSearchForRow.value.activeRowIndex = rowIndex;
+  productSearchForRow.value.results = products.value;
+  productSearchForRow.value.selectedIndex = -1;
+  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
+  
+  // 해당 행의 제품명 입력창에 포커스
+  nextTick(() => {
+    focusField(rowIndex, 'product_name');
+  });
+}
+
+// 거래처 검색 관련 함수들
+function handleClientNameInput(rowIndex, event) {
+  if (!isEditMode.value) return;
+  const query = event.target.value.toLowerCase();
+  displayRows.value[rowIndex].client_name = event.target.value;
+  displayRows.value[rowIndex].client_id = null;
+
+  clientSearchForRow.value.activeRowIndex = rowIndex;
+  if (query.length < 1) {
+    clientSearchForRow.value.show = false;
+    clientSearchForRow.value.results = [];
+    return;
+  }
+  clientSearchForRow.value.results = hospitals.value.filter(h =>
+    (h.name && h.name.toLowerCase().includes(query)) ||
+    (h.business_registration_number && h.business_registration_number.includes(query))
+  );
+  clientSearchForRow.value.selectedIndex = -1;
+  clientSearchForRow.value.show = clientSearchForRow.value.results.length > 0;
+}
+
+function navigateClientSearchList(direction) {
+  if (!clientSearchForRow.value.show || clientSearchForRow.value.results.length === 0) return;
+  if (direction === 'down') {
+    clientSearchForRow.value.selectedIndex = (clientSearchForRow.value.selectedIndex + 1) % clientSearchForRow.value.results.length;
+  } else if (direction === 'up') {
+    clientSearchForRow.value.selectedIndex = (clientSearchForRow.value.selectedIndex - 1 + clientSearchForRow.value.results.length) % clientSearchForRow.value.results.length;
+  }
+}
+
+function applySelectedClient(client, rowIndex) {
+  displayRows.value[rowIndex].client_name = client.name;
+  displayRows.value[rowIndex].client_id = client.id;
+  clientSearchForRow.value.show = false;
+  clientSearchForRow.value.activeRowIndex = -1;
+  nextTick(() => {
+    focusField(rowIndex, 'product_name');
+  });
+}
+
+function applySelectedClientFromSearch(rowIndexToApply) {
+  const idx = clientSearchForRow.value.selectedIndex;
+  const currentActionRow = clientSearchForRow.value.activeRowIndex;
+  if (clientSearchForRow.value.show && idx !== -1 && clientSearchForRow.value.results[idx] && currentActionRow === rowIndexToApply) {
+    const client = clientSearchForRow.value.results[idx];
+    applySelectedClient(client, currentActionRow);
+  } else if (clientSearchForRow.value.show && clientSearchForRow.value.results.length > 0 && currentActionRow === rowIndexToApply) {
+    const client = clientSearchForRow.value.results[0];
+    applySelectedClient(client, currentActionRow);
+  }
+  clientSearchForRow.value.show = false;
+}
+
+function clickClientFromSearchList(client, rowIndex) {
+  applySelectedClient(client, rowIndex);
+}
+
+function hideClientSearchList(rowIndex) {
+  if (clientSearchForRow.value.activeRowIndex === rowIndex) {
+    if (!displayRows.value[rowIndex].client_id) {
+      displayRows.value[rowIndex].client_name = '';
+    }
+    clientSearchForRow.value.show = false;
+    clientSearchForRow.value.activeRowIndex = -1;
+  }
+}
+
+function toggleClientDropdown(rowIndex) {
+  if (!isEditMode.value) return;
+  
+  // 다른 행의 거래처 검색이 열려있으면 차단
+  if (clientSearchForRow.value.show && clientSearchForRow.value.activeRowIndex !== rowIndex) {
+    return;
+  }
+  
+  // 현재 드롭다운이 열려있으면 닫기
+  if (clientSearchForRow.value.show && clientSearchForRow.value.activeRowIndex === rowIndex) {
+    clientSearchForRow.value.show = false;
+    clientSearchForRow.value.activeRowIndex = -1;
+    return;
+  }
+  
+  // 전체 거래처 목록 표시
+  clientSearchForRow.value.activeRowIndex = rowIndex;
+  clientSearchForRow.value.results = hospitals.value;
+  clientSearchForRow.value.selectedIndex = -1;
+  clientSearchForRow.value.show = clientSearchForRow.value.results.length > 0;
+  
+  // 해당 행의 거래처명 입력창에 포커스
+  nextTick(() => {
+    focusField(rowIndex, 'client_name');
+  });
+}
+
+function handleClientNameFocus(rowIdx) {
+  if (!isEditMode.value) {
+    event.target.blur();
+    return;
+  }
+  
+  // 다른 행의 거래처 검색이 열려있으면 차단
+  if (clientSearchForRow.value.show && clientSearchForRow.value.activeRowIndex !== rowIdx) {
+    event.target.blur();
+    return;
+  }
+  
+  currentCell.value = { row: rowIdx, col: 'client_name' };
+  clientSearchForRow.value.activeRowIndex = rowIdx;
 }
 
 // 제품명 필드 포커스 핸들러
@@ -920,16 +1223,32 @@ async function setDefaultSettlementMonth() {
 
 // 라이프사이클
 onMounted(async () => {
-  await fetchUserInfo();
-  await fetchAvailableMonths();
-  await fetchHospitals();
-  await fetchProducts();
-  
-  // 기본 정산월 설정 (사용자 정보와 사용 가능한 월 로드 후)
-  await setDefaultSettlementMonth();
-  
-  // 전역 키보드 이벤트 리스너 추가
-  document.addEventListener('keydown', handleGlobalKeydown);
+  try {
+    console.log('컴포넌트 마운트 시작');
+    
+    // 1. 사용자 정보 먼저 로드
+    await fetchUserInfo();
+    console.log('사용자 정보 로드 완료:', { userType: userType.value, companyId: currentUserCompanyId.value });
+    
+    // 2. 기본 데이터들 병렬로 로드
+    await Promise.all([
+      fetchAvailableMonths(),
+      fetchHospitals(),
+      fetchProducts()
+    ]);
+    console.log('기본 데이터 로드 완료');
+    
+    // 3. 기본 정산월 설정
+    await setDefaultSettlementMonth();
+    console.log('기본 정산월 설정 완료:', selectedSettlementMonth.value);
+    
+    // 4. 전역 키보드 이벤트 리스너 추가
+    document.addEventListener('keydown', handleGlobalKeydown);
+    
+    console.log('컴포넌트 마운트 완료');
+  } catch (err) {
+    console.error('컴포넌트 마운트 오류:', err);
+  }
 });
 
 // 컴포넌트 언마운트 시 이벤트 리스너 제거
@@ -1026,29 +1345,37 @@ async function fetchPerformanceRecords() {
     
     if (error) {
       console.error('실적 조회 오류:', error);
+      // 오류가 발생해도 빈 배열로 초기화
+      performanceRecords.value = [];
+      displayRows.value = [];
+      originalData.value = [];
       return;
     }
     
     performanceRecords.value = data || [];
     
     // 화면 표시용 데이터 변환
-    const transformedData = performanceRecords.value.map(record => ({
-      id: record.id,
-      product_name_display: record.products.product_name,
-      product_id: record.product_id,
-      insurance_code: record.products.insurance_code,
-      price: record.products.price,
-      prescription_qty: record.prescription_qty,
-      prescription_amount: (record.prescription_qty * record.products.price).toLocaleString(),
-      prescription_type: record.prescription_type,
-      client_name: record.clients.name,
-      prescription_month: record.prescription_month,
-      remarks: record.remarks || ''
-    }));
+    let transformedData = [];
     
-    // 편집 모드가 아니거나 데이터가 없으면 빈 행 추가하지 않음
+    if (performanceRecords.value.length > 0) {
+      transformedData = performanceRecords.value.map(record => ({
+        id: record.id,
+        product_name_display: record.products?.product_name || '',
+        product_id: record.product_id,
+        insurance_code: record.products?.insurance_code || '',
+        price: record.products?.price || '',
+        prescription_qty: record.prescription_qty,
+        prescription_amount: record.products?.price ? (record.prescription_qty * record.products.price).toLocaleString() : '',
+        prescription_type: record.prescription_type,
+        client_name: record.clients?.name || '',
+        prescription_month: record.prescription_month,
+        remarks: record.remarks || ''
+      }));
+    }
+    
+    // 데이터가 없고 편집 모드일 때만 빈 행 추가
     if (transformedData.length === 0 && isEditMode.value) {
-      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
+      const clientName = selectedHospitalId.value && selectedHospitalInfo.value ? selectedHospitalInfo.value.name : '';
       transformedData.push({
         id: null,
         product_name_display: '',
@@ -1066,10 +1393,24 @@ async function fetchPerformanceRecords() {
     
     displayRows.value = transformedData;
     originalData.value = JSON.parse(JSON.stringify(transformedData));
+    
+    // 변경사항 플래그 명시적으로 초기화
     hasChanges.value = false;
+    
+    console.log('실적 데이터 로드 완료:', {
+      recordsCount: performanceRecords.value.length,
+      displayRowsCount: displayRows.value.length,
+      hasChanges: hasChanges.value,
+      isEditMode: isEditMode.value
+    });
     
   } catch (err) {
     console.error('실적 조회 예외:', err);
+    // 예외 발생 시에도 빈 배열로 초기화
+    performanceRecords.value = [];
+    displayRows.value = [];
+    originalData.value = [];
+    hasChanges.value = false;
   }
 }
 
@@ -1078,157 +1419,108 @@ async function onSave() {
   if (!isEditMode.value || !hasChanges.value) return;
   
   try {
-    // 기존 데이터 삭제 후 새로 저장하는 방식
-    if (performanceRecords.value.length > 0) {
-      const recordIds = performanceRecords.value.map(r => r.id);
-      const { error: deleteError } = await supabase
-        .from('performance_records')
-        .delete()
-        .in('id', recordIds);
-        
-      if (deleteError) {
-        throw new Error('기존 데이터 삭제 실패');
-      }
-    }
-    
-    // 새 데이터 저장
+    // 유효한 행들만 필터링 (제품과 수량이 모두 입력된 행)
     const validRows = displayRows.value.filter(row => row.product_id && row.prescription_qty);
     
-    if (validRows.length > 0) {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: company } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .single();
+    if (validRows.length === 0) {
+      alert('저장할 데이터가 없습니다.');
+      return;
+    }
+    
+    // 거래처가 선택되지 않은 행이 있는지 확인
+    const rowsWithoutClient = validRows.filter(row => !row.client_name);
+    if (rowsWithoutClient.length > 0) {
+      alert('모든 행에 거래처를 선택해주세요.');
+      return;
+    }
+    
+    // 현재 사용자 정보 가져오기
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .single();
       
-      const saveData = validRows.map(row => ({
+    if (!company) {
+      alert('회사 정보를 찾을 수 없습니다.');
+      return;
+    }
+    
+    // 기존 데이터 삭제 (현재 조건에 맞는 데이터만)
+    let deleteQuery = supabase
+      .from('performance_records')
+      .delete()
+      .eq('company_id', company.id)
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('prescription_month', prescriptionMonth.value);
+    
+    // 병원이 선택된 경우 해당 병원 데이터만 삭제
+    if (selectedHospitalId.value) {
+      deleteQuery = deleteQuery.eq('client_id', selectedHospitalId.value);
+    }
+    
+    const { error: deleteError } = await deleteQuery;
+    
+    if (deleteError) {
+      console.error('기존 데이터 삭제 오류:', deleteError);
+      throw new Error('기존 데이터 삭제 실패: ' + deleteError.message);
+    }
+    
+    // 새 데이터 저장을 위한 준비
+    const savePromises = [];
+    
+    for (const row of validRows) {
+      // 거래처 ID 찾기
+      const client = hospitals.value.find(h => h.name === row.client_name);
+      if (!client) {
+        throw new Error(`거래처 '${row.client_name}'을 찾을 수 없습니다.`);
+      }
+      
+      const saveData = {
         company_id: company.id,
         settlement_month: selectedSettlementMonth.value,
         prescription_month: prescriptionMonth.value,
-        client_id: selectedHospitalId.value,
+        client_id: client.id,
         product_id: row.product_id,
         prescription_qty: parseInt(row.prescription_qty),
         prescription_type: row.prescription_type,
         remarks: row.remarks || null,
         registered_by: session.user.id
-      }));
+      };
       
-      const { error: insertError } = await supabase
-        .from('performance_records')
-        .insert(saveData);
-        
-      if (insertError) {
-        throw new Error('데이터 저장 실패');
+      savePromises.push(
+        supabase.from('performance_records').insert(saveData)
+      );
+    }
+    
+    // 모든 데이터 저장
+    const results = await Promise.all(savePromises);
+    
+    // 저장 결과 확인
+    for (const result of results) {
+      if (result.error) {
+        console.error('데이터 저장 오류:', result.error);
+        throw new Error('데이터 저장 실패: ' + result.error.message);
       }
     }
     
     alert('저장되었습니다.');
-    await fetchPerformanceRecords(); // 데이터 다시 로드
+    
+    // 데이터 다시 로드하여 원본 데이터 갱신
+    await fetchPerformanceRecords();
+    
+    // 변경사항 플래그 명시적으로 초기화
+    hasChanges.value = false;
     
   } catch (err) {
     console.error('저장 오류:', err);
     alert('저장 중 오류가 발생했습니다: ' + err.message);
   }
 }
-</script>
-
-<style scoped>
-/* 제품 검색 드롭다운 위치 조정 */
-.product-search-container {
-  position: relative;
-}
-
-/* 병원 선택 모달 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 80%;
-  max-width: 800px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
-}
-
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.close-button:hover {
-  color: #000;
-}
-
-.modal-body {
-  margin-bottom: 20px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-}
-
-/* 병원 목록 테이블 */
-.hospital-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-.hospital-table th,
-.hospital-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-.hospital-table th {
-  background: #f5f5f5;
-  font-weight: bold;
-}
-
-.hospital-table tbody tr {
-  cursor: pointer;
-}
-
-.hospital-table tbody tr:hover {
-  background: #f0f0f0;
-}
-
-.hospital-table tbody tr.selected {
-  background: #e3f2fd;
-}
-</style> 
+</script> 

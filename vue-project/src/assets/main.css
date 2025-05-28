@@ -438,6 +438,8 @@ select.input-editable {
   min-height: 0;
   padding: 16px 16px 0px 16px !important;
   overflow-y: auto;
+  position: relative;
+  max-height: 70vh; /* 화면 높이의 70%로 제한 */
 }
 
 /* 테이블 헤더 영역 */
@@ -796,13 +798,15 @@ body.no-main-padding .main-content {
   height: 40px !important;
   border: 1px solid #aaa;
   background: #fff;
+  position: relative;
+  overflow: visible;
 }
 
 .hospital-input {
   flex: 1;
   height: 40px !important;
   border: none;
-  padding: 0 8px;
+  padding: 0 30px 0 8px;
   background: #fff;
   outline: none;
   cursor: pointer;
@@ -851,11 +855,18 @@ body.no-main-padding .main-content {
   user-select: none;
 }
 
+/* disabled-area 중에서 readonly-field만 연회색 배경 */
+.disabled-area.readonly-field {
+  background: #f5f5f5 !important;
+  color: #555 !important;
+}
+
 /* 실적 입력 테이블 */
 .input-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
+  position: relative;
 }
 
 .input-table th, .input-table td {
@@ -867,25 +878,48 @@ body.no-main-padding .main-content {
   line-height: 40px !important;
 }
 
+/* 테이블 헤더 고정 */
+.input-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.input-table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 실적 입력 테이블 - 최우선 스타일 */
+.input-table tbody tr td input:not(.readonly-field) {
+  background: #fff !important;
+  color: #333 !important;
+}
+
+.input-table tbody tr td select:not(.readonly-field) {
+  background: #fff !important;
+  color: #333 !important;
+}
+
+.input-table tbody tr td input.readonly-field {
+  background: #f5f5f5 !important;
+  color: #555 !important;
+}
+
+/* 실적 입력 테이블 - 기본 스타일 */
 .input-table input, .input-table select {
   width: 100%;
   height: 40px !important;
   border: none;
   padding: 0 8px;
   font-size: 1rem;
-  background: #fff;
   text-align: center;
   box-sizing: border-box;
   line-height: 40px !important;
   margin: 0;
   vertical-align: top;
   display: block;
-}
-
-.input-table input[readonly] {
-  background: #f5f5f5;
-  color: #555;
-  cursor: default;
 }
 
 /* 셀 포커스 효과 (실적 등록 테이블) */
@@ -908,11 +942,13 @@ body.no-main-padding .main-content {
   z-index: 1000;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
 .product-search-dropdown ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
+
 .product-search-dropdown li {
   padding: 8px 12px;
   cursor: pointer;
@@ -921,16 +957,20 @@ body.no-main-padding .main-content {
   justify-content: space-between;
   align-items: center;
 }
+
 .product-search-dropdown li:last-child {
   border-bottom: none;
 }
+
 .product-search-dropdown li:hover {
   background-color: #f0f0f0;
 }
+
 .product-search-dropdown li.selected {
   background-color: #1976d2;
   color: white;
 }
+
 .product-search-dropdown .product-name {
   flex: 1;
   text-align: left;
@@ -940,6 +980,7 @@ body.no-main-padding .main-content {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .product-search-dropdown .insurance-code {
   flex-shrink: 0;
   text-align: right;
@@ -947,64 +988,259 @@ body.no-main-padding .main-content {
   min-width: 80px;
 }
 
-/* 행 액션 버튼 (실적 등록) */
-.action-cell {
-  text-align: center;
-  background: #f5f5f5;
+/* 병원 검색 드롭다운 (실적 등록) */
+.hospital-search-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 500px;
+  left: 80px;
+  top: 100%;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-.btn-table-action {
-  background: #fff;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font-size: 1.1em;
-  width: 28px;
-  height: 28px;
-  margin: 0 2px;
+
+.hospital-search-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hospital-search-dropdown li {
+  padding: 8px 12px;
   cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-table-action:disabled {
-  background: #eee;
-  color: #bbb;
-  cursor: not-allowed;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-/* 등록 버튼 (실적 등록) */
-.btn-primary:disabled {
-  background: #e0e0e0 !important;
-  color: #b0b0b0 !important;
-  border: 1px solid #d0d0d0 !important;
-  cursor: not-allowed !important;
-  opacity: 0.7;
+.hospital-search-dropdown li:last-child {
+  border-bottom: none;
 }
 
-/* 행 추가/삭제 버튼 (실적 등록) */
-.btn-add-m, .btn-delete-m {
-  background: #fff;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font-size: 1.1em;
-  width: 28px;
-  height: 28px;
-  margin: 0 2px;
+.hospital-search-dropdown li:hover {
+  background-color: #f0f0f0;
+}
+
+.hospital-search-dropdown li.selected {
+  background-color: #1976d2;
+  color: white;
+}
+
+.hospital-search-dropdown .hospital-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.hospital-search-dropdown .hospital-name {
+  flex: 1;
+  text-align: left;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 16px;
+}
+
+.hospital-search-dropdown .hospital-reg-number {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.9em;
+  color: #666;
+  min-width: 120px;
+}
+
+.hospital-search-dropdown .hospital-address {
+  font-size: 0.85em;
+  color: #888;
+  width: 100%;
+  text-align: left;
+}
+
+.hospital-search-dropdown li.selected .hospital-reg-number,
+.hospital-search-dropdown li.selected .hospital-address {
+  color: #ccc;
+}
+
+/* ========================================== */
+/* 15. 드롭다운 공통 스타일 (전역) */
+/* ========================================== */
+
+/* 드롭다운 화살표 버튼 공통 스타일 */
+.dropdown-arrow-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #f8f9fa;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
   transition: background 0.2s;
+  z-index: 10;
 }
 
-.btn-add-m:hover, .btn-delete-m:hover {
-  background: #f0f0f0;
+.dropdown-arrow-btn:hover {
+  background: #e9ecef;
 }
 
-.btn-add-m:disabled, .btn-delete-m:disabled {
-  background: #eee;
-  color: #bbb;
-  cursor: not-allowed;
+.dropdown-arrow-btn:disabled {
+  display: none;
 }
 
-/* 비활성화된 input 스타일 (실적 등록) */
-.input-table input.disabled-area,
-.input-table select.disabled-area {
-  background: #f5f5f5 !important;
-  color: #555;
-  cursor: default;
+.dropdown-arrow {
+  font-size: 10px;
+  color: #666;
+  line-height: 1;
+}
+
+/* 검색 드롭다운 공통 스타일 */
+.search-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.search-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.search-dropdown li:last-child {
+  border-bottom: none;
+}
+
+.search-dropdown li:hover {
+  background-color: #f0f0f0;
+}
+
+.search-dropdown li.selected {
+  background-color: #1976d2;
+  color: white;
+}
+
+/* 병원 검색 드롭다운 특화 스타일 */
+.hospital-search-dropdown {
+  width: 500px;
+  left: 80px;
+  top: 100%;
+}
+
+.hospital-search-dropdown li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hospital-search-dropdown .hospital-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.hospital-search-dropdown .hospital-name {
+  flex: 1;
+  text-align: left;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 16px;
+}
+
+.hospital-search-dropdown .hospital-reg-number {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.9em;
+  color: #666;
+  min-width: 120px;
+}
+
+.hospital-search-dropdown .hospital-address {
+  font-size: 0.85em;
+  color: #888;
+  width: 100%;
+  text-align: left;
+}
+
+.hospital-search-dropdown li.selected .hospital-reg-number,
+.hospital-search-dropdown li.selected .hospital-address {
+  color: #ccc;
+}
+
+/* 제품 검색 드롭다운 특화 스타일 */
+.product-search-dropdown {
+  width: calc(100% - 2px);
+  left: 0;
+  top: 100%;
+}
+
+.product-search-dropdown li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-search-dropdown .product-name {
+  flex: 1;
+  text-align: left;
+  padding-left: 12px;
+  margin-right: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-search-dropdown .insurance-code {
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 12px;
+  min-width: 80px;
+}
+
+/* 제품 입력 컨테이너 */
+.product-input-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.product-input-container input {
+  padding-right: 30px !important;
+}
+
+.product-dropdown-btn {
+  right: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.product-dropdown-btn .dropdown-arrow {
+  font-size: 8px;
 }

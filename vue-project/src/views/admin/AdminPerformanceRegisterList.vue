@@ -89,15 +89,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, rowIdx) in displayRows" :key="rowIdx">
+          <tr v-if="displayRows.length === 0">
+            <td colspan="11" style="text-align:center;padding:2rem;color:#666;">
+              {{ selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.' }}
+            </td>
+          </tr>
+          <tr v-for="(row, rowIdx) in displayRows" :key="rowIdx" v-else>
             <td style="text-align:center;">{{ rowIdx + 1 }}</td>
             <td style="text-align:left;">
               <input 
                 v-model="row.company_name" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:left;"
+                style="text-align:left; background: #fff !important;"
               />
             </td>
             <td style="text-align:left;">
@@ -105,8 +109,7 @@
                 v-model="row.client_name" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:left;"
+                style="text-align:left; background: #fff !important;"
               />
             </td>
             <td style="text-align:center;">
@@ -114,8 +117,7 @@
                 v-model="row.prescription_month" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="text-align:left;">
@@ -123,8 +125,7 @@
                 v-model="row.product_name_display"
                 readonly
                 tabindex="-1"
-                class="disabled-area"
-                style="text-align:left;"
+                style="text-align:left; background: #fff !important;"
               />
             </td>
             <td style="text-align:center;">
@@ -132,8 +133,7 @@
                 v-model="row.insurance_code" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="text-align:right;">
@@ -141,8 +141,7 @@
                 v-model="row.price" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:right;"
+                style="text-align:right; background: #fff !important;"
               />
             </td>
             <td style="text-align:right;">
@@ -150,8 +149,7 @@
                 v-model="row.prescription_qty"
                 readonly
                 tabindex="-1"
-                class="disabled-area"
-                style="text-align:right;"
+                style="text-align:right; background: #fff !important;"
               />
             </td>
             <td style="text-align:right;">
@@ -159,8 +157,7 @@
                 v-model="row.prescription_amount" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
-                style="text-align:right;"
+                style="text-align:right; background: #fff !important;"
               />
             </td>
             <td style="text-align:center;">
@@ -168,8 +165,7 @@
                 v-model="row.prescription_type"
                 readonly
                 tabindex="-1"
-                class="disabled-area"
-                style="text-align:center;"
+                style="text-align:center; background: #fff !important;"
               />
             </td>
             <td style="text-align:left;">
@@ -177,8 +173,7 @@
                 v-model="row.remarks"
                 readonly
                 tabindex="-1"
-                class="disabled-area"
-                style="text-align:left;"
+                style="text-align:left; background: #fff !important;"
               />
             </td>
           </tr>
@@ -260,11 +255,17 @@ watch(selectedSettlementMonth, () => {
   selectedCompanyId.value = '';
   selectedCompanyInfo.value = null;
   
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  selectedHospitalInfo.value = null;
+  
   if (selectedSettlementMonth.value) {
     fetchCompanies();
+    fetchHospitals();
     fetchPerformanceRecords();
   } else {
     companies.value = [];
+    hospitals.value = [];
     displayRows.value = [];
     performanceRecords.value = [];
   }
@@ -277,14 +278,24 @@ watch(prescriptionOffset, (val) => {
   selectedCompanyId.value = '';
   selectedCompanyInfo.value = null;
   
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  selectedHospitalInfo.value = null;
+  
   if (selectedSettlementMonth.value) {
     fetchCompanies();
+    fetchHospitals();
     fetchPerformanceRecords();
   }
 });
 
 watch(selectedCompanyId, () => {
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  selectedHospitalInfo.value = null;
+  
   if (selectedSettlementMonth.value) {
+    fetchHospitals();
     fetchPerformanceRecords();
   }
 });
@@ -353,12 +364,66 @@ async function fetchCompanies() {
 }
 
 async function fetchHospitals() {
+  console.log('fetchHospitals called with:', selectedSettlementMonth.value, prescriptionMonth.value, selectedCompanyId.value);
+  
+  if (!selectedSettlementMonth.value || !prescriptionMonth.value) {
+    console.log('fetchHospitals: missing settlement or prescription month');
+    hospitals.value = [];
+    return;
+  }
+  
   try {
-    // 관리자는 모든 병원 조회
-    const { data } = await supabase.from('clients').select('*').eq('status', 'active').order('name');
-    hospitals.value = data || [];
+    console.log('fetchHospitals: querying database...');
+    
+    let query = supabase
+      .from('performance_records')
+      .select(`
+        client_id,
+        clients!inner(*)
+      `)
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('prescription_month', prescriptionMonth.value);
+    
+    // 업체가 선택된 경우 해당 업체의 실적만 조회
+    if (selectedCompanyId.value) {
+      query = query.eq('company_id', selectedCompanyId.value);
+    }
+    
+    const { data, error } = await query;
+      
+    if (error) {
+      console.error('거래처 조회 오류:', error);
+      return;
+    }
+    
+    console.log('fetchHospitals: raw data from database:', data);
+    if (data && data.length > 0) {
+      console.log('First hospital record:', data[0].clients);
+      console.log('Hospital fields:', Object.keys(data[0].clients));
+    }
+    
+    // 중복 제거하여 고유한 거래처들만 추출
+    const uniqueHospitals = [];
+    const hospitalIds = new Set();
+    
+    data?.forEach(record => {
+      if (!hospitalIds.has(record.client_id)) {
+        hospitalIds.add(record.client_id);
+        uniqueHospitals.push({
+          id: record.clients.id,
+          name: record.clients.name,
+          business_registration_number: record.clients.business_registration_number,
+          owner_name: record.clients.owner_name,
+          address: record.clients.address
+        });
+      }
+    });
+    
+    // 거래처명으로 정렬
+    hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
+    console.log('fetchHospitals result:', hospitals.value);
   } catch (err) {
-    console.error('병원 조회 오류:', err);
+    console.error('거래처 조회 예외:', err);
   }
 }
 
@@ -383,9 +448,8 @@ async function setDefaultSettlementMonth() {
 // 라이프사이클
 onMounted(async () => {
   await fetchAvailableMonths();
-  await fetchHospitals();
   
-  // 기본 정산월 설정 (이후 watch에서 업체 조회됨)
+  // 기본 정산월 설정 (이후 watch에서 업체, 거래처 조회됨)
   await setDefaultSettlementMonth();
 });
 
@@ -497,19 +561,4 @@ const totalQty = computed(() => {
 const totalAmount = computed(() => {
   return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
 });
-</script>
-
-<style scoped>
-/* 관리자용 등록 현황 - 조회 전용 스타일 */
-.performance-register-view .input-table input {
-  background: #f5f5f5 !important;
-  color: #555;
-  cursor: default;
-}
-
-.performance-register-view .input-table select {
-  background: #f5f5f5 !important;
-  color: #555;
-  cursor: default;
-}
-</style> 
+</script> 

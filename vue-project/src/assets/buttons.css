@@ -53,14 +53,37 @@ button-m,
   transition: opacity 0.15s !important;
 }
 
+/* -m 버튼(테이블 내 사용) 비활성화 - 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */
+button-m-d,
+.btn-primary-m-d,
+.btn-add-m-d,
+.btn-delete-m-d,
+.btn-edit-m-d {
+  padding: 4px 0px !important;
+  width: 6rem !important;
+  margin-left: 4px !important;
+  margin-right: 4px !important;
+  font-size: 0.9rem !important;
+  border-radius: 2px !important;
+  cursor: not-allowed !important;
+  transition: opacity 0.15s !important;
+  background: #cccccc !important;
+  color: #333333 !important;
+}
+
 /* -m 버튼 외곽선 */
 .btn-add-m {
   border: 1px solid #1976d2 !important;
 }
+.btn-add-m-d {
+  border: 1px solid #84b5e5 !important;
+}
 .btn-delete-m {
   border: 1px solid #e74c3c !important;
 }
-
+.btn-delete-m-d {
+  border: 1px solid #f0968c !important;
+}
 
 /* -m 버튼(테이블 내 사용) hover 설정 */
 .btn-add-m:hover {
@@ -70,6 +93,57 @@ button-m,
 .btn-delete-m:hover {
   background: #e74c3c !important;
   color: #ffffff !important;
+}
+
+/* 실적 등록용 작은 행 추가/삭제 버튼 (활성화) */
+.btn-add-m.small-btn, .btn-delete-m.small-btn {
+  background: #fff !important;
+  border: 1px solid #bbb !important;
+  border-radius: 4px !important;
+  font-size: 1.1em !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin: 0 2px !important;
+  cursor: pointer !important;
+  transition: background 0.2s !important;
+  padding: 0 !important;
+}
+
+.btn-add-m.small-btn:hover, .btn-delete-m.small-btn:hover {
+  background: #f0f0f0 !important;
+}
+
+.btn-add-m.small-btn:disabled, .btn-delete-m.small-btn:disabled {
+  background: #eee !important;
+  color: #bbb !important;
+  cursor: not-allowed !important;
+}
+
+/* 실적 등록용 작은 행 추가/삭제 버튼 (비활성화 - 보기 모드용) */
+.btn-add-m-d.small-btn, .btn-delete-m-d.small-btn {
+  background: #eee !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  font-size: 1.1em !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin: 0 2px !important;
+  cursor: not-allowed !important;
+  color: #bbb !important;
+  transition: none !important;
+  padding: 0 !important;
+}
+
+/* 액션 셀 배경 */
+.action-cell {
+  text-align: center !important;
+  background: #f5f5f5 !important;
+}
+
+/* 보기 모드용 액션 셀 배경 (연회색) */
+.action-cell-disabled {
+  text-align: center !important;
+  background: #f5f5f5 !important;
 }
 
 

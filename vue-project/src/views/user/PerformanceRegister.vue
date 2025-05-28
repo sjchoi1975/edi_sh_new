@@ -24,19 +24,48 @@
       
       <div class="performance-action-row">
         <div class="hospital-selection-container">
-          <div class="hospital-input-box">
+          <div class="hospital-input-box" style="position:relative;">
             <span class="info-box-label">병원 선택</span>
             <input 
               type="text" 
-              v-model="selectedHospitalName" 
-              readonly 
-              @click="openHospitalModal" 
-              @focus="handleHospitalFocus"
+              v-model="hospitalSearchQuery" 
+              @input="handleHospitalSearchInput"
+              @keydown.enter.prevent="applySelectedHospitalFromSearch"
+              @keydown.down.prevent="navigateHospitalSearchList('down')"
+              @keydown.up.prevent="navigateHospitalSearchList('up')"
+              @focus="handleHospitalSearchFocus"
+              @blur="setTimeout(() => hideHospitalSearchList(), 200)"
               class="hospital-input"
               :class="currentCell.row === -1 && currentCell.col === 'hospital' ? 'hospital-input-focused' : ''"
-              placeholder="병원명을 선택하세요" 
+              placeholder="병원명 또는 사업자등록번호 검색" 
               tabindex="0"
+              autocomplete="off"
             />
+            <button 
+              type="button"
+              @click="toggleHospitalDropdown"
+              @mousedown.prevent
+              class="dropdown-arrow-btn"
+              tabindex="-1"
+            >
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div v-if="hospitalSearchForRow.show && hospitalSearchForRow.results.length > 0" class="search-dropdown hospital-search-dropdown">
+              <ul>
+                <li
+                  v-for="(hospital, index) in hospitalSearchForRow.results"
+                  :key="hospital.id"
+                  @click="clickHospitalFromSearchList(hospital)"
+                  :class="{ 'selected': hospitalSearchForRow.selectedIndex === index }"
+                >
+                  <div class="hospital-info-row">
+                    <span class="hospital-name">{{ hospital.name }}</span>
+                    <span class="hospital-reg-number">{{ hospital.business_registration_number }}</span>
+                  </div>
+                  <div class="hospital-address">{{ truncateText(hospital.address, 20) }}</div>
+                </li>
+              </ul>
+            </div>
           </div>
           <span v-if="selectedHospitalInfo" class="hospital-info">
             ({{ selectedHospitalInfo.business_registration_number }}, {{ selectedHospitalInfo.owner_name }}, {{ selectedHospitalInfo.address }})
@@ -69,26 +98,38 @@
           <tr v-for="(row, rowIdx) in inputRows" :key="rowIdx">
             <td style="text-align:center;">{{ rowIdx + 1 }}</td>
             <td style="position:relative;text-align:left;">
-              <input
-                v-model="row.product_name_display"
-                :tabindex="isInputEnabled ? 0 : -1"
-                :readonly="!isInputEnabled"
-                @input="handleProductNameInput(rowIdx, $event)"
-                @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                @keydown.down.prevent="navigateProductSearchList('down')"
-                @keydown.up.prevent="navigateProductSearchList('up')"
-                @keydown="onArrowKey($event, rowIdx, 'product_name')"
-                @focus="handleProductNameFocus(rowIdx)"
-                @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                :disabled="!isInputEnabled"
-                :class="[
-                  cellClass(rowIdx, 'product_name'),
-                  { 'disabled-area': !isInputEnabled }
-                ]"
-                autocomplete="off"
-                style="text-align:left;"
-              />
-              <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="product-search-dropdown">
+              <div class="product-input-container">
+                <input
+                  v-model="row.product_name_display"
+                  :tabindex="isInputEnabled ? 0 : -1"
+                  :readonly="!isInputEnabled"
+                  @input="handleProductNameInput(rowIdx, $event)"
+                  @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
+                  @keydown.down.prevent="navigateProductSearchList('down')"
+                  @keydown.up.prevent="navigateProductSearchList('up')"
+                  @keydown="onArrowKey($event, rowIdx, 'product_name')"
+                  @focus="handleProductNameFocus(rowIdx)"
+                  @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
+                  :disabled="!isInputEnabled"
+                  :class="[
+                    cellClass(rowIdx, 'product_name'),
+                    { 'disabled-area': !isInputEnabled }
+                  ]"
+                  autocomplete="off"
+                  style="text-align:left;"
+                />
+                <button 
+                  type="button"
+                  @click="toggleProductDropdown(rowIdx)"
+                  @mousedown.prevent
+                  class="dropdown-arrow-btn product-dropdown-btn"
+                  tabindex="-1"
+                  :disabled="!isInputEnabled"
+                >
+                  <span class="dropdown-arrow">▼</span>
+                </button>
+              </div>
+              <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="search-dropdown product-search-dropdown">
                 <ul>
                   <li
                     v-for="(product, index) in productSearchForRow.results"
@@ -107,7 +148,7 @@
                 v-model="row.insurance_code" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
+                class="disabled-area readonly-field"
                 style="text-align:center;"
               />
             </td>
@@ -116,7 +157,7 @@
                 v-model="row.price" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
+                class="disabled-area readonly-field"
                 style="text-align:right;"
               />
             </td>
@@ -142,7 +183,7 @@
                 v-model="row.prescription_amount" 
                 readonly 
                 tabindex="-1" 
-                class="disabled-area"
+                class="disabled-area readonly-field"
                 style="text-align:right;"
               />
             </td>
@@ -213,26 +254,6 @@
       <div v-if="!activeMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0);">
         <div style="font-size:1.8rem;color:#d32f2f;text-align:center;">지금은 실적 입력 기간이 아닙니다.</div>
       </div>
-      
-      <!-- 병원 선택 모달 -->
-      <Dialog v-model:visible="hospitalModalVisible" header="병원 선택" :modal="true" :closable="true" style="min-width:700px;">
-        <div>
-          <InputText v-model="hospitalSearch" placeholder="병원명, 사업자등록번호, 원장명, 주소 검색" style="width:100%;margin-bottom:12px;" />
-      <DataTable
-            :value="filteredHospitals" 
-        class="custom-table"
-            style="min-width:600px;"
-            selectionMode="single"
-            v-model:selection="selectedHospitalRow"
-            @rowSelect="onHospitalRowSelect"
-          >
-            <Column field="name" header="병원명" :headerStyle="{ width: '24%' }" />
-            <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '18%' }" />
-            <Column field="owner_name" header="원장명" :headerStyle="{ width: '14%' }" />
-            <Column field="address" header="주소" :headerStyle="{ width: '44%' }" />
-      </DataTable>
-        </div>
-      </Dialog>
     </div>
   </div>
 </template>
@@ -240,10 +261,6 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
 import { supabase } from '@/supabase';
 
 // 반응형 데이터
@@ -254,10 +271,8 @@ const prescriptionOptions = ref([]);
 const selectedHospitalName = ref('');
 const selectedHospitalInfo = ref(null);
 const selectedHospitalId = ref(null);
-const hospitalModalVisible = ref(false);
-const hospitalSearch = ref('');
 const hospitals = ref([]);
-const selectedHospitalRow = ref(null);
+const hospitalSearchQuery = ref('');
 
 // 실적 입력용 행 (최소 1개 빈 행)
 const inputRows = ref([{ 
@@ -297,6 +312,19 @@ const productSearchForRow = ref({
   selectedIndex: -1,
   show: false,
   activeRowIndex: -1,
+});
+
+// 병원 검색 관련
+const hospitalSearchForRow = ref({
+  query: '',
+  results: [],
+  selectedIndex: -1,
+  show: false,
+});
+
+// 병원 검색이 열려있는지 확인하는 computed
+const isHospitalSearchOpen = computed(() => {
+  return hospitalSearchForRow.value.show;
 });
 
 // 유틸리티 함수들
@@ -349,8 +377,105 @@ function openHospitalModal() {
   hospitalModalVisible.value = true;
 }
 
-// 병원 선택 input 포커스 핸들러
-function handleHospitalFocus() {
+// 병원 검색 관련 함수들
+function handleHospitalSearchInput(event) {
+  if (!activeMonth.value) return;
+  const query = event.target.value.toLowerCase();
+  hospitalSearchQuery.value = event.target.value;
+  
+  // 선택된 병원 초기화
+  if (!query || query !== selectedHospitalName.value.toLowerCase()) {
+    selectedHospitalName.value = '';
+    selectedHospitalInfo.value = null;
+    selectedHospitalId.value = null;
+  }
+
+  hospitalSearchForRow.value.query = query;
+  if (query.length < 1) {
+    hospitalSearchForRow.value.show = false;
+    hospitalSearchForRow.value.results = [];
+    return;
+  }
+  
+  hospitalSearchForRow.value.results = hospitals.value.filter(h =>
+    (h.name && h.name.toLowerCase().includes(query)) ||
+    (h.business_registration_number && h.business_registration_number.includes(query))
+  );
+  hospitalSearchForRow.value.selectedIndex = -1;
+  hospitalSearchForRow.value.show = hospitalSearchForRow.value.results.length > 0;
+}
+
+function navigateHospitalSearchList(direction) {
+  if (!hospitalSearchForRow.value.show || hospitalSearchForRow.value.results.length === 0) return;
+  if (direction === 'down') {
+    hospitalSearchForRow.value.selectedIndex = (hospitalSearchForRow.value.selectedIndex + 1) % hospitalSearchForRow.value.results.length;
+  } else if (direction === 'up') {
+    hospitalSearchForRow.value.selectedIndex = (hospitalSearchForRow.value.selectedIndex - 1 + hospitalSearchForRow.value.results.length) % hospitalSearchForRow.value.results.length;
+  }
+}
+
+function applySelectedHospital(hospital) {
+  selectedHospitalName.value = hospital.name;
+  selectedHospitalInfo.value = hospital;
+  selectedHospitalId.value = hospital.id;
+  hospitalSearchQuery.value = hospital.name;
+  hospitalSearchForRow.value.show = false;
+  
+  // 병원 선택 시 첫 번째 제품명 입력란으로 포커스 이동
+  nextTick(() => focusField(0, 'product_name'));
+}
+
+function applySelectedHospitalFromSearch() {
+  const idx = hospitalSearchForRow.value.selectedIndex;
+  if (hospitalSearchForRow.value.show && idx !== -1 && hospitalSearchForRow.value.results[idx]) {
+    const hospital = hospitalSearchForRow.value.results[idx];
+    applySelectedHospital(hospital);
+  } else if (hospitalSearchForRow.value.show && hospitalSearchForRow.value.results.length > 0) {
+    const hospital = hospitalSearchForRow.value.results[0];
+    applySelectedHospital(hospital);
+  }
+}
+
+function clickHospitalFromSearchList(hospital) {
+  applySelectedHospital(hospital);
+}
+
+function hideHospitalSearchList() {
+  if (!selectedHospitalId.value) {
+    hospitalSearchQuery.value = '';
+  }
+  hospitalSearchForRow.value.show = false;
+}
+
+function toggleHospitalDropdown() {
+  if (!activeMonth.value) return;
+  
+  // 제품 검색 드롭다운이 열려있으면 차단
+  if (isProductSearchOpen.value) {
+    return;
+  }
+  
+  // 현재 드롭다운이 열려있으면 닫기
+  if (hospitalSearchForRow.value.show) {
+    hospitalSearchForRow.value.show = false;
+    return;
+  }
+  
+  // 전체 병원 목록 표시
+  hospitalSearchForRow.value.results = hospitals.value;
+  hospitalSearchForRow.value.selectedIndex = -1;
+  hospitalSearchForRow.value.show = hospitalSearchForRow.value.results.length > 0;
+  
+  // 입력창에 포커스
+  nextTick(() => {
+    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
+    if (hospitalInput) {
+      hospitalInput.focus();
+    }
+  });
+}
+
+function handleHospitalSearchFocus() {
   // 제품 검색 드롭다운이 열려있으면 포커스 차단
   if (isProductSearchOpen.value) {
     event.target.blur();
@@ -359,27 +484,6 @@ function handleHospitalFocus() {
   
   currentCell.value = { row: -1, col: 'hospital' };
 }
-
-function onHospitalRowSelect(e) {
-  const hospital = e.data;
-  selectedHospitalName.value = hospital.name;
-  selectedHospitalInfo.value = hospital;
-  selectedHospitalId.value = hospital.id;
-  hospitalModalVisible.value = false;
-  // 병원 선택 시 첫 번째 제품명 입력란으로 포커스 이동
-  nextTick(() => focusField(0, 'product_name'));
-}
-
-const filteredHospitals = computed(() => {
-  if (!hospitalSearch.value) return hospitals.value;
-  const search = hospitalSearch.value.toLowerCase();
-  return hospitals.value.filter(h =>
-    (h.name && h.name.toLowerCase().includes(search)) ||
-    (h.business_registration_number && h.business_registration_number.includes(search)) ||
-    (h.owner_name && h.owner_name.toLowerCase().includes(search)) ||
-    (h.address && h.address.toLowerCase().includes(search))
-  );
-});
 
 // 데이터 fetch 함수들
 async function fetchHospitals() {
@@ -557,6 +661,33 @@ function hideProductSearchList(rowIndex) {
     productSearchForRow.value.show = false;
     productSearchForRow.value.activeRowIndex = -1;
   }
+}
+
+function toggleProductDropdown(rowIndex) {
+  if (!isInputEnabled.value) return;
+  
+  // 다른 행의 제품 검색이 열려있으면 차단
+  if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex !== rowIndex) {
+    return;
+  }
+  
+  // 현재 드롭다운이 열려있으면 닫기
+  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIndex) {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.activeRowIndex = -1;
+    return;
+  }
+  
+  // 전체 제품 목록 표시
+  productSearchForRow.value.activeRowIndex = rowIndex;
+  productSearchForRow.value.results = products.value;
+  productSearchForRow.value.selectedIndex = -1;
+  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
+  
+  // 해당 행의 제품명 입력창에 포커스
+  nextTick(() => {
+    focusField(rowIndex, 'product_name');
+  });
 }
 
 // 제품 검색 드롭다운이 열려있는지 확인하는 computed
@@ -937,6 +1068,7 @@ function resetForm() {
   selectedHospitalName.value = '';
   selectedHospitalInfo.value = null;
   selectedHospitalId.value = null;
+  hospitalSearchQuery.value = '';
   
   // 입력 행 초기화 (1개 빈 행만 남김)
   inputRows.value = [{ 
@@ -962,9 +1094,17 @@ function resetForm() {
     activeRowIndex: -1,
   };
   
+  // 병원 검색 상태 초기화
+  hospitalSearchForRow.value = {
+    query: '',
+    results: [],
+    selectedIndex: -1,
+    show: false,
+  };
+  
   // 병원명 input에 포커스
   nextTick(() => {
-    const hospitalInput = document.querySelector('input[placeholder="병원명을 선택하세요"]');
+    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
     if (hospitalInput) {
       hospitalInput.focus();
       // 병원명 input 포커스 상태 설정
@@ -1046,7 +1186,7 @@ onMounted(() => {
   fetchProducts();
   // 진입 시 병원명 input에 포커스
   nextTick(() => {
-    const hospitalInput = document.querySelector('input[placeholder="병원명을 선택하세요"]');
+    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
     if (hospitalInput) {
       hospitalInput.focus();
       // 병원명 input 포커스 상태 설정
@@ -1061,104 +1201,4 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalKeydown);
 });
-</script>
-
-<style scoped>
-/* 제품 검색 드롭다운 위치 조정 */
-.product-search-container {
-  position: relative;
-}
-
-/* 병원 선택 모달 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 80%;
-  max-width: 800px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
-}
-
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.close-button:hover {
-  color: #000;
-}
-
-.modal-body {
-  margin-bottom: 20px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-}
-
-/* 병원 목록 테이블 */
-.hospital-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-.hospital-table th,
-.hospital-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-.hospital-table th {
-  background: #f5f5f5;
-  font-weight: bold;
-}
-
-.hospital-table tbody tr {
-  cursor: pointer;
-}
-
-.hospital-table tbody tr:hover {
-  background: #f0f0f0;
-}
-
-.hospital-table tbody tr.selected {
-  background: #e3f2fd;
-}
-</style> 
+</script> 

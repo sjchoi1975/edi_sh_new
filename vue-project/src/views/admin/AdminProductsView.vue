@@ -54,8 +54,16 @@
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '10%' }" :sortable="true" />
         <Column field="price" header="약가" :headerStyle="{ width: '8%' }" :sortable="true" />
-        <Column field="commission_rate_a" header="수수료A(%)" :headerStyle="{ width: '8%' }" :sortable="true" />
-        <Column field="commission_rate_b" header="수수료B(%)" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column header="수수료A(%)" :headerStyle="{ width: '8%' }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) : '-' }}
+          </template>
+        </Column>
+        <Column header="수수료B(%)" :headerStyle="{ width: '8%' }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.commission_rate_b ? (slotProps.data.commission_rate_b * 100).toFixed(1) : '-' }}
+          </template>
+        </Column>
         <Column field="standard_code" header="표준코드" :headerStyle="{ width: '12%' }"   :sortable="true" />
         <Column field="unit_packaging_desc" header="단위/포장형태" :headerStyle="{ width: '8%' }" :sortable="true" />
         <Column field="unit_quantity" header="단위수량" :headerStyle="{ width: '8%' }" :sortabl e="true" :sortable="true" />

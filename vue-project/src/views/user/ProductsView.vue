@@ -53,11 +53,14 @@
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '14%' }" :sortable="true" />
         <Column field="price" header="약가" :headerStyle="{ width: '8%' }" :sortable="true" />
-        <Column field="commission_rate_a" header="수수료A(%)" :headerStyle="{ width: '8%' }" :sortable="true" />
-        <Column field="commission_rate_b" header="수수료B(%)" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column header="수수료율(%)" :headerStyle="{ width: '8%' }" :sortable="false">
+          <template #body="slotProps">
+            {{ getCommissionRate(slotProps.data) }}
+          </template>
+        </Column>
         <Column field="standard_code" header="표준코드" :headerStyle="{ width: '12%' }"   :sortable="true" />
         <Column field="unit_packaging_desc" header="단위/포장형태" :headerStyle="{ width: '10%' }" :sortable="true" />
-        <Column field="unit_quantity" header="단위수량" :headerStyle="{ width: '10%' }" :sortabl e="true" :sortable="true" />
+        <Column field="unit_quantity" header="단위수량" :headerStyle="{ width: '10%' }" :sortable="true" />
         <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" />
       </DataTable>
     </div>
@@ -77,6 +80,7 @@ const products = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const selectedMonth = ref(new Date()); // Date 객체로 관리
 const router = useRouter();
+const userCommissionGrade = ref('A'); // 사용자 등급 (기본값 A)
 
 const koLocale = {
   firstDayOfWeek: 0,
@@ -97,6 +101,21 @@ const filteredProducts = computed(() => {
   return products.value.filter(p => p.base_month === ym);
 });
 
+// 사용자 등급에 따른 수수료율 반환
+function getCommissionRate(product) {
+  let rate = 0;
+  if (userCommissionGrade.value === 'A') {
+    rate = product.commission_rate_a || 0;
+  } else if (userCommissionGrade.value === 'B') {
+    rate = product.commission_rate_b || 0;
+  } else {
+    // C 등급이나 기타 등급의 경우 기본적으로 A 등급 수수료율 표시
+    rate = product.commission_rate_a || 0;
+  }
+  
+  return rate ? (rate * 100).toFixed(1) : '-';
+}
+
 function goToDetail(id) {
   router.push(`/products/${id}`);
 }
@@ -112,7 +131,29 @@ const fetchProducts = async () => {
   }
 };
 
-onMounted(() => {
-  fetchProducts();
+// 사용자 등급 정보 가져오기
+const fetchUserCommissionGrade = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    
+    const { data: company, error } = await supabase
+      .from('companies')
+      .select('default_commission_grade')
+      .eq('user_id', session.user.id)
+      .single();
+      
+    if (!error && company) {
+      userCommissionGrade.value = company.default_commission_grade || 'A';
+    }
+  } catch (err) {
+    console.error('사용자 등급 조회 오류:', err);
+    userCommissionGrade.value = 'A'; // 오류 시 기본값
+  }
+};
+
+onMounted(async () => {
+  await fetchUserCommissionGrade();
+  await fetchProducts();
 });
 </script> 
