@@ -3,17 +3,43 @@
     <div class="header-title">도매매출 목록</div>
     <div class="table-container">
       <div class="table-header">
-        <span class="p-input-icon-left">
-          <InputText
-                v-model="filters['global'].value"
-                placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
-                class="search-input"
-              />
-        </span>
-        <button class="btn-primary" @click="goCreate">등록</button>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <span class="p-input-icon-left">
+            <InputText
+                  v-model="filters['global'].value"
+                  placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
+                  class="search-input"
+                />
+          </span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="white-space: nowrap; font-weight: 500;">매출월</label>
+            <select 
+              v-model="selectedMonth" 
+              @change="filterByMonth"
+              style="width: 140px; height: 36px; border: 1px solid #bbb; border-radius: 2px; padding: 4px 8px;"
+            >
+              <option value="">- 전체 -</option>
+              <option v-for="month in availableMonths" :key="month" :value="month">
+                {{ month }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
+          <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
+          <input 
+            ref="fileInput" 
+            type="file" 
+            accept=".xlsx,.xls" 
+            @change="handleFileUpload" 
+            style="display: none;"
+          />
+          <button class="btn-primary" @click="goCreate">등록</button>
+        </div>
       </div>
       <DataTable
-        :value="revenues"
+        :value="filteredRevenues"
         paginator
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -25,34 +51,146 @@
       >
         <template #empty>등록된 매출이 없습니다.</template>
         <template #loading>매출 목록을 불러오는 중입니다...</template>
-        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '10%' }" />
-        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: '14%' }" />
-        <Column field="business_registration_number" header="사업자번호" :headerStyle="{ width: '13%' }" />
-        <Column field="address" header="주소" :headerStyle="{ width: '18%' }" />
-        <Column field="standard_code" header="표준코드" :headerStyle="{ width: '10%' }" />
-        <Column field="product_name" header="제품명" :headerStyle="{ width: '13%' }" />
-        <Column field="sales_amount" header="매출액" :headerStyle="{ width: '10%' }">
+        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }">
           <template #body="slotProps">
-            {{ slotProps.data.sales_amount?.toLocaleString() }}
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.pharmacy_code"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="sales_date" header="매출일자" :headerStyle="{ width: '12%' }" />
+        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: '12%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.pharmacy_name"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.pharmacy_name }}</span>
+          </template>
+        </Column>
+        <Column field="business_registration_number" header="사업자번호" :headerStyle="{ width: '11%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.business_registration_number"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.business_registration_number }}</span>
+          </template>
+        </Column>
+        <Column field="address" header="주소" :headerStyle="{ width: '16%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.address"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.address }}</span>
+          </template>
+        </Column>
+        <Column field="standard_code" header="표준코드" :headerStyle="{ width: '9%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.standard_code"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.standard_code }}</span>
+          </template>
+        </Column>
+        <Column field="product_name" header="제품명" :headerStyle="{ width: '11%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.product_name"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.product_name }}</span>
+          </template>
+        </Column>
+        <Column field="sales_amount" header="매출액" :headerStyle="{ width: '9%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.sales_amount"
+              type="number"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px; text-align: right;"
+            />
+            <span v-else>{{ slotProps.data.sales_amount?.toLocaleString() }}</span>
+          </template>
+        </Column>
+        <Column field="sales_date" header="매출일자" :headerStyle="{ width: '10%' }">
+          <template #body="slotProps">
+            <input 
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.sales_date"
+              type="date"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+            />
+            <span v-else>{{ slotProps.data.sales_date }}</span>
+          </template>
+        </Column>
+        <Column header="작업" :headerStyle="{ width: '14%' }">
+          <template #body="slotProps">
+            <div style="display: flex; gap: 4px; justify-content: center;">
+              <template v-if="slotProps.data.isEditing">
+                <button 
+                  @click="saveEdit(slotProps.data)"
+                  style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  title="저장"
+                >
+                  저장
+                </button>
+                <button 
+                  @click="cancelEdit(slotProps.data)"
+                  style="background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  title="취소"
+                >
+                  취소
+                </button>
+              </template>
+              <template v-else>
+                <button 
+                  @click="startEdit(slotProps.data)"
+                  style="background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  title="수정"
+                >
+                  edit-m
+                </button>
+                <button 
+                  @click="deleteRevenue(slotProps.data)"
+                  style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  title="삭제"
+                >
+                  delete-m
+                </button>
+              </template>
+            </div>
+          </template>
+        </Column>
       </DataTable>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
+import * as XLSX from 'xlsx';
 
 const revenues = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
+const fileInput = ref(null);
+const selectedMonth = ref('');
+const availableMonths = ref([]);
 
 function goCreate() {
   router.push('/admin/wholesale-revenue/create');
@@ -64,7 +202,281 @@ const fetchRevenues = async () => {
     .select('*')
     .order('sales_date', { ascending: false });
   if (!error && data) {
-    revenues.value = data;
+    // 각 행에 편집 상태와 원본 데이터 백업 추가
+    revenues.value = data.map(item => ({
+      ...item,
+      isEditing: false,
+      originalData: { ...item }
+    }));
+    generateAvailableMonths();
+  }
+};
+
+// 매출 데이터에서 월별 목록 생성
+const generateAvailableMonths = () => {
+  const monthSet = new Set();
+  revenues.value.forEach(revenue => {
+    if (revenue.sales_date) {
+      const month = revenue.sales_date.substring(0, 7); // YYYY-MM 형식
+      monthSet.add(month);
+    }
+  });
+  
+  // 최신월부터 과거월 순으로 정렬
+  availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+};
+
+// 월별 필터링된 매출 데이터
+const filteredRevenues = computed(() => {
+  if (!selectedMonth.value) {
+    return revenues.value;
+  }
+  
+  return revenues.value.filter(revenue => {
+    if (!revenue.sales_date) return false;
+    const revenueMonth = revenue.sales_date.substring(0, 7);
+    return revenueMonth === selectedMonth.value;
+  });
+});
+
+// 월별 필터 변경 시 호출
+const filterByMonth = () => {
+  // computed에서 자동으로 처리되므로 별도 로직 불필요
+};
+
+// 수정 시작
+const startEdit = (row) => {
+  // 다른 행이 편집 중이면 취소
+  revenues.value.forEach(item => {
+    if (item.isEditing && item.id !== row.id) {
+      cancelEdit(item);
+    }
+  });
+  
+  // 원본 데이터 백업
+  row.originalData = { ...row };
+  row.isEditing = true;
+};
+
+// 수정 취소
+const cancelEdit = (row) => {
+  // 원본 데이터로 복원
+  Object.keys(row.originalData).forEach(key => {
+    if (key !== 'isEditing' && key !== 'originalData') {
+      row[key] = row.originalData[key];
+    }
+  });
+  row.isEditing = false;
+};
+
+// 수정 저장
+const saveEdit = async (row) => {
+  try {
+    // 필수 필드 검증
+    if (!row.business_registration_number || !row.standard_code || !row.sales_amount || !row.sales_date) {
+      alert('필수 항목을 모두 입력하세요.');
+      return;
+    }
+    
+    const updateData = {
+      pharmacy_code: row.pharmacy_code || '',
+      pharmacy_name: row.pharmacy_name || '',
+      business_registration_number: row.business_registration_number,
+      address: row.address || '',
+      standard_code: row.standard_code,
+      product_name: row.product_name || '',
+      sales_amount: Number(row.sales_amount),
+      sales_date: row.sales_date
+    };
+    
+    const { error } = await supabase
+      .from('wholesale_sales')
+      .update(updateData)
+      .eq('id', row.id);
+    
+    if (error) {
+      alert('수정 실패: ' + error.message);
+      return;
+    }
+    
+    // 편집 모드 종료
+    row.isEditing = false;
+    row.originalData = { ...row };
+    
+    alert('수정되었습니다.');
+    
+  } catch (error) {
+    console.error('수정 오류:', error);
+    alert('수정 중 오류가 발생했습니다.');
+  }
+};
+
+// 삭제
+const deleteRevenue = async (row) => {
+  if (!confirm('정말 삭제하시겠습니까?')) {
+    return;
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('wholesale_sales')
+      .delete()
+      .eq('id', row.id);
+    
+    if (error) {
+      alert('삭제 실패: ' + error.message);
+      return;
+    }
+    
+    // 목록에서 제거
+    const index = revenues.value.findIndex(item => item.id === row.id);
+    if (index > -1) {
+      revenues.value.splice(index, 1);
+    }
+    
+    // 월별 목록 업데이트
+    generateAvailableMonths();
+    
+    alert('삭제되었습니다.');
+    
+  } catch (error) {
+    console.error('삭제 오류:', error);
+    alert('삭제 중 오류가 발생했습니다.');
+  }
+};
+
+// 엑셀 템플릿 다운로드
+const downloadTemplate = () => {
+  const templateData = [
+    {
+      '약국코드': 'PH001',
+      '약국명': '예시약국',
+      '사업자등록번호': '123-45-67890',
+      '주소': '서울시 강남구 테헤란로 123',
+      '표준코드': 'STD001',
+      '제품명': '예시제품',
+      '매출액': 100000,
+      '매출일자': '2025-01-15'
+    }
+  ];
+  
+  const ws = XLSX.utils.json_to_sheet(templateData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '도매매출템플릿');
+  
+  // 컬럼 너비 설정
+  ws['!cols'] = [
+    { width: 12 }, // 약국코드
+    { width: 20 }, // 약국명
+    { width: 15 }, // 사업자등록번호
+    { width: 30 }, // 주소
+    { width: 12 }, // 표준코드
+    { width: 20 }, // 제품명
+    { width: 12 }, // 매출액
+    { width: 12 }  // 매출일자
+  ];
+  
+  XLSX.writeFile(wb, '도매매출_업로드_템플릿.xlsx');
+};
+
+// 파일 업로드 트리거
+const triggerFileUpload = () => {
+  fileInput.value.click();
+};
+
+// 엑셀 파일 업로드 처리
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    if (jsonData.length === 0) {
+      alert('엑셀 파일에 데이터가 없습니다.');
+      return;
+    }
+    
+    // 데이터 변환 및 검증
+    const uploadData = [];
+    const errors = [];
+    
+    jsonData.forEach((row, index) => {
+      const rowNum = index + 2; // 엑셀 행 번호 (헤더 제외)
+      
+      // 필수 필드 검증
+      if (!row['사업자등록번호']) {
+        errors.push(`${rowNum}행: 사업자등록번호가 필요합니다.`);
+        return;
+      }
+      if (!row['표준코드']) {
+        errors.push(`${rowNum}행: 표준코드가 필요합니다.`);
+        return;
+      }
+      if (!row['매출액']) {
+        errors.push(`${rowNum}행: 매출액이 필요합니다.`);
+        return;
+      }
+      if (!row['매출일자']) {
+        errors.push(`${rowNum}행: 매출일자가 필요합니다.`);
+        return;
+      }
+      
+      // 날짜 변환 처리
+      let salesDate = row['매출일자'];
+      if (typeof salesDate === 'number') {
+        // 엑셀 시리얼 번호를 날짜로 변환
+        const excelDate = new Date((salesDate - 25569) * 86400 * 1000);
+        salesDate = excelDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+      } else if (salesDate instanceof Date) {
+        salesDate = salesDate.toISOString().split('T')[0];
+      } else if (typeof salesDate === 'string') {
+        // 문자열인 경우 날짜 형식 검증
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(salesDate)) {
+          errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이어야 합니다.`);
+          return;
+        }
+      }
+      
+      uploadData.push({
+        pharmacy_code: row['약국코드'] || '',
+        pharmacy_name: row['약국명'] || '',
+        business_registration_number: row['사업자등록번호'],
+        address: row['주소'] || '',
+        standard_code: row['표준코드'],
+        product_name: row['제품명'] || '',
+        sales_amount: Number(row['매출액']),
+        sales_date: salesDate
+      });
+    });
+    
+    if (errors.length > 0) {
+      alert('데이터 오류:\n' + errors.join('\n'));
+      return;
+    }
+    
+    // 데이터베이스에 일괄 삽입
+    const { error } = await supabase
+      .from('wholesale_sales')
+      .insert(uploadData);
+    
+    if (error) {
+      alert('업로드 실패: ' + error.message);
+    } else {
+      alert(`${uploadData.length}건의 도매매출 데이터가 업로드되었습니다.`);
+      await fetchRevenues(); // 목록 새로고침
+    }
+    
+  } catch (error) {
+    console.error('파일 처리 오류:', error);
+    alert('파일 처리 중 오류가 발생했습니다.');
+  } finally {
+    // 파일 입력 초기화
+    event.target.value = '';
   }
 };
 

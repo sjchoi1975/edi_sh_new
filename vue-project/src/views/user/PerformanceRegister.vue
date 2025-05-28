@@ -122,7 +122,7 @@
                   type="button"
                   @click="toggleProductDropdown(rowIdx)"
                   @mousedown.prevent
-                  class="dropdown-arrow-btn product-dropdown-btn"
+                  class="dropdown-arrow-btn"
                   tabindex="-1"
                   :disabled="!isInputEnabled"
                 >
@@ -161,7 +161,7 @@
                 style="text-align:right;"
               />
             </td>
-            <td style="text-align:right;">
+            <td style="text-align:right; position:relative;">
               <input
                 v-model="row.prescription_qty"
                 :tabindex="isInputEnabled ? 0 : -1"
@@ -169,7 +169,8 @@
                 @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
                 @keydown="onArrowKey($event, rowIdx, 'prescription_qty')"
                 @input="onQtyInput(rowIdx)"
-                @focus="handleFieldFocus(rowIdx, 'prescription_qty')"
+                @focus="handlePrescriptionQtyFocus(rowIdx)"
+                @blur="row.prescription_qty = row.prescription_qty ? Number(row.prescription_qty.toString().replace(/,/g, '')).toLocaleString() : ''"
                 :disabled="!isInputEnabled"
                 :class="[
                   cellClass(rowIdx, 'prescription_qty'),
@@ -626,7 +627,7 @@ function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].product_name_display = product.product_name;
   inputRows.value[rowIndex].product_id = product.id;
   inputRows.value[rowIndex].insurance_code = product.insurance_code;
-  inputRows.value[rowIndex].price = product.price;
+  inputRows.value[rowIndex].price = product.price ? Number(product.price).toLocaleString() : '';
   productSearchForRow.value.show = false;
   productSearchForRow.value.activeRowIndex = -1;
   nextTick(() => {
@@ -726,6 +727,25 @@ function handleFieldFocus(rowIdx, col) {
   }
   
   currentCell.value = { row: rowIdx, col: col };
+}
+
+// 처방수량 필드 포커스 핸들러
+function handlePrescriptionQtyFocus(rowIdx) {
+  if (!isInputEnabled.value) {
+    event.target.blur();
+    return;
+  }
+  
+  // 제품 검색 드롭다운이 열려있으면 포커스 차단
+  if (isProductSearchOpen.value) {
+    event.target.blur();
+    return;
+  }
+  
+  // 포커스 시 콤마 제거
+  inputRows.value[rowIdx].prescription_qty = inputRows.value[rowIdx].prescription_qty ? inputRows.value[rowIdx].prescription_qty.toString().replace(/,/g, '') : '';
+  
+  currentCell.value = { row: rowIdx, col: 'prescription_qty' };
 }
 
 function openProductModalForAdd() {
@@ -859,8 +879,8 @@ function onPrescriptionTypeKeydown(e, rowIdx) {
 }
 
 function onQtyInput(rowIdx) {
-  const qty = Number(inputRows.value[rowIdx].prescription_qty);
-  const price = Number(inputRows.value[rowIdx].price);
+  const qty = Number(inputRows.value[rowIdx].prescription_qty.toString().replace(/,/g, ''));
+  const price = Number(inputRows.value[rowIdx].price.toString().replace(/,/g, ''));
   if (!isNaN(qty) && !isNaN(price) && price > 0) {
     inputRows.value[rowIdx].prescription_amount = (qty * price).toLocaleString();
   } else {
@@ -995,7 +1015,7 @@ async function savePerformanceData() {
     prescription_month: prescriptionMonth.value,
     client_id: selectedHospitalId.value,
     product_id: row.product_id,
-    prescription_qty: parseInt(row.prescription_qty),
+    prescription_qty: parseInt(row.prescription_qty.toString().replace(/,/g, '')),
     prescription_type: row.prescription_type || 'EDI',
     remarks: row.remarks || null,
     registered_by: userUid
@@ -1115,7 +1135,11 @@ function resetForm() {
 
 // 합계 계산
 const totalQty = computed(() => {
-  return inputRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  const total = inputRows.value.reduce((sum, row) => {
+    const qty = Number(row.prescription_qty.toString().replace(/,/g, '')) || 0;
+    return sum + qty;
+  }, 0);
+  return total.toLocaleString();
 });
 const totalAmount = computed(() => {
   return inputRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
@@ -1179,6 +1203,32 @@ function handleGlobalKeydown(e) {
   }
 }
 
+// 전역 클릭 이벤트 처리
+function handleGlobalClick(e) {
+  // 병원 검색 드롭다운 처리
+  if (hospitalSearchForRow.value.show) {
+    const hospitalContainer = e.target.closest('.hospital-selection-container');
+    const searchDropdown = e.target.closest('.search-dropdown');
+    
+    if (!hospitalContainer && !searchDropdown) {
+      hideHospitalSearchList();
+    }
+  }
+  
+  // 제품 검색 드롭다운 처리
+  if (isProductSearchOpen.value) {
+    const productContainer = e.target.closest('.product-input-container');
+    const searchDropdown = e.target.closest('.search-dropdown');
+    
+    if (!productContainer && !searchDropdown) {
+      const activeRowIndex = productSearchForRow.value.activeRowIndex;
+      if (activeRowIndex !== -1) {
+        hideProductSearchList(activeRowIndex);
+      }
+    }
+  }
+}
+
 // 라이프사이클
 onMounted(() => {
   fetchActiveMonth();
@@ -1195,10 +1245,12 @@ onMounted(() => {
   });
   // 전역 키보드 이벤트 리스너 추가
   document.addEventListener('keydown', handleGlobalKeydown);
+  document.addEventListener('click', handleGlobalClick);
 });
 
 // 컴포넌트 언마운트 시 이벤트 리스너 제거
 onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalKeydown);
+  document.removeEventListener('click', handleGlobalClick);
 });
 </script> 

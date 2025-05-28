@@ -1,16 +1,23 @@
-/* 색상 지정 (배경색, 글자색) */ 
-.btn-primary   { background: #5fa56b !important; color: #ffffff !important; }
-.btn-primary-m { background: #5fa56b !important; color: #ffffff !important; }
-.btn-add       { background: #1976d2 !important; color: #ffffff !important; }
-.btn-add-m     { background: #ffffff !important; color: #1976d2 !important; }
-.btn-edit      { background: #ffe600 !important; color: #222222 !important; }
-.btn-edit-m    { background: #ffe600 !important; color: #222222 !important; }
-.btn-delete    { background: #e74c3c !important; color: #ffffff !important; }
-.btn-delete-m  { background: #ffffff !important; color: #e74c3c !important; }
-.btn-list      { background: #5fa56b !important; color: #ffffff !important; }
-.btn-cancel    { background: #dddddd !important; color: #333333 !important; }
+/* ========================================== */
+/* 버튼 색상 정의 */
+/* ========================================== */
+.btn-primary    { background: #1976d2 !important; color: #ffffff !important; }
+.btn-primary-m  { background: #1976d2 !important; color: #ffffff !important; }
+.btn-add        { background: #1976d2 !important; color: #ffffff !important; }
+.btn-add-m      { background: #ffffff !important; color: #1976d2 !important; }
+.btn-edit       { background: #ffe600 !important; color: #222222 !important; }
+.btn-edit-m     { background: #ffe600 !important; color: #222222 !important; }
+.btn-delete     { background: #e74c3c !important; color: #ffffff !important; }
+.btn-delete-m   { background: #ffffff !important; color: #e74c3c !important; }
+.btn-list       { background: #5fa56b !important; color: #ffffff !important; }
+.btn-cancel     { background: #dddddd !important; color: #333333 !important; }
+.btn-approve-m  { background: #ffffff !important; color: #1976d2 !important; }
+.btn-pending-m  { background: #ffffff !important; color: #e74c3c !important; }
 
-/* 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */ 
+
+/* ========================================== */
+/* 일반 버튼 스타일 (폼 하단 등에서 사용) */
+/* ========================================== */
 button,
 .btn-primary,
 .btn-add,
@@ -34,93 +41,71 @@ button:hover,
 .btn-delete:hover,
 .btn-list:hover,
 .btn-cancel:hover {
-  opacity:  1.0;
+  opacity: 1.0;
 }
 
-/* -m 버튼(테이블 내 사용) 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */
+/* ========================================== */
+/* 테이블 내 버튼 스타일 (-m 버튼) */
+/* ========================================== */
 button-m,
 .btn-primary-m,
 .btn-add-m,
 .btn-delete-m,
-.btn-edit-m {
-  padding: 4px 0px !important;
-  width: 6rem !important;
+.btn-edit-m,
+.btn-approve-m,
+.btn-pending-m {
+  padding: 3px 0px !important;
+  width: 4rem !important;
   margin-left: 4px !important;
   margin-right: 4px !important;
-  font-size: 1rem !important;
+  font-size: 0.9rem !important;
   border-radius: 2px !important;
   cursor: pointer !important;
   transition: opacity 0.15s !important;
 }
 
-/* -m 버튼(테이블 내 사용) 비활성화 - 주요 공통 스타일 지정 (폰트 사이즈, 외곽선, 모서리..) */
-button-m-d,
-.btn-primary-m-d,
-.btn-add-m-d,
-.btn-delete-m-d,
-.btn-edit-m-d {
-  padding: 4px 0px !important;
-  width: 6rem !important;
-  margin-left: 4px !important;
-  margin-right: 4px !important;
-  font-size: 0.9rem !important;
-  border-radius: 2px !important;
-  cursor: not-allowed !important;
-  transition: opacity 0.15s !important;
-  background: #cccccc !important;
-  color: #333333 !important;
-}
-
-/* -m 버튼 외곽선 */
+/* 테이블 내 버튼 외곽선 */
+.btn-approve-m,
 .btn-add-m {
   border: 1px solid #1976d2 !important;
 }
-.btn-add-m-d {
-  border: 1px solid #84b5e5 !important;
-}
+.btn-pending-m,
 .btn-delete-m {
   border: 1px solid #e74c3c !important;
 }
-.btn-delete-m-d {
-  border: 1px solid #f0968c !important;
-}
 
-/* -m 버튼(테이블 내 사용) hover 설정 */
+/* 테이블 내 버튼 호버 효과 */
+
 .btn-add-m:hover {
   background: #1976d2 !important;
   color: #ffffff !important;
 }
+
+.btn-approve-m:hover {
+  background: #1976d2 !important;
+  color: #ffffff !important;
+}
+
 .btn-delete-m:hover {
   background: #e74c3c !important;
   color: #ffffff !important;
 }
 
-/* 실적 등록용 작은 행 추가/삭제 버튼 (활성화) */
-.btn-add-m.small-btn, .btn-delete-m.small-btn {
-  background: #fff !important;
-  border: 1px solid #bbb !important;
-  border-radius: 4px !important;
-  font-size: 1.1em !important;
-  width: 28px !important;
-  height: 28px !important;
-  margin: 0 2px !important;
-  cursor: pointer !important;
-  transition: background 0.2s !important;
-  padding: 0 !important;
+.btn-pending-m:hover {
+  background: #e74c3c !important;
+  color: #ffffff !important;
 }
 
-.btn-add-m.small-btn:hover, .btn-delete-m.small-btn:hover {
-  background: #f0f0f0 !important;
-}
+/* ========================================== */
+/* 실적 등록 화면 전용 작은 버튼 스타일 */
+/* ========================================== */
 
-.btn-add-m.small-btn:disabled, .btn-delete-m.small-btn:disabled {
-  background: #eee !important;
-  color: #bbb !important;
-  cursor: not-allowed !important;
-}
+/* 실적 등록 - 행 추가/삭제 버튼 (활성화 상태) */
+/* .btn-add-m:hover, .btn-delete-m:hover */
 
-/* 실적 등록용 작은 행 추가/삭제 버튼 (비활성화 - 보기 모드용) */
-.btn-add-m-d.small-btn, .btn-delete-m-d.small-btn {
+
+/* 실적 등록 - 행 추가/삭제 버튼 (비활성화 상태 - 보기 모드용) */
+.btn-add-m-d, .btn-delete-m-d {
   background: #eee !important;
   border: 1px solid #ccc !important;
   border-radius: 4px !important;
@@ -134,20 +119,59 @@ button-m-d,
   padding: 0 !important;
 }
 
-/* 액션 셀 배경 */
+/* ========================================== */
+/* 테이블 액션 셀 스타일 */
+/* ========================================== */
+
+/* 액션 셀 배경 - 실적 등록 화면에서 사용 */
 .action-cell {
   text-align: center !important;
   background: #f5f5f5 !important;
 }
 
-/* 보기 모드용 액션 셀 배경 (연회색) */
+/* 보기 모드용 액션 셀 배경 - 실적 현황 화면에서 사용 */
 .action-cell-disabled {
   text-align: center !important;
   background: #f5f5f5 !important;
 }
 
 
+/* ========================================== */
+/* 뱃지 스타일 */
+/* ========================================== */
 
+/* 필수 뱃지 - 공지사항 목록에서 사용 */
+.required-badge {
+  background: #f66 !important;
+  color: #ffffff !important;
+  border-radius: 24px !important;
+  padding: 3px 12px !important;
+  font-size: 0.85rem !important;
+  display: inline-block !important;
+  border: none !important;
+}
+
+/* 활성 뱃지 - 제품, 거래처, 문전약국 목록에서 사용 */
+.active-badge {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border-radius: 24px !important;
+  padding: 3px 12px !important;
+  font-size: 0.85rem !important;
+  display: inline-block !important;
+  border: none !important;
+}
+
+/* 비활성 뱃지 - 제품, 거래처, 문전약국 목록에서 사용 */
+.inactive-badge {
+  background: #ddd !important;
+  color: #333 !important;
+  border-radius: 24px !important;
+  padding: 3px 12px !important;
+  font-size: 0.85rem !important;
+  display: inline-block !important;
+  border: none !important;
+}
 
 
 

@@ -146,7 +146,7 @@
             </td>
             <td style="text-align:right;">
               <input
-                v-model="row.prescription_qty"
+                :value="row.prescription_qty ? Number(row.prescription_qty).toLocaleString() : ''"
                 readonly
                 tabindex="-1"
                 style="text-align:right; background: #fff !important;"
@@ -204,7 +204,7 @@ const availableMonths = ref([]); // 선택 가능한 정산월 목록
 const selectedSettlementMonth = ref(''); // 선택된 정산월
 const selectedMonthInfo = ref(null); // 선택된 정산월 정보
 const prescriptionMonth = ref('');
-const prescriptionOffset = ref(1); // 1: -1M, 2: -2M, 3: -3M
+const prescriptionOffset = ref(0); // 0: 전체, 1: -1M, 2: -2M, 3: -3M
 const prescriptionOptions = ref([]);
 
 // 업체 관련
@@ -237,10 +237,15 @@ function updatePrescriptionOptions() {
     prescriptionOptions.value = [];
     return;
   }
-  prescriptionOptions.value = [1, 2, 3].map(offset => ({
-    value: offset,
-    month: getPrescriptionMonth(selectedMonthInfo.value.settlement_month, offset)
-  }));
+  
+  // "- 전체 -" 옵션을 첫 번째로 추가
+  prescriptionOptions.value = [
+    { value: 0, month: '- 전체 -' },
+    ...([1, 2, 3].map(offset => ({
+      value: offset,
+      month: getPrescriptionMonth(selectedMonthInfo.value.settlement_month, offset)
+    })))
+  ];
 }
 
 // 워치어
@@ -248,8 +253,8 @@ watch(selectedSettlementMonth, () => {
   const monthInfo = availableMonths.value.find(m => m.settlement_month === selectedSettlementMonth.value);
   selectedMonthInfo.value = monthInfo || null;
   updatePrescriptionOptions();
-  prescriptionOffset.value = 1;
-  prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, 1);
+  prescriptionOffset.value = 0; // 기본값을 "- 전체 -"로 설정
+  prescriptionMonth.value = ''; // 전체 선택 시 빈 값
   
   // 업체 선택 초기화
   selectedCompanyId.value = '';
@@ -272,7 +277,11 @@ watch(selectedSettlementMonth, () => {
 });
 
 watch(prescriptionOffset, (val) => {
-  prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, val);
+  if (val === 0) {
+    prescriptionMonth.value = ''; // 전체 선택 시 빈 값
+  } else {
+    prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, val);
+  }
   
   // 업체 선택 초기화
   selectedCompanyId.value = '';
@@ -308,25 +317,31 @@ watch(selectedHospitalId, () => {
 
 // 데이터 fetch 함수들
 async function fetchCompanies() {
-  console.log('fetchCompanies called with:', selectedSettlementMonth.value, prescriptionMonth.value);
+  console.log('fetchCompanies called with:', selectedSettlementMonth.value, prescriptionMonth.value, prescriptionOffset.value);
   
-  if (!selectedSettlementMonth.value || !prescriptionMonth.value) {
-    console.log('fetchCompanies: missing settlement or prescription month');
+  if (!selectedSettlementMonth.value) {
+    console.log('fetchCompanies: missing settlement month');
     companies.value = [];
     return;
   }
   
   try {
     console.log('fetchCompanies: querying database...');
-    // 선택된 정산월과 처방월에 실적을 제출한 업체들만 조회
-    const { data, error } = await supabase
+    // 선택된 정산월에 실적을 제출한 업체들만 조회
+    let query = supabase
       .from('performance_records')
       .select(`
         company_id,
         companies!inner(*)
       `)
-      .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('prescription_month', prescriptionMonth.value);
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+      
+    const { data, error } = await query;
       
     if (error) {
       console.error('업체 조회 오류:', error);
@@ -364,10 +379,10 @@ async function fetchCompanies() {
 }
 
 async function fetchHospitals() {
-  console.log('fetchHospitals called with:', selectedSettlementMonth.value, prescriptionMonth.value, selectedCompanyId.value);
+  console.log('fetchHospitals called with:', selectedSettlementMonth.value, prescriptionMonth.value, prescriptionOffset.value, selectedCompanyId.value);
   
-  if (!selectedSettlementMonth.value || !prescriptionMonth.value) {
-    console.log('fetchHospitals: missing settlement or prescription month');
+  if (!selectedSettlementMonth.value) {
+    console.log('fetchHospitals: missing settlement month');
     hospitals.value = [];
     return;
   }
@@ -381,8 +396,12 @@ async function fetchHospitals() {
         client_id,
         clients!inner(*)
       `)
-      .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('prescription_month', prescriptionMonth.value);
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
     
     // 업체가 선택된 경우 해당 업체의 실적만 조회
     if (selectedCompanyId.value) {
@@ -494,7 +513,7 @@ async function fetchAvailableMonths() {
 }
 
 async function fetchPerformanceRecords() {
-  if (!selectedSettlementMonth.value || !prescriptionMonth.value) {
+  if (!selectedSettlementMonth.value) {
     displayRows.value = [];
     performanceRecords.value = [];
     return;
@@ -509,8 +528,12 @@ async function fetchPerformanceRecords() {
         clients!inner(name, business_registration_number, owner_name, address),
         companies!inner(company_name, business_registration_number, representative_name)
       `)
-      .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('prescription_month', prescriptionMonth.value);
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
     
     // 업체 필터링
     if (selectedCompanyId.value) {
@@ -522,7 +545,7 @@ async function fetchPerformanceRecords() {
       query = query.eq('client_id', selectedHospitalId.value);
     }
     
-    const { data, error } = await query.order('created_at', { ascending: true });
+    const { data, error } = await query.order('prescription_month', { ascending: false }).order('created_at', { ascending: true });
     
     if (error) {
       console.error('실적 조회 오류:', error);
@@ -538,7 +561,7 @@ async function fetchPerformanceRecords() {
       product_name_display: record.products.product_name,
       product_id: record.product_id,
       insurance_code: record.products.insurance_code,
-      price: record.products.price,
+      price: record.products.price ? Number(record.products.price).toLocaleString() : '',
       prescription_qty: record.prescription_qty,
       prescription_amount: (record.prescription_qty * record.products.price).toLocaleString(),
       prescription_type: record.prescription_type,
@@ -556,7 +579,8 @@ async function fetchPerformanceRecords() {
 
 // 합계 계산
 const totalQty = computed(() => {
-  return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  return total.toLocaleString();
 });
 const totalAmount = computed(() => {
   return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();

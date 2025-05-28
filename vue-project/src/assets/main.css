@@ -195,7 +195,7 @@ a {
 /* 5. 폼 레이아웃 및 공통 스타일 */
 /* ========================================== */
 
-/* 폼 행/열 레이아웃 */
+/* 폼 행/열 레이아웃 - 공지사항, 업체, 제품, 거래처, 약국 등록/수정 화면에서 사용 */
 .form-row {
   display: flex;
   flex-direction: row;
@@ -219,7 +219,16 @@ a {
   flex: 3 1 0;
 }
 
-/* 폼 제목 */
+/* 정렬 클래스 - 업체 등록/수정 화면의 사업장 소재지 입력란에서 사용 */
+.form-col.align-right {
+  text-align: right;
+}
+
+.form-col.align-left {
+  text-align: left;
+}
+
+/* 폼 제목 - 모든 등록/수정/상세 화면에서 사용 */
 .form-title {
   margin-bottom: 2.8rem;
   font-size: var(--font-size-title);
@@ -227,14 +236,21 @@ a {
   text-align: left;
 }
 
-/* 폼 컨테이너 */
+/* 폼 컨테이너 - 모든 등록/수정/상세 화면에서 사용 */
 .notice-form {
   display: flex;
   flex-direction: column;
   gap: 0rem;
 }
 
-/* 폼 배경 컨테이너 */
+/* 그리드 폼 레이아웃 - 업체, 제품, 거래처, 약국 등록/수정 화면에서 사용 */
+.notice-form.grid-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+}
+
+/* 폼 배경 컨테이너 - 모든 등록/수정/상세 화면에서 사용 */
 .board_960 {
   max-width: 960px;
   margin: 2rem auto;
@@ -248,7 +264,7 @@ a {
 /* 6. 입력창 스타일 (통합) */
 /* ========================================== */
 
-/* 라벨 스타일 */
+/* 라벨 스타일 - 모든 폼에서 사용 */
 label {
   font-size: var(--font-size-base);
   font-weight: 400;
@@ -256,12 +272,18 @@ label {
   letter-spacing: 0em;
 }
 
-/* 기본 입력창 스타일 */
+/* 필수 입력 표시 - 모든 등록/수정 화면에서 사용 */
+.required {
+  color: #1976d2;
+}
+
+/* 기본 입력창 스타일 - 모든 폼 입력창에서 사용 */
 input,
 textarea,
 select {
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
+  border-color: #bbb !important;
   border-radius: var(--border-radius);
   padding: 2px 12px;
   font-size: var(--font-size-large);
@@ -273,7 +295,14 @@ select {
   margin-bottom: 0.5rem;
 }
 
-/* 읽기 전용 입력창 */
+/* textarea 높이 조정 - 공지사항, 정산월 등록/수정 화면에서 사용 */
+textarea {
+  height: auto;
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* 읽기 전용 입력창 - 모든 상세 화면에서 사용 */
 .input-readonly {
   background: var(--bg-primary);
   border: 1px solid var(--border-secondary);
@@ -286,6 +315,8 @@ select {
   box-sizing: border-box;
   height: var(--input-height);
   margin-bottom: 0.5rem;
+  display: inline-block;
+  line-height: 28px;
 }
 
 /* 편집 가능한 입력창 (강조) */
@@ -296,16 +327,17 @@ select.input-editable {
   font-weight: 500;
 }
 
-/* 검색 입력창 */
+/* 검색 입력창 - 모든 목록 화면의 검색창에서 사용 */
 .search-input {
   width: var(--search-input-width) !important;
   height: var(--search-input-height) !important;
   border-radius: var(--border-radius) !important;
   border: 1px solid var(--border-dark) !important;
+  border-color: #bbb !important;
   background: var(--bg-primary) !important;
   font-size: var(--font-size-base) !important;
   font-weight: 400 !important;
-  color: #222 !important;
+  color: #888!important;
   padding: 4px 12px !important;
   transition: border 0.2s !important;
   box-sizing: border-box !important;
@@ -335,7 +367,7 @@ select.input-editable {
 /* 7. 버튼 스타일 */
 /* ========================================== */
 
-/* 버튼 행 레이아웃 */
+/* 버튼 행 레이아웃 - 모든 폼 하단에서 사용 */
 .btn-row {
   display: flex;
   flex-direction: row;
@@ -356,7 +388,7 @@ select.input-editable {
   margin-top: 1.5rem;
 }
 
-/* 비밀번호 초기화 버튼 */
+/* 비밀번호 초기화 버튼 - 업체 상세 화면에서 사용 */
 .btn-reset-password {
   background: #2b4a8b;
   color: var(--text-white);
@@ -373,6 +405,7 @@ select.input-editable {
 /* 8. 파일 관련 스타일 */
 /* ========================================== */
 
+/* 파일 목록 - 공지사항 등록/수정/상세 화면에서 사용 */
 .file-list {
   display: flex;
   flex-direction: column;
@@ -398,7 +431,7 @@ select.input-editable {
   margin-left: 8px;
 }
 
-/* 파일 첨부 라벨 (버튼 스타일) */
+/* 파일 첨부 라벨 (버튼 스타일) - 공지사항 등록/수정 화면에서 사용 */
 .file-label {
   display: inline-block;
   background: var(--bg-secondary);
@@ -421,28 +454,92 @@ select.input-editable {
   background: #eee;
 }
 
+/* 파일 행 - 공지사항 등록/수정/상세 화면에서 사용 */
+.file-row {
+  margin-top: 1rem;
+}
+
 /* ========================================== */
 /* 9. 테이블 스타일 (통합) */
 /* ========================================== */
 
-/* 테이블 컨테이너 */
+/* 테이블 컨테이너 - 모든 목록 화면에서 사용 */
 .table-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
+  height: 90vh;        /* 화면 높이의 90% */
   margin-bottom: 0px !important;
   background: var(--bg-primary);
   border-radius: 4px;
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.03);
   border: 1.5px solid var(--border-light);
-  min-height: 0;
+  min-height: 60vh;    /* 최소 화면 높이의 60% */
   padding: 16px 16px 0px 16px !important;
-  overflow-y: auto;
+  overflow: hidden;    /* 컨테이너 자체는 스크롤 숨김 */
   position: relative;
-  max-height: 70vh; /* 화면 높이의 70%로 제한 */
+  max-height: 90vh;    /* 최대 화면 높이의 90% */
 }
 
-/* 테이블 헤더 영역 */
+/* 등록 현황 화면 전용 - 테이블 영역에 스크롤 적용 */
+.performance-register-view .table-container {
+  overflow-y: auto;    /* 등록 현황에서는 스크롤 허용 */
+}
+
+/* 등록 현황 화면 - 테이블 스크롤 래퍼 */
+.table-scroll-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(90vh - 250px);  /* 상단 필터 영역과 하단 합계 영역 제외한 높이 */
+  border: 1px solid #ddd;
+  border-bottom: none;  /* 하단 테두리 제거 */
+}
+
+/* 스크롤바가 있을 때 합계 테이블 너비 조정 */
+.table-scroll-wrapper::-webkit-scrollbar {
+  width: 17px;  /* 스크롤바 너비 */
+}
+
+/* 등록 현황 화면 - 합계 행 고정 래퍼 */
+.table-footer-wrapper {
+  border: 1px solid #ddd;
+  border-top: none;  /* 상단 테두리 제거 */
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;  /* 드롭다운보다 낮은 z-index */
+  margin-right: 0;  /* 스크롤바 너비만큼 여백 제거 */
+}
+
+/* 합계 테이블 스타일 */
+.footer-table {
+  margin: 0 !important;
+  border-collapse: collapse;
+  table-layout: fixed !important;  /* 고정 레이아웃 */
+  width: calc(100% - 17px) !important;  /* 스크롤바 너비 제외 */
+}
+
+.footer-table tfoot td {
+  background-color: #f8f9fa !important;
+  font-weight: bold;
+  color: #333;
+  border-top: 2px solid #666 !important;
+  padding: 0 8px !important;  /* 좌우 패딩만 추가 */
+  height: 40px !important;
+  line-height: 40px !important;  /* 높이와 동일하게 설정 */
+  vertical-align: middle;
+  border-right: 1px solid #ddd !important;  /* 세로 구분선 추가 */
+  box-sizing: border-box;
+}
+
+/* 등록 현황 화면 - 테이블 래퍼 추가 */
+.performance-register-view .input-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  table-layout: fixed;  /* 고정 레이아웃으로 컬럼 너비 정확히 맞춤 */
+}
+
+/* 테이블 헤더 영역 - 모든 목록 화면에서 사용 */
 .table-header {
   display: flex;
   justify-content: space-between;
@@ -467,19 +564,36 @@ select.input-editable {
   border-bottom: none !important;
   padding: 8px 0 0 0 !important;
   border-radius: 4px;
+  border-color: #888 !important;
   border: 1px solid var(--border-light);
 }
 
 /* 테이블 헤더 스타일 */
 .p-datatable .p-datatable-thead > tr > th {
   padding: 0.4rem 0.5rem !important;
-  background: var(--bg-light) !important;
+  background: #666 !important;
   font-size: var(--font-size-base) !important;
   font-weight: 600 !important;
   text-align: center !important;
-  color: var(--text-primary) !important;
-  border-bottom: 2px solid #dee2e6 !important;
+  color: #fff !important;
+  border-bottom: 1px solid #bbb !important;
   border-top: 1px solid #bbb !important;
+}
+
+/* 정렬 화살표 크기 조절 - 등록 현황 목록의 정렬 화살표에서 사용 */
+.p-datatable .p-datatable-thead > tr > th[style*="cursor:pointer"] {
+  font-size: var(--font-size-base) !important;
+}
+
+/* 정렬 화살표만 작게 표시 */
+.p-datatable .p-datatable-thead > tr > th[style*="cursor:pointer"]:after {
+  font-size: 0.7em !important;
+}
+
+/* 정렬 화살표 크기 조절 클래스 - 등록 현황 목록에서 사용 */
+.sort-arrow {
+  font-size: 0.7em !important;
+  margin-left: 2px;
 }
 
 /* 테이블 바디 스타일 */
@@ -489,6 +603,11 @@ select.input-editable {
   font-weight: 400 !important;
   color: var(--text-primary) !important;
   border-color: var(--border-secondary) !important;
+  border-bottom: 1px solid #ddd !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 0 !important;
 }
 
 /* 테이블 행 배경색 (짝수행) */
@@ -515,7 +634,7 @@ select.input-editable {
   border-right: none !important;
 }
 
-/* 테이블 세로선 */
+/* 테이블 세로선 - 모든 목록 화면에서 사용 */
 .custom-table :deep(.p-datatable-table) {
   border-collapse: separate !important;
 }
@@ -575,7 +694,7 @@ select.input-editable {
   background: rgba(0, 0, 0, 0.5) !important;
 }
 
-/* 모달 전체 컨테이너 */
+/* 모달 전체 컨테이너 - 담당업체/약국 지정 모달에서 사용 */
 .p-dialog {
   background: var(--bg-light) !important;
   width: 960px !important;
@@ -614,7 +733,7 @@ select.input-editable {
 /* 12. 날짜/캘린더 관련 스타일 */
 /* ========================================== */
 
-/* 캘린더 입력창 */
+/* 캘린더 입력창 - 제품 목록 화면의 기준월 선택에서 사용 */
 .p-calendar .p-inputtext {
   background: var(--bg-primary) !important;
   border: none !important;
@@ -661,7 +780,7 @@ select.input-editable {
 /* 13. 기타 공통 스타일 */
 /* ========================================== */
 
-/* 페이지 제목 */
+/* 페이지 제목 - 모든 목록 화면 상단에서 사용 */
 .header-title {
   font-size: var(--font-size-title);
   font-weight: 700;
@@ -671,16 +790,6 @@ select.input-editable {
   margin-top: 0;
   padding-left: 0;
   padding-top: 0;
-}
-
-/* 필수 뱃지 */
-.required-badge {
-  background: #f66;
-  color: var(--text-white);
-  border-radius: var(--border-radius);
-  padding: 3px 12px;
-  font-size: 0.85rem;
-  display: inline-block;
 }
 
 /* 상세 페이지 헤더 */
@@ -729,108 +838,184 @@ body.no-main-padding .main-content {
   text-align: left !important;
 }
 
+/* 관리자 거래처 뷰 - 담당업체/약국 지정 화면에서 사용 */
+.admin-clients-view,
+.admin-clients-assign-companies,
+.admin-clients-assign-pharmacies {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 관리자 업체 뷰 - 승인/미승인 업체 목록 화면에서 사용 */
+.admin-companies-view {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 관리자 제품 뷰 */
+.admin-products-view {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 관리자 정산월 뷰 */
+.admin-settlement-months-view {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 관리자 매출 뷰 - 직거래/도매 매출 목록 화면에서 사용 */
+.admin-revenue-view {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* =============================
+   실적 등록/등록 현황 - 셀 포커스/선택 시 노란 배경
+   ============================= */
+
+/* 실적 등록 테이블 - 제품명, 처방수량, 처방구분, 비고 셀 포커스/선택 시 */
+.input-table td:focus-within,
+.input-table td input:focus,
+.input-table td select:focus,
+.input-table td textarea:focus,
+.input-table td .p-dropdown.p-focus {
+  background: #ffffaa !important;
+}
+
+/* 등록 현황 테이블 - 거래처 선택 시(셀렉트박스, 드롭다운 등) */
+.status-table td:focus-within,
+.status-table td input:focus,
+.status-table td select:focus,
+.status-table td textarea:focus,
+.status-table td .p-dropdown.p-focus {
+  background: #ffffaa !important;
+}
+
 /* =============================
    실적 등록(PerformanceRegister.vue) 전용 스타일
    ============================= */
 
-/* 실적 등록 - 상단 정보 박스들 (정산월, 제출기간, 처방월) */
+/* 실적 등록 화면 - 전체 컨테이너 */
+.performance-register-view {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 실적 등록 화면 - 상단 정보 박스(정산월, 제출기간, 처방월) */
 .info-box {
   display: flex;
   align-items: center;
-  height: 40px !important;
+  height: 32px !important;
   border: 1px solid #aaa;
   background: #fff;
 }
 
+/* 실적 등록 화면 - 정산월 정보 박스 */
 .info-box-settlement {
   width: 200px;
 }
 
+/* 실적 등록 화면 - 제출기간 정보 박스 */
 .info-box-period {
   width: 300px;
 }
 
+/* 실적 등록 화면 - 처방월 정보 박스 */
 .info-box-prescription {
   width: 200px;
 }
 
+/* 실적 등록 화면 - 상단 정보 박스 내 라벨(정산월/제출기간/처방월) */
 .info-box-label {
   display: inline-block;
   width: 80px;
   text-align: center;
   background: #f5f5f5;
   height: 100% !important;
-  line-height: 40px !important;
+  line-height: 32px !important;
   border-right: 1px solid #aaa;
 }
 
+/* 실적 등록 화면 - 상단 정보 박스 내 값(정산월/제출기간/처방월) */
 .info-box-content {
   flex: 1;
   text-align: center;
 }
 
-/* 실적 등록 - 처방월 선택 드롭다운 */
+/* 실적 등록 화면 - 처방월 선택 드롭다운 */
 .prescription-select {
   flex: 1;
-  height: 40px !important;
+  height: 32px !important;
   border: none;
   background: transparent;
   outline: none;
   text-align: center;
   font-size: 1rem;
-  line-height: 40px !important;
+  line-height: 32px !important;
   padding: 0;
   vertical-align: middle;
   box-sizing: border-box;
 }
 
-/* 실적 등록 - 병원 선택 영역 */
+/* 실적 등록 화면 - 병원 선택 영역 전체 */
 .hospital-selection-container {
   display: flex;
   align-items: center;
   flex: 1;
 }
 
+/* 실적 등록 화면 - 병원명 입력 박스(검색창+드롭다운) */
 .hospital-input-box {
   display: flex;
   align-items: center;
-  width: 352px;
-  height: 40px !important;
+  width: 400px;
+  height: 32px !important;
   border: 1px solid #aaa;
-  background: #fff;
+  background: none;
   position: relative;
   overflow: visible;
 }
 
+/* 실적 등록 화면 - 병원명 입력창 */
 .hospital-input {
   flex: 1;
-  height: 40px !important;
+  height: 32px !important;
   border: none;
-  padding: 0 30px 0 8px;
-  background: #fff;
+  padding: 0 0 0 8px;
+  background: none;
   outline: none;
   cursor: pointer;
-  line-height: 40px !important;
+  line-height: 32px !important;
   vertical-align: middle;
   box-sizing: border-box;
 }
 
-/* 실적 등록 - 병원명 input 포커스 스타일 */
+/* 실적 등록 화면 - 병원명 입력창 포커스 효과 */
 .hospital-input-focused {
-  background: #fffbe0 !important;
-  outline: 2px solid #ffd600;
+  font-size: 1rem;
+  height: 34px !important;
+  background: #ffffaa !important;
+  outline: 2px solid #e74c3c !important;
+  font-weight: bold;
   z-index: 2;
 }
 
-/* 실적 등록 - 병원 정보 표시 */
+/* 실적 등록 화면 - 병원 정보(사업자번호, 대표자, 주소) 표시 */
 .hospital-info {
-  margin-left: 8px;
+  margin-left: 12px;
   font-size: 1rem;
-  color: #666;
+  color: #333;
   white-space: nowrap;
 }
 
-/* 실적 등록 - 상단 레이아웃 */
+/* 실적 등록 화면 - 상단 필터/액션 행(병원선택+등록버튼) */
 .performance-header-row {
   display: flex;
   gap: 32px;
@@ -838,30 +1023,38 @@ body.no-main-padding .main-content {
   align-items: center;
 }
 
+/* 실적 등록 화면 - 병원선택/등록버튼 행 */
 .performance-action-row {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
 }
 
-/* 실적 등록 - 등록 버튼 */
+/* 실적 등록 화면 - 등록 버튼 */
 .register-button {
   margin-left: 16px;
 }
 
-/* 실적 등록 - 비활성화 상태 스타일 */
+/* 실적 등록 화면 - 입력 비활성화(병원 미선택 시) */
 .disabled-area {
   pointer-events: none;
   user-select: none;
 }
 
-/* disabled-area 중에서 readonly-field만 연회색 배경 */
+/* 실적 등록 화면 - 비활성화 상태에서 readonly-field만 연회색 배경 */
 .disabled-area.readonly-field {
   background: #f5f5f5 !important;
   color: #555 !important;
 }
 
-/* 실적 입력 테이블 */
+/* 실적 등록 화면 - 테이블 헤더(합계, 컬럼명) */
+.input-table-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 실적 등록 화면 - 실적 입력 테이블 전체 */
 .input-table {
   width: 100%;
   border-collapse: collapse;
@@ -869,137 +1062,167 @@ body.no-main-padding .main-content {
   position: relative;
 }
 
+/* 실적 등록 화면 - 실적 입력 테이블 셀(공통) */
 .input-table th, .input-table td {
   border: 1px solid #ddd;
   padding: 0;
   text-align: center;
-  height: 40px !important;
+  height: 32px !important;
   vertical-align: middle;
-  line-height: 40px !important;
+  line-height: 32px !important;
 }
 
-/* 테이블 헤더 고정 */
+/* 실적 등록 화면 - 테이블 헤더 고정 */
 .input-table thead {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10;
+  background-color: #666;
 }
 
+/* 실적 등록 화면 - 테이블 헤더(컬럼명) 스타일 */
 .input-table thead th {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
-  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  background-color: #666 !important;
+  color: #fff !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1) !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-/* 실적 입력 테이블 - 최우선 스타일 */
+/* 실적 등록 화면 - 입력 셀(일반) */
 .input-table tbody tr td input:not(.readonly-field) {
-  background: #fff !important;
+  background: none !important;
   color: #333 !important;
 }
 
-.input-table tbody tr td select:not(.readonly-field) {
-  background: #fff !important;
-  color: #333 !important;
-}
-
+/* 실적 등록 화면 - 입력 불가능 셀(readonly) */
 .input-table tbody tr td input.readonly-field {
-  background: #f5f5f5 !important;
-  color: #555 !important;
+  background: #f0f0f0 !important;
+  color: #666 !important;
 }
 
-/* 실적 입력 테이블 - 기본 스타일 */
+/* 실적 등록 화면 - 입력 셀 공통 스타일 */
 .input-table input, .input-table select {
   width: 100%;
-  height: 40px !important;
+  height: 32px !important;
   border: none;
   padding: 0 8px;
   font-size: 1rem;
   text-align: center;
   box-sizing: border-box;
-  line-height: 40px !important;
+  line-height: 32px !important;
   margin: 0;
-  vertical-align: top;
+  vertical-align: middle;
   display: block;
+  background: none !important;  /* 테이블 내 input과 select 배경 투명 */
 }
 
-/* 셀 포커스 효과 (실적 등록 테이블) */
-.cell-focused {
-  background: #fffbe0 !important;
-  outline: 2px solid #ffd600;
+/* 실적 등록 화면 - 셀 포커스 효과 (외곽선 + 배경) */
+.cell-focused input,
+  input.cell-focused {
+  background: #ffffaa !important;
+  font-weight: bold;
+  outline: 2px solid #e74c3c !important;
   z-index: 2;
 }
 
-/* 제품 검색 드롭다운 (실적 등록) */
-.product-search-dropdown {
+/* 실적 등록 화면 - 테이블 푸터(합계) */
+.input-table tfoot td {
+  background-color: #fff;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ========================================== */
+/* 15. 드롭다운 공통 스타일 (전역) */
+/* ========================================== */
+
+/* 드롭다운 화살표 버튼 공통 스타일 - 실적 등록/현황 화면에서 사용 */
+.dropdown-arrow-btn {
   position: absolute;
-  background-color: white;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.dropdown-arrow-btn:hover {
+  background: none;
+}
+
+.dropdown-arrow-btn:disabled {
+  display: none;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  color: #888;
+  line-height: 1;
+}
+
+/* 검색 드롭다운 공통 스타일 */
+.search-dropdown {
+  position: absolute;
+  background-color: none;
   border: 1px solid #ccc;
   border-top: none;
-  max-height: 200px;
+  max-height: 600px;
   overflow-y: auto;
-  width: calc(100% - 2px);
-  left: 0;
-  z-index: 1000;
+  z-index: 9999;  /* 매우 높은 z-index로 설정 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.product-search-dropdown ul {
+.search-dropdown ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.product-search-dropdown li {
-  padding: 8px 12px;
+.search-dropdown li {
+  padding: 8px 8px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.product-search-dropdown li:last-child {
+.search-dropdown li:last-child {
   border-bottom: none;
 }
 
-.product-search-dropdown li:hover {
-  background-color: #f0f0f0;
+.search-dropdown li:hover {
+  background-color: #1976d2;
+  color: #fff;
 }
 
-.product-search-dropdown li.selected {
+.search-dropdown li.selected {
   background-color: #1976d2;
   color: white;
 }
 
-.product-search-dropdown .product-name {
-  flex: 1;
-  text-align: left;
-  padding-left: 12px;
-  margin-right: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.product-search-dropdown .insurance-code {
-  flex-shrink: 0;
-  text-align: right;
-  padding-right: 12px;
-  min-width: 80px;
-}
-
-/* 병원 검색 드롭다운 (실적 등록) */
+/* 병원 검색 드롭다운 특화 스타일 */
 .hospital-search-dropdown {
   position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-top: none;
-  max-height: 200px;
+  background-color: #fff;
+  border: 1px solid #888;
+  
+  min-height: 60px;
+  max-height: 640px;
   overflow-y: auto;
-  width: 500px;
+  width: 320px;
   left: 80px;
   top: 100%;
-  z-index: 1000;
+  z-index: 9999;  /* 매우 높은 z-index로 설정 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
@@ -1023,7 +1246,14 @@ body.no-main-padding .main-content {
 }
 
 .hospital-search-dropdown li:hover {
-  background-color: #f0f0f0;
+  background-color: #1976d2;
+  color: white;
+}
+
+.hospital-search-dropdown li:hover .hospital-name,
+.hospital-search-dropdown li:hover .hospital-reg-number,
+.hospital-search-dropdown li:hover .hospital-address {
+  color: white;
 }
 
 .hospital-search-dropdown li.selected {
@@ -1058,158 +1288,65 @@ body.no-main-padding .main-content {
 }
 
 .hospital-search-dropdown .hospital-address {
-  font-size: 0.85em;
-  color: #888;
+  font-size: 0.9em;
+  color: #666;
   width: 100%;
   text-align: left;
 }
 
 .hospital-search-dropdown li.selected .hospital-reg-number,
 .hospital-search-dropdown li.selected .hospital-address {
-  color: #ccc;
+  color: #fff;
 }
 
-/* ========================================== */
-/* 15. 드롭다운 공통 스타일 (전역) */
-/* ========================================== */
-
-/* 드롭다운 화살표 버튼 공통 스타일 */
-.dropdown-arrow-btn {
+/* 제품 검색 드롭다운 특화 스타일 */
+.product-search-dropdown {
   position: absolute;
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: #f8f9fa;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  transition: background 0.2s;
-  z-index: 10;
-}
-
-.dropdown-arrow-btn:hover {
-  background: #e9ecef;
-}
-
-.dropdown-arrow-btn:disabled {
-  display: none;
-}
-
-.dropdown-arrow {
-  font-size: 10px;
-  color: #666;
-  line-height: 1;
-}
-
-/* 검색 드롭다운 공통 스타일 */
-.search-dropdown {
-  position: absolute;
-  background-color: white;
+  background-color: #fff;
   border: 1px solid #ccc;
-  border-top: none;
-  max-height: 200px;
+  min-height: 48px;
+  max-height: 640px;
   overflow-y: auto;
-  z-index: 1000;
+  width: calc(100% - 2px);
+  left: 0;
+  top: 100%;
+  z-index: 9999;  /* 매우 높은 z-index로 설정 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.search-dropdown ul {
+.product-search-dropdown ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.search-dropdown li {
+.product-search-dropdown li {
   padding: 8px 12px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.search-dropdown li:last-child {
+.product-search-dropdown li:last-child {
   border-bottom: none;
 }
 
-.search-dropdown li:hover {
-  background-color: #f0f0f0;
-}
-
-.search-dropdown li.selected {
+.product-search-dropdown li:hover {
   background-color: #1976d2;
   color: white;
 }
 
-/* 병원 검색 드롭다운 특화 스타일 */
-.hospital-search-dropdown {
-  width: 500px;
-  left: 80px;
-  top: 100%;
-}
-
-.hospital-search-dropdown li {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.hospital-search-dropdown .hospital-info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 4px;
-}
-
-.hospital-search-dropdown .hospital-name {
-  flex: 1;
-  text-align: left;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-right: 16px;
-}
-
-.hospital-search-dropdown .hospital-reg-number {
-  flex-shrink: 0;
-  text-align: right;
-  font-size: 0.9em;
-  color: #666;
-  min-width: 120px;
-}
-
-.hospital-search-dropdown .hospital-address {
-  font-size: 0.85em;
-  color: #888;
-  width: 100%;
-  text-align: left;
-}
-
-.hospital-search-dropdown li.selected .hospital-reg-number,
-.hospital-search-dropdown li.selected .hospital-address {
-  color: #ccc;
-}
-
-/* 제품 검색 드롭다운 특화 스타일 */
-.product-search-dropdown {
-  width: calc(100% - 2px);
-  left: 0;
-  top: 100%;
-}
-
-.product-search-dropdown li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.product-search-dropdown li.selected {
+  background-color: #1976d2;
+  color: white;
 }
 
 .product-search-dropdown .product-name {
   flex: 1;
   text-align: left;
+  font-weight: bold;
   padding-left: 12px;
   margin-right: 16px;
   white-space: nowrap;
@@ -1224,7 +1361,7 @@ body.no-main-padding .main-content {
   min-width: 80px;
 }
 
-/* 제품 입력 컨테이너 */
+/* 제품 입력 컨테이너 - 실적 등록/현황 화면에서 사용 */
 .product-input-container {
   position: relative;
   width: 100%;
@@ -1235,12 +1372,47 @@ body.no-main-padding .main-content {
   padding-right: 30px !important;
 }
 
-.product-dropdown-btn {
-  right: 4px !important;
-  width: 20px !important;
-  height: 20px !important;
+/* 페이지 제목 숨김 처리 */
+.header-title {
+  display: none !important;
 }
 
-.product-dropdown-btn .dropdown-arrow {
-  font-size: 8px;
+/* 등록 현황 테이블 헤더 고정 - PerformanceRegisterList.vue에서 사용 */
+.input-table thead tr th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #666 !important;
+  color: #fff !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 등록 현황 화면 - 액션 버튼 그룹 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+/* 보조 버튼 스타일 - 엑셀 다운로드 등에서 사용 */
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-secondary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }

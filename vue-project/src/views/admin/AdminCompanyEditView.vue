@@ -25,11 +25,11 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2 align-right">
+        <div class="form-col col-2">
           <label>사업장 소재지 <span class="required">*</span></label>
           <input v-model="address" type="text" required />
         </div>
-        <div class="form-col align-left">
+        <div class="form-col">
           <label>유선전화</label>
           <input v-model="landline" type="text" />
         </div>

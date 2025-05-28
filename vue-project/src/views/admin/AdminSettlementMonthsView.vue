@@ -16,7 +16,7 @@
       >
         <template #empty>등록된 정산월이 없습니다.</template>
         <template #loading>정산월 목록을 불러오는 중입니다...</template>
-        <Column field="settlement_month" header="정산월" :headerStyle="{ width: '15%' }" :sortable="true">
+        <Column field="settlement_month" header="정산월" :headerStyle="{ width: '10%' }" :sortable="true">
           <template #body="slotProps">
             <a
               href="#"
@@ -27,13 +27,15 @@
             </a>
           </template>
         </Column>
-        <Column field="start_date" header="실적입력 시작일" :headerStyle="{ width: '15%' }" />
-        <Column field="end_date" header="실적입력 종료일" :headerStyle="{ width: '15%' }" />
-        <Column field="notice" header="전달 사항" :headerStyle="{ width: '35%' }" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: '10%' }" />
+        <Column field="start_date" header="실적입력 시작일" :headerStyle="{ width: '10%' }" />
+        <Column field="end_date" header="실적입력 종료일" :headerStyle="{ width: '10%' }" />
+        <Column field="notice" header="전달 사항" :headerStyle="{ width: '36%' }" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: '24%' }" />
         <Column field="status" header="상태" :headerStyle="{ width: '10%' }">
           <template #body="slotProps">
-            {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
+            <span :class="slotProps.data.status === 'active' ? 'active-badge' : 'inactive-badge'">
+              {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
+            </span>
           </template>
         </Column>
       </DataTable>

@@ -42,6 +42,7 @@ const emit = defineEmits(['logout']);
   gap: 6px;
 }
 .breadcrumb-menu {
+  font-size: 1.1rem;
   color: #222;
   font-weight: 500;
 }
@@ -51,6 +52,7 @@ const emit = defineEmits(['logout']);
   margin: 0 2px;
 }
 .breadcrumb-submenu {
+  font-size: 1.5rem;
   color: #222;
   font-weight: 700;
 }

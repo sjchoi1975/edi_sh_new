@@ -42,7 +42,7 @@ app.use(PrimeVue, {
     rows: 20,
     rowsPerPageOptions: [20, 50, 100],
     scrollable: true,
-    scrollHeight: '680px',
+    scrollHeight: '780px',
     loading: false,
     responsiveLayout: 'scroll',
     filterDisplay: 'menu'

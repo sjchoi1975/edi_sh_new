@@ -1,6 +1,6 @@
 <template>
   <div class="admin-companies-view">
-    <div class="header-title">승인 업체 목록</div>
+    <div class="header-title">승인 업체</div>
     <div class="table-container">
       <DataTable
         :value="approvedCompanies"
@@ -59,7 +59,7 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%' }" :exportable="false" style="min-width:10rem">
           <template #body="slotProps">
-            <Button label="취소" class="p-button-rounded p-button-warning p-button-sm" @click="confirmApprovalChange(slotProps.data, 'pending')" />
+            <button class="btn-pending-m" @click="confirmApprovalChange(slotProps.data, 'pending')">취소</button>
           </template>
         </Column>
       </DataTable>

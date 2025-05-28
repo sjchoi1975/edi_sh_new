@@ -1,9 +1,7 @@
 <template>
   <div class="admin-companies-view">
-    <div class="header-title">미승인 업체 목록</div>
+    <div class="header-title">미승인 업체</div>
     <div class="table-container">
-      <ConfirmDialog></ConfirmDialog>
-      <Toast />
       <DataTable
         :value="pendingCompanies"
         paginator
@@ -38,12 +36,6 @@
           미승인 업체 목록을 불러오는 중입니다...
         </template>
 
-
-
-
-
-
-
         <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
@@ -68,7 +60,7 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%' }" :exportable="false" style="min-width:10rem">
           <template #body="slotProps">
-            <Button label="승인" class="p-button-rounded p-button-success p-button-sm" @click="confirmApprovalChange(slotProps.data, 'approved')" />
+            <button class="btn-approve-m" @click="confirmApprovalChange(slotProps.data, 'approved')">승인</button>
           </template>
         </Column>
       </DataTable>
@@ -81,25 +73,25 @@ import { ref, onMounted, reactive } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
-import ConfirmDialog from 'primevue/confirmdialog';
-import Toast from 'primevue/toast';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
-import { useConfirm } from "primevue/useconfirm";
-import { useToast } from "primevue/usetoast";
 import { supabase } from '@/supabase';
 import Textarea from 'primevue/textarea';
 import Dialog from 'primevue/dialog';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { h } from 'vue';
 
 const pendingCompanies = ref([]);
 const loading = ref(false);
 const filters = ref({
     'global': { value: null, matchMode: 'contains' },
 });
-const confirm = useConfirm();
-const toast = useToast();
+const commissionGrades = [
+  { name: 'A', value: 'A' },
+  { name: 'B', value: 'B' },
+  { name: 'C', value: 'C' }
+];
 const companyDetailDialog = ref(false);
 const selectedCompany = reactive({});
 const isEditing = ref(false);
@@ -116,7 +108,7 @@ const fetchCompanies = async () => {
     if (error) throw error;
     pendingCompanies.value = (data || []).filter(company => company.user_type === 'user' && company.approval_status === 'pending');
   } catch (err) {
-    toast.add({ severity: 'error', summary: '오류', detail: err.message || '업체 정보를 불러오는데 실패했습니다.', life: 3000 });
+    console.error('업체 정보를 불러오는데 실패했습니다.', err);
   } finally {
     loading.value = false;
   }
@@ -177,13 +169,13 @@ const saveCompanyDetail = async () => {
       })
       .eq('id', selectedCompany.id);
     if (error) throw error;
-    toast.add({ severity: 'success', summary: '성공', detail: '업체 정보가 성공적으로 수정되었습니다.', life: 3000 });
+    alert('업체 정보가 성공적으로 수정되었습니다.');
     isEditing.value = false;
     hasChanges.value = false;
     originalCompanyDetail.value = JSON.parse(JSON.stringify(selectedCompany));
     await fetchCompanies();
   } catch (err) {
-    toast.add({ severity: 'error', summary: '오류', detail: err.message || '업체 정보 수정 중 오류가 발생했습니다.', life: 3000 });
+    alert(err.message || '업체 정보 수정 중 오류가 발생했습니다.');
   } finally {
     loading.value = false;
   }
@@ -193,34 +185,24 @@ watch(selectedCompany, (newVal) => {
   hasChanges.value = JSON.stringify(newVal) !== JSON.stringify(originalCompanyDetail.value);
 }, { deep: true });
 
-const confirmApprovalChange = (company, newStatus) => {
-  confirm.require({
-    message: `${company.company_name} 업체를 ${newStatus === 'approved' ? '승인' : '승인 취소'} 처리하시겠습니까?`,
-    header: `업체 ${newStatus === 'approved' ? '승인' : '승인 취소'} 확인`,
-    icon: newStatus === 'approved' ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle',
-    acceptLabel: newStatus === 'approved' ? '승인' : '승인 취소',
-    rejectLabel: '취소',
-    acceptClass: newStatus === 'approved' ? 'p-button-success' : 'p-button-danger',
-    accept: async () => {
+const confirmApprovalChange = async (company, newStatus) => {
+  const actionText = newStatus === 'approved' ? '승인' : '승인 취소';
+  if (!confirm(`${company.company_name} 업체를 ${actionText} 처리하시겠습니까?`)) return;
+  
+  try {
       loading.value = true;
-      try {
         const { error } = await supabase
           .from('companies')
           .update({ approval_status: newStatus })
           .eq('id', company.id);
         if (error) throw error;
-        toast.add({ severity: 'success', summary: '성공', detail: `업체 상태가 성공적으로 변경되었습니다.`, life: 3000 });
+    alert('업체 상태가 성공적으로 변경되었습니다.');
         await fetchCompanies();
       } catch (err) {
-        toast.add({ severity: 'error', summary: '오류', detail: err.message || '상태 변경 실패', life: 3000 });
+    alert(err.message || '상태 변경 실패');
       } finally {
         loading.value = false;
       }
-    },
-    reject: () => {
-      toast.add({ severity: 'info', summary: '알림', detail: `처리가 취소되었습니다.`, life: 2000 });
-    }
-  });
 };
 
 const resetCompanyPassword = async () => {
@@ -233,9 +215,9 @@ const resetCompanyPassword = async () => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || '비밀번호 초기화 실패');
-    toast.add({ severity: 'success', summary: '비밀번호 초기화', detail: '비밀번호가 asdf1234로 초기화되었습니다.', life: 3000 });
+    alert('비밀번호가 asdf1234로 초기화되었습니다.');
   } catch (err) {
-    toast.add({ severity: 'error', summary: '오류', detail: err.message || '비밀번호 초기화 중 오류가 발생했습니다.', life: 3000 });
+    alert(err.message || '비밀번호 초기화 중 오류가 발생했습니다.');
   } finally {
     loading.value = false;
   }

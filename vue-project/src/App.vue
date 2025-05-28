@@ -84,13 +84,23 @@ const handleRedirect = async (currentSession) => {
 // 대메뉴/중메뉴 구조(TopNavigationBar용, SideNavigationBar와 동일하게 유지)
 const adminMenuTree = [
   { label: '공지사항 관리', children: [ { label: '공지사항 목록', path: '/admin/notices' } ] },
-  { label: '업체 관리', children: [ { label: '업체 목록', path: '/admin/companies' } ] },
+  { label: '업체 관리', children: [ 
+    { label: '승인 업체', path: '/admin/companies/approved' },
+    { label: '미승인 업체', path: '/admin/companies/pending' }
+  ] },
   { label: '제품 관리', children: [ { label: '제품 목록', path: '/admin/products' } ] },
   { label: '거래처 관리', children: [ { label: '거래처 목록', path: '/admin/clients' } ] },
   { label: '문전약국 관리', children: [ { label: '문전약국 목록', path: '/admin/pharmacies' } ] },
   { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
-  { label: '실적 관리', children: [ { label: '정산월 관리', path: '/admin/settlement-months' }, { label: '실적 입력', path: '/admin/performance-input' }, { label: '등록 현황', path: '/admin/performance-list' } ] },
-  { label: '정산내역서 관리', children: [ { label: '월별 정산 목록', path: '/admin/settlement-statements' } ] }
+  { label: '실적 관리', children: [ 
+    { label: '정산월 관리', path: '/admin/settlement-months' }, 
+    // { label: '실적 입력', path: '/admin/performance-input' }, // 임시 숨김 처리
+    { label: '등록 현황', path: '/admin/performance-list' } 
+  ] },
+  { label: '정산 관리', children: [ 
+    { label: '흡수율 분석', path: '/admin/absorption-analysis' }, 
+    { label: '정산내역서 공유', path: '/admin/settlement-statements' } 
+  ] }
 ];
 const userMenuTree = [
   { label: '공지사항 조회', children: [ { label: '공지사항 목록', path: '/notices' } ] },
@@ -115,14 +125,22 @@ const breadcrumbMenu = computed(() => {
 });
 const breadcrumbSubMenu = computed(() => {
   const currentPath = route.path;
+  let bestMatch = '';
+  let bestMatchLength = 0;
+  
   for (const menu of menuTree.value) {
     for (const child of menu.children) {
-      if (currentPath.startsWith(child.path)) {
-        return child.label;
+      // 정확한 경로 매칭 또는 하위 경로 매칭
+      if (currentPath === child.path || currentPath.startsWith(child.path + '/')) {
+        // 더 긴 경로가 더 구체적인 매칭이므로 우선순위를 높임
+        if (child.path.length > bestMatchLength) {
+          bestMatch = child.label;
+          bestMatchLength = child.path.length;
+        }
       }
     }
   }
-  return '';
+  return bestMatch;
 });
 
 onMounted(async () => {
@@ -239,8 +257,9 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
   margin-left: 220px;
   margin-top: 56px;
   padding: 16px 16px 0px 16px;
-  background: #f8f9fa;
+  background: #f8f8f8;
   box-sizing: border-box;
   height: auto;
+  min-height: 100vh;
 }
 </style>

@@ -43,7 +43,9 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
         <Column field="status" header="상태" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
+            <span :class="slotProps.data.status === 'active' ? 'active-badge' : 'inactive-badge'">
             {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
+            </span>
           </template>
         </Column>
       </DataTable>
