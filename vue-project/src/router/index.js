@@ -220,9 +220,9 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
-      path: '/admin/performance-view',
-      name: 'admin-performance-view',
-      component: AdminPerformanceViewView,
+      path: '/admin/performance-list',
+      name: 'admin-performance-list',
+      component: () => import('@/views/admin/AdminPerformanceRegisterList.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
     {

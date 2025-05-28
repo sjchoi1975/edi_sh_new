@@ -68,7 +68,7 @@ const adminMenuTree = [
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '정산월 관리', path: '/admin/settlement-months' },
     { label: '실적 입력', path: '/admin/performance-input' },
-    { label: '내역 조회', path: '/admin/performance-list' }
+    { label: '등록 현황', path: '/admin/performance-list' }
   ]},
   { label: '정산내역서 관리', icon: 'pi pi-file', children: [
     { label: '월별 정산 목록', path: '/admin/settlement-statements' }

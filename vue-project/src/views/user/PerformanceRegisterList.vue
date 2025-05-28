@@ -53,20 +53,22 @@
           @click="onSave" 
           :disabled="!canSave" 
           :class="{ 'disabled-area': !isEditMode }"
-        >{{ isEditMode ? '저장' : '등록' }}</button>
+        >{{ isEditMode ? '저장' : '저장' }}</button>
       </div>
       
       <table class="input-table" :class="{ 'disabled-area': !isEditMode }">
         <thead>
           <tr>
             <th style="width:40px;">No</th>
-            <th style="width:20%;">제품명</th>
+            <th style="width:12%;">거래처</th>
+            <th style="width:6%;">처방월</th>
+            <th style="width:16%;">제품명</th>
             <th style="width:8%;">보험코드</th>
-            <th style="width:8%;">약가</th>
-            <th style="width:8%;">처방수량</th>
-            <th style="width:10%;">처방액</th>
-            <th style="width:10%;">처방구분</th>
-            <th style="width:14%;">비고</th>
+            <th style="width:6%;">약가</th>
+            <th style="width:6%;">처방수량</th>
+            <th style="width:6%;">처방액</th>
+            <th style="width:8%;">처방구분</th>
+            <th style="width:10%;">비고</th>
             <th style="width:40px;">삭제</th>
             <th style="width:40px;">추가</th>
           </tr>
@@ -74,6 +76,24 @@
         <tbody>
           <tr v-for="(row, rowIdx) in displayRows" :key="rowIdx">
             <td style="text-align:center;">{{ rowIdx + 1 }}</td>
+            <td style="text-align:left;">
+              <input 
+                v-model="row.client_name" 
+                readonly 
+                tabindex="-1" 
+                class="disabled-area"
+                style="text-align:left;"
+              />
+            </td>
+            <td style="text-align:center;">
+              <input 
+                v-model="row.prescription_month" 
+                readonly 
+                tabindex="-1" 
+                class="disabled-area"
+                style="text-align:center;"
+              />
+            </td>
             <td style="position:relative;text-align:left;">
               <input
                 v-model="row.product_name_display"
@@ -154,21 +174,25 @@
             </td>
             <td style="text-align:center;">
               <select
+                v-if="isEditMode"
                 v-model="row.prescription_type"
                 :tabindex="isEditMode ? 0 : -1"
-                :readonly="!isEditMode"
                 @change="onPrescriptionTypeInput(rowIdx)"
                 @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
                 @focus="handleFieldFocus(rowIdx, 'prescription_type')"
-                :disabled="!isEditMode"
-                :class="[
-                  cellClass(rowIdx, 'prescription_type'),
-                  { 'disabled-area': !isEditMode }
-                ]"
+                :class="cellClass(rowIdx, 'prescription_type')"
                 style="text-align:center;"
               >
                 <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
               </select>
+              <input
+                v-else
+                v-model="row.prescription_type"
+                readonly
+                tabindex="-1"
+                class="disabled-area"
+                style="text-align:center;"
+              />
             </td>
             <td style="text-align:left;">
               <input
@@ -208,7 +232,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" style="text-align:right;font-weight:bold;">합계</td>
+            <td colspan="6" style="text-align:center;font-weight:bold;">합계</td>
             <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
             <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
             <td colspan="4"></td>
@@ -518,7 +542,7 @@ function hideProductSearchList(rowIndex) {
 
 // 제품명 필드 포커스 핸들러
 function handleProductNameFocus(rowIdx) {
-  if (!isInputEnabled.value) {
+  if (!isEditMode.value) {
     event.target.blur();
     return;
   }
@@ -535,7 +559,7 @@ function handleProductNameFocus(rowIdx) {
 
 // 일반 필드 포커스 핸들러
 function handleFieldFocus(rowIdx, col) {
-  if (!isInputEnabled.value) {
+  if (!isEditMode.value) {
     event.target.blur();
     return;
   }
@@ -562,10 +586,10 @@ function focusField(rowIdx, col) {
     const row = table.querySelectorAll('tbody tr')[rowIdx];
     if (!row) return;
     let el = null;
-    if (col === 'product_name') el = row.querySelector('td:nth-child(2) input');
-    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(5) input');
-    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(7) select');
-    else if (col === 'remarks') el = row.querySelector('td:nth-child(8) input');
+    if (col === 'product_name') el = row.querySelector('td:nth-child(4) input');
+    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(7) input');
+    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(9) select, td:nth-child(9) input');
+    else if (col === 'remarks') el = row.querySelector('td:nth-child(10) input');
     if (el) el.focus();
   });
 }
@@ -593,6 +617,7 @@ function addOrFocusNextRow(rowIdx) {
     
     // 마지막 행이면 새 행 추가
     if (rowIdx === displayRows.value.length - 1) {
+      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
       displayRows.value.push({ 
         product_name_display: '', 
         product_id: null, 
@@ -601,6 +626,8 @@ function addOrFocusNextRow(rowIdx) {
         prescription_qty: '', 
         prescription_amount: '', 
         prescription_type: 'EDI',
+        client_name: clientName,
+        prescription_month: prescriptionMonth.value,
         remarks: '' 
       });
     }
@@ -617,6 +644,7 @@ function addOrFocusNextRow(rowIdx) {
     
     // 마지막 행이면 새 행 추가
     if (rowIdx === displayRows.value.length - 1) {
+      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
       displayRows.value.push({ 
         product_name_display: '', 
         product_id: null, 
@@ -625,6 +653,8 @@ function addOrFocusNextRow(rowIdx) {
         prescription_qty: '', 
         prescription_amount: '', 
         prescription_type: 'EDI',
+        client_name: clientName,
+        prescription_month: prescriptionMonth.value,
         remarks: '' 
       });
     }
@@ -653,6 +683,7 @@ function onPrescriptionTypeKeydown(e, rowIdx) {
     // 아래 화살표: 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새 행 생성
     const currentRow = displayRows.value[currentCell.value.row];
     if (currentRow.product_id && currentRow.prescription_qty && currentCell.value.row === displayRows.value.length - 1) {
+      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
       displayRows.value.push({ 
         product_name_display: '', 
         product_id: null, 
@@ -661,6 +692,8 @@ function onPrescriptionTypeKeydown(e, rowIdx) {
         prescription_qty: '', 
         prescription_amount: '', 
         prescription_type: 'EDI',
+        client_name: clientName,
+        prescription_month: prescriptionMonth.value,
         remarks: '' 
       });
       newRow = currentCell.value.row + 1;
@@ -713,6 +746,7 @@ function onArrowKey(e, rowIdx, col) {
     // 아래 화살표: 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새 행 생성
     const currentRow = displayRows.value[rowIdx];
     if (currentRow.product_id && currentRow.prescription_qty && rowIdx === displayRows.value.length - 1) {
+      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
       displayRows.value.push({ 
         product_name_display: '', 
         product_id: null, 
@@ -721,6 +755,8 @@ function onArrowKey(e, rowIdx, col) {
         prescription_qty: '', 
         prescription_amount: '', 
         prescription_type: 'EDI',
+        client_name: clientName,
+        prescription_month: prescriptionMonth.value,
         remarks: '' 
       });
       newRow = rowIdx + 1;
@@ -769,8 +805,9 @@ const totalAmount = computed(() => {
 
 // 행 추가/삭제
 function addRowBelow(idx) {
+  const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
   displayRows.value.splice(idx + 1, 0, {
-    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', remarks: ''
+    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', client_name: clientName, prescription_month: prescriptionMonth.value, remarks: ''
   });
   nextTick(() => focusField(idx + 1, 'product_name'));
 }
@@ -1004,11 +1041,14 @@ async function fetchPerformanceRecords() {
       prescription_qty: record.prescription_qty,
       prescription_amount: (record.prescription_qty * record.products.price).toLocaleString(),
       prescription_type: record.prescription_type,
+      client_name: record.clients.name,
+      prescription_month: record.prescription_month,
       remarks: record.remarks || ''
     }));
     
     // 편집 모드가 아니거나 데이터가 없으면 빈 행 추가하지 않음
     if (transformedData.length === 0 && isEditMode.value) {
+      const clientName = selectedHospitalId.value ? selectedHospitalInfo.value?.name || '' : '';
       transformedData.push({
         id: null,
         product_name_display: '',
@@ -1018,6 +1058,8 @@ async function fetchPerformanceRecords() {
         prescription_qty: '',
         prescription_amount: '',
         prescription_type: 'EDI',
+        client_name: clientName,
+        prescription_month: prescriptionMonth.value,
         remarks: ''
       });
     }

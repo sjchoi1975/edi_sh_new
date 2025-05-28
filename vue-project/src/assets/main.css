@@ -351,6 +351,7 @@ select.input-editable {
 }
 
 .bottom-btns {
+  display: flex;
   justify-content: flex-end;
   margin-top: 1.5rem;
 }
@@ -951,7 +952,7 @@ body.no-main-padding .main-content {
   text-align: center;
   background: #f5f5f5;
 }
-.btn-row {
+.btn-table-action {
   background: #fff;
   border: 1px solid #bbb;
   border-radius: 4px;
@@ -962,7 +963,7 @@ body.no-main-padding .main-content {
   cursor: pointer;
   transition: background 0.2s;
 }
-.btn-row:disabled {
+.btn-table-action:disabled {
   background: #eee;
   color: #bbb;
   cursor: not-allowed;

@@ -89,7 +89,7 @@ const adminMenuTree = [
   { label: '거래처 관리', children: [ { label: '거래처 목록', path: '/admin/clients' } ] },
   { label: '문전약국 관리', children: [ { label: '문전약국 목록', path: '/admin/pharmacies' } ] },
   { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
-  { label: '실적 관리', children: [ { label: '정산월 관리', path: '/admin/settlement-months' }, { label: '실적 입력', path: '/admin/performance-input' }, { label: '내역 조회', path: '/admin/performance-list' } ] },
+  { label: '실적 관리', children: [ { label: '정산월 관리', path: '/admin/settlement-months' }, { label: '실적 입력', path: '/admin/performance-input' }, { label: '등록 현황', path: '/admin/performance-list' } ] },
   { label: '정산내역서 관리', children: [ { label: '월별 정산 목록', path: '/admin/settlement-statements' } ] }
 ];
 const userMenuTree = [

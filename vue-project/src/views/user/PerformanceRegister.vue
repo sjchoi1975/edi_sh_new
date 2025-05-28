@@ -202,7 +202,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" style="text-align:right;font-weight:bold;">합계</td>
+            <td colspan="4" style="text-align:center;font-weight:bold;">합계</td>
             <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
             <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
             <td colspan="4"></td>
@@ -210,8 +210,8 @@
         </tfoot>
       </table>
       
-      <div v-if="!activeMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0.85);">
-        <div style="font-size:1.3rem;color:#d32f2f;text-align:center;">지금은 실적 입력 기간이 아닙니다.</div>
+      <div v-if="!activeMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0);">
+        <div style="font-size:1.8rem;color:#d32f2f;text-align:center;">지금은 실적 입력 기간이 아닙니다.</div>
       </div>
       
       <!-- 병원 선택 모달 -->
