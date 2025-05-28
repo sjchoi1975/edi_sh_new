@@ -38,51 +38,45 @@ const setUserState = (sessionUser) => {
 // 리디렉션 처리 함수
 const handleRedirect = async (currentSession) => {
   const currentPath = router.currentRoute.value.path;
-  console.log(`[App.vue] handleRedirect: Current path: ${currentPath}, UserType: ${userType.value}`);
+  const actualPath = window.location.pathname; // 브라우저의 실제 URL 경로
+  console.log(`[App.vue] handleRedirect: Router path: ${currentPath}, Actual path: ${actualPath}, UserType: ${userType.value}`);
 
   if (currentSession && currentSession.user) {
     // 사용자가 로그인된 상태
     const targetPath = userType.value === 'admin' ? '/admin/notices' : (userType.value === 'user' ? '/notices' : null);
     
     if (targetPath) {
-      // 역할에 따른 기본 페이지로 이동해야 하는 경우
-      if (currentPath === '/' || currentPath === '/login' || currentPath === targetPath) { // 현재 경로가 루트, 로그인 또는 이미 타겟 경로인 경우
-         if (currentPath !== targetPath) { // 이미 타겟 경로에 있다면 불필요한 push 방지
-            console.log(`[App.vue] handleRedirect: User logged in. Redirecting from ${currentPath} to ${targetPath}`);
-            try {
-                await router.push(targetPath);
-            } catch (e) {
-                console.error(`[App.vue] handleRedirect: Failed to push to ${targetPath}`, e);
-            }
-         } else {
-            console.log(`[App.vue] handleRedirect: User logged in. Already at target path ${targetPath}. No redirect needed.`);
+      // 실제 브라우저 경로가 루트(/)나 로그인 페이지에서만 기본 페이지로 리다이렉션
+      if (actualPath === '/' || actualPath === '/login') {
+         console.log(`[App.vue] handleRedirect: User logged in. Redirecting from ${actualPath} to ${targetPath}`);
+         try {
+             await router.push(targetPath);
+         } catch (e) {
+             console.error(`[App.vue] handleRedirect: Failed to push to ${targetPath}`, e);
          }
       } else {
-        // 로그인 되어있으나, 허용되지 않은 다른 경로에 있으려고 한다면, 일단은 그대로 두거나, 혹은 홈으로 보낼 수 있습니다.
-        // 현재는 라우터 가드에서 처리하도록 별도 조치 없음.
-        console.log(`[App.vue] handleRedirect: User logged in. At path ${currentPath}. No redirect based on login status alone unless at / or /login.`);
+        // 다른 경로에서는 현재 경로 유지
+        console.log(`[App.vue] handleRedirect: User logged in. Staying at actual path ${actualPath}.`);
       }
     } else {
         // userType이 없거나 유효하지 않은 경우 (예: 메타데이터 누락)
-        console.warn(`[App.vue] handleRedirect: User logged in but userType ('${userType.value}') is invalid. Staying at ${currentPath} or redirecting to login if critical.`);
-        // 이 경우, 문제가 될 수 있으므로 /login으로 보내거나, 에러 처리가 필요할 수 있습니다.
-        // 우선은 라우터 가드가 /login으로 보내도록 기대합니다.
-        if (currentPath !== '/login' && currentPath !== '/signup') {
-             console.log(`[App.vue] handleRedirect: Invalid userType, pushing to /login from ${currentPath}`);
+        console.warn(`[App.vue] handleRedirect: User logged in but userType ('${userType.value}') is invalid. Staying at ${actualPath} or redirecting to login if critical.`);
+        if (actualPath !== '/login' && actualPath !== '/signup') {
+             console.log(`[App.vue] handleRedirect: Invalid userType, pushing to /login from ${actualPath}`);
              await router.push('/login');
         }
     }
   } else {
     // 사용자가 로그인되지 않은 상태
-    if (currentPath !== '/login' && currentPath !== '/signup') {
-      console.log(`[App.vue] handleRedirect: User not logged in. Redirecting from ${currentPath} to /login`);
+    if (actualPath !== '/login' && actualPath !== '/signup') {
+      console.log(`[App.vue] handleRedirect: User not logged in. Redirecting from ${actualPath} to /login`);
       try {
         await router.push('/login');
       } catch (e) {
         console.error('[App.vue] handleRedirect: Failed to push to /login (user not logged in)', e);
       }
     } else {
-        console.log(`[App.vue] handleRedirect: User not logged in. Already at ${currentPath}. No redirect needed.`);
+        console.log(`[App.vue] handleRedirect: User not logged in. Already at ${actualPath}. No redirect needed.`);
     }
   }
 };

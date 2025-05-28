@@ -325,6 +325,12 @@ const router = createRouter({
       name: 'performance-register',
       component: () => import('@/views/user/PerformanceRegister.vue'),
       meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/performance/list',
+      name: 'performance-list',
+      component: () => import('@/views/user/PerformanceRegisterList.vue'),
+      meta: { requiresAuth: true, role: 'user' }
     }
   ]
 })

@@ -725,3 +725,285 @@ body.no-main-padding .main-content {
 .admin-notices-view .p-datatable .p-datatable-tbody > tr > td:nth-child(2) {
   text-align: left !important;
 }
+
+/* =============================
+   실적 등록(PerformanceRegister.vue) 전용 스타일
+   ============================= */
+
+/* 실적 등록 - 상단 정보 박스들 (정산월, 제출기간, 처방월) */
+.info-box {
+  display: flex;
+  align-items: center;
+  height: 40px !important;
+  border: 1px solid #aaa;
+  background: #fff;
+}
+
+.info-box-settlement {
+  width: 200px;
+}
+
+.info-box-period {
+  width: 300px;
+}
+
+.info-box-prescription {
+  width: 200px;
+}
+
+.info-box-label {
+  display: inline-block;
+  width: 80px;
+  text-align: center;
+  background: #f5f5f5;
+  height: 100% !important;
+  line-height: 40px !important;
+  border-right: 1px solid #aaa;
+}
+
+.info-box-content {
+  flex: 1;
+  text-align: center;
+}
+
+/* 실적 등록 - 처방월 선택 드롭다운 */
+.prescription-select {
+  flex: 1;
+  height: 40px !important;
+  border: none;
+  background: transparent;
+  outline: none;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 40px !important;
+  padding: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+/* 실적 등록 - 병원 선택 영역 */
+.hospital-selection-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.hospital-input-box {
+  display: flex;
+  align-items: center;
+  width: 352px;
+  height: 40px !important;
+  border: 1px solid #aaa;
+  background: #fff;
+}
+
+.hospital-input {
+  flex: 1;
+  height: 40px !important;
+  border: none;
+  padding: 0 8px;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  line-height: 40px !important;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+/* 실적 등록 - 병원명 input 포커스 스타일 */
+.hospital-input-focused {
+  background: #fffbe0 !important;
+  outline: 2px solid #ffd600;
+  z-index: 2;
+}
+
+/* 실적 등록 - 병원 정보 표시 */
+.hospital-info {
+  margin-left: 8px;
+  font-size: 1rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* 실적 등록 - 상단 레이아웃 */
+.performance-header-row {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.performance-action-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* 실적 등록 - 등록 버튼 */
+.register-button {
+  margin-left: 16px;
+}
+
+/* 실적 등록 - 비활성화 상태 스타일 */
+.disabled-area {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 실적 입력 테이블 */
+.input-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.input-table th, .input-table td {
+  border: 1px solid #ddd;
+  padding: 0;
+  text-align: center;
+  height: 40px !important;
+  vertical-align: middle;
+  line-height: 40px !important;
+}
+
+.input-table input, .input-table select {
+  width: 100%;
+  height: 40px !important;
+  border: none;
+  padding: 0 8px;
+  font-size: 1rem;
+  background: #fff;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 40px !important;
+  margin: 0;
+  vertical-align: top;
+  display: block;
+}
+
+.input-table input[readonly] {
+  background: #f5f5f5;
+  color: #555;
+  cursor: default;
+}
+
+/* 셀 포커스 효과 (실적 등록 테이블) */
+.cell-focused {
+  background: #fffbe0 !important;
+  outline: 2px solid #ffd600;
+  z-index: 2;
+}
+
+/* 제품 검색 드롭다운 (실적 등록) */
+.product-search-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  width: calc(100% - 2px);
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.product-search-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.product-search-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.product-search-dropdown li:last-child {
+  border-bottom: none;
+}
+.product-search-dropdown li:hover {
+  background-color: #f0f0f0;
+}
+.product-search-dropdown li.selected {
+  background-color: #1976d2;
+  color: white;
+}
+.product-search-dropdown .product-name {
+  flex: 1;
+  text-align: left;
+  padding-left: 12px;
+  margin-right: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-search-dropdown .insurance-code {
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 12px;
+  min-width: 80px;
+}
+
+/* 행 액션 버튼 (실적 등록) */
+.action-cell {
+  text-align: center;
+  background: #f5f5f5;
+}
+.btn-row {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 1.1em;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-row:disabled {
+  background: #eee;
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+/* 등록 버튼 (실적 등록) */
+.btn-primary:disabled {
+  background: #e0e0e0 !important;
+  color: #b0b0b0 !important;
+  border: 1px solid #d0d0d0 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+/* 행 추가/삭제 버튼 (실적 등록) */
+.btn-add-m, .btn-delete-m {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 1.1em;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add-m:hover, .btn-delete-m:hover {
+  background: #f0f0f0;
+}
+
+.btn-add-m:disabled, .btn-delete-m:disabled {
+  background: #eee;
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+/* 비활성화된 input 스타일 (실적 등록) */
+.input-table input.disabled-area,
+.input-table select.disabled-area {
+  background: #f5f5f5 !important;
+  color: #555;
+  cursor: default;
+}

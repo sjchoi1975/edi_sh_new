@@ -17,7 +17,7 @@ PS C:\_D\edi_sh_new>
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "이용자 공지,제품,거래처 1"
+git commit -m "이용자 실적 입력 1"
 git push origin main
 
 
@@ -78,3 +78,22 @@ git push origin main
  <div class="header-title">제품 목록</div>
      <div class="table-container">
        <div class="table-header">
+
+
+1. 데이터 없을때
+    : 당연히 그냥 이동
+
+2. 데이터 있을때
+   2-1. 입력 중인 실적이 있습니다. 등록하시겠습니까?
+      2-1-1. 등록 -> 필수값 체크
+          2-1-1-1  필수값 누락 없을시
+
+          2-1-1-1  필수값 누락 있을시
+
+
+
+      2-1-2. 미등록 > 필수값 체크미등록 -> 누락 잇을시 
+
+
+
+취소
