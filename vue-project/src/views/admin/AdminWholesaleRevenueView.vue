@@ -28,6 +28,7 @@
         <div class="action-buttons">
           <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
           <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
+          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
           <input 
             ref="fileInput" 
             type="file" 
@@ -139,14 +140,14 @@
               <template v-if="slotProps.data.isEditing">
                 <button 
                   @click="saveEdit(slotProps.data)"
-                  style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  class="btn-save-m"
                   title="저장"
                 >
                   저장
                 </button>
                 <button 
                   @click="cancelEdit(slotProps.data)"
-                  style="background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  class="btn-cancel-m"
                   title="취소"
                 >
                   취소
@@ -155,17 +156,17 @@
               <template v-else>
                 <button 
                   @click="startEdit(slotProps.data)"
-                  style="background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  class="btn-edit-m"
                   title="수정"
                 >
-                  edit-m
+                  수정
                 </button>
                 <button 
                   @click="deleteRevenue(slotProps.data)"
-                  style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 12px;"
+                  class="btn-delete-m"
                   title="삭제"
                 >
-                  delete-m
+                  삭제
                 </button>
               </template>
             </div>
@@ -478,6 +479,61 @@ const handleFileUpload = async (event) => {
     // 파일 입력 초기화
     event.target.value = '';
   }
+};
+
+// 엑셀 다운로드 (현재 목록)
+const downloadExcel = () => {
+  if (filteredRevenues.value.length === 0) {
+    alert('다운로드할 데이터가 없습니다.');
+    return;
+  }
+  
+  // 데이터 변환
+  const excelData = filteredRevenues.value.map(revenue => ({
+    '약국코드': revenue.pharmacy_code || '',
+    '약국명': revenue.pharmacy_name || '',
+    '사업자등록번호': revenue.business_registration_number || '',
+    '주소': revenue.address || '',
+    '표준코드': revenue.standard_code || '',
+    '제품명': revenue.product_name || '',
+    '매출액': revenue.sales_amount || 0,
+    '매출일자': revenue.sales_date || '',
+    '등록일': revenue.created_at ? new Date(revenue.created_at).toISOString().split('T')[0] : '',
+    '수정일': revenue.updated_at ? new Date(revenue.updated_at).toISOString().split('T')[0] : ''
+  }));
+  
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '도매매출목록');
+  
+  // 컬럼 너비 설정
+  ws['!cols'] = [
+    { width: 12 }, // 약국코드
+    { width: 20 }, // 약국명
+    { width: 15 }, // 사업자등록번호
+    { width: 30 }, // 주소
+    { width: 12 }, // 표준코드
+    { width: 20 }, // 제품명
+    { width: 12 }, // 매출액
+    { width: 12 }, // 매출일자
+    { width: 12 }, // 등록일
+    { width: 12 }  // 수정일
+  ];
+  
+  // 매출액 컬럼에 숫자 형식 적용 (천단위 콤마)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let row = 1; row <= range.e.r; row++) { // 헤더 제외하고 시작
+    const cellAddress = XLSX.utils.encode_cell({ r: row, c: 6 }); // 매출액은 7번째 컬럼 (인덱스 6)
+    if (ws[cellAddress]) {
+      ws[cellAddress].z = '#,##0'; // 천단위 콤마 형식
+    }
+  }
+  
+  // 파일명에 현재 날짜 포함
+  const today = new Date().toISOString().split('T')[0];
+  const fileName = `도매매출목록_${today}.xlsx`;
+  
+  XLSX.writeFile(wb, fileName);
 };
 
 onMounted(() => {
