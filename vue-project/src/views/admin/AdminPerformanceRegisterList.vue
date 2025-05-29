@@ -1,41 +1,45 @@
 <template>
   <div class="performance-register-view">
     <div class="header-title">등록 현황</div>
-    <div class="table-container" style="position:relative;">
-      <div class="performance-header-row">
-        <!-- 정산월 선택 드롭다운 -->
-        <div class="info-box info-box-settlement">
-          <span class="info-box-label">정산월</span>
-          <select v-model="selectedSettlementMonth" class="prescription-select" @change="onSettlementMonthChange">
-            <option value="">- 선택하세요 -</option>
-            <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
-              {{ month.settlement_month }}
-            </option>
-          </select>
-        </div>
-        <div class="info-box info-box-period">
-          <span class="info-box-label">제출기간</span>
-          <span class="info-box-content">{{ selectedMonthInfo ? (selectedMonthInfo.start_date + ' ~ ' + selectedMonthInfo.end_date) : '' }}</span>
-        </div>
-        <!-- 처방월 표시 -->
-        <div class="info-box info-box-prescription">
-          <span class="info-box-label">처방월</span>
-          <select v-model="prescriptionOffset" class="prescription-select" @change="onPrescriptionOffsetChange">
-            <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
-              {{ opt.month }}
-            </option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="performance-action-row">
-        <!-- 업체 선택 -->
-        <div class="hospital-selection-container">
-          <div class="hospital-input-box">
+    
+    <!-- 고정될 상단 영역 -->
+    <div class="fixed-header-area" style="position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #ddd;">
+      <!-- 정산월과 엑셀 다운로드를 테이블 너비에 맞춰 배치 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 20px 16px; max-width: 100%;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <!-- 정산월 선택 드롭다운 -->
+          <div class="info-box info-box-settlement">
+            <span class="info-box-label">정산월</span>
+            <select v-model="selectedSettlementMonth" class="prescription-select" @change="onSettlementMonthChange">
+              <option value="">- 선택하세요 -</option>
+              <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
+                {{ month.settlement_month }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="info-box info-box-period">
+            <span class="info-box-label">제출기간</span>
+            <span class="info-box-content">{{ selectedMonthInfo ? (selectedMonthInfo.start_date + ' ~ ' + selectedMonthInfo.end_date) : '' }}</span>
+          </div>
+          
+          <!-- 처방월 표시 -->
+          <div class="info-box info-box-prescription">
+            <span class="info-box-label">처방월</span>
+            <select v-model="prescriptionOffset" class="prescription-select" @change="onPrescriptionOffsetChange">
+              <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
+                {{ opt.month }}
+              </option>
+            </select>
+          </div>
+          
+          <!-- 업체 선택 -->
+          <div class="info-box">
             <span class="info-box-label">업체 선택</span>
             <select 
               v-model="selectedCompanyId" 
-              class="hospital-input"
+              class="prescription-select"
+              style="width: 200px;"
               @change="onCompanyChange"
             >
               <option value="">- 전체 -</option>
@@ -44,20 +48,14 @@
               </option>
             </select>
           </div>
-          <span v-if="selectedCompanyInfo" class="hospital-info">
-            ({{ selectedCompanyInfo.business_registration_number }}, {{ selectedCompanyInfo.representative_name }})
-          </span>
-        </div>
-      </div>
-      
-      <div class="performance-action-row">
-        <!-- 거래처 선택 -->
-        <div class="hospital-selection-container">
-          <div class="hospital-input-box">
+          
+          <!-- 거래처 선택 -->
+          <div class="info-box">
             <span class="info-box-label">거래처 선택</span>
             <select 
               v-model="selectedHospitalId" 
-              class="hospital-input"
+              class="prescription-select"
+              style="width: 200px;"
               @change="onHospitalChange"
             >
               <option value="">- 전체 -</option>
@@ -66,31 +64,74 @@
               </option>
             </select>
           </div>
-          <span v-if="selectedHospitalInfo" class="hospital-info">
-            ({{ selectedHospitalInfo.business_registration_number }}, {{ selectedHospitalInfo.owner_name }}, {{ selectedHospitalInfo.address }})
-          </span>
+        </div>
+        
+        <!-- 엑셀 다운로드 버튼을 오른쪽 끝에 -->
+        <div>
+          <button class="btn-primary" @click="downloadExcel" :disabled="displayRows.length === 0" style="margin-right: 16px;">
+            엑셀 다운로드
+          </button>
         </div>
       </div>
       
-      <table class="input-table">
+      <!-- 테이블 헤더를 고정 영역에 포함 -->
+      <table class="input-table" style="width: 97%; table-layout: fixed; margin: 0px 0px 0px 16px; padding: 0px 32px; border-bottom: none;">
+        <colgroup>
+          <col style="width:40px;">
+          <col style="width:12%;">
+          <col style="width:14%;">
+          <col style="width:6%;">
+          <col style="width:12%;">
+          <col style="width:8%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+        </colgroup>
         <thead>
           <tr>
             <th style="width:40px;">No</th>
             <th style="width:12%;">업체명</th>
-            <th style="width:16%;">거래처</th>
+            <th style="width:14%;">거래처</th>
             <th style="width:6%;">처방월</th>
-            <th style="width:16%;">제품명</th>
+            <th style="width:12%;">제품명</th>
             <th style="width:8%;">보험코드</th>
             <th style="width:6%;">약가</th>
             <th style="width:6%;">처방수량</th>
             <th style="width:6%;">처방액</th>
-            <th style="width:8%;">처방구분</th>
-            <th style="width:12%;">비고</th>
+            <th style="width:6%;">처방구분</th>
+            <th style="width:8%;">비고</th>
+            <th style="width:8%;">등록일자</th>
+            <th style="width:8%;">등록자</th>
           </tr>
         </thead>
+      </table>
+    </div>
+    
+    <!-- 스크롤 가능한 테이블 바디 영역 -->
+    <div class="table-container" style="position: relative; max-height: calc(100vh - 350px); overflow-y: auto; margin-top: 0; border-top: none;">
+      <table class="input-table" style="width: 100%; table-layout: fixed; margin: -16px 0px 0px 0px; border-top: none; padding: 0px 0px 0px 0px;">
+        <colgroup>
+          <col style="width:40px;">
+          <col style="width:10%;">
+          <col style="width:14%;">
+          <col style="width:6%;">
+          <col style="width:14%;">
+          <col style="width:8%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+        </colgroup>
         <tbody>
           <tr v-if="displayRows.length === 0">
-            <td colspan="11" style="text-align:center;padding:2rem;color:#666;">
+            <td colspan="13" style="text-align:center;padding:2rem;color:#666;">
               {{ selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.' }}
             </td>
           </tr>
@@ -176,21 +217,58 @@
                 style="text-align:left; background: #fff !important;"
               />
             </td>
+            <td style="text-align:center;">
+              <input
+                v-model="row.created_date"
+                readonly
+                tabindex="-1"
+                style="text-align:center; background: #fff !important;"
+              />
+            </td>
+            <td style="text-align:left;">
+              <input
+                v-model="row.created_by"
+                readonly
+                tabindex="-1"
+                style="text-align:left; background: #fff !important;"
+              />
+            </td>
           </tr>
         </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="7" style="text-align:center;font-weight:bold;">합계</td>
-            <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
-            <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
-            <td colspan="2"></td>
-          </tr>
-        </tfoot>
       </table>
       
       <div v-if="!selectedSettlementMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0.85);">
         <div style="font-size:1.3rem;color:#666;text-align:center;">정산월을 선택하세요.</div>
       </div>
+    </div>
+    
+    <!-- 합계 고정 영역 -->
+    <div style="position: sticky; bottom: 0; background: white; z-index: 10; border-top: 1px solid #ddd;">
+      <table class="input-table" style="width: 100%; table-layout: fixed; margin: 0; border-top: none;">
+        <colgroup>
+          <col style="width:40px;">
+          <col style="width:10%;">
+          <col style="width:14%;">
+          <col style="width:6%;">
+          <col style="width:14%;">
+          <col style="width:8%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:6%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+          <col style="width:8%;">
+        </colgroup>
+        <tfoot>
+          <tr>
+            <td colspan="7" style="text-align:center;font-weight:bold;">합계</td>
+            <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
+            <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
+            <td colspan="4"></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   </div>
 </template>
@@ -198,6 +276,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { supabase } from '@/supabase';
+import * as XLSX from 'xlsx';
 
 // 반응형 데이터
 const availableMonths = ref([]); // 선택 가능한 정산월 목록
@@ -567,7 +646,9 @@ async function fetchPerformanceRecords() {
       prescription_type: record.prescription_type,
       client_name: record.clients.name,
       prescription_month: record.prescription_month,
-      remarks: record.remarks || ''
+      remarks: record.remarks || '',
+      created_date: record.created_at ? record.created_at.split('T')[0] : '',
+      created_by: record.companies.company_name
     }));
     
     displayRows.value = transformedData;
@@ -585,4 +666,109 @@ const totalQty = computed(() => {
 const totalAmount = computed(() => {
   return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
 });
+
+// 엑셀 다운로드 기능
+const downloadExcel = () => {
+  if (displayRows.value.length === 0) {
+    alert('다운로드할 데이터가 없습니다.');
+    return;
+  }
+  
+  // 데이터 변환
+  const excelData = displayRows.value.map((row, index) => ({
+    'No': index + 1,
+    '업체명': row.company_name || '',
+    '거래처': row.client_name || '',
+    '처방월': row.prescription_month || '',
+    '제품명': row.product_name_display || '',
+    '보험코드': row.insurance_code || '',
+    '약가': Number(row.price?.toString().replace(/,/g, '')) || 0,
+    '처방수량': Number(row.prescription_qty) || 0,
+    '처방액': Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0,
+    '처방구분': row.prescription_type || '',
+    '비고': row.remarks || '',
+    '등록일자': row.created_date || '',
+    '등록자': row.created_by || ''
+  }));
+  
+  // 합계 행 추가
+  excelData.push({
+    'No': '',
+    '업체명': '',
+    '거래처': '',
+    '처방월': '',
+    '제품명': '',
+    '보험코드': '',
+    '약가': '합계',
+    '처방수량': Number(totalQty.value.replace(/,/g, '')),
+    '처방액': Number(totalAmount.value.replace(/,/g, '')),
+    '처방구분': '',
+    '비고': '',
+    '등록일자': '',
+    '등록자': ''
+  });
+  
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '실적등록현황');
+  
+  // 컬럼 너비 설정
+  ws['!cols'] = [
+    { width: 5 },  // No
+    { width: 15 }, // 업체명
+    { width: 20 }, // 거래처
+    { width: 10 }, // 처방월
+    { width: 20 }, // 제품명
+    { width: 12 }, // 보험코드
+    { width: 10 }, // 약가
+    { width: 12 }, // 처방수량
+    { width: 12 }, // 처방액
+    { width: 10 }, // 처방구분
+    { width: 15 }, // 비고
+    { width: 15 }, // 등록일자
+    { width: 15 }  // 등록자
+  ];
+  
+  // 약가, 처방수량, 처방액 컬럼에 숫자 형식 적용 (천단위 콤마)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let row = 1; row <= range.e.r; row++) { // 헤더 제외하고 시작
+    // 약가 (7번째 컬럼, 인덱스 6)
+    const priceCell = XLSX.utils.encode_cell({ r: row, c: 6 });
+    if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
+      ws[priceCell].z = '#,##0';
+    }
+    
+    // 처방수량 (8번째 컬럼, 인덱스 7)
+    const qtyCell = XLSX.utils.encode_cell({ r: row, c: 7 });
+    if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
+      ws[qtyCell].z = '#,##0';
+    }
+    
+    // 처방액 (9번째 컬럼, 인덱스 8)
+    const amountCell = XLSX.utils.encode_cell({ r: row, c: 8 });
+    if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
+      ws[amountCell].z = '#,##0';
+    }
+  }
+  
+  // 파일명 생성
+  let fileName = '실적등록현황';
+  if (selectedSettlementMonth.value) {
+    fileName += `_${selectedSettlementMonth.value}`;
+  }
+  if (prescriptionOffset.value !== 0) {
+    fileName += `_${prescriptionMonth.value}`;
+  }
+  if (selectedCompanyInfo.value) {
+    fileName += `_${selectedCompanyInfo.value.company_name}`;
+  }
+  if (selectedHospitalInfo.value) {
+    fileName += `_${selectedHospitalInfo.value.name}`;
+  }
+  
+  const today = new Date().toISOString().split('T')[0];
+  fileName += `_${today}.xlsx`;
+  
+  XLSX.writeFile(wb, fileName);
+};
 </script> 

@@ -17,7 +17,7 @@ PS C:\_D\edi_sh_new>
 
 cd /c/_D/edi_sh_new
 git add .
-git commit -m "실적관리 0528-1"
+git commit -m "실적관리 0529-1"
 git push origin main
 
 

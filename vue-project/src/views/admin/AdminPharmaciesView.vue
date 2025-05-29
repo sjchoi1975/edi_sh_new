@@ -49,7 +49,7 @@
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="name" header="약국명" :headerStyle="{ width: '18%' }" :sortable="true">
+        <Column field="name" header="약국명" :headerStyle="{ width: '16%' }" :sortable="true">
           <template #body="slotProps">
             <input 
               v-if="slotProps.data.isEditing"
@@ -76,7 +76,7 @@
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: '32%' }" :sortable="true">
+        <Column field="address" header="주소" :headerStyle="{ width: '28%' }" :sortable="true">
           <template #body="slotProps">
             <input 
               v-if="slotProps.data.isEditing"
@@ -94,6 +94,11 @@
               style="width: 100%; border: 1px solid #ddd; padding: 4px;"
             />
             <span v-else>{{ slotProps.data.remarks }}</span>
+          </template>
+        </Column>
+        <Column field="created_at" header="등록일" :headerStyle="{ width: '8%' }" :sortable="true">
+          <template #body="slotProps">
+            <span>{{ slotProps.data.created_at ? new Date(slotProps.data.created_at).toISOString().split('T')[0] : '' }}</span>
           </template>
         </Column>
         <Column field="status" header="상태" :headerStyle="{ width: '6%' }" :sortable="true">

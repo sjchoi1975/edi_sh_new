@@ -55,7 +55,7 @@
         <template #loading>
           제품 목록을 불러오는 중입니다...
         </template>
-        <Column field="product_name" header="제품명" :headerStyle="{ width: '16%' }" :sortable="true">
+        <Column field="product_name" header="제품명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
             <input 
               v-if="slotProps.data.isEditing"
@@ -72,7 +72,7 @@
             </a>
           </template>
         </Column>
-        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '9%' }" :sortable="true">
+        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
             <input 
               v-if="slotProps.data.isEditing"
@@ -82,7 +82,7 @@
             <span v-else>{{ slotProps.data.insurance_code }}</span>
           </template>
         </Column>
-        <Column field="price" header="약가" :headerStyle="{ width: '7%' }" :sortable="true">
+        <Column field="price" header="약가" :headerStyle="{ width: '6%' }" :sortable="true">
           <template #body="slotProps">
             <input 
               v-if="slotProps.data.isEditing"
@@ -158,6 +158,11 @@
             <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
+        <Column field="created_at" header="등록일자" :headerStyle="{ width: '8%' }" :sortable="true">
+          <template #body="slotProps">
+            <span>{{ slotProps.data.created_at ? new Date(slotProps.data.created_at).toISOString().split('T')[0] : '' }}</span>
+          </template>
+        </Column>
         <Column field="status" header="상태" :headerStyle="{ width: '6%' }" :sortable="true">
           <template #body="slotProps">
             <select 
@@ -173,7 +178,7 @@
             </span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '14%' }">
+        <Column header="작업" :headerStyle="{ width: '12%' }">
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center;">
               <template v-if="slotProps.data.isEditing">
