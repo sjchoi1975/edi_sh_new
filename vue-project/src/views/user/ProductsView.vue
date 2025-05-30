@@ -33,6 +33,7 @@
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #empty>
           등록된 제품이 없습니다.
@@ -40,6 +41,11 @@
         <template #loading>
           제품 목록을 불러오는 중입니다...
         </template>
+        <Column header="No" :headerStyle="{ width: '5%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="product_name" header="제품명" :headerStyle="{ width: '18%' }" :sortable="true">
           <template #body="slotProps">
             <a
@@ -81,6 +87,7 @@ const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const selectedMonth = ref(new Date()); // Date 객체로 관리
 const router = useRouter();
 const userCommissionGrade = ref('A'); // 사용자 등급 (기본값 A)
+const currentPageFirstIndex = ref(0); // 추가
 
 const koLocale = {
   firstDayOfWeek: 0,

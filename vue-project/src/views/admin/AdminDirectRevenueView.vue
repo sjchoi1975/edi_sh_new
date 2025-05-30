@@ -49,9 +49,15 @@
         v-model:filters="filters"
         :globalFilterFields="['pharmacy_name', 'business_registration_number', 'standard_code', 'product_name']"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 매출이 없습니다.</template>
         <template #loading>매출 목록을 불러오는 중입니다...</template>
+        <Column header="No" :headerStyle="{ width: '4%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }">
           <template #body="slotProps">
             <input 
@@ -192,6 +198,7 @@ const router = useRouter();
 const fileInput = ref(null);
 const selectedMonth = ref('');
 const availableMonths = ref([]);
+const currentPageFirstIndex = ref(0);
 
 function goCreate() {
   router.push('/admin/direct-revenue/create');

@@ -1,7 +1,7 @@
 <template>
   <div class="board_960">
     <div class="form-title">공지사항 상세</div>
-    <div class="notice-form grid-form" style="overflow-y:auto; max-height:70vh;">
+    <div class="notice-form grid-form">
       <div class="form-row">
         <div class="form-col col-3">
           <label>제목</label>
@@ -20,15 +20,14 @@
           <input type="checkbox" :checked="notice.is_pinned" disabled style="width:16px; height:16px; margin-left:8px;" />
         </div>
       </div>
-      <div class="form-row file-row">
+      <div v-if="notice.file_url && notice.file_url.length > 0" class="form-row file-row">
         <div class="form-col col-3">
           <label>첨부 파일</label>
-          <div v-if="notice.file_url && notice.file_url.length" class="file-list">
+          <div class="file-list">
             <div v-for="(url, idx) in notice.file_url" :key="url" class="file-item">
               <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
             </div>
           </div>
-          <div v-else class="input-readonly">첨부 파일 없음</div>
         </div>
       </div>
     </div>

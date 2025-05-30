@@ -16,6 +16,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['primevue/api'],
+    include: ['primevue/api', 'jszip'],
   },
 })

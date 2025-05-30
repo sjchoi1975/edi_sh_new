@@ -246,20 +246,3 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
     </Dialog>
   </div>
 </template>
-
-<style scoped>
-#app-container {
-  min-height: 100vh;
-  background: #f8f9fa;
-  font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
-}
-.main-content {
-  margin-left: 220px;
-  margin-top: 56px;
-  padding: 16px 16px 0px 16px;
-  background: #f8f8f8;
-  box-sizing: border-box;
-  height: auto;
-  min-height: 100vh;
-}
-</style>

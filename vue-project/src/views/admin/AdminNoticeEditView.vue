@@ -11,7 +11,13 @@
       <div class="form-row">
         <div class="form-col col-3">
           <label>내용 <span class="required">*</span></label>
-          <textarea v-model="content" required style="min-height:200px;"></textarea>
+          <textarea 
+            v-model="content" 
+            required 
+            ref="contentArea"
+            @input="adjustTextareaHeight"
+            style="min-height:200px; overflow-y:hidden; resize: none;"
+          ></textarea>
         </div>
       </div>
       <div class="form-row" style="justify-content: flex-start;">
@@ -41,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -49,9 +55,17 @@ const route = useRoute();
 const router = useRouter();
 const title = ref('');
 const content = ref('');
+const contentArea = ref(null);
 const isPinned = ref(false);
 const files = ref([]);
 const fileInput = ref(null);
+
+const adjustTextareaHeight = () => {
+  if (contentArea.value) {
+    contentArea.value.style.height = 'auto';
+    contentArea.value.style.height = `${contentArea.value.scrollHeight}px`;
+  }
+};
 
 onMounted(async () => {
   const { data, error } = await supabase
@@ -67,7 +81,6 @@ onMounted(async () => {
   title.value = data.title;
   content.value = data.content;
   isPinned.value = data.is_pinned;
-  // 기존 파일 URL들을 files 배열에 추가
   if (data.file_url) {
     let fileUrls = [];
     if (typeof data.file_url === 'string') {
@@ -84,6 +97,11 @@ onMounted(async () => {
       url: url
     }));
   }
+  nextTick(adjustTextareaHeight);
+});
+
+watch(content, () => {
+  nextTick(adjustTextareaHeight);
 });
 
 function getFileName(url) {

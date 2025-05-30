@@ -54,7 +54,7 @@
             @click="downloadExcel" 
             :disabled="sortedDisplayRows.length === 0"
             title="엑셀 다운로드"
-          >📊 엑셀 다운로드</button>
+          >엑셀 다운로드</button>
           <button 
             class="btn-primary register-button" 
             @click="onSave" 

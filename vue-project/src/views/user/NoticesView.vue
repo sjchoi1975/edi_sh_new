@@ -14,6 +14,7 @@
         v-model:filters="filters"
         :globalFilterFields="['title']"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #header>
           <div class="table-header">
@@ -26,6 +27,11 @@
             </span>
           </div>
         </template>
+        <Column header="No" :headerStyle="{ width: '5%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="is_pinned" header="필수" :headerStyle="{ width: '11%' }" :sortable="false">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
@@ -74,6 +80,7 @@ const loading = ref(false);
 const router = useRouter();
 const userType = ref('');
 const search = ref('');
+const currentPageFirstIndex = ref(0);
 
 const filters = ref({
   'global': { value: null, matchMode: 'contains' }

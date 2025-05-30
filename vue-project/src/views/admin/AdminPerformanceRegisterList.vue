@@ -75,13 +75,13 @@
       </div>
       
       <!-- 테이블 헤더를 고정 영역에 포함 -->
-      <table class="input-table" style="width: 97%; table-layout: fixed; margin: 0px 0px 0px 16px; padding: 0px 32px; border-bottom: none;">
+      <table class="input-table" style="width: 97%; table-layout: fixed; margin: 0px 0px 0px 16px; border-bottom: none;">
         <colgroup>
           <col style="width:40px;">
-          <col style="width:12%;">
-          <col style="width:14%;">
+          <col style="width:10%;">
+          <col style="width:16%;">
           <col style="width:6%;">
-          <col style="width:12%;">
+          <col style="width:14%;">
           <col style="width:8%;">
           <col style="width:6%;">
           <col style="width:6%;">
@@ -94,8 +94,8 @@
         <thead>
           <tr>
             <th style="width:40px;">No</th>
-            <th style="width:12%;">업체명</th>
-            <th style="width:14%;">거래처</th>
+            <th style="width:10%;">업체명</th>
+            <th style="width:16%;">거래처</th>
             <th style="width:6%;">처방월</th>
             <th style="width:12%;">제품명</th>
             <th style="width:8%;">보험코드</th>
@@ -117,9 +117,9 @@
         <colgroup>
           <col style="width:40px;">
           <col style="width:10%;">
-          <col style="width:14%;">
+          <col style="width:16%;">
           <col style="width:6%;">
-          <col style="width:14%;">
+          <col style="width:12%;">
           <col style="width:8%;">
           <col style="width:6%;">
           <col style="width:6%;">

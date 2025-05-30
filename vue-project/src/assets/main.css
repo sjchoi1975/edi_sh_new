@@ -1,4 +1,5 @@
 @import './base.css';
+@import './buttons.css';
 
 /* ========================================== */
 /* 1. CSS 변수 정의 (공통 색상, 크기값) */
@@ -48,7 +49,7 @@ html,
 body,
 #app {
   height: 100vh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #app {
@@ -57,7 +58,26 @@ body,
 }
 
 /* ========================================== */
-/* 3. 공통 링크 스타일 */
+/* 3. 앱 기본 레이아웃 (App.vue) */
+/* ========================================== */
+#app-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+  font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
+}
+
+.main-content {
+  margin-left: 220px;
+  margin-top: 56px;
+  padding: 16px 16px 0px 16px;
+  background: #f8f8f8;
+  box-sizing: border-box;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* ========================================== */
+/* 4. 공통 링크 스타일 */
 /* ========================================== */
 a {
   text-decoration: none;
@@ -79,7 +99,7 @@ a {
 }
 
 /* ========================================== */
-/* 4. 네비게이션 메뉴 스타일 */
+/* 5. 네비게이션 메뉴 스타일 */
 /* ========================================== */
 
 /* 최상위 메뉴 아이템 - 기본 상태 */
@@ -192,7 +212,7 @@ a {
 }
 
 /* ========================================== */
-/* 5. 폼 레이아웃 및 공통 스타일 */
+/* 6. 폼 레이아웃 및 공통 스타일 */
 /* ========================================== */
 
 /* 폼 행/열 레이아웃 - 공지사항, 업체, 제품, 거래처, 약국 등록/수정 화면에서 사용 */
@@ -260,8 +280,18 @@ a {
   border-radius: var(--border-radius);
 }
 
+/* 폼 배경 컨테이너 1280px - 지금은 미사용중 */
+.board_1280 {
+  max-width: 1280px;
+  margin: 2rem auto;
+  padding: 2rem 3rem 3rem 3rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius);
+}
+
 /* ========================================== */
-/* 6. 입력창 스타일 (통합) */
+/* 7. 입력창 스타일 (통합) */
 /* ========================================== */
 
 /* 라벨 스타일 - 모든 폼에서 사용 */
@@ -313,9 +343,12 @@ textarea {
   color: var(--text-primary);
   width: 100%;
   box-sizing: border-box;
-  height: var(--input-height);
+  /* height: var(--input-height); */ /* 기존 높이 주석 처리 */
+  min-height: var(--input-height); /* 최소 높이 설정 (기본 입력창 높이) */
+  height: auto; /* 내용에 따라 높이 자동 조절 */
+  overflow-y: visible; /* 내용이 넘칠 경우 보이도록 설정 */
   margin-bottom: 0.5rem;
-  display: inline-block;
+  display: inline-block; /* 기본은 inline-block 유지 */
   line-height: 28px;
 }
 
@@ -364,7 +397,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 7. 버튼 스타일 */
+/* 8. 버튼 스타일 */
 /* ========================================== */
 
 /* 버튼 행 레이아웃 - 모든 폼 하단에서 사용 */
@@ -402,7 +435,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 8. 파일 관련 스타일 */
+/* 9. 파일 관련 스타일 */
 /* ========================================== */
 
 /* 파일 목록 - 공지사항 등록/수정/상세 화면에서 사용 */
@@ -460,7 +493,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 9. 테이블 스타일 (통합) */
+/* 10. 테이블 스타일 (통합) */
 /* ========================================== */
 
 /* 테이블 컨테이너 - 모든 목록 화면에서 사용 */
@@ -478,6 +511,7 @@ select.input-editable {
   overflow: hidden;    /* 컨테이너 자체는 스크롤 숨김 */
   position: relative;
   max-height: 90vh;    /* 최대 화면 높이의 90% */
+  z-index: 1;
 }
 
 /* 등록 현황 화면 전용 - 테이블 영역에 스크롤 적용 */
@@ -566,6 +600,8 @@ select.input-editable {
   border-radius: 4px;
   border-color: #888 !important;
   border: 1px solid var(--border-light);
+  position: relative;
+  z-index: 1;
 }
 
 /* 테이블 헤더 스타일 */
@@ -646,7 +682,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 10. 페이지네이터 스타일 */
+/* 11. 페이지네이터 스타일 */
 /* ========================================== */
 
 .p-datatable .p-paginator {
@@ -686,7 +722,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 11. 모달/다이얼로그 스타일 */
+/* 12. 모달/다이얼로그 스타일 */
 /* ========================================== */
 
 /* 모달 배경 오버레이 */
@@ -730,7 +766,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 12. 날짜/캘린더 관련 스타일 */
+/* 13. 날짜/캘린더 관련 스타일 */
 /* ========================================== */
 
 /* 캘린더 입력창 - 제품 목록 화면의 기준월 선택에서 사용 */
@@ -777,7 +813,7 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 13. 기타 공통 스타일 */
+/* 14. 기타 공통 스타일 */
 /* ========================================== */
 
 /* 페이지 제목 - 모든 목록 화면 상단에서 사용 */
@@ -790,6 +826,8 @@ select.input-editable {
   margin-top: 0;
   padding-left: 0;
   padding-top: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* 상세 페이지 헤더 */
@@ -818,7 +856,7 @@ body.no-main-padding .main-content {
 }
 
 /* ========================================== */
-/* 14. 페이지별 특수 스타일 */
+/* 15. 페이지별 특수 스타일 */
 /* ========================================== */
 
 /* 관리자 공지사항 뷰 */
@@ -906,237 +944,141 @@ body.no-main-padding .main-content {
   display: flex;
   flex-direction: column;
   height: auto;
+  padding: 20px;
 }
 
-/* 실적 등록 화면 - 상단 정보 박스(정산월, 제출기간, 처방월) */
-.info-box {
-  display: flex;
-  align-items: center;
-  height: 32px !important;
-  border: 1px solid #aaa;
-  background: #fff;
+/* 흡수율 분석 화면 전용 - 전체 컨테이너 높이 설정 */
+.performance-register-view.absorption-analysis {
+  height: 100vh;
 }
 
-/* 실적 등록 화면 - 정산월 정보 박스 */
-.info-box-settlement {
-  width: 200px;
-}
-
-/* 실적 등록 화면 - 제출기간 정보 박스 */
-.info-box-period {
-  width: 300px;
-}
-
-/* 실적 등록 화면 - 처방월 정보 박스 */
-.info-box-prescription {
-  width: 200px;
-}
-
-/* 실적 등록 화면 - 상단 정보 박스 내 라벨(정산월/제출기간/처방월) */
-.info-box-label {
-  display: inline-block;
-  width: 80px;
-  text-align: center;
-  background: #f5f5f5;
-  height: 100% !important;
-  line-height: 32px !important;
-  border-right: 1px solid #aaa;
-}
-
-/* 실적 등록 화면 - 상단 정보 박스 내 값(정산월/제출기간/처방월) */
-.info-box-content {
+/* 흡수율 분석 화면 - 테이블 스크롤 래퍼 (상하 스크롤 활성화) */
+.performance-register-view.absorption-analysis .table-scroll-wrapper {
   flex: 1;
-  text-align: center;
-}
-
-/* 실적 등록 화면 - 처방월 선택 드롭다운 */
-.prescription-select {
-  flex: 1;
-  height: 32px !important;
-  border: none;
-  background: transparent;
-  outline: none;
-  text-align: center;
-  font-size: 1rem;
-  line-height: 32px !important;
-  padding: 0;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
-
-/* 실적 등록 화면 - 병원 선택 영역 전체 */
-.hospital-selection-container {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-/* 실적 등록 화면 - 병원명 입력 박스(검색창+드롭다운) */
-.hospital-input-box {
-  display: flex;
-  align-items: center;
-  width: 400px;
-  height: 32px !important;
-  border: 1px solid #aaa;
-  background: none;
-  position: relative;
-  overflow: visible;
-}
-
-/* 실적 등록 화면 - 병원명 입력창 */
-.hospital-input {
-  flex: 1;
-  height: 32px !important;
-  border: none;
-  padding: 0 0 0 8px;
-  background: none;
-  outline: none;
-  cursor: pointer;
-  line-height: 32px !important;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
-
-/* 실적 등록 화면 - 병원명 입력창 포커스 효과 */
-.hospital-input-focused {
-  font-size: 1rem;
-  height: 34px !important;
-  background: #ffffaa !important;
-  outline: 2px solid #e74c3c !important;
-  font-weight: bold;
-  z-index: 2;
-}
-
-/* 실적 등록 화면 - 병원 정보(사업자번호, 대표자, 주소) 표시 */
-.hospital-info {
-  margin-left: 12px;
-  font-size: 1rem;
-  color: #333;
-  white-space: nowrap;
-}
-
-/* 실적 등록 화면 - 상단 필터/액션 행(병원선택+등록버튼) */
-.performance-header-row {
-  display: flex;
-  gap: 32px;
-  margin-bottom: 12px;
-  align-items: center;
-}
-
-/* 실적 등록 화면 - 병원선택/등록버튼 행 */
-.performance-action-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-/* 실적 등록 화면 - 등록 버튼 */
-.register-button {
-  margin-left: 16px;
-}
-
-/* 실적 등록 화면 - 입력 비활성화(병원 미선택 시) */
-.disabled-area {
-  pointer-events: none;
-  user-select: none;
-}
-
-/* 실적 등록 화면 - 비활성화 상태에서 readonly-field만 연회색 배경 */
-.disabled-area.readonly-field {
-  background: #f5f5f5 !important;
-  color: #555 !important;
-}
-
-/* 실적 등록 화면 - 테이블 헤더(합계, 컬럼명) */
-.input-table-header {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
-  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* 실적 등록 화면 - 실적 입력 테이블 전체 */
-.input-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-  position: relative;
-}
-
-/* 실적 등록 화면 - 실적 입력 테이블 셀(공통) */
-.input-table th, .input-table td {
+  overflow-y: auto;
+  overflow-x: auto;  /* 가로 스크롤도 활성화 */
+  max-height: calc(100vh - 300px);
   border: 1px solid #ddd;
-  padding: 0;
-  text-align: center;
-  height: 32px !important;
-  vertical-align: middle;
-  line-height: 32px !important;
+  border-bottom: none;
+  min-height: 400px;  /* 최소 높이 설정 */
 }
 
-/* 실적 등록 화면 - 테이블 헤더 고정 */
-.input-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #666;
+/* 스크롤바 스타일 - 흡수율 분석 화면 */
+.performance-register-view.absorption-analysis .table-scroll-wrapper::-webkit-scrollbar {
+  width: 34px;
+  height: 12px;
 }
 
-/* 실적 등록 화면 - 테이블 헤더(컬럼명) 스타일 */
-.input-table thead th {
-  background-color: #666 !important;
-  color: #fff !important;
-  border-bottom: 2px solid #dee2e6 !important;
-  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1) !important;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.performance-register-view.absorption-analysis .table-scroll-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
 }
 
-/* 실적 등록 화면 - 입력 셀(일반) */
-.input-table tbody tr td input:not(.readonly-field) {
-  background: none !important;
-  color: #333 !important;
+.performance-register-view.absorption-analysis .table-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
 }
 
-/* 실적 등록 화면 - 입력 불가능 셀(readonly) */
-.input-table tbody tr td input.readonly-field {
-  background: #f0f0f0 !important;
-  color: #666 !important;
+.performance-register-view.absorption-analysis .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
-/* 실적 등록 화면 - 입력 셀 공통 스타일 */
-.input-table input, .input-table select {
+.performance-register-view.absorption-analysis .table-scroll-wrapper::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Firefox 스크롤바 스타일 */
+.performance-register-view.absorption-analysis .table-scroll-wrapper {
+  scrollbar-width: auto; /* thin, auto, none */
+  scrollbar-color: #bbb #f0f0f0; /* thumb track */
+}
+
+/* 스크롤바 항상 표시 (모든 브라우저) */
+.performance-register-view.absorption-analysis .table-scroll-wrapper {
+  overflow-y: scroll !important; /* 항상 세로 스크롤바 표시 */
+  overflow-x: scroll !important; /* 항상 가로 스크롤바 표시 */
+}
+
+/* 흡수율 분석 화면 - 메인 테이블 (우선순위 높임) */
+.performance-register-view.absorption-analysis .input-table {
   width: 100%;
-  height: 32px !important;
-  border: none;
-  padding: 0 8px;
+  min-width: 2400px;  /* 최소 너비로 가로 스크롤 유도 */
+  border-collapse: collapse;
   font-size: 1rem;
+  table-layout: fixed;  /* auto에서 fixed로 변경 */
+  margin-top: 0 !important;
+}
+
+/* 흡수율 분석 화면 - 테이블 셀 (우선순위 높임) */
+.performance-register-view.absorption-analysis .input-table th,
+.performance-register-view.absorption-analysis .input-table td {
+  padding: 8px !important;
+  border: 1px solid #ddd;
+  white-space: nowrap;
+  min-width: 60px;
+  height: auto !important;
+  line-height: normal !important;
+}
+
+/* 흡수율 분석 화면 - 테이블 헤더 (우선순위 높임) */
+.performance-register-view.absorption-analysis .input-table th {
+  background-color: #f8f9fa !important;
+  color: #333 !important;
+  font-weight: 600;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #ddd !important;
+  box-shadow: none !important;
+}
+
+/* 흡수율 분석 화면 - 입력 필드 (우선순위 높임) */
+.performance-register-view.absorption-analysis .input-table input,
+.performance-register-view.absorption-analysis .input-table select {
+  width: 100%;
+  border: none;
+  padding: 4px 8px !important;
+  font-size: 0.9rem !important;
+  background: transparent;
   box-sizing: border-box;
-  line-height: 32px !important;
-  margin: 0;
-  vertical-align: middle;
+  height: auto !important;
+  line-height: normal !important;
   display: block;
-  background: none !important;  /* 테이블 내 input과 select 배경 투명 */
 }
 
-/* 실적 등록 화면 - 셀 포커스 효과 (외곽선 + 배경) */
-.cell-focused input,
-  input.cell-focused {
-  background: #ffffaa !important;
-  font-weight: bold;
-  outline: 2px solid #e74c3c !important;
-  z-index: 2;
+/* 흡수율 분석 화면 - 합계 테이블 래퍼 */
+.performance-register-view.absorption-analysis .table-footer-wrapper {
+  border: 1px solid #ddd;
+  border-top: none;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
-/* 실적 등록 화면 - 테이블 푸터(합계) */
-.input-table tfoot td {
-  background-color: #fff;
-  font-weight: bold;
-  color: #333;
+/* 흡수율 분석 화면 - 합계 테이블 */
+.performance-register-view.absorption-analysis .footer-table {
+  width: 100%;
+  min-width: 2400px;
+  border-collapse: collapse;
+  font-size: 1rem;
+  table-layout: auto;
+  margin: 0;
+}
+
+/* 흡수율 분석 화면 - 합계 테이블 셀 */
+.performance-register-view.absorption-analysis .footer-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  white-space: nowrap;
+  border-top: 1px solid #007bff;
 }
 
 /* ========================================== */
-/* 15. 드롭다운 공통 스타일 (전역) */
+/* 16. 드롭다운 공통 스타일 (전역) */
 /* ========================================== */
 
 /* 드롭다운 화살표 버튼 공통 스타일 - 실적 등록/현황 화면에서 사용 */
@@ -1395,24 +1337,301 @@ body.no-main-padding .main-content {
   margin-left: 16px;
 }
 
-/* 보조 버튼 스타일 - 엑셀 다운로드 등에서 사용 */
-.btn-secondary {
-  background: #6c757d;
-  color: #fff;
+/* 흡수율 분석 화면 - 합계 테이블 셀 */
+.performance-register-view.absorption-analysis .footer-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  white-space: nowrap;
+  border-top: 2px solid #007bff;
+}
+
+/* 실적 등록 화면 - 상단 정보 박스(정산월, 제출기간, 처방월) */
+.info-box {
+  display: flex;
+  align-items: center;
+  height: 32px !important;
+  border: 1px solid #aaa;
+  background: #fff;
+}
+
+/* 실적 등록 화면 - 정산월 정보 박스 */
+.info-box-settlement {
+  width: 200px;
+}
+
+/* 실적 등록 화면 - 제출기간 정보 박스 */
+.info-box-period {
+  width: 300px;
+}
+
+/* 실적 등록 화면 - 처방월 정보 박스 */
+.info-box-prescription {
+  width: 200px;
+}
+
+/* 실적 등록 화면 - 상단 정보 박스 내 라벨(정산월/제출기간/처방월) */
+.info-box-label {
+  display: inline-block;
+  width: 80px;
+  text-align: center;
+  background: #f5f5f5;
+  height: 100% !important;
+  line-height: 32px !important;
+  border-right: 1px solid #aaa;
+}
+
+/* 실적 등록 화면 - 상단 정보 박스 내 값(정산월/제출기간/처방월) */
+.info-box-content {
+  flex: 1;
+  text-align: center;
+}
+
+/* 실적 등록 화면 - 처방월 선택 드롭다운 */
+.prescription-select {
+  flex: 1;
+  height: 32px !important;
   border: none;
-  padding: 8px 16px;
-  border-radius: 2px;
-  cursor: pointer;
+  background: transparent;
+  outline: none;
+  text-align: center;
   font-size: 1rem;
-  transition: background 0.2s;
+  line-height: 32px !important;
+  padding: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background: #5a6268;
+/* 실적 등록 화면 - 병원 선택 영역 전체 */
+.hospital-selection-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
-.btn-secondary:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  opacity: 0.6;
+/* 실적 등록 화면 - 병원명 입력 박스(검색창+드롭다운) */
+.hospital-input-box {
+  display: flex;
+  align-items: center;
+  width: 400px;
+  height: 32px !important;
+  border: 1px solid #aaa;
+  background: none;
+  position: relative;
+  overflow: visible;
+}
+
+/* 실적 등록 화면 - 병원명 입력창 */
+.hospital-input {
+  flex: 1;
+  height: 32px !important;
+  border: none;
+  padding: 0 0 0 8px;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  line-height: 32px !important;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+/* 실적 등록 화면 - 병원명 입력창 포커스 효과 */
+.hospital-input-focused {
+  font-size: 1rem;
+  height: 34px !important;
+  background: #ffffaa !important;
+  outline: 2px solid #e74c3c !important;
+  font-weight: bold;
+  z-index: 2;
+}
+
+/* 실적 등록 화면 - 병원 정보(사업자번호, 대표자, 주소) 표시 */
+.hospital-info {
+  margin-left: 12px;
+  font-size: 1rem;
+  color: #333;
+  white-space: nowrap;
+}
+
+/* 실적 등록 화면 - 상단 필터/액션 행(병원선택+등록버튼) */
+.performance-header-row {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 12px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* 실적 등록 화면 - 병원선택/등록버튼 행 */
+.performance-action-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* 실적 등록 화면 - 등록 버튼 */
+.register-button {
+  margin-left: 16px;
+}
+
+/* 실적 등록 화면 - 입력 비활성화(병원 미선택 시) */
+.disabled-area {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 실적 등록 화면 - 비활성화 상태에서 readonly-field만 연회색 배경 */
+.disabled-area.readonly-field {
+  background: #f5f5f5 !important;
+  color: #555 !important;
+}
+
+/* 실적 등록 화면 - 테이블 헤더(합계, 컬럼명) */
+.input-table-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 실적 등록 화면 - 실적 입력 테이블 전체 */
+.input-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  position: relative;
+}
+
+/* 실적 등록 화면 - 실적 입력 테이블 셀(공통) */
+.input-table th, .input-table td {
+  border: 1px solid #ddd;
+  padding: 0;
+  text-align: center;
+  height: 32px !important;
+  vertical-align: middle;
+  line-height: 32px !important;
+}
+
+/* 실적 등록 화면 - 테이블 헤더 고정 */
+.input-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #666;
+}
+
+/* 실적 등록 화면 - 테이블 헤더(컬럼명) 스타일 */
+.input-table thead th {
+  background-color: #666 !important;
+  color: #fff !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1) !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* 실적 등록 화면 - 입력 셀(일반) */
+.input-table tbody tr td input:not(.readonly-field) {
+  background: none !important;
+  color: #333 !important;
+}
+
+/* 실적 등록 화면 - 입력 불가능 셀(readonly) */
+.input-table tbody tr td input.readonly-field {
+  background: #f0f0f0 !important;
+  color: #666 !important;
+}
+
+/* 실적 등록 화면 - 입력 셀 공통 스타일 */
+.input-table input, .input-table select {
+  width: 100%;
+  height: 32px !important;
+  border: none;
+  padding: 0 8px;
+  font-size: 1rem;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 32px !important;
+  margin: 0;
+  vertical-align: middle;
+  display: block;
+  background: none !important;  /* 테이블 내 input과 select 배경 투명 */
+}
+
+/* 실적 등록 화면 - 셀 포커스 효과 (외곽선 + 배경) */
+.cell-focused input,
+input.cell-focused {
+  background: #ffffaa !important;
+  font-weight: bold;
+  outline: 2px solid #e74c3c !important;
+  z-index: 2;
+}
+
+/* 실적 등록 화면 - 테이블 푸터(합계) */
+.input-table tfoot td {
+  background-color: #fff;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ========================================== */
+/* 증빙파일 제출 화면 모달 (PerformanceUploadView.vue) */
+/* ========================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1001;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #ddd;
 }

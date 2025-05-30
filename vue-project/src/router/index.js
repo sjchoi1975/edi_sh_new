@@ -21,13 +21,10 @@ import AdminWholesaleRevenueCreateView from '../views/admin/AdminWholesaleRevenu
 
 import AdminDirectRevenueView from '../views/admin/AdminDirectRevenueView.vue'
 import AdminDirectRevenueCreateView from '../views/admin/AdminDirectRevenueCreateView.vue'
-import AdminPerformanceInputView from '../views/admin/AdminPerformanceInputView.vue'
-import AdminPerformanceViewView from '../views/admin/AdminPerformanceViewView.vue'
 import AdminSettlementMonthsView from '../views/admin/AdminSettlementMonthsView.vue'
 import AdminSettlementMonthsCreateView from '../views/admin/AdminSettlementMonthsCreateView.vue'
 import AdminSettlementMonthsDetailView from '../views/admin/AdminSettlementMonthsDetailView.vue'
 import AdminSettlementMonthsEditView from '../views/admin/AdminSettlementMonthsEditView.vue'
-import AdminSettlementStatementsView from '../views/admin/AdminSettlementStatementsView.vue'
 
 import { supabase } from '@/supabase'; // <<< Supabase 클라이언트 임포트
 import { ref, onMounted } from 'vue'
@@ -214,21 +211,15 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
-      path: '/admin/performance-input',
-      name: 'admin-performance-input',
-      component: AdminPerformanceInputView,
-      meta: { requiresAuth: true, role: 'admin' }
-    },
-    {
       path: '/admin/performance-list',
-      name: 'admin-performance-list',
+      name: 'AdminPerformanceRegisterList',
       component: () => import('@/views/admin/AdminPerformanceRegisterList.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
-      path: '/admin/settlement-statements',
-      name: 'admin-settlement-statements',
-      component: AdminSettlementStatementsView,
+      path: '/admin/absorption-analysis',
+      name: 'AdminAbsorptionAnalysis',
+      component: () => import('@/views/admin/AdminAbsorptionAnalysis.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
@@ -330,6 +321,30 @@ const router = createRouter({
       path: '/performance/list',
       name: 'performance-list',
       component: () => import('@/views/user/PerformanceRegisterList.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/performance/upload',
+      name: 'performance-upload',
+      component: () => import('@/views/user/PerformanceUploadView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/my-info',
+      name: 'my-info',
+      component: () => import('@/views/user/MyInfoView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/my-info/edit',
+      name: 'my-info-edit',
+      component: () => import('@/views/user/MyInfoEditView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/my-info/change-password',
+      name: 'my-info-change-password',
+      component: () => import('@/views/user/ChangePasswordView.vue'),
       meta: { requiresAuth: true, role: 'user' }
     }
   ]

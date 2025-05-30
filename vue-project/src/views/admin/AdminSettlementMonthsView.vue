@@ -13,9 +13,15 @@
         scrollable
         scrollHeight="680px"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 정산월이 없습니다.</template>
         <template #loading>정산월 목록을 불러오는 중입니다...</template>
+        <Column header="No" :headerStyle="{ width: '5%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="settlement_month" header="정산월" :headerStyle="{ width: '10%' }" :sortable="true">
           <template #body="slotProps">
             <a
@@ -52,6 +58,7 @@ import { supabase } from '@/supabase';
 
 const settlementMonths = ref([]);
 const router = useRouter();
+const currentPageFirstIndex = ref(0);
 
 function goCreate() {
   router.push('/admin/settlement-months/create');

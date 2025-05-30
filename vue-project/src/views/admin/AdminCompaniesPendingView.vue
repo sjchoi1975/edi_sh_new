@@ -14,6 +14,7 @@
         v-model:filters="filters"
         :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #header>
           <div class="table-header">
@@ -35,7 +36,11 @@
         <template #loading>
           미승인 업체 목록을 불러오는 중입니다...
         </template>
-
+        <Column header="No" :headerStyle="{ width: '5%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="company_group" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
@@ -84,6 +89,7 @@ import { h } from 'vue';
 
 const pendingCompanies = ref([]);
 const loading = ref(false);
+const currentPageFirstIndex = ref(0);
 const filters = ref({
     'global': { value: null, matchMode: 'contains' },
 });

@@ -11,7 +11,13 @@
       <div class="form-row">
         <div class="form-col col-3">
           <label>내용 <span class="required">*</span></label>
-          <textarea v-model="content" required style="min-height:200px;"></textarea>
+          <textarea 
+            v-model="content" 
+            required 
+            ref="contentArea"
+            @input="adjustTextareaHeight"
+            style="min-height:200px; overflow-y:hidden; resize: none;"
+          ></textarea>
         </div>
       </div>
       <div class="form-row" style="justify-content: flex-start;">
@@ -41,16 +47,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
 const title = ref('');
 const content = ref('');
+const contentArea = ref(null);
 const isPinned = ref(false);
 const files = ref([]);
 const fileInput = ref(null);
 const router = useRouter();
+
+const adjustTextareaHeight = () => {
+  if (contentArea.value) {
+    contentArea.value.style.height = 'auto';
+    contentArea.value.style.height = `${contentArea.value.scrollHeight}px`;
+  }
+};
+
+onMounted(() => {
+  nextTick(adjustTextareaHeight);
+});
+
+watch(content, () => {
+  nextTick(adjustTextareaHeight);
+});
 
 function onFileChange(e) {
   const selected = Array.from(e.target.files);

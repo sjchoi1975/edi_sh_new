@@ -36,9 +36,15 @@
         v-model:filters="filters"
         :globalFilterFields="['pharmacy_code', 'name', 'business_registration_number']"
         class="custom-table"
+        v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 약국이 없습니다.</template>
         <template #loading>약국 목록을 불러오는 중입니다...</template>
+        <Column header="No" :headerStyle="{ width: '4%' }">
+          <template #body="slotProps">
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
+          </template>
+        </Column>
         <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
             <input 
@@ -172,6 +178,7 @@ const pharmacies = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 const fileInput = ref(null);
+const currentPageFirstIndex = ref(0);
 
 function goCreate() {
   router.push('/admin/pharmacies/create');

@@ -11,8 +11,11 @@
 .btn-delete-m   { background: #ffffff !important; color: #e74c3c !important; }
 .btn-list       { background: #5fa56b !important; color: #ffffff !important; }
 .btn-cancel     { background: #dddddd !important; color: #333333 !important; }
+.btn-cancel-m   { background: #888888 !important; color: #333333 !important; }
 .btn-approve-m  { background: #ffffff !important; color: #1976d2 !important; }
 .btn-pending-m  { background: #ffffff !important; color: #e74c3c !important; }
+.btn-save-m     { background: #1976d2 !important; color: #ffffff !important; }
+
 
 
 /* ========================================== */
@@ -108,12 +111,12 @@ button-m,
 }
 
 .btn-edit-m:hover {
-  background: #007bff !important;
+  background: #5fa56b !important;
   color: #ffffff !important;
 }
 
 .btn-save-m:hover {
-  background: #28a745 !important;
+  background: #1976d2 !important;
   color: #ffffff !important;
 }
 
@@ -207,6 +210,144 @@ button-m,
   font-size: 0.85rem !important;
   display: inline-block !important;
   border: none !important;
+}
+
+/* ========================================== */
+/* 전역 버튼 스타일 정의 */
+/* ========================================== */
+
+/* 기본 버튼 스타일 */
+.btn-primary {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.btn-primary:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+/* 보조 버튼 스타일 */
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-secondary:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+/* 성공 버튼 스타일 */
+.btn-success {
+  background: #28a745;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-success:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+/* 위험 버튼 스타일 */
+.btn-danger {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-danger:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+/* 소형 버튼 스타일 */
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 0.875rem;
+}
+
+/* 대형 버튼 스타일 */
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 1.125rem;
+}
+
+.btn-delete-m:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+.btn-add-m:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+/* 액션 셀 스타일 */
+.action-cell {
+  text-align: center;
+  padding: 4px !important;
+  vertical-align: middle;
+}
+
+.action-cell-disabled {
+  text-align: center;
+  padding: 4px !important;
+  vertical-align: middle;
+  opacity: 0.5;
 }
 
 
