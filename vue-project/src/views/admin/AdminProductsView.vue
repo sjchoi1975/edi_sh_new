@@ -304,7 +304,7 @@ const downloadTemplate = () => {
       '단위포장형태': '정 10개',
       '단위수량': 10,
       '비고': '예시 비고',
-      '상태': 'active'
+      '상태': '활성'
     }
   ];
   
@@ -379,11 +379,20 @@ const handleFileUpload = async (event) => {
         return;
       }
       
-      // 상태 값 검증
-      const status = row['상태'] || 'active';
-      if (!['active', 'inactive'].includes(status)) {
-        errors.push(`${rowNum}행: 상태는 'active' 또는 'inactive'여야 합니다.`);
-        return;
+      // 상태 값 검증 및 변환
+      let statusValue = 'active'; // 기본값
+      if (row['상태']) {
+        if (row['상태'] === '활성') {
+          statusValue = 'active';
+        } else if (row['상태'] === '비활성') {
+          statusValue = 'inactive';
+        } else {
+          errors.push(`${rowNum}행: 상태는 '활성' 또는 '비활성'이어야 합니다.`);
+          return;
+        }
+      } else {
+        // 상태 값이 비어있으면 기본값 '활성'('active') 사용
+        statusValue = 'active';
       }
       
       uploadData.push({
@@ -397,7 +406,7 @@ const handleFileUpload = async (event) => {
         unit_packaging_desc: row['단위포장형태'] || '',
         unit_quantity: Number(row['단위수량']) || 0,
         remarks: row['비고'] || '',
-        status: status
+        status: statusValue // 변환된 값 사용
       });
     });
     

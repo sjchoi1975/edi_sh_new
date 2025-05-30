@@ -115,6 +115,14 @@ const handleSubmit = async () => {
   loading.value = true
   
   try {
+    const currentUser = await supabase.auth.getUser();
+    if (!currentUser.data.user) {
+      alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      loading.value = false;
+      return;
+    }
+    const currentUserId = currentUser.data.user.id;
+
     const { error } = await supabase
       .from('companies')
       .update({
@@ -124,7 +132,8 @@ const handleSubmit = async () => {
         business_address: address.value,
         contact_person_name: contactPerson.value,
         mobile_phone: mobile.value,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        updated_by: currentUserId
       })
       .eq('id', companyId.value)
       

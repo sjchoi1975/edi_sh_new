@@ -10,6 +10,18 @@
             class="search-input"
           />
         </span>
+        <div class="action-buttons">
+          <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
+          <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
+          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <input 
+            ref="fileInput" 
+            type="file" 
+            accept=".xlsx,.xls" 
+            @change="handleFileUpload" 
+            style="display: none;"
+          />
+        </div>
       </div>
       <DataTable
         :value="filteredClients"
@@ -104,6 +116,7 @@ import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import Dialog from 'primevue/dialog';
 import { supabase } from '@/supabase';
+import * as XLSX from 'xlsx';
 
 const clients = ref([]);
 const companies = ref([]);
@@ -113,6 +126,7 @@ const selectedClient = ref(null);
 const selectedCompanies = ref([]);
 const companySearch = ref('');
 const currentPageFirstIndex = ref(0);
+const fileInput = ref(null);
 
 const fetchClients = async () => {
   const { data: clientsData, error } = await supabase
@@ -182,6 +196,148 @@ async function deleteAssignment(client, company = null) {
   await query;
   await fetchClients();
 }
+
+const downloadTemplate = () => {
+  const templateData = [
+    { '거래처 사업자등록번호': '123-45-67890', '업체 사업자등록번호': '111-22-33333' },
+    { '거래처 사업자등록번호': '987-65-43210', '업체 사업자등록번호': '444-55-66666' }
+  ];
+  const ws = XLSX.utils.json_to_sheet(templateData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '담당업체지정템플릿');
+  ws['!cols'] = [{ width: 20 }, { width: 20 }]; // 컬럼 너비 조정
+  XLSX.writeFile(wb, '담당업체지정_업로드_템플릿_사업자번호.xlsx'); // 파일명 변경
+};
+
+const triggerFileUpload = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+};
+
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+    if (jsonData.length === 0) {
+      alert('엑셀 파일에 데이터가 없습니다.');
+      return;
+    }
+
+    const assignmentsToUpload = [];
+    const errors = [];
+
+    // 모든 거래처 및 업체 정보를 미리 로드하여 ID 조회용으로 사용 (성능 최적화)
+    const { data: allClientsData, error: clientError } = await supabase.from('clients').select('id, business_registration_number');
+    const { data: allCompaniesData, error: companyError } = await supabase.from('companies').select('id, business_registration_number');
+
+    if (clientError || companyError) {
+      alert('거래처 또는 업체 정보 조회 중 오류가 발생했습니다.');
+      console.error(clientError || companyError);
+      return;
+    }
+
+    const clientMap = new Map(allClientsData.map(c => [c.business_registration_number, c.id]));
+    const companyMap = new Map(allCompaniesData.map(c => [c.business_registration_number, c.id]));
+
+    for (const [index, row] of jsonData.entries()) {
+      const rowNum = index + 2;
+      const clientBrn = row['거래처 사업자등록번호'];
+      const companyBrn = row['업체 사업자등록번호'];
+
+      if (!clientBrn || !companyBrn) {
+        errors.push(`${rowNum}행: 거래처 또는 업체의 사업자등록번호가 비어있습니다.`);
+        continue;
+      }
+
+      const clientId = clientMap.get(String(clientBrn));
+      const companyId = companyMap.get(String(companyBrn));
+
+      if (!clientId) {
+        errors.push(`${rowNum}행: 거래처 사업자등록번호 '${clientBrn}'에 해당하는 거래처를 찾을 수 없습니다.`);
+      }
+      if (!companyId) {
+        errors.push(`${rowNum}행: 업체 사업자등록번호 '${companyBrn}'에 해당하는 업체를 찾을 수 없습니다.`);
+      }
+
+      if (clientId && companyId) {
+        assignmentsToUpload.push({ client_id: clientId, company_id: companyId });
+      }
+    }
+
+    if (errors.length > 0) {
+      alert('데이터 오류:\n' + errors.join('\n'));
+      return;
+    }
+
+    if (assignmentsToUpload.length > 0) {
+      const { error } = await supabase.from('client_company_assignments').upsert(assignmentsToUpload, { onConflict: 'client_id,company_id' });
+      if (error) {
+        alert('업로드 실패: ' + error.message);
+      } else {
+        alert(`${assignmentsToUpload.length}건의 담당업체 지정 정보가 업로드/갱신되었습니다.`);
+        await fetchClients(); // 목록 새로고침
+      }
+    }
+  } catch (error) {
+    console.error('파일 처리 오류:', error);
+    alert('파일 처리 중 오류가 발생했습니다.');
+  } finally {
+    if (event.target) {
+      event.target.value = '';
+    }
+  }
+};
+
+const downloadExcel = () => {
+  if (filteredClients.value.length === 0) {
+    alert('다운로드할 데이터가 없습니다.');
+    return;
+  }
+  const excelData = [];
+  filteredClients.value.forEach(client => {
+    if (client.companies && client.companies.length > 0) {
+      client.companies.forEach(company => {
+        excelData.push({
+          '거래처ID': client.id,
+          '거래처코드': client.client_code,
+          '병의원명': client.name,
+          '사업자등록번호': client.business_registration_number,
+          '원장명': client.owner_name,
+          '주소': client.address,
+          '업체ID': company.id,
+          '지정된 업체명': company.company_name,
+          '지정된 업체 사업자번호': company.business_registration_number
+        });
+      });
+    } else {
+      excelData.push({
+        '거래처ID': client.id,
+        '거래처코드': client.client_code,
+        '병의원명': client.name,
+        '사업자등록번호': client.business_registration_number,
+        '원장명': client.owner_name,
+        '주소': client.address,
+        '업체ID': '-',
+        '지정된 업체명': '-',
+        '지정된 업체 사업자번호': '-'
+      });
+    }
+  });
+
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '담당업체지정현황');
+  const today = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `담당업체지정현황_${today}.xlsx`);
+};
+
 onMounted(() => {
   fetchClients();
   fetchCompanies();

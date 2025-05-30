@@ -60,57 +60,6 @@
       </div>
       
       <div class="performance-action-row">
-        <!-- 검색 영역 (왼쪽) -->
-        <div class="search-section">
-          <div class="search-field">
-            <label>업체명</label>
-            <input 
-              v-model="searchFilters.companyName"
-              type="text"
-              placeholder="업체명 검색"
-              @input="applySearchFilters"
-              class="search-input"
-            />
-          </div>
-          <div class="search-field">
-            <label>거래처</label>
-            <input 
-              v-model="searchFilters.clientName"
-              type="text"
-              placeholder="거래처 검색"
-              @input="applySearchFilters"
-              class="search-input"
-            />
-          </div>
-          <div class="search-field">
-            <label>제품명</label>
-            <input 
-              v-model="searchFilters.productName"
-              type="text"
-              placeholder="제품명 검색"
-              @input="applySearchFilters"
-              class="search-input"
-            />
-          </div>
-          <div class="search-field">
-            <label>보험코드</label>
-            <input 
-              v-model="searchFilters.insuranceCode"
-              type="text"
-              placeholder="보험코드 검색"
-              @input="applySearchFilters"
-              class="search-input"
-            />
-          </div>
-          <div class="search-field">
-            <button 
-              class="btn-search"
-              @click="clearSearchFilters"
-              title="검색 조건 초기화"
-            >초기화</button>
-          </div>
-        </div>
-        
         <!-- 버튼 영역 (오른쪽) -->
         <div class="action-buttons">
           <button 
@@ -509,14 +458,6 @@ const productSearchForRow = ref({
   activeRowIndex: -1,
   results: [],
   selectedIndex: -1
-});
-
-// 검색 필터
-const searchFilters = ref({
-  companyName: '',
-  clientName: '',
-  productName: '',
-  insuranceCode: ''
 });
 
 // 처방월 옵션 업데이트
@@ -1583,64 +1524,296 @@ async function handleCompanyChangeAndResetClient(newCompanyId) {
   }
 }
 
-// 흡수율 분석 실행 (추후 로직 구현 예정)
-function runAbsorptionAnalysis() {
+// 병원-약국 매핑 정보 조회
+async function fetchClientPharmacyMappings() {
+  try {
+    const { data, error } = await supabase
+      .from('client_pharmacy_mappings')
+      .select('client_id, pharmacy_id, clients(name), pharmacies(name)'); // 병원명, 약국명 포함
+    if (error) {
+      console.error('병원-약국 매핑 정보 조회 오류:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('병원-약국 매핑 정보 조회 예외:', err);
+    return [];
+  }
+}
+
+// 제품 정보 전체 조회
+async function fetchAllProducts() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, product_name, insurance_code, standard_code'); // 필요한 컬럼만 선택
+    if (error) {
+      console.error('제품 정보 조회 오류:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('제품 정보 조회 예외:', err);
+    return [];
+  }
+}
+
+// 흡수율 분석 실행
+async function runAbsorptionAnalysis() {
   if (displayRows.value.length === 0) {
     alert('분석할 데이터가 없습니다. 먼저 실적 정보를 불러오세요.');
     return;
   }
   
-  // TODO: 흡수율 분석 로직 구현 예정
-  alert('흡수율 분석 로직은 추후 구현 예정입니다.');
-}
-
-// 검색 필터링 함수
-function applySearchFilters() {
-  if (!allDisplayRows.value || allDisplayRows.value.length === 0) {
-    displayRows.value = [];
+  console.log('흡수율 분석 시작');
+  
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 선택해주세요.');
     return;
   }
 
-  let filtered = [...allDisplayRows.value];
+  const [year, month] = selectedSettlementMonth.value.split('-').map(Number);
 
-  // 업체명 필터
-  if (searchFilters.value.companyName.trim()) {
-    filtered = filtered.filter(row => 
-      row.company_name && row.company_name.toLowerCase().includes(searchFilters.value.companyName.trim().toLowerCase())
-    );
+  try {
+    // 1. 필요한 모든 데이터 가져오기
+    const allProductsData = await fetchAllProducts();
+    const clientPharmacyMappings = await fetchClientPharmacyMappings();
+    const wholesaleRecords = await fetchWholesaleRecords(year, month);
+    const directSaleRecords = await fetchDirectSaleRecords(year, month);
+
+    console.log('Products:', allProductsData);
+    console.log('Mappings:', clientPharmacyMappings);
+    console.log('Wholesale:', wholesaleRecords);
+    console.log('Direct Sales:', directSaleRecords);
+
+    if (!allProductsData.length) {
+      alert('제품 정보가 없습니다. 흡수율 분석을 진행할 수 없습니다.');
+      return;
+    }
+
+    // displayRows (실적 데이터) 를 순회하며 흡수율 계산
+    for (const performanceRow of displayRows.value) {
+      // 초기화
+      performanceRow.wholesale_sales = 0;
+      performanceRow.direct_sales = 0;
+      performanceRow.total_sales = 0;
+      performanceRow.absorption_rate = 0;
+
+      const clientName = performanceRow.client_name;
+      const productName = performanceRow.product_name;
+      const insuranceCode = performanceRow.insurance_code;
+      const performancePrescriptionMonth = performanceRow.prescription_month; // YYYY-MM 형식
+
+      // 주의사항 2: 보험코드로 표준코드 목록 찾기
+      const relevantStandardCodes = allProductsData
+        .filter(p => p.insurance_code === insuranceCode && p.product_name === productName)
+        .map(p => p.standard_code);
+      
+      if (!relevantStandardCodes.length) {
+        console.warn(`표준코드를 찾을 수 없음: 제품명 ${productName}, 보험코드 ${insuranceCode}`);
+        continue; // 다음 실적 행으로
+      }
+
+      // 해당 병원(clientName)에 매핑된 약국 ID 목록 찾기
+      const mappedPharmacyIds = clientPharmacyMappings
+        .filter(m => m.clients && m.clients.name === clientName)
+        .map(m => m.pharmacy_id);
+
+      if (!mappedPharmacyIds.length) {
+        console.warn(`매핑된 약국을 찾을 수 없음: 병원명 ${clientName}`);
+        continue; // 다음 실적 행으로
+      }
+
+      let pharmacyTotalWholesale = 0;
+      let pharmacyTotalDirectSales = 0;
+
+      // 각 매핑된 약국에 대해 매출 집계
+      for (const pharmacyId of mappedPharmacyIds) {
+        // 도매 매출 집계
+        wholesaleRecords
+          .filter(wr => wr.pharmacy_id === pharmacyId && 
+                         relevantStandardCodes.includes(wr.product_standard_code) &&
+                         wr.sales_date && wr.sales_date.startsWith(performancePrescriptionMonth)) // sales_date NULL 체크 추가
+          .forEach(wr => {
+            pharmacyTotalWholesale += Number(wr.sales_amount) || 0;
+          });
+
+        // 직거래 매출 집계
+        directSaleRecords
+          .filter(dr => dr.pharmacy_id === pharmacyId && 
+                         relevantStandardCodes.includes(dr.product_standard_code) &&
+                         dr.sales_date && dr.sales_date.startsWith(performancePrescriptionMonth)) // sales_date NULL 체크 추가
+          .forEach(dr => {
+            pharmacyTotalDirectSales += Number(dr.sales_amount) || 0;
+          });
+      }
+      
+      // 주의사항 5: 약국 1 : 병원 N 처리 (이 부분은 더 복잡한 로직 필요)
+      // 현재는 병원 1 : 약국 N 을 기준으로 합산된 매출을 그대로 사용합니다.
+      // TODO: 추후 약국별 총 매출을 계산하고, 해당 약국에 연결된 병원들의 실적 비율로 분배하는 로직 추가 필요.
+      //       이를 위해서는 전체 실적 데이터, 전체 병원-약국 매핑 정보 등을 종합적으로 고려해야 함.
+
+      performanceRow.wholesale_sales = pharmacyTotalWholesale;
+      performanceRow.direct_sales = pharmacyTotalDirectSales;
+      
+      // 주의사항 3: 동일 병원, 제품, 처방월의 실적이 여러 행일 경우 (이 부분도 추가 로직 필요)
+      // TODO: 현재는 각 displayRow를 독립적으로 계산. 동일 그룹 내 총 매출을 구하고 비율 배분 필요.
+      //       이를 위해서는 displayRows를 그룹핑하고, 그룹별 총 매출을 먼저 계산해야 함.
+
+      // 합산액 및 흡수율 계산
+      performanceRow.total_sales = performanceRow.wholesale_sales + performanceRow.direct_sales;
+      const prescriptionAmount = Number(performanceRow.prescription_amount.toString().replace(/,/g, '')) || 0;
+      if (prescriptionAmount > 0) {
+        performanceRow.absorption_rate = parseFloat(((performanceRow.total_sales / prescriptionAmount) * 100).toFixed(1));
+      } else {
+        performanceRow.absorption_rate = 0;
+      }
+    }
+    
+    // 주의사항 3 및 5를 적용하기 위한 추가 처리 (매우 중요)
+    // 현재 위 로직은 각 실적 행을 독립적으로 계산하여, 동일 그룹 내 매출 배분 및
+    // 여러 병원에 연결된 약국의 매출 배분이 정확하지 않을 수 있습니다.
+    // 정확한 계산을 위해서는 아래와 같은 접근이 필요합니다:
+
+    // 1. 약국별, 제품(표준코드)별, 월별 총 매출액 집계 (도매 + 직거래)
+    const monthlyPharmacyProductSales = {}; // { 'pharmacyId_standardCode_YYYY-MM': totalSales, ... }
+    
+    [...wholesaleRecords, ...directSaleRecords].forEach(rec => {
+      if (rec.sales_date && rec.product_standard_code) { // sales_date 및 standard_code NULL 체크 추가
+        const key = `${rec.pharmacy_id}_${rec.product_standard_code}_${rec.sales_date.substring(0, 7)}`;
+        monthlyPharmacyProductSales[key] = (monthlyPharmacyProductSales[key] || 0) + (Number(rec.sales_amount) || 0);
+      }
+    });
+
+    // 2. 각 실적 행(performanceRow)에 대해 배분될 매출 계산
+    for (const performanceRow of displayRows.value) {
+      const clientName = performanceRow.client_name;
+      const productName = performanceRow.product_name;
+      const insuranceCode = performanceRow.insurance_code;
+      const performancePrescriptionMonth = performanceRow.prescription_month; // YYYY-MM
+      const performanceQty = Number(performanceRow.prescription_qty) || 0;
+
+      let allocatedWholesale = 0;
+      let allocatedDirectSales = 0;
+
+      const relevantStandardCodes = allProductsData
+        .filter(p => p.insurance_code === insuranceCode && p.product_name === productName)
+        .map(p => p.standard_code);
+
+      if (!relevantStandardCodes.length) continue;
+
+      // 이 실적 행의 병원(clientName)에 매핑된 약국들
+      const mappedPharmaciesForThisClient = clientPharmacyMappings
+        .filter(m => m.clients && m.clients.name === clientName);
+
+      if (!mappedPharmaciesForThisClient.length) continue;
+
+      for (const standardCode of relevantStandardCodes) {
+        for (const mapping of mappedPharmaciesForThisClient) {
+          const pharmacyId = mapping.pharmacy_id;
+          const salesKey = `${pharmacyId}_${standardCode}_${performancePrescriptionMonth}`;
+          const pharmacyProductMonthTotalSales = monthlyPharmacyProductSales[salesKey] || 0;
+
+          if (pharmacyProductMonthTotalSales === 0) continue;
+
+          // 이 약국(pharmacyId)에 매핑된 모든 병원 찾기
+          const clientsMappedToThisPharmacy = clientPharmacyMappings
+            .filter(m => m.pharmacy_id === pharmacyId)
+            .map(m => m.clients.name);
+          
+          // 이 약국 & 제품 & 월에 대해, 연결된 모든 병원의 총 처방 수량 계산
+          let totalQtyForPharmacyProductMonth = 0;
+          displayRows.value.forEach(pr => {
+            if (clientsMappedToThisPharmacy.includes(pr.client_name) && 
+                pr.insurance_code === insuranceCode && // 동일 보험코드 (즉, 동일 제품군)
+                pr.prescription_month === performancePrescriptionMonth) {
+              totalQtyForPharmacyProductMonth += Number(pr.prescription_qty) || 0;
+            }
+          });
+          
+          if (totalQtyForPharmacyProductMonth > 0) {
+            const allocationRatio = performanceQty / totalQtyForPharmacyProductMonth;
+            const allocatedSalesForThisRow = pharmacyProductMonthTotalSales * allocationRatio;
+            
+            // 도매/직거래 비율을 알 수 없으므로, 우선 합산액을 기준으로 배분하고, 
+            // 실제로는 wholesale_sales와 direct_sales를 구분해서 배분해야 함 (데이터 구조상 어려움)
+            // 여기서는 합산된 매출을 우선 direct_sales에 모두 할당하거나, 혹은 별도 비율로 나눠야 함.
+            // 이번 단계에서는 설명을 위해 total_sales 기준으로 계산하고, 이후 UI 표시 시 분배.
+            // 실제로는 wholesaleRecords와 directSaleRecords에서 해당 약국, 표준코드, 월의 매출을 각각 가져와 비율대로 배분해야 더 정확함.
+
+            // 임시: 합산된 매출을 우선 direct_sales에 할당 (추후 도매/직거래 구분 필요)
+            allocatedDirectSales += allocatedSalesForThisRow; 
+          }
+        }
+      }
+      performanceRow.wholesale_sales = 0; // 정확한 배분을 위해 0으로 초기화 후 아래에서 재계산 시도
+      performanceRow.direct_sales = allocatedDirectSales; // 주의: 이부분은 도매/직거래를 합친 값임
+
+      // 실제로는 allocatedWholesale 과 allocatedDirectSales를 별도로 계산해야 합니다.
+      // 위 로직은 개념 설명이며, 정확한 도매/직거래 분배를 위해서는 추가적인 처리가 필요합니다.
+      // 예: 해당 약국-제품-월의 총 도매액과 총 직거래액을 구하고, 그 비율대로 allocatedSalesForThisRow를 분배
+
+      // 재계산: 합산액 및 흡수율
+      performanceRow.total_sales = performanceRow.wholesale_sales + performanceRow.direct_sales;
+      const prescriptionAmount = Number(performanceRow.prescription_amount.toString().replace(/,/g, '')) || 0;
+      if (prescriptionAmount > 0) {
+        performanceRow.absorption_rate = parseFloat(((performanceRow.total_sales / prescriptionAmount) * 100).toFixed(1));
+      } else {
+        performanceRow.absorption_rate = 0;
+      }
+    }
+
+    alert('흡수율 분석이 완료되었습니다. 주의사항 3, 5에 대한 기본 배분 로직이 적용되었습니다. (추가 정교화 필요)');
+
+  } catch (error) {
+    console.error('흡수율 분석 중 오류 발생:', error);
+    alert('흡수율 분석 중 오류가 발생했습니다: ' + error.message);
   }
-
-  // 거래처 필터
-  if (searchFilters.value.clientName.trim()) {
-    filtered = filtered.filter(row => 
-      row.client_name && row.client_name.toLowerCase().includes(searchFilters.value.clientName.trim().toLowerCase())
-    );
-  }
-
-  // 제품명 필터
-  if (searchFilters.value.productName.trim()) {
-    filtered = filtered.filter(row => 
-      row.product_name && row.product_name.toLowerCase().includes(searchFilters.value.productName.trim().toLowerCase())
-    );
-  }
-
-  // 보험코드 필터
-  if (searchFilters.value.insuranceCode.trim()) {
-    filtered = filtered.filter(row => 
-      row.insurance_code && row.insurance_code.toLowerCase().includes(searchFilters.value.insuranceCode.trim().toLowerCase())
-    );
-  }
-
-  displayRows.value = filtered;
 }
 
-function clearSearchFilters() {
-  searchFilters.value = {
-    companyName: '',
-    clientName: '',
-    productName: '',
-    insuranceCode: ''
-  };
-  displayRows.value = [...allDisplayRows.value];
+// 특정 월의 도매 매출 데이터 조회
+async function fetchWholesaleRecords(year, month) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0); // 해당 월의 마지막 날짜
+  const endDateString = `${year}-${String(month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+  try {
+    const { data, error } = await supabase
+      .from('wholesale_records')
+      .select('pharmacy_id, product_standard_code, sales_amount, sales_date, pharmacies(name)') // 약국명 포함
+      .gte('sales_date', startDate)
+      .lte('sales_date', endDateString);
+    if (error) {
+      console.error('도매 매출 데이터 조회 오류:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('도매 매출 데이터 조회 예외:', err);
+    return [];
+  }
+}
+
+// 특정 월의 직거래 매출 데이터 조회
+async function fetchDirectSaleRecords(year, month) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0); // 해당 월의 마지막 날짜
+  const endDateString = `${year}-${String(month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+  try {
+    const { data, error } = await supabase
+      .from('direct_sale_records')
+      .select('pharmacy_id, product_standard_code, sales_amount, sales_date, pharmacies(name)') // 약국명 포함
+      .gte('sales_date', startDate)
+      .lte('sales_date', endDateString);
+    if (error) {
+      console.error('직거래 매출 데이터 조회 오류:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('직거래 매출 데이터 조회 예외:', err);
+    return [];
+  }
 }
 </script> 

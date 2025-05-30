@@ -25,7 +25,8 @@
                 class="search-input"
               />
             </span>
-            <div>
+            <div class="button-group">
+              <button class="btn-excel" @click="downloadExcel" :disabled="pendingCompanies.length === 0">엑셀 다운로드</button>
               <button class="btn-primary" @click="goCreate">등록</button>
             </div>            
           </div>
@@ -86,6 +87,7 @@ import Dialog from 'primevue/dialog';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { h } from 'vue';
+import * as XLSX from 'xlsx';
 
 const pendingCompanies = ref([]);
 const loading = ref(false);
@@ -111,7 +113,10 @@ const fetchCompanies = async () => {
     const { data, error } = await supabase
       .from('companies')
       .select('*');
-    if (error) throw error;
+    if (error) {
+      console.error('업체 정보를 불러오는데 실패했습니다.', error);
+      throw error;
+    }
     pendingCompanies.value = (data || []).filter(company => company.user_type === 'user' && company.approval_status === 'pending');
   } catch (err) {
     console.error('업체 정보를 불러오는데 실패했습니다.', err);
@@ -156,6 +161,14 @@ const cancelEditCompanyDetail = () => {
 const saveCompanyDetail = async () => {
   try {
     loading.value = true;
+    const currentUser = await supabase.auth.getUser();
+    if (!currentUser.data.user) {
+      alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      loading.value = false;
+      return;
+    }
+    const adminUserId = currentUser.data.user.id;
+
     const { error } = await supabase
       .from('companies')
       .update({
@@ -171,7 +184,8 @@ const saveCompanyDetail = async () => {
         default_commission_grade: selectedCompany.default_commission_grade,
         assigned_pharmacist_contact: selectedCompany.assigned_pharmacist_contact,
         remarks: selectedCompany.remarks,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        updated_by: adminUserId
       })
       .eq('id', selectedCompany.id);
     if (error) throw error;
@@ -196,19 +210,37 @@ const confirmApprovalChange = async (company, newStatus) => {
   if (!confirm(`${company.company_name} 업체를 ${actionText} 처리하시겠습니까?`)) return;
   
   try {
-      loading.value = true;
-        const { error } = await supabase
-          .from('companies')
-          .update({ approval_status: newStatus })
-          .eq('id', company.id);
-        if (error) throw error;
+    loading.value = true;
+    const currentUser = await supabase.auth.getUser();
+    if (!currentUser.data.user) {
+      alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      loading.value = false;
+      return;
+    }
+    const adminUserId = currentUser.data.user.id;
+
+    const updatePayload = {
+      approval_status: newStatus,
+      updated_at: new Date().toISOString(),
+      updated_by: adminUserId
+    };
+
+    if (newStatus === 'approved' && !company.approved_at) { // 최초 승인 시에만 approved_at 기록
+      updatePayload.approved_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('companies')
+      .update(updatePayload)
+      .eq('id', company.id);
+    if (error) throw error;
     alert('업체 상태가 성공적으로 변경되었습니다.');
-        await fetchCompanies();
-      } catch (err) {
+    await fetchCompanies();
+  } catch (err) {
     alert(err.message || '상태 변경 실패');
-      } finally {
-        loading.value = false;
-      }
+  } finally {
+    loading.value = false;
+  }
 };
 
 const resetCompanyPassword = async () => {
@@ -244,4 +276,42 @@ function onCellEditComplete(event) {
 function goToDetail(id) {
   router.push(`/admin/companies/${id}`);
 }
+
+const downloadExcel = () => {
+  if (pendingCompanies.value.length === 0) {
+    alert('다운로드할 데이터가 없습니다.');
+    return;
+  }
+
+  const dataToExport = pendingCompanies.value.map((company, index) => ({
+    'ID': company.id,
+    'No': index + 1 + currentPageFirstIndex.value,
+    '아이디(이메일)': company.email,
+    '구분': company.company_group,
+    '업체명': company.company_name,
+    '사업자등록번호': company.business_registration_number,
+    '대표자': company.representative_name,
+    '사업장소재지': company.business_address,
+    '유선전화': company.landline_phone,
+    '담당자': company.contact_person_name,
+    '휴대폰 번호': company.mobile_phone,
+    '휴대폰 번호 2': company.mobile_phone_2,
+    '수신용 이메일': company.receive_email,
+    '승인여부': company.approval_status === 'approved' ? '승인' : (company.approval_status === 'pending' ? '미승인' : company.approval_status),
+    '수수료 등급': company.default_commission_grade,
+    '관리자': company.assigned_pharmacist_contact,
+    '비고': company.remarks,
+    '등록일자': company.created_at ? new Date(company.created_at).toLocaleString('ko-KR') : '',
+    '승인일자': company.approved_at ? new Date(company.approved_at).toLocaleString('ko-KR') : '',
+    '수정일자': company.updated_at ? new Date(company.updated_at).toLocaleString('ko-KR') : ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, '미승인업체목록');
+  
+  const today = new Date().toISOString().split('T')[0];
+  const fileName = `미승인업체목록_${today}.xlsx`;
+  XLSX.writeFile(workbook, fileName);
+};
 </script> 

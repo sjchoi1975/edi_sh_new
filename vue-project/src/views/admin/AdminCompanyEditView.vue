@@ -165,7 +165,28 @@ const handleSubmit = async () => {
   if (loading.value) return;
   loading.value = true;
   try {
-    const { error } = await supabase.from('companies').update({
+    const currentUser = await supabase.auth.getUser();
+    if (!currentUser.data.user) {
+      alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      loading.value = false;
+      return;
+    }
+    const adminUserId = currentUser.data.user.id;
+
+    // 기존 업체 정보를 불러와서 approved_at 값 확인
+    const { data: existingCompany, error: fetchError } = await supabase
+      .from('companies')
+      .select('approved_at')
+      .eq('id', route.params.id)
+      .single();
+
+    if (fetchError) {
+      alert('기존 업체 정보 조회 실패: ' + fetchError.message);
+      loading.value = false;
+      return;
+    }
+
+    const updatePayload = {
       company_name: companyName.value,
       business_registration_number: businessNumber.value,
       representative_name: representative.value,
@@ -180,8 +201,16 @@ const handleSubmit = async () => {
       assigned_pharmacist_contact: manager.value,
       remarks: remarks.value,
       approval_status: approvalStatus.value,
-      updated_at: new Date().toISOString()
-    }).eq('id', route.params.id);
+      updated_at: new Date().toISOString(),
+      updated_by: adminUserId // 최종 수정자 ID 추가
+    };
+
+    // 승인 상태로 변경되고, 기존 approved_at이 없을 경우 (최초 승인)
+    if (approvalStatus.value === 'approved' && !existingCompany?.approved_at) {
+      updatePayload.approved_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase.from('companies').update(updatePayload).eq('id', route.params.id);
     if (error) {
       alert('수정 실패: ' + error.message);
       loading.value = false;

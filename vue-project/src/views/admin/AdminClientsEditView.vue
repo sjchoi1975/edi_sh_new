@@ -82,8 +82,9 @@ onMounted(async () => {
 });
 
 const handleSubmit = async () => {
-  if (!clientCode.value || !name.value) {
-    alert('필수 항목을 모두 입력하세요.');
+  // 필수 항목: 병의원명, 사업자등록번호
+  if (!name.value || !businessNumber.value) {
+    alert('필수 항목(병의원명, 사업자등록번호)을 모두 입력하세요.');
     return;
   }
   const { error } = await supabase

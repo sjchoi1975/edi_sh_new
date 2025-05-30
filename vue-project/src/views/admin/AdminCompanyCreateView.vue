@@ -215,7 +215,7 @@ const handleSubmit = async () => {
     }
     const userId = signUpData.user?.id
     // 4. companies 테이블에 데이터 저장
-    const { error: insertError } = await supabase.from('companies').insert({
+    const companyDataToInsert = {
       email: email.value,
       company_name: companyName.value,
       business_registration_number: businessNumber.value,
@@ -236,7 +236,14 @@ const handleSubmit = async () => {
       status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    })
+      created_by: userId,
+    }
+
+    if (approvalStatus.value === '승인') {
+      companyDataToInsert.approved_at = new Date().toISOString()
+    }
+
+    const { error: insertError } = await supabase.from('companies').insert(companyDataToInsert)
     if (insertError) {
       alert('업체 등록 실패: ' + insertError.message)
       loading.value = false

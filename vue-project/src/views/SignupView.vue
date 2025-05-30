@@ -92,22 +92,23 @@ const handleSignup = async () => {
     });
     if (authError) throw authError;
     if (authData && authData.user) {
+      const companyDataToInsert = {
+        user_id: authData.user.id,
+        email: emailLower,
+        company_name: formData.value.companyName,
+        business_registration_number: formData.value.businessRegistrationNumber,
+        representative_name: formData.value.representativeName,
+        business_address: formData.value.businessAddress,
+        contact_person_name: formData.value.contactPersonName,
+        mobile_phone: formData.value.mobilePhone,
+        user_type: 'user',
+        approval_status: 'pending',
+        created_by: authData.user.id,
+      };
+      
       const { error: companyInsertError } = await supabase
         .from('companies')
-        .insert([
-          {
-            user_id: authData.user.id,
-            email: emailLower,
-            company_name: formData.value.companyName,
-            business_registration_number: formData.value.businessRegistrationNumber,
-            representative_name: formData.value.representativeName,
-            business_address: formData.value.businessAddress,
-            contact_person_name: formData.value.contactPersonName,
-            mobile_phone: formData.value.mobilePhone,
-            user_type: 'user',
-            approval_status: 'pending'
-          }
-        ]);
+        .insert([companyDataToInsert]);
       if (companyInsertError) throw companyInsertError;
       alert('가입 요청이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다.');
       router.push('/login');

@@ -280,9 +280,9 @@ const cancelEdit = (row) => {
 // 수정 저장
 const saveEdit = async (row) => {
   try {
-    // 필수 필드 검증
-    if (!row.business_registration_number || !row.standard_code || !row.sales_amount || !row.sales_date) {
-      alert('필수 항목을 모두 입력하세요.');
+    // 필수 필드 검증 (매출액, 매출일자 제외)
+    if (!row.business_registration_number || !row.standard_code) { // 매출액, 매출일자 필수 검증 제거
+      alert('사업자등록번호, 표준코드는 필수 항목입니다.');
       return;
     }
     
@@ -293,8 +293,8 @@ const saveEdit = async (row) => {
       address: row.address || '',
       standard_code: row.standard_code,
       product_name: row.product_name || '',
-      sales_amount: Number(row.sales_amount),
-      sales_date: row.sales_date
+      sales_amount: row.sales_amount ? Number(row.sales_amount) : null, // NULL 가능하도록 수정
+      sales_date: row.sales_date || null // 빈 문자열이면 null로 처리
     };
     
     const { error } = await supabase
@@ -415,7 +415,7 @@ const handleFileUpload = async (event) => {
     jsonData.forEach((row, index) => {
       const rowNum = index + 2; // 엑셀 행 번호 (헤더 제외)
       
-      // 필수 필드 검증
+      // 필수 필드 검증 (매출액, 매출일자 제외)
       if (!row['사업자등록번호']) {
         errors.push(`${rowNum}행: 사업자등록번호가 필요합니다.`);
         return;
@@ -424,30 +424,32 @@ const handleFileUpload = async (event) => {
         errors.push(`${rowNum}행: 표준코드가 필요합니다.`);
         return;
       }
-      if (!row['매출액']) {
-        errors.push(`${rowNum}행: 매출액이 필요합니다.`);
-        return;
-      }
-      if (!row['매출일자']) {
-        errors.push(`${rowNum}행: 매출일자가 필요합니다.`);
-        return;
-      }
+      // 매출액, 매출일자는 NULL 허용으로 필수 검증에서 제외
       
-      // 날짜 변환 처리
-      let salesDate = row['매출일자'];
-      if (typeof salesDate === 'number') {
-        // 엑셀 시리얼 번호를 날짜로 변환
-        const excelDate = new Date((salesDate - 25569) * 86400 * 1000);
-        salesDate = excelDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
-      } else if (salesDate instanceof Date) {
-        salesDate = salesDate.toISOString().split('T')[0];
-      } else if (typeof salesDate === 'string') {
-        // 문자열인 경우 날짜 형식 검증
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(salesDate)) {
-          errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이어야 합니다.`);
-          return;
+      // 날짜 변환 처리 (NULL 허용)
+      let salesDate = null;
+      if (row['매출일자']) {
+        if (typeof row['매출일자'] === 'number') {
+          const excelDate = new Date((row['매출일자'] - 25569) * 86400 * 1000);
+          salesDate = excelDate.toISOString().split('T')[0];
+        } else if (row['매출일자'] instanceof Date) {
+          salesDate = row['매출일자'].toISOString().split('T')[0];
+        } else if (typeof row['매출일자'] === 'string') {
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (dateRegex.test(row['매출일자'])) {
+            salesDate = row['매출일자'];
+          } else {
+            errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이거나 비워두어야 합니다.`);
+            return;
+          }
         }
+      }
+
+      // 매출액 처리 (NULL 허용)
+      const salesAmount = row['매출액'] ? Number(row['매출액']) : null;
+      if (row['매출액'] && isNaN(salesAmount)) {
+          errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`);
+          return;
       }
       
       uploadData.push({
@@ -457,8 +459,8 @@ const handleFileUpload = async (event) => {
         address: row['주소'] || '',
         standard_code: row['표준코드'],
         product_name: row['제품명'] || '',
-        sales_amount: Number(row['매출액']),
-        sales_date: salesDate
+        sales_amount: salesAmount, // NULL 가능
+        sales_date: salesDate // NULL 가능
       });
     });
     
