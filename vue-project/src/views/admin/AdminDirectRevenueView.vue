@@ -1,40 +1,48 @@
 <template>
-  <div class="admin-revenue-view">
-    <div class="header-title">직거래매출 목록</div>
-    <div class="table-container">
-      <div class="table-header">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <span class="p-input-icon-left">
-            <InputText
-                  v-model="filters['global'].value"
-                  placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
-                  class="search-input"
-                />
-          </span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label style="white-space: nowrap; font-weight: 500;">매출월</label>
-            <select 
-              v-model="selectedMonth" 
-              @change="filterByMonth"
-              style="width: 140px; height: 36px; border: 1px solid #bbb; border-radius: 2px; padding: 4px 8px;"
-            >
-              <option value="">- 전체 -</option>
-              <option v-for="month in availableMonths" :key="month" :value="month">
-                {{ month }}
-              </option>
-            </select>
-          </div>
+  <div class="admin-revenue-view page-container">
+    <div class="page-header-title-area">
+      <div class="header-title">직거래매출 목록</div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-row">
+        <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
+          <label style="font-weight: 500;">기간</label>
+          <select v-model="fromMonth" class="select_month">
+            <option v-for="month in availableMonths" :key="month" :value="month">
+              {{ month }}
+            </option>
+          </select>
+          <span>~</span>
+          <select v-model="toMonth" class="select_month">
+            <option v-for="month in availableMonths" :key="month" :value="month">
+              {{ month }}
+            </option>
+          </select>
         </div>
-        <div class="action-buttons">
+        <span class="p-input-icon-left">
+          <InputText
+            v-model="filters['global'].value"
+            placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
+            class="search-input"
+          />
+        </span>
+      </div>
+    </div>
+    <div class="data-card">
+      <div class="data-card-header">
+        <div class="total-count-display">
+          전체 {{ filteredRevenues.length }} 건
+        </div>
+        <div class="action-buttons-group">
           <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
           <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
           <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
-          <input 
-            ref="fileInput" 
-            type="file" 
-            accept=".xlsx,.xls" 
-            @change="handleFileUpload" 
-            style="display: none;"
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".xlsx,.xls"
+            @change="handleFileUpload"
+            style="display: none"
           />
           <button class="btn-primary" @click="goCreate">등록</button>
         </div>
@@ -45,133 +53,127 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="680px"
+        scrollHeight="calc(100vh - 340px)"
         v-model:filters="filters"
-        :globalFilterFields="['pharmacy_name', 'business_registration_number', 'standard_code', 'product_name']"
+        :globalFilterFields="[
+          'pharmacy_name',
+          'business_registration_number',
+          'standard_code',
+          'product_name',
+        ]"
         class="custom-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 매출이 없습니다.</template>
         <template #loading>매출 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '4%' }">
+        <Column header="No" :headerStyle="{ width: '6%' }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }">
+        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }" :sortable="true" >
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.pharmacy_code"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: '12%' }">
+        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.pharmacy_name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.pharmacy_name }}</span>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자번호" :headerStyle="{ width: '11%' }">
+        <Column
+          field="business_registration_number"
+          header="사업자번호"
+          :headerStyle="{ width: '10%' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: '16%' }">
+        <Column field="address" header="주소" :headerStyle="{ width: '18%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.address"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.address }}</span>
           </template>
         </Column>
-        <Column field="standard_code" header="표준코드" :headerStyle="{ width: '9%' }">
+        <Column field="standard_code" header="표준코드" :headerStyle="{ width: '10%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.standard_code"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
         </Column>
-        <Column field="product_name" header="제품명" :headerStyle="{ width: '11%' }">
+        <Column field="product_name" header="제품명" :headerStyle="{ width: '12%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.product_name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.product_name }}</span>
           </template>
         </Column>
-        <Column field="sales_amount" header="매출액" :headerStyle="{ width: '9%' }">
+        <Column field="sales_amount" header="매출액" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.sales_amount"
               type="number"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px; text-align: right;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px; text-align: right"
             />
             <span v-else>{{ slotProps.data.sales_amount?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column field="sales_date" header="매출일자" :headerStyle="{ width: '10%' }">
+        <Column field="sales_date" header="매출일자" :headerStyle="{ width: '8%' }" :sortable="true">
           <template #body="slotProps">
-            <input 
+            <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.sales_date"
               type="date"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px;"
+              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.sales_date }}</span>
           </template>
         </Column>
         <Column header="작업" :headerStyle="{ width: '14%' }">
           <template #body="slotProps">
-            <div style="display: flex; gap: 4px; justify-content: center;">
+            <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
-                <button 
-                  @click="saveEdit(slotProps.data)"
-                  class="btn-save-m"
-                  title="저장"
-                >
+                <button @click="saveEdit(slotProps.data)" class="btn-save-m" title="저장">
                   저장
                 </button>
-                <button 
-                  @click="cancelEdit(slotProps.data)"
-                  class="btn-cancel-m"
-                  title="취소"
-                >
+                <button @click="cancelEdit(slotProps.data)" class="btn-cancel-m" title="취소">
                   취소
                 </button>
               </template>
               <template v-else>
-                <button 
-                  @click="startEdit(slotProps.data)"
-                  class="btn-edit-m"
-                  title="수정"
-                >
+                <button @click="startEdit(slotProps.data)" class="btn-edit-m" title="수정">
                   수정
                 </button>
-                <button 
-                  @click="deleteRevenue(slotProps.data)"
-                  class="btn-delete-m"
-                  title="삭제"
-                >
+                <button @click="deleteRevenue(slotProps.data)" class="btn-delete-m" title="삭제">
                   삭제
                 </button>
               </template>
@@ -184,108 +186,111 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import InputText from 'primevue/inputtext';
-import { useRouter } from 'vue-router';
-import { supabase } from '@/supabase';
-import * as XLSX from 'xlsx';
+import { ref, onMounted, computed } from 'vue'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
+import { useRouter } from 'vue-router'
+import { supabase } from '@/supabase'
+import * as XLSX from 'xlsx'
 
-const revenues = ref([]);
-const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
-const router = useRouter();
-const fileInput = ref(null);
-const selectedMonth = ref('');
-const availableMonths = ref([]);
-const currentPageFirstIndex = ref(0);
+const revenues = ref([])
+const filters = ref({ global: { value: null, matchMode: 'contains' } })
+const router = useRouter()
+const fileInput = ref(null)
+const fromMonth = ref('')
+const toMonth = ref('')
+const availableMonths = ref([])
+const currentPageFirstIndex = ref(0)
 
 function goCreate() {
-  router.push('/admin/direct-revenue/create');
+  router.push('/admin/direct-revenue/create')
 }
 
 const fetchRevenues = async () => {
   const { data, error } = await supabase
     .from('direct_sales')
     .select('*')
-    .order('sales_date', { ascending: false });
+    .order('sales_date', { ascending: false })
   if (!error && data) {
     // 각 행에 편집 상태와 원본 데이터 백업 추가
-    revenues.value = data.map(item => ({
+    revenues.value = data.map((item) => ({
       ...item,
       isEditing: false,
-      originalData: { ...item }
-    }));
-    generateAvailableMonths();
+      originalData: { ...item },
+    }))
+    generateAvailableMonths()
   }
-};
+}
 
-// 매출 데이터에서 월별 목록 생성
-const generateAvailableMonths = () => {
-  const monthSet = new Set();
-  revenues.value.forEach(revenue => {
-    if (revenue.sales_date) {
-      const month = revenue.sales_date.substring(0, 7); // YYYY-MM 형식
-      monthSet.add(month);
+const fetchAvailableMonths = async () => {
+  const { data, error } = await supabase
+    .from('direct_sales')
+    .select('sales_date')
+    .order('sales_date', { ascending: false })
+  if (!error && data) {
+    const monthSet = new Set()
+    data.forEach(item => {
+      if (item.sales_date) {
+        monthSet.add(item.sales_date.substring(0, 7))
+      }
+    })
+    availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a))
+    if (availableMonths.value.length > 0) {
+      toMonth.value = availableMonths.value[0]
+      fromMonth.value = availableMonths.value[Math.min(2, availableMonths.value.length - 1)]
     }
-  });
-  
-  // 최신월부터 과거월 순으로 정렬
-  availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
-};
+  }
+}
 
 // 월별 필터링된 매출 데이터
 const filteredRevenues = computed(() => {
-  if (!selectedMonth.value) {
-    return revenues.value;
+  if (!fromMonth.value || !toMonth.value) {
+    return revenues.value
   }
-  
-  return revenues.value.filter(revenue => {
-    if (!revenue.sales_date) return false;
-    const revenueMonth = revenue.sales_date.substring(0, 7);
-    return revenueMonth === selectedMonth.value;
-  });
-});
 
-// 월별 필터 변경 시 호출
-const filterByMonth = () => {
-  // computed에서 자동으로 처리되므로 별도 로직 불필요
-};
+  return revenues.value.filter((revenue) => {
+    if (!revenue.sales_date) return false
+    const revenueMonth = revenue.sales_date.substring(0, 7)
+    return revenueMonth >= fromMonth.value && revenueMonth <= toMonth.value
+  })
+})
 
 // 수정 시작
 const startEdit = (row) => {
   // 다른 행이 편집 중이면 취소
-  revenues.value.forEach(item => {
+  revenues.value.forEach((item) => {
     if (item.isEditing && item.id !== row.id) {
-      cancelEdit(item);
+      cancelEdit(item)
     }
-  });
-  
+  })
+
   // 원본 데이터 백업
-  row.originalData = { ...row };
-  row.isEditing = true;
-};
+  row.originalData = { ...row }
+  row.isEditing = true
+}
 
 // 수정 취소
 const cancelEdit = (row) => {
   // 원본 데이터로 복원
-  Object.keys(row.originalData).forEach(key => {
+  Object.keys(row.originalData).forEach((key) => {
     if (key !== 'isEditing' && key !== 'originalData') {
-      row[key] = row.originalData[key];
+      row[key] = row.originalData[key]
     }
-  });
-  row.isEditing = false;
-};
+  })
+  row.isEditing = false
+}
 
 // 수정 저장
 const saveEdit = async (row) => {
   try {
     // 필수 필드 검증 (매출액, 매출일자 제외)
-    if (!row.business_registration_number || !row.standard_code) { // 매출액, 매출일자 필수 검증 제거
-      alert('사업자등록번호, 표준코드는 필수 항목입니다.');
-      return;
+    if (!row.business_registration_number || !row.standard_code) {
+      // 매출액, 매출일자 필수 검증 제거
+      alert('사업자등록번호, 표준코드는 필수 항목입니다.')
+      return
     }
-    
+
     const updateData = {
       pharmacy_code: row.pharmacy_code || '',
       pharmacy_name: row.pharmacy_name || '',
@@ -294,84 +299,76 @@ const saveEdit = async (row) => {
       standard_code: row.standard_code,
       product_name: row.product_name || '',
       sales_amount: row.sales_amount ? Number(row.sales_amount) : null, // NULL 가능하도록 수정
-      sales_date: row.sales_date || null // 빈 문자열이면 null로 처리
-    };
-    
-    const { error } = await supabase
-      .from('direct_sales')
-      .update(updateData)
-      .eq('id', row.id);
-    
-    if (error) {
-      alert('수정 실패: ' + error.message);
-      return;
+      sales_date: row.sales_date || null, // 빈 문자열이면 null로 처리
     }
-    
+
+    const { error } = await supabase.from('direct_sales').update(updateData).eq('id', row.id)
+
+    if (error) {
+      alert('수정 실패: ' + error.message)
+      return
+    }
+
     // 편집 모드 종료
-    row.isEditing = false;
-    row.originalData = { ...row };
-    
-    alert('수정되었습니다.');
-    
+    row.isEditing = false
+    row.originalData = { ...row }
+
+    alert('수정되었습니다.')
   } catch (error) {
-    console.error('수정 오류:', error);
-    alert('수정 중 오류가 발생했습니다.');
+    console.error('수정 오류:', error)
+    alert('수정 중 오류가 발생했습니다.')
   }
-};
+}
 
 // 삭제
 const deleteRevenue = async (row) => {
   if (!confirm('정말 삭제하시겠습니까?')) {
-    return;
+    return
   }
-  
+
   try {
-    const { error } = await supabase
-      .from('direct_sales')
-      .delete()
-      .eq('id', row.id);
-    
+    const { error } = await supabase.from('direct_sales').delete().eq('id', row.id)
+
     if (error) {
-      alert('삭제 실패: ' + error.message);
-      return;
+      alert('삭제 실패: ' + error.message)
+      return
     }
-    
+
     // 목록에서 제거
-    const index = revenues.value.findIndex(item => item.id === row.id);
+    const index = revenues.value.findIndex((item) => item.id === row.id)
     if (index > -1) {
-      revenues.value.splice(index, 1);
+      revenues.value.splice(index, 1)
     }
-    
+
     // 월별 목록 업데이트
-    generateAvailableMonths();
-    
-    alert('삭제되었습니다.');
-    
+    generateAvailableMonths()
+
+    alert('삭제되었습니다.')
   } catch (error) {
-    console.error('삭제 오류:', error);
-    alert('삭제 중 오류가 발생했습니다.');
+    console.error('삭제 오류:', error)
+    alert('삭제 중 오류가 발생했습니다.')
   }
-};
+}
 
 // 엑셀 템플릿 다운로드
 const downloadTemplate = () => {
   const templateData = [
     {
-      '약국코드': 'PH001',
-      '약국명': '예시약국',
-      '사업자등록번호': '123-45-67890',
-      '주소': '서울시 강남구 테헤란로 123',
-      '표준코드': 'STD001',
-      '제품명': '예시제품',
-      '매출액': 100000,
-      '매출일자': '2025-01-15'
-    }
-  ];
-  
-  const ws = XLSX.utils.json_to_sheet(templateData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '직거래매출템플릿');
-  
+      약국코드: 'PH001',
+      약국명: '예시약국',
+      사업자등록번호: '123-45-67890',
+      주소: '서울시 강남구 테헤란로 123',
+      표준코드: 'STD001',
+      제품명: '예시제품',
+      매출액: 100000,
+      매출일자: '2025-01-15',
+    },
+  ]
+
+  const ws = XLSX.utils.json_to_sheet(templateData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '직거래매출템플릿')
+
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 12 }, // 약국코드
@@ -381,77 +378,77 @@ const downloadTemplate = () => {
     { width: 12 }, // 표준코드
     { width: 20 }, // 제품명
     { width: 12 }, // 매출액
-    { width: 12 }  // 매출일자
-  ];
-  
-  XLSX.writeFile(wb, '직거래매출_업로드_템플릿.xlsx');
-};
+    { width: 12 }, // 매출일자
+  ]
+
+  XLSX.writeFile(wb, '직거래매출_업로드_템플릿.xlsx')
+}
 
 // 파일 업로드 트리거
 const triggerFileUpload = () => {
-  fileInput.value.click();
-};
+  fileInput.value.click()
+}
 
 // 엑셀 파일 업로드 처리
 const handleFileUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  
+  const file = event.target.files[0]
+  if (!file) return
+
   try {
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-    
+    const data = await file.arrayBuffer()
+    const workbook = XLSX.read(data)
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+    const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
     if (jsonData.length === 0) {
-      alert('엑셀 파일에 데이터가 없습니다.');
-      return;
+      alert('엑셀 파일에 데이터가 없습니다.')
+      return
     }
-    
+
     // 데이터 변환 및 검증
-    const uploadData = [];
-    const errors = [];
-    
+    const uploadData = []
+    const errors = []
+
     jsonData.forEach((row, index) => {
-      const rowNum = index + 2; // 엑셀 행 번호 (헤더 제외)
-      
+      const rowNum = index + 2 // 엑셀 행 번호 (헤더 제외)
+
       // 필수 필드 검증 (매출액, 매출일자 제외)
       if (!row['사업자등록번호']) {
-        errors.push(`${rowNum}행: 사업자등록번호가 필요합니다.`);
-        return;
+        errors.push(`${rowNum}행: 사업자등록번호가 필요합니다.`)
+        return
       }
       if (!row['표준코드']) {
-        errors.push(`${rowNum}행: 표준코드가 필요합니다.`);
-        return;
+        errors.push(`${rowNum}행: 표준코드가 필요합니다.`)
+        return
       }
       // 매출액, 매출일자는 NULL 허용으로 필수 검증에서 제외
-      
+
       // 날짜 변환 처리 (NULL 허용)
-      let salesDate = null;
+      let salesDate = null
       if (row['매출일자']) {
         if (typeof row['매출일자'] === 'number') {
-          const excelDate = new Date((row['매출일자'] - 25569) * 86400 * 1000);
-          salesDate = excelDate.toISOString().split('T')[0];
+          const excelDate = new Date((row['매출일자'] - 25569) * 86400 * 1000)
+          salesDate = excelDate.toISOString().split('T')[0]
         } else if (row['매출일자'] instanceof Date) {
-          salesDate = row['매출일자'].toISOString().split('T')[0];
+          salesDate = row['매출일자'].toISOString().split('T')[0]
         } else if (typeof row['매출일자'] === 'string') {
-          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/
           if (dateRegex.test(row['매출일자'])) {
-            salesDate = row['매출일자'];
+            salesDate = row['매출일자']
           } else {
-            errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이거나 비워두어야 합니다.`);
-            return;
+            errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이거나 비워두어야 합니다.`)
+            return
           }
         }
       }
 
       // 매출액 처리 (NULL 허용)
-      const salesAmount = row['매출액'] ? Number(row['매출액']) : null;
+      const salesAmount = row['매출액'] ? Number(row['매출액']) : null
       if (row['매출액'] && isNaN(salesAmount)) {
-          errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`);
-          return;
+        errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`)
+        return
       }
-      
+
       uploadData.push({
         pharmacy_code: row['약국코드'] || '',
         pharmacy_name: row['약국명'] || '',
@@ -460,61 +457,58 @@ const handleFileUpload = async (event) => {
         standard_code: row['표준코드'],
         product_name: row['제품명'] || '',
         sales_amount: salesAmount, // NULL 가능
-        sales_date: salesDate // NULL 가능
-      });
-    });
-    
+        sales_date: salesDate, // NULL 가능
+      })
+    })
+
     if (errors.length > 0) {
-      alert('데이터 오류:\n' + errors.join('\n'));
-      return;
+      alert('데이터 오류:\n' + errors.join('\n'))
+      return
     }
-    
+
     // 데이터베이스에 일괄 삽입
-    const { error } = await supabase
-      .from('direct_sales')
-      .insert(uploadData);
-    
+    const { error } = await supabase.from('direct_sales').insert(uploadData)
+
     if (error) {
-      alert('업로드 실패: ' + error.message);
+      alert('업로드 실패: ' + error.message)
     } else {
-      alert(`${uploadData.length}건의 직거래매출 데이터가 업로드되었습니다.`);
-      await fetchRevenues(); // 목록 새로고침
+      alert(`${uploadData.length}건의 직거래매출 데이터가 업로드되었습니다.`)
+      await fetchRevenues() // 목록 새로고침
     }
-    
   } catch (error) {
-    console.error('파일 처리 오류:', error);
-    alert('파일 처리 중 오류가 발생했습니다.');
+    console.error('파일 처리 오류:', error)
+    alert('파일 처리 중 오류가 발생했습니다.')
   } finally {
     // 파일 입력 초기화
-    event.target.value = '';
+    event.target.value = ''
   }
-};
+}
 
 // 엑셀 다운로드 (현재 목록)
 const downloadExcel = () => {
   if (filteredRevenues.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.');
-    return;
+    alert('다운로드할 데이터가 없습니다.')
+    return
   }
-  
+
   // 데이터 변환
-  const excelData = filteredRevenues.value.map(revenue => ({
-    '약국코드': revenue.pharmacy_code || '',
-    '약국명': revenue.pharmacy_name || '',
-    '사업자등록번호': revenue.business_registration_number || '',
-    '주소': revenue.address || '',
-    '표준코드': revenue.standard_code || '',
-    '제품명': revenue.product_name || '',
-    '매출액': revenue.sales_amount || 0,
-    '매출일자': revenue.sales_date || '',
-    '등록일': revenue.created_at ? new Date(revenue.created_at).toISOString().split('T')[0] : '',
-    '수정일': revenue.updated_at ? new Date(revenue.updated_at).toISOString().split('T')[0] : ''
-  }));
-  
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '직거래매출목록');
-  
+  const excelData = filteredRevenues.value.map((revenue) => ({
+    약국코드: revenue.pharmacy_code || '',
+    약국명: revenue.pharmacy_name || '',
+    사업자등록번호: revenue.business_registration_number || '',
+    주소: revenue.address || '',
+    표준코드: revenue.standard_code || '',
+    제품명: revenue.product_name || '',
+    매출액: revenue.sales_amount || 0,
+    매출일자: revenue.sales_date || '',
+    등록일: revenue.created_at ? new Date(revenue.created_at).toISOString().split('T')[0] : '',
+    수정일: revenue.updated_at ? new Date(revenue.updated_at).toISOString().split('T')[0] : '',
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(excelData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '직거래매출목록')
+
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 12 }, // 약국코드
@@ -526,26 +520,28 @@ const downloadExcel = () => {
     { width: 12 }, // 매출액
     { width: 12 }, // 매출일자
     { width: 12 }, // 등록일
-    { width: 12 }  // 수정일
-  ];
-  
+    { width: 12 }, // 수정일
+  ]
+
   // 매출액 컬럼에 숫자 형식 적용 (천단위 콤마)
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let row = 1; row <= range.e.r; row++) { // 헤더 제외하고 시작
-    const cellAddress = XLSX.utils.encode_cell({ r: row, c: 6 }); // 매출액은 7번째 컬럼 (인덱스 6)
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  for (let row = 1; row <= range.e.r; row++) {
+    // 헤더 제외하고 시작
+    const cellAddress = XLSX.utils.encode_cell({ r: row, c: 6 }) // 매출액은 7번째 컬럼 (인덱스 6)
     if (ws[cellAddress]) {
-      ws[cellAddress].z = '#,##0'; // 천단위 콤마 형식
+      ws[cellAddress].z = '#,##0' // 천단위 콤마 형식
     }
   }
-  
+
   // 파일명에 현재 날짜 포함
-  const today = new Date().toISOString().split('T')[0];
-  const fileName = `직거래매출목록_${today}.xlsx`;
-  
-  XLSX.writeFile(wb, fileName);
-};
+  const today = new Date().toISOString().split('T')[0]
+  const fileName = `직거래매출목록_${today}.xlsx`
+
+  XLSX.writeFile(wb, fileName)
+}
 
 onMounted(() => {
-  fetchRevenues();
-});
-</script> 
+  fetchRevenues()
+  fetchAvailableMonths()
+})
+</script>

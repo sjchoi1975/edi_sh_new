@@ -89,7 +89,11 @@ const adminMenuTree = [
     { label: '미승인 업체', path: '/admin/companies/pending' }
   ] },
   { label: '제품 관리', children: [ { label: '제품 목록', path: '/admin/products' } ] },
-  { label: '거래처 관리', children: [ { label: '거래처 목록', path: '/admin/clients' } ] },
+  { label: '거래처 관리', children: [ 
+    { label: '거래처 목록', path: '/admin/clients' },
+    { label: '담당업체 지정', path: '/admin/clients/assign-companies' },
+    { label: '문전약국 지정', path: '/admin/clients/assign-pharmacies' }
+  ] },
   { label: '문전약국 관리', children: [ { label: '문전약국 목록', path: '/admin/pharmacies' } ] },
   { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
   { label: '실적 관리', children: [ 

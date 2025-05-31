@@ -1,8 +1,30 @@
 <template>
-  <div class="admin-notices-view">
-    <div class="header-title">공지사항 목록</div>
-    <div class="table-container">
+  <div class="admin-notices-view page-container">
+    <div class="page-header-title-area">
+      <div class="header-title">공지사항 목록</div>
+    </div>
 
+    <div class="filter-card">
+      <div class="filter-row">
+        <span class="filter-item p-input-icon-left">
+          <InputText
+            v-model="filters['global'].value"
+            placeholder="제목 검색"
+            class="search-input"
+          />
+        </span>
+      </div>
+    </div>
+
+    <div class="data-card">
+      <div class="data-card-header">
+        <div class="total-count-display">
+          전체 {{ filteredNotices.length }} 건
+        </div>
+        <div class="action-buttons-group">
+          <button class="btn-primary btn-sm" @click="goCreate">등록</button>
+        </div>
+      </div>
 
       <DataTable
         :value="filteredNotices"
@@ -10,57 +32,36 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="680px"
+        scrollHeight="calc(100vh - 340px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
         class="custom-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #header>
-          <div class="table-header">
-            <span class="p-input-icon-left">
-              <InputText
-                v-model="filters['global'].value"
-                placeholder="제목 검색"
-                class="search-input"
-              />
-            </span>
-            <button class="btn-primary" @click="goCreate">등록</button>
-          </div>
-        </template>
-        <Column header="No" :headerStyle="{ width: '5%' }">
-          <template #body="slotProps">
-            {{ slotProps.index + currentPageFirstIndex + 1 }}
-          </template>
+        <template #empty>등록된 공지사항이 없습니다.</template>
+        <template #loading>공지사항 목록을 불러오는 중입니다...</template>
+        
+        <Column header="No" :headerStyle="{ width: '5%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+          <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="is_pinned" header="필수" :headerStyle="{ width: '11%' }" :sortable="false">
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: '10%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
           </template>
         </Column>
-        <Column field="title" header="제목" :headerStyle="{ width: '40%' }" :sortable="false">
+        <Column field="title" header="제목" :headerStyle="{ width: '45%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }">
           <template #body="slotProps">
-            <a
-              href="#"
-              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
-              @click.prevent="goToDetail(slotProps.data.id)"
-            >
-              {{ slotProps.data.title }}
-            </a>
+            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.title }}</a>
           </template>
         </Column>
-        <Column field="file_count" header="첨부파일" :headerStyle="{ width: '11%' }">
+        <Column field="file_count" header="첨부파일" :headerStyle="{ width: '10%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
-            <span>
-              {{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}
-            </span>
+            <span>{{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}</span>
           </template>
         </Column>
-        <Column field="view_count" header="조회수" :headerStyle="{ width: '11%' }" :sortable="false" />
-        <Column field="created_at" header="작성일시" :headerStyle="{ width: '16%' }" :sortable="false">
-          <template #body="slotProps">
-            {{ formatKST(slotProps.data.created_at) }}
-          </template>
+        <Column field="view_count" header="조회수" :headerStyle="{ width: '10%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" />
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: '15%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+          <template #body="slotProps">{{ formatKST(slotProps.data.created_at) }}</template>
         </Column>
       </DataTable>
     </div>
@@ -74,7 +75,6 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import { useRouter } from 'vue-router';
 import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
 
 const notices = ref([]);
 const loading = ref(false);
@@ -138,8 +138,8 @@ onMounted(async () => {
     .select('id, title, created_at, is_pinned, view_count, file_url')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false });
-  console.log('공지사항 데이터:', data); // ← 이 줄만 추가!  
-      if (!error && data) {
+  console.log('공지사항 데이터:', data);
+  if (!error && data) {
     notices.value = data.map(n => {
       let count = 0;
       try {
@@ -155,9 +155,14 @@ onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession();
   userType.value = session?.user?.user_metadata?.user_type || '';
 });
+
 import { watch } from 'vue';
 
 watch(filteredNotices, (val) => {
   console.log('filteredNotices:', val);
 });
 </script>
+
+<!-- <style scoped>
+// 모든 내용을 삭제하거나 style 태그 전체를 삭제
+</style> -->

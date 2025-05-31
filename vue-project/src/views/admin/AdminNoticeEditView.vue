@@ -1,46 +1,35 @@
 <template>
+  <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 수정'" />
   <div class="board_960">
     <div class="form-title">공지사항 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form" style="overflow-y:auto; max-height:70vh;">
+    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>제목 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">제목 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="title" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>내용 <span class="required">*</span></label>
-          <textarea 
-            v-model="content" 
-            required 
-            ref="contentArea"
-            @input="adjustTextareaHeight"
-            style="min-height:200px; overflow-y:hidden; resize: none;"
-          ></textarea>
+        <div class="form-col label-col">
+          <label style="text-align: right;">내용 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
+          <textarea v-model="content" ref="contentArea" rows="6" required @input="adjustTextareaHeight"></textarea>
         </div>
       </div>
-      <div class="form-row" style="justify-content: flex-start;">
-        <div class="form-col" style="display: flex; align-items: center; width: auto; flex: none;">
-          <span style="margin:0;">필수 공지 (상단 고정)</span>
-          <input type="checkbox" v-model="isPinned" style="width:16px; height:16px; margin-left:8px;" />
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">필수 여부</label>
+        </div>
+        <div class="form-col input-col">
+          <input type="checkbox" v-model="isRequired" />
         </div>
       </div>
-      <div class="form-row file-row">
-        <div class="form-col col-3">
-          <label class="file-label" for="fileInput">파일 첨부</label>
-          <input id="fileInput" type="file" multiple @change="onFileChange" ref="fileInput" style="display:none" />
-          <div v-if="files.length" class="file-list">
-            <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
-              <a :href="f.url || ''" class="file-link" :download="f.name">{{ f.name }}</a>
-              <span class="file-remove" @click="removeFile(idx)">삭제</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem;">
-        <button class="btn-cancel" type="button" @click="goDetail">취소</button>
-        <button class="btn-primary" type="submit">저장</button>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+        <Button class="btn-cancel" type="button" @click="goList" label="취소" />
+        <Button class="btn-primary" type="submit" label="저장" />
       </div>
     </form>
   </div>

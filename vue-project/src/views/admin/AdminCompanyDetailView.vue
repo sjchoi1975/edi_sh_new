@@ -1,117 +1,151 @@
 <template>
-  <div class="board_960">
-    <div class="form-title">업체 상세 정보</div>
-
-    <div class="form-row">
-      <div class="form-col">
-        <label>아이디(이메일)</label>
-        <span class="input-readonly">{{ email }}</span>
+  <TopNavigationBar :breadcrumbMenu="'업체 관리'" :breadcrumbSubMenu="breadcrumbSubMenu" />
+  <div class="board_640">
+    <div class="form-title">업체 상세</div>
+    <div class="notice-form single-row-form">
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">아이디(이메일)</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.email || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col"></div>
-      <div class="form-col"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-col">
-        <label>업체명</label>
-        <span class="input-readonly">{{ companyName }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">업체명</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.company_name || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>사업자등록번호</label>
-        <span class="input-readonly">{{ businessNumber }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업자등록번호</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.business_registration_number || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>대표자</label>
-        <span class="input-readonly">{{ representative }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">대표자</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.representative_name || '-'" readonly disabled />
+        </div>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-col col-2">
-        <label>사업장 소재지</label>
-        <span class="input-readonly">{{ address }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업장 소재지</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.business_address || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>유선전화</label>
-        <span class="input-readonly">{{ landline }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">유선전화</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.landline_phone || '-'" readonly disabled />
+        </div>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-col">
-        <label>담당자</label>
-        <span class="input-readonly">{{ contactPerson }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">담당자</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.contact_person_name || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>휴대폰 번호</label>
-        <span class="input-readonly">{{ mobile }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.mobile_phone || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>휴대폰 번호 2</label>
-        <span class="input-readonly">{{ mobile2 }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호 2</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.mobile_phone_2 || '-'" readonly disabled />
+        </div>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-col">
-        <label>수신용 이메일</label>
-        <span class="input-readonly">{{ receiveEmail }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수신용 이메일</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.receive_email || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>구분</label>
-        <span class="input-readonly">{{ companyGroup }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">구분</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.company_group || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>수수료 등급</label>
-        <span class="input-readonly">{{ commissionGrade }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.default_commission_grade || '-'" readonly disabled />
+        </div>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-col">
-        <label>관리자</label>
-        <span class="input-readonly">{{ manager }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">관리자</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.assigned_pharmacist_contact || '-'" readonly disabled />
+        </div>
       </div>
-      <div class="form-col">
-        <label>승인여부</label>
-        <span class="input-readonly">
-          {{ approvalStatus === 'approved' ? '승인' : '미승인' }}
-        </span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">승인여부</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.approval_status === 'approved' ? '승인' : (company.approval_status === 'pending' ? '미승인' : '-')" readonly disabled />
+        </div>
       </div>
-      <div class="form-col"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-col col-3">
-        <label>비고</label>
-        <span class="input-readonly">{{ remarks }}</span>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="company.remarks || '-'" readonly disabled />
+        </div>
       </div>
-    </div>
-    <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
-      <button class="btn-reset-password" @click="resetPassword">비밀번호 초기화</button>
-      <button class="btn-edit" @click="goEdit">수정</button>
-      <button class="btn-list" type="button" @click="goList">목록</button>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+        <button class="btn-reset-password" @click="handleResetPassword">비밀번호 초기화</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
+        <button class="btn-primary" @click="goList">목록</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import TopNavigationBar from '@/components/TopNavigationBar.vue'
 
 const route = useRoute()
 const router = useRouter()
+const company = ref({})
 
-const email = ref('')
-const companyName = ref('')
-const businessNumber = ref('')
-const representative = ref('')
-const address = ref('')
-const landline = ref('')
-const contactPerson = ref('')
-const mobile = ref('')
-const mobile2 = ref('')
-const receiveEmail = ref('')
-const companyGroup = ref('')
-const commissionGrade = ref('')
-const manager = ref('')
-const remarks = ref('')
-const approvalStatus = ref('')
+const breadcrumbSubMenu = computed(() => {
+  if (route.query.from === 'pending') return '미승인 업체';
+  return '승인 업체';
+});
 
 onMounted(async () => {
   const { data, error } = await supabase
@@ -120,40 +154,31 @@ onMounted(async () => {
     .eq('id', route.params.id)
     .single()
   if (!error && data) {
-    email.value = data.email || ''
-    companyName.value = data.company_name || ''
-    businessNumber.value = data.business_registration_number || ''
-    representative.value = data.representative_name || ''
-    address.value = data.business_address || ''
-    landline.value = data.landline_phone || ''
-    contactPerson.value = data.contact_person_name || ''
-    mobile.value = data.mobile_phone || ''
-    mobile2.value = data.mobile_phone_2 || ''
-    receiveEmail.value = data.receive_email || ''
-    companyGroup.value = data.company_group || ''
-    commissionGrade.value = data.default_commission_grade || ''
-    manager.value = data.assigned_pharmacist_contact || ''
-    remarks.value = data.remarks || ''
-    approvalStatus.value = data.approval_status || ''
+    company.value = data
   }
 })
 
-function goList() {
-  const from = route.query.from === 'pending' ? 'pending' : 'approved'
-  router.push(`/admin/companies/${from}`)
-}
-
 function goEdit() {
-  const from = route.query.from === 'pending' ? 'pending' : 'approved'
-  router.push(`/admin/companies/${route.params.id}/edit?from=${from}`)
+  const from = route.query.from === 'pending' ? 'pending' : 'approved';
+  router.push(`/admin/companies/${route.params.id}/edit?from=${from}`);
 }
 
-async function resetPassword() {
-  const { error } = await supabase.auth.admin.updateUserById(email.value, { password: 'asdf1234' })
+function goList() {
+  const from = route.query.from === 'pending' ? 'pending' : 'approved';
+  router.push(`/admin/companies/${from}`);
+}
+
+async function handleResetPassword() {
+  if (!company.value.email) {
+    alert('이메일 정보가 없습니다.');
+    return;
+  }
+  if (!confirm('정말 비밀번호를 asdf1234로 초기화하시겠습니까?')) return;
+  const { error } = await supabase.auth.admin.updateUserByEmail(company.value.email, { password: 'asdf1234' });
   if (error) {
-    alert('비밀번호 초기화 실패: ' + error.message)
+    alert('비밀번호 초기화 실패: ' + error.message);
   } else {
-    alert('비밀번호가 asdf1234로 초기화되었습니다.')
+    alert('비밀번호가 asdf1234로 초기화되었습니다.');
   }
 }
 </script>

@@ -1,70 +1,117 @@
 <template>
-  <div class="board_960">
+  <TopNavigationBar :breadcrumbMenu="'업체 관리'" :breadcrumbSubMenu="breadcrumbSubMenu" />
+  <div class="board_640">
     <div class="form-title">신규 업체 등록</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
+    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col">
-          <label>아이디(이메일) <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">아이디(이메일) <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="email" type="email" required />
         </div>
-        <div class="form-col">
-          <label>비밀번호 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">비밀번호 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="password" type="password" required />
         </div>
-        <div class="form-col">
-          <label>비밀번호 확인 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">비밀번호 확인 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="confirmPassword" type="password" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>업체명 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">업체명 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="companyName" type="text" required />
         </div>
-        <div class="form-col">
-          <label>사업자등록번호 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업자등록번호 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="businessNumber" type="text" required />
         </div>
-        <div class="form-col">
-          <label>대표자 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">대표자 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="representative" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>사업장 소재지 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업장 소재지 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="address" type="text" required />
         </div>
-        <div class="form-col">
-          <label>유선전화</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">유선전화</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="landline" type="text" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>담당자 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">담당자 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="contactPerson" type="text" required />
         </div>
-        <div class="form-col">
-          <label>휴대폰 번호 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="mobile" type="text" required />
         </div>
-        <div class="form-col">
-          <label>휴대폰 번호 2</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호 2</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="mobile2" type="text" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>수신용 이메일</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">수신용 이메일</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="receiveEmail" type="email" />
         </div>
-        <div class="form-col">
-          <label>구분</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">구분</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="companyGroup" type="text" />
         </div>
-        <div class="form-col">
-          <label>수수료 등급</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급</label>
+        </div>
+        <div class="form-col input-col">
           <select v-model="commissionGrade">
             <option disabled value="">등급 선택</option>
             <option v-for="item in commissionGradeOptions" :key="item.value" :value="item.value">
@@ -74,12 +121,18 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>관리자</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">관리자</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="manager" type="text" />
         </div>
-        <div class="form-col">
-          <label>승인여부</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">승인여부</label>
+        </div>
+        <div class="form-col input-col">
           <select v-model="approvalStatus">
             <option disabled value="">승인여부 선택</option>
             <option v-for="item in approvalStatusOptions" :key="item.value" :value="item.value">
@@ -87,11 +140,12 @@
             </option>
           </select>
         </div>
-        <div class="form-col"></div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="remarks" type="text" />
         </div>
       </div>
@@ -104,11 +158,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import { supabase } from '@/supabase'
+import TopNavigationBar from '@/components/TopNavigationBar.vue'
 
 const email = ref('')
 const password = ref('')
@@ -141,19 +196,26 @@ const approvalStatusOptions = [
   { label: '미승인', value: '미승인' },
 ]
 
+const breadcrumbSubMenu = computed(() => {
+  if (route.query.from === 'pending') return '미승인 업체'
+  return '승인 업체'
+})
+
 function getListPath() {
   // 쿼리 또는 라우트에서 listType(approved/pending) 확인
-  const type = route.query.listType
+  const type = route.query.from
   if (type === 'pending') return '/admin/companies/pending'
   return '/admin/companies/approved'
 }
 
 function goList() {
-  router.push(getListPath())
+  const from = route.query.from === 'pending' ? 'pending' : 'approved';
+  router.push(`/admin/companies/${from}`);
 }
 
 const handleSubmit = async () => {
-  if (loading.value) return
+  if (loading.value) return;
+  
   // 필수 입력값 체크
   if (
     !email.value ||
@@ -166,37 +228,39 @@ const handleSubmit = async () => {
     !contactPerson.value ||
     !mobile.value
   ) {
-    alert('필수 항목을 모두 입력해 주세요.')
-    return
+    alert('필수 항목을 모두 입력해 주세요.');
+    return;
   }
+
   if (password.value !== confirmPassword.value) {
-    alert('비밀번호가 일치하지 않습니다.')
-    return
+    alert('비밀번호가 일치하지 않습니다.');
+    return;
   }
-  loading.value = true
+
+  loading.value = true;
   try {
     // 1. 이메일 중복 체크
     const { data: emailDup } = await supabase
       .from('companies')
       .select('id')
       .eq('email', email.value)
-      .maybeSingle()
+      .maybeSingle();
     if (emailDup) {
-      alert('이미 등록된 이메일입니다.')
-      loading.value = false
-      return
+      alert('이미 등록된 이메일입니다.');
+      return;
     }
+
     // 2. 사업자등록번호 중복 체크
     const { data: brnDup } = await supabase
       .from('companies')
       .select('id')
       .eq('business_registration_number', businessNumber.value)
-      .maybeSingle()
+      .maybeSingle();
     if (brnDup) {
-      alert('이미 등록된 사업자등록번호입니다.')
-      loading.value = false
-      return
+      alert('이미 등록된 사업자등록번호입니다.');
+      return;
     }
+
     // 3. Supabase Auth 회원가입
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.value,
@@ -207,13 +271,14 @@ const handleSubmit = async () => {
           company_name: companyName.value,
         },
       },
-    })
+    });
     if (signUpError) {
-      alert('회원가입 실패: ' + signUpError.message)
-      loading.value = false
-      return
+      alert('회원가입 실패: ' + signUpError.message);
+      return;
     }
-    const userId = signUpData.user?.id
+
+    const userId = signUpData.user?.id;
+
     // 4. companies 테이블에 데이터 저장
     const companyDataToInsert = {
       email: email.value,
@@ -229,36 +294,34 @@ const handleSubmit = async () => {
       company_group: companyGroup.value,
       default_commission_grade: commissionGrade.value,
       assigned_pharmacist_contact: manager.value,
-      remarks: remarks.value,
       approval_status: approvalStatus.value === '승인' ? 'approved' : 'pending',
+      remarks: remarks.value,
       user_id: userId,
       user_type: 'user',
       status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       created_by: userId,
-    }
+    };
 
     if (approvalStatus.value === '승인') {
-      companyDataToInsert.approved_at = new Date().toISOString()
+      companyDataToInsert.approved_at = new Date().toISOString();
     }
 
-    const { error: insertError } = await supabase.from('companies').insert(companyDataToInsert)
+    const { error: insertError } = await supabase.from('companies').insert(companyDataToInsert);
     if (insertError) {
-      alert('업체 등록 실패: ' + insertError.message)
-      loading.value = false
-      return
+      alert('업체 등록 실패: ' + insertError.message);
+      return;
     }
-    alert('등록되었습니다.')
-    if (approvalStatus.value === '승인') {
-      router.push('/admin/companies/approved')
-    } else {
-      router.push('/admin/companies/pending')
-    }
+
+    alert('등록되었습니다.');
+    const from = route.query.from === 'pending' ? 'pending' : 'approved';
+    router.push(`/admin/companies/${from}`);
   } catch (err) {
-    alert('오류: ' + (err.message || err))
+    console.error('업체 등록 중 오류가 발생했습니다.', err);
+    alert('업체 등록에 실패했습니다.');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>

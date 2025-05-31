@@ -1,54 +1,84 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">제품 등록</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
+    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>기준월 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">기준월 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="baseMonth" type="text" placeholder="YYYY-MM" maxlength="7" required />
         </div>
-        <div class="form-col col-2">
-          <label>제품명 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">제품명 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="productName" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>보험코드 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">보험코드 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="insuranceCode" type="number" maxlength="9" required />
         </div>
-        <div class="form-col col-2">
-          <label>약가 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">약가 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="price" type="number" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>수수료 등급 A(%) <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급 A(%) <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="commissionA" type="number" step="0.1" required />
         </div>
-        <div class="form-col col-2">
-          <label>수수료 등급 B(%) <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급 B(%) <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="commissionB" type="number" step="0.1" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>표준코드 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">표준코드 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="standardCode" type="text" maxlength="13" required />
         </div>
-        <div class="form-col col-2">
-          <label>단위/포장형태</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">단위/포장형태</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="unitPackagingDesc" type="text" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>단위수량</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">단위수량</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="unitQuantity" type="number" />
         </div>
-        <div class="form-col col-2">
-          <label>상태</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">상태</label>
+        </div>
+        <div class="form-col input-col">
           <select v-model="status">
             <option value="active">활성</option>
             <option value="inactive">비활성</option>
@@ -56,8 +86,10 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="remarks" type="text" />
         </div>
       </div>

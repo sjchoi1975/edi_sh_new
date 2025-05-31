@@ -1,37 +1,53 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">문전약국 상세</div>
-    <div class="notice-form grid-form">
+    <div class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>약국코드</label>
-          <span class="input-readonly">{{ pharmacy.pharmacy_code }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">약국코드</label>
         </div>
-        <div class="form-col col-2">
-          <label>약국명</label>
-          <span class="input-readonly">{{ pharmacy.name }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.pharmacy_code || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>사업자등록번호</label>
-          <span class="input-readonly">{{ pharmacy.business_registration_number }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">약국명</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.name || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>주소</label>
-          <span class="input-readonly">{{ pharmacy.address }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업자등록번호</label>
         </div>
-        <div class="form-col col-2">
-          <label>상태</label>
-          <span class="input-readonly">{{ pharmacy.status === 'active' ? '활성' : '비활성' }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.business_registration_number || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
-          <span class="input-readonly">{{ pharmacy.remarks }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">주소</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.address || '-'" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">상태</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.status === 'active' ? '활성' : (pharmacy.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="pharmacy.remarks || '-'" readonly disabled />
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
@@ -52,7 +68,7 @@ const route = useRoute();
 const router = useRouter();
 const pharmacy = ref({});
 
-const fetchPharmacy = async () => {
+onMounted(async () => {
   const { data, error } = await supabase
     .from('pharmacies')
     .select('*')
@@ -61,10 +77,6 @@ const fetchPharmacy = async () => {
   if (!error && data) {
     pharmacy.value = data;
   }
-};
-
-onMounted(() => {
-  fetchPharmacy();
 });
 
 function goEdit() {
@@ -76,11 +88,11 @@ function goList() {
 async function handleDelete() {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   const { error } = await supabase.from('pharmacies').delete().eq('id', route.params.id);
-  if (error) {
-    alert('삭제 실패: ' + error.message);
-  } else {
+  if (!error) {
     alert('삭제되었습니다.');
     router.push('/admin/pharmacies');
+  } else {
+    alert('삭제 실패: ' + error.message);
   }
 }
 </script>

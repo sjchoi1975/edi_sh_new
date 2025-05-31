@@ -65,13 +65,12 @@
             </select>
           </div>
         </div>
-        
+      </div>        
         <!-- 엑셀 다운로드 버튼을 오른쪽 끝에 -->
-        <div>
-          <button class="btn-primary" @click="downloadExcel" :disabled="displayRows.length === 0" style="margin-right: 16px;">
-            엑셀 다운로드
-          </button>
-        </div>
+      <div class="top-btns">
+        <button class="btn-primary" @click="downloadExcel" :disabled="displayRows.length === 0">
+          엑셀 다운로드
+        </button>
       </div>
       
       <!-- 테이블 헤더를 고정 영역에 포함 -->

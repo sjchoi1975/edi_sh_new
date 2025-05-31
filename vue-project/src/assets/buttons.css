@@ -3,6 +3,7 @@
 /* ========================================== */
 .btn-primary    { background: #1976d2 !important; color: #ffffff !important; }
 .btn-primary-m  { background: #1976d2 !important; color: #ffffff !important; }
+.btn-secondary  { background: #6c757d !important; color: #ffffff !important; }
 .btn-add        { background: #1976d2 !important; color: #ffffff !important; }
 .btn-add-m      { background: #ffffff !important; color: #1976d2 !important; }
 .btn-edit       { background: #ffe600 !important; color: #222222 !important; }
@@ -15,7 +16,8 @@
 .btn-approve-m  { background: #ffffff !important; color: #1976d2 !important; }
 .btn-pending-m  { background: #ffffff !important; color: #e74c3c !important; }
 .btn-save-m     { background: #1976d2 !important; color: #ffffff !important; }
-
+.btn-save-m     { background: #ffffff !important; color: #28a745 !important; }
+.btn-cancel-m   { background: #ffffff !important; color: #6c757d !important; }
 
 
 /* ========================================== */
@@ -70,70 +72,28 @@ button-m,
 }
 
 /* 테이블 내 버튼 외곽선 */
-.btn-approve-m,
-.btn-add-m {
-  border: 1px solid #1976d2 !important;
-}
-.btn-pending-m,
-.btn-delete-m {
-  border: 1px solid #e74c3c !important;
-}
-.btn-edit-m {
-  border: 1px solid #9aaa06 !important;
-}
-.btn-save-m {
-  border: 1px solid #28a745 !important;
-}
-.btn-cancel-m {
-  border: 1px solid #6c757d !important;
-}
+.btn-approve-m { border: 1px solid #1976d2 !important; }
+.btn-add-m     { border: 1px solid #1976d2 !important; }
+.btn-pending-m { border: 1px solid #e74c3c !important; }
+.btn-delete-m  { border: 1px solid #e74c3c !important; }
+.btn-edit-m    { border: 1px solid #9aaa06 !important; }
+.btn-save-m    { border: 1px solid #28a745 !important; }
+.btn-cancel-m  { border: 1px solid #6c757d !important; }
 
-/* 테이블 내 버튼 색상 */
-.btn-save-m {
-  background: #ffffff !important;
-  color: #28a745 !important;
-}
-.btn-cancel-m {
-  background: #ffffff !important;
-  color: #6c757d !important;
-}
 
 /* 테이블 내 버튼 호버 효과 */
+.btn-add-m:hover     { background: #1976d2 !important; color: #ffffff !important; }
+.btn-approve-m:hover { background: #1976d2 !important; color: #ffffff !important; }
+.btn-edit-m:hover    { background: #5fa56b !important; color: #ffffff !important; }
+.btn-save-m:hover    { background: #1976d2 !important; color: #ffffff !important; }
+.btn-cancel-m:hover  { background: #6c757d !important; color: #ffffff !important; }
+.btn-delete-m:hover  { background: #e74c3c !important; color: #ffffff !important; }
+.btn-pending-m:hover { background: #e74c3c !important; color: #ffffff !important; }
 
-.btn-add-m:hover {
-  background: #1976d2 !important;
-  color: #ffffff !important;
-}
 
-.btn-approve-m:hover {
-  background: #1976d2 !important;
-  color: #ffffff !important;
-}
 
-.btn-edit-m:hover {
-  background: #5fa56b !important;
-  color: #ffffff !important;
-}
 
-.btn-save-m:hover {
-  background: #1976d2 !important;
-  color: #ffffff !important;
-}
 
-.btn-cancel-m:hover {
-  background: #6c757d !important;
-  color: #ffffff !important;
-}
-
-.btn-delete-m:hover {
-  background: #e74c3c !important;
-  color: #ffffff !important;
-}
-
-.btn-pending-m:hover {
-  background: #e74c3c !important;
-  color: #ffffff !important;
-}
 
 /* ========================================== */
 /* 실적 등록 화면 전용 작은 버튼 스타일 */
@@ -157,6 +117,9 @@ button-m,
   transition: none !important;
   padding: 0 !important;
 }
+
+
+
 
 /* ========================================== */
 /* 테이블 액션 셀 스타일 */
@@ -212,6 +175,8 @@ button-m,
   border: none !important;
 }
 
+
+
 /* ========================================== */
 /* 전역 버튼 스타일 정의 */
 /* ========================================== */
@@ -240,20 +205,6 @@ button-m,
   cursor: not-allowed !important;
 }
 
-/* 보조 버튼 스타일 */
-.btn-secondary {
-  background: #6c757d;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background 0.2s;
-  white-space: nowrap;
-}
-
 .btn-secondary:hover:not(:disabled) {
   background: #5a6268;
 }
@@ -268,14 +219,6 @@ button-m,
 .btn-success {
   background: #28a745;
   color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background 0.2s;
-  white-space: nowrap;
 }
 
 .btn-success:hover:not(:disabled) {
@@ -293,13 +236,6 @@ button-m,
   background: #dc3545;
   color: #fff;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background 0.2s;
-  white-space: nowrap;
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -349,6 +285,338 @@ button-m,
   vertical-align: middle;
   opacity: 0.5;
 }
+
+/******************************************/
+/* 1. 기본 버튼 색상 및 스타일 (전역)        */
+/******************************************/
+
+/* 1.1. 주요 액션 버튼 */
+.btn-primary,
+.btn-add,
+.btn-success,
+.btn-danger,
+.btn-secondary,
+.btn-list,
+.btn-cancel,
+.btn-reset-password, /* 여기에 reset-password 포함 */
+.file-label /* 파일 라벨도 기본 버튼 스타일 적용 */
+{
+  padding: 0.6rem 1.2rem !important; /* 패딩 일관성 및 적절한 크기 */
+  margin-left: 0.5rem !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 500 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius) !important; /* 8px로 증가된 값 적용 */
+  cursor: pointer !important;
+  transition: all .2s ease-in-out !important; /* 모든 속성에 부드러운 전환 */
+  white-space: nowrap;
+  line-height: 1.5;
+  box-shadow: var(--box-shadow-sm) !important; /* 기본 그림자 추가 */
+}
+
+/* 버튼 기본 색상 정의 */
+.btn-primary, .btn-add {
+  background-color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: #ffffff !important;
+}
+.btn-secondary, .btn-list {
+  background-color: var(--text-secondary) !important;
+  border-color: var(--text-secondary) !important;
+  color: #ffffff !important;
+}
+.btn-success    { background-color: #28a745 !important; border-color: #28a745 !important; color: #ffffff !important; }
+.btn-danger     { background-color: #dc3545 !important; border-color: #dc3545 !important; color: #ffffff !important; }
+.btn-cancel     { background-color: var(--bg-light) !important; border-color: var(--border-secondary) !important; color: var(--text-primary) !important; }
+.btn-reset-password {
+  background-color: var(--text-primary) !important; /* 어두운 색으로 변경 */
+  border-color: var(--text-primary) !important;
+  color: var(--text-white) !important;
+}
+.file-label {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important; /* 파일 라벨은 그림자 제거 */
+}
+
+/* 호버 및 포커스 효과 */
+.btn-primary:hover:not(:disabled),
+.btn-add:hover:not(:disabled) {
+  background-color: var(--primary-blue-dark) !important;
+  border-color: var(--primary-blue-dark) !important;
+  box-shadow: var(--box-shadow) !important; /* 호버 시 그림자 강화 */
+}
+.btn-secondary:hover:not(:disabled),
+.btn-list:hover:not(:disabled) {
+  background-color: #545b62 !important; /* Secondary Dark */
+  border-color: #4e555b !important;
+  box-shadow: var(--box-shadow) !important;
+}
+.btn-success:hover:not(:disabled)    { background-color: #218838 !important; border-color: #1e7e34 !important; box-shadow: var(--box-shadow) !important;}
+.btn-danger:hover:not(:disabled)     { background-color: #c82333 !important; border-color: #bd2130 !important; box-shadow: var(--box-shadow) !important;}
+.btn-cancel:hover:not(:disabled)     { background-color: var(--border-light) !important; border-color: var(--border-primary) !important; box-shadow: var(--box-shadow) !important;}
+.btn-reset-password:hover:not(:disabled) { background-color: #1a1e21 !important; border-color: #121416 !important; box-shadow: var(--box-shadow) !important;}
+.file-label:hover {
+  background: var(--border-light) !important;
+  border-color: var(--border-secondary) !important;
+}
+
+/* 포커스 시 (box-shadow로 통일) */
+.btn-primary:focus, .btn-add:focus { box-shadow: 0 0 0 0.2rem var(--primary-blue-light) !important; }
+.btn-secondary:focus, .btn-list:focus { box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.5) !important; }
+.btn-success:focus { box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5) !important; }
+.btn-danger:focus { box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5) !important; }
+.btn-cancel:focus { box-shadow: 0 0 0 0.2rem rgba(210, 213, 216, 0.7) !important; }
+.btn-reset-password:focus { box-shadow: 0 0 0 0.2rem rgba(52, 58, 64, 0.5) !important; }
+.file-label:focus { box-shadow: 0 0 0 0.2rem var(--primary-blue-light) !important; }
+
+/* 비활성화 스타일 */
+.btn-primary:disabled, .btn-add:disabled, .btn-success:disabled, .btn-danger:disabled, .btn-secondary:disabled, .btn-list:disabled, .btn-cancel:disabled, .btn-reset-password:disabled, .file-label:disabled {
+  background-color: var(--bg-light) !important;
+  border-color: var(--border-light) !important;
+  color: var(--text-light) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+  box-shadow: none !important; /* 비활성화 시 그림자 제거 */
+}
+
+/* 1.2. 버튼 크기 변형 (기존 유지 또는 필요시 Bootstrap 크기 기준으로 재조정) */
+.btn-sm { padding: 0.35rem 0.8rem !important; font-size: 0.875rem !important; }
+.btn-lg { padding: 0.8rem 1.5rem !important; font-size: 1.125rem !important; }
+
+/******************************************/
+/* 2. 테이블 내 작은 버튼 (-m 계열)           */
+/******************************************/
+.btn-primary-m, .btn-add-m, .btn-edit-m, .btn-delete-m, .btn-approve-m, .btn-pending-m, .btn-save-m, .btn-cancel-m {
+  padding: 0.25rem 0.6rem !important;
+  min-width: auto; /* 최소 너비 제거 또는 조정 */
+  margin-left: 0.25rem !important;
+  margin-right: 0.25rem !important;
+  font-size: 0.875rem !important;
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  transition: all .2s ease-in-out !important;
+  border: 1px solid transparent !important;
+  background: transparent !important; /* 기본 배경 투명 */
+  line-height: 1.4;
+  box-shadow: none !important; /* 테이블 내 버튼은 기본 그림자 없음 */
+}
+
+/* -m 버튼 테두리 및 기본 텍스트 색상 */
+.btn-primary-m, .btn-add-m, .btn-approve-m, .btn-save-m {
+  border-color: transparent; 
+  color: var(--primary-blue) !important; 
+}
+.btn-edit-m    { border-color: transparent; color: #ffc107 !important; } /* 아이콘만 있는 버튼의 경우 색상으로만 구분 */
+.btn-delete-m,
+.btn-pending-m { 
+  border-color: transparent;
+  color: #dc3545 !important; 
+}
+.btn-cancel-m  { border-color: transparent; color: var(--text-secondary) !important; }
+
+/* -m 버튼 호버 효과 (배경색 약간, 또는 아이콘 버튼의 경우 밝기 변경) */
+.btn-primary-m:hover:not(:disabled), .btn-add-m:hover:not(:disabled), .btn-approve-m:hover:not(:disabled), .btn-save-m:hover:not(:disabled) {
+  background-color: var(--primary-blue-light) !important; 
+  color: var(--primary-blue-dark) !important; 
+}
+.btn-edit-m:hover:not(:disabled)    { background-color: rgba(255, 193, 7, 0.1) !important; color: #b8860b !important; }
+.btn-delete-m:hover:not(:disabled),
+.btn-pending-m:hover:not(:disabled) { 
+  background-color: rgba(220, 53, 69, 0.1) !important; 
+  color: #c82333 !important; 
+}
+.btn-cancel-m:hover:not(:disabled)  { background-color: var(--bg-hover) !important; color: var(--text-primary) !important; }
+
+/* -m 버튼 비활성화 (텍스트 색상만 더 연하게) */
+.btn-primary-m:disabled, .btn-add-m:disabled, .btn-edit-m:disabled, .btn-delete-m:disabled, .btn-approve-m:disabled, .btn-pending-m:disabled, .btn-save-m:disabled, .btn-cancel-m:disabled {
+  color: var(--text-light) !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+
+/******************************************/
+/* 5. 뱃지 스타일 (UI 요소)                 */
+/******************************************/
+.required-badge, .active-badge, .inactive-badge {
+  color: #ffffff !important;
+  border-radius: var(--border-radius) !important; 
+  padding: 0.3em 0.65em !important; /* 패딩 조정으로 좀 더 컴팩트하게 */
+  font-size: 0.8em !important; /* 폰트 크기 약간 더 작게 */
+  font-weight: 500 !important; 
+  display: inline-block !important;
+  line-height: 1.2; /* 라인 높이 조정 */
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+/* (나머지 뱃지 색상 정의는 이전과 동일하게 유지) */
+.required-badge { background-color: #dc3545 !important; } 
+.active-badge   { background-color: var(--primary-blue) !important; }
+.inactive-badge { background-color: var(--text-secondary) !important; }
+
+:root {
+  /* CleanPay 스타일용 버튼 변수 */
+  --btn-primary-bg: var(--primary-color);
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: var(--primary-color);
+  --btn-primary-hover-bg: var(--primary-color-dark);
+  --btn-primary-hover-border: var(--primary-color-dark);
+
+  --btn-secondary-bg: var(--bg-secondary); /* 연한 회색 배경 */
+  --btn-secondary-text: var(--text-primary);
+  --btn-secondary-border: var(--border-primary);
+  --btn-secondary-hover-bg: var(--bg-hover);
+  --btn-secondary-hover-border: var(--border-secondary);
+
+  --btn-text-color: var(--primary-color);
+  --btn-text-hover-bg: rgba(0,0,0,0.05); /* 매우 연한 배경 호버 */
+}
+
+/******************************************/
+/* 1. 기본 버튼 스타일 (CleanPay 참조)      */
+/******************************************/
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-list, /* .btn-secondary와 유사하게 처리 */
+.btn-cancel, /* .btn-secondary와 유사하게 처리 */
+.btn-add,    /* .btn-primary와 유사하게 처리 */
+.btn-reset-password, /* 다크한 버튼으로 */
+.file-label /* .btn-secondary와 유사하게 처리 */
+{
+  padding: 0.5rem 1rem !important; /* 패딩 조정 (CleanPay 참고) */
+  margin-left: 0.5rem !important;
+  font-size: var(--font-size-md) !important; /* 15px */
+  font-weight: 500 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius) !important; /* 6px */
+  cursor: pointer !important;
+  transition: background-color .15s ease-in-out, border-color .15s ease-in-out, color .15s ease-in-out, box-shadow .15s ease-in-out !important;
+  white-space: nowrap;
+  line-height: 1.5;
+  box-shadow: none !important; /* 기본적으로 그림자 없음 (CleanPay 스타일) */
+}
+
+/* 주 색상 버튼 (녹색) */
+.btn-primary, .btn-add {
+  background-color: var(--btn-primary-bg) !important;
+  border-color: var(--btn-primary-border) !important;
+  color: var(--btn-primary-text) !important;
+}
+.btn-primary:hover:not(:disabled), .btn-add:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover-bg) !important;
+  border-color: var(--btn-primary-hover-border) !important;
+}
+.btn-primary:focus, .btn-add:focus {
+  box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
+}
+
+/* 보조 버튼 (연한 회색) */
+.btn-secondary, .btn-list, .btn-cancel, .file-label {
+  background-color: var(--btn-secondary-bg) !important;
+  border-color: var(--btn-secondary-border) !important;
+  color: var(--btn-secondary-text) !important;
+}
+.btn-secondary:hover:not(:disabled), .btn-list:hover:not(:disabled), .btn-cancel:hover:not(:disabled), .file-label:hover:not([disabled]) {
+  background-color: var(--btn-secondary-hover-bg) !important;
+  border-color: var(--btn-secondary-hover-border) !important;
+}
+.btn-secondary:focus, .btn-list:focus, .btn-cancel:focus, .file-label:focus {
+  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important; /* 회색 계열 포커스 */
+}
+
+/* 성공/위험/특수 버튼 색상 (기존 유지 또는 CleanPay에 맞춰 조정) */
+.btn-success    { background-color: #28a745 !important; border-color: #28a745 !important; color: #ffffff !important; }
+.btn-success:hover:not(:disabled) { background-color: #218838 !important; border-color: #1e7e34 !important; }
+.btn-danger     { background-color: #dc3545 !important; border-color: #dc3545 !important; color: #ffffff !important; }
+.btn-danger:hover:not(:disabled) { background-color: #c82333 !important; border-color: #bd2130 !important; }
+.btn-reset-password {
+  background-color: var(--text-secondary) !important; 
+  border-color: var(--text-secondary) !important;
+  color: var(--text-white) !important;
+}
+.btn-reset-password:hover:not(:disabled) { background-color: #545b62 !important; border-color: #4e555b !important;}
+
+/* 비활성화 스타일 */
+.btn-primary:disabled, .btn-add:disabled, .btn-success:disabled, .btn-danger:disabled, .btn-secondary:disabled, .btn-list:disabled, .btn-cancel:disabled, .btn-reset-password:disabled, .file-label[disabled] {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-light) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+  box-shadow: none !important;
+}
+
+
+/******************************************/
+/* 2. 테이블 내 작은 버튼 (-m 계열) - 텍스트 버튼 스타일로 변경 */
+/******************************************/
+.btn-primary-m, .btn-add-m, .btn-edit-m, .btn-delete-m, .btn-approve-m, .btn-pending-m, .btn-save-m, .btn-cancel-m {
+  padding: 0.25rem 0.5rem !important;
+  margin-left: 0.125rem !important; /* 간격 줄임 */
+  margin-right: 0.125rem !important;
+  font-size: var(--font-size-sm) !important; /* 13px */
+  font-weight: 500 !important;
+  border: none !important; /* 테두리 없음 */
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  transition: background-color .15s ease-in-out, color .15s ease-in-out !important;
+  background-color: transparent !important; /* 기본 배경 투명 */
+  line-height: 1.4;
+  box-shadow: none !important;
+}
+
+/* -m 버튼 텍스트 색상 */
+.btn-primary-m, .btn-add-m, .btn-approve-m, .btn-save-m { color: var(--btn-text-color) !important; }
+.btn-edit-m    { color: #ffc107 !important; } /* 노란색 계열 (수정) */
+.btn-delete-m,
+.btn-pending-m { color: #dc3545 !important; } /* 빨간색 계열 (삭제/취소) */
+.btn-cancel-m  { color: var(--text-secondary) !important; } /* 회색 계열 */
+
+/* -m 버튼 호버 효과 */
+.btn-primary-m:hover:not(:disabled),
+.btn-add-m:hover:not(:disabled),
+.btn-approve-m:hover:not(:disabled),
+.btn-save-m:hover:not(:disabled) { background-color: var(--btn-text-hover-bg) !important; color: var(--primary-color-dark) !important; }
+.btn-edit-m:hover:not(:disabled)    { background-color: rgba(255, 193, 7, 0.1) !important; color: #b8860b !important; }
+.btn-delete-m:hover:not(:disabled),
+.btn-pending-m:hover:not(:disabled) { background-color: rgba(220, 53, 69, 0.1) !important; color: #c82333 !important; }
+.btn-cancel-m:hover:not(:disabled)  { background-color: var(--btn-text-hover-bg) !important; color: var(--text-primary) !important; }
+
+/* -m 버튼 비활성화 */
+.btn-primary-m:disabled, .btn-add-m:disabled, .btn-edit-m:disabled, .btn-delete-m:disabled, .btn-approve-m:disabled, .btn-pending-m:disabled, .btn-save-m:disabled, .btn-cancel-m:disabled {
+  color: var(--text-light) !important;
+  background-color: transparent !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+/******************************************/
+/* 5. 뱃지 스타일 (UI 요소)                 */
+/******************************************/
+.required-badge, .active-badge, .inactive-badge {
+  border-radius: var(--border-radius) !important; 
+  padding: 0.3em 0.65em !important; 
+  font-size: var(--font-size-sm) !important; /* 13px */
+  font-weight: 500 !important; 
+  display: inline-block !important;
+  line-height: 1.2; 
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border: none !important; /* 테두리 제거 */
+}
+
+.required-badge { background-color: #dc3545 !important; color: #ffffff !important; }
+.active-badge   { background-color: var(--primary-color) !important; color: #ffffff !important; }
+.inactive-badge { background-color: var(--bg-secondary) !important; color: var(--text-secondary) !important; border: 1px solid var(--border-secondary) !important; } /* 연한 회색 배경 + 테두리 */
 
 
 

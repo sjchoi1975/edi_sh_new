@@ -1,67 +1,99 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">제품 상세</div>
-    <div class="notice-form grid-form">
+    <div class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>기준월</label>
-          <span class="input-readonly">{{ product.base_month }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">기준월</label>
         </div>
-        <div class="form-col col-2">
-          <label>제품명</label>
-          <span class="input-readonly">{{ product.product_name }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>보험코드</label>
-          <span class="input-readonly">{{ product.insurance_code }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">제품명</label>
         </div>
-        <div class="form-col col-2">
-          <label>약가</label>
-          <span class="input-readonly">{{ product.price }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>수수료 등급 A(%)</label>
-          <span class="input-readonly">{{ product.commission_rate_a ? (product.commission_rate_a * 100).toFixed(1) : '-' }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">보험코드</label>
         </div>
-        <div class="form-col col-2">
-          <label>수수료 등급 B(%)</label>
-          <span class="input-readonly">{{ product.commission_rate_b ? (product.commission_rate_b * 100).toFixed(1) : '-' }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>표준코드</label>
-          <span class="input-readonly">{{ product.standard_code }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">약가</label>
         </div>
-        <div class="form-col col-2">
-          <label>단위/포장형태</label>
-          <span class="input-readonly">{{ product.unit_packaging_desc }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>단위수량</label>
-          <span class="input-readonly">{{ product.unit_quantity }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급 A(%)</label>
         </div>
-        <div class="form-col col-2">
-          <label>상태</label>
-          <span class="input-readonly">{{ product.status === 'active' ? '활성' : '비활성' }}</span>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.commission_rate_a ? (product.commission_rate_a * 100).toFixed(1) : '-'" readonly disabled />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
-          <span class="input-readonly">{{ product.remarks }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급 B(%)</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.commission_rate_b ? (product.commission_rate_b * 100).toFixed(1) : '-'" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">표준코드</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.standard_code || '-'" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">단위/포장형태</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.unit_packaging_desc || '-'" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">단위수량</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.unit_quantity || '-'" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">상태</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
+          <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-delete" type="button" @click="handleDelete">삭제</button>
-        <button class="btn-edit" type="button" @click="goEdit">수정</button>
-        <button class="btn-list" type="button" @click="goList">목록</button>
+        <button class="btn-delete" @click="handleDelete">삭제</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
+        <button class="btn-primary" @click="goList">목록</button>
       </div>
     </div>
   </div>

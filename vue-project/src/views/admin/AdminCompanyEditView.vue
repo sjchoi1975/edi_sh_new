@@ -1,64 +1,101 @@
 <template>
-  <div class="board_960">
-    <div class="form-title">업체 정보 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
+  <TopNavigationBar :breadcrumbMenu="'업체 관리'" :breadcrumbSubMenu="breadcrumbSubMenu" />
+  <div class="board_640">
+    <div class="form-title">업체 수정</div>
+    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col">
-          <label>아이디(이메일)</label>
-          <span class="input-readonly">{{ email }}</span>
+        <div class="form-col label-col">
+          <label style="text-align: right;">아이디(이메일) <span class="required">*</span></label>
         </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
+        <div class="form-col input-col">
+          <input v-model="email" type="email" required />
+        </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>업체명 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">업체명 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="companyName" type="text" required />
         </div>
-        <div class="form-col">
-          <label>사업자등록번호 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업자등록번호 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="businessNumber" type="text" required />
         </div>
-        <div class="form-col">
-          <label>대표자 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">대표자 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="representative" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-2">
-          <label>사업장 소재지 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">사업장 소재지 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="address" type="text" required />
         </div>
-        <div class="form-col">
-          <label>유선전화</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">유선전화</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="landline" type="text" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>담당자 <span class="required">*</span></label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">담당자 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="contactPerson" type="text" required />
         </div>
-        <div class="form-col">
-          <label>휴대폰 번호 <span class="required">*</span></label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="mobile" type="text" required />
         </div>
-        <div class="form-col">
-          <label>휴대폰 번호 2</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">휴대폰 번호 2</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="mobile2" type="text" />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>수신용 이메일</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">수신용 이메일</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="receiveEmail" type="email" />
         </div>
-        <div class="form-col">
-          <label>구분</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">구분</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="companyGroup" type="text" />
         </div>
-        <div class="form-col">
-          <label>수수료 등급</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료 등급</label>
+        </div>
+        <div class="form-col input-col">
           <select v-model="commissionGrade">
             <option disabled value="">등급 선택</option>
             <option v-for="item in commissionGradeOptions" :key="item.value" :value="item.value">
@@ -68,12 +105,18 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col">
-          <label>관리자</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">관리자</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="manager" type="text" />
         </div>
-        <div class="form-col">
-          <label>승인여부</label>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">승인여부</label>
+        </div>
+        <div class="form-col input-col">
           <select v-model="approvalStatus">
             <option disabled value="">승인여부 선택</option>
             <option v-for="item in approvalStatusOptions" :key="item.value" :value="item.value">
@@ -81,15 +124,16 @@
             </option>
           </select>
         </div>
-        <div class="form-col"></div>
-      </div>      
+      </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
+        <div class="form-col label-col">
+          <label style="text-align: right;">비고</label>
+        </div>
+        <div class="form-col input-col">
           <input v-model="remarks" type="text" />
         </div>
-      </div>      
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem;">
+      </div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-cancel" type="button" @click="goDetail">취소</button>
         <button class="btn-primary" type="submit">저장</button>
       </div>
@@ -98,9 +142,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
+import TopNavigationBar from '@/components/TopNavigationBar.vue';
 
 const email = ref('');
 const companyName = ref('');
@@ -130,6 +175,11 @@ const approvalStatusOptions = [
   { label: '승인', value: 'approved' },
   { label: '미승인', value: 'pending' }
 ];
+
+const breadcrumbSubMenu = computed(() => {
+  if (route.query.from === 'pending') return '미승인 업체';
+  return '승인 업체';
+});
 
 onMounted(async () => {
   const { data, error } = await supabase
@@ -162,9 +212,8 @@ function goDetail() {
 }
 
 const handleSubmit = async () => {
-  if (loading.value) return;
-  loading.value = true;
   try {
+    loading.value = true;
     const currentUser = await supabase.auth.getUser();
     if (!currentUser.data.user) {
       alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
@@ -173,55 +222,36 @@ const handleSubmit = async () => {
     }
     const adminUserId = currentUser.data.user.id;
 
-    // 기존 업체 정보를 불러와서 approved_at 값 확인
-    const { data: existingCompany, error: fetchError } = await supabase
+    const { error } = await supabase
       .from('companies')
-      .select('approved_at')
-      .eq('id', route.params.id)
-      .single();
+      .update({
+        email: email.value,
+        company_name: companyName.value,
+        business_registration_number: businessNumber.value,
+        representative_name: representative.value,
+        business_address: address.value,
+        landline_phone: landline.value,
+        contact_person_name: contactPerson.value,
+        mobile_phone: mobile.value,
+        mobile_phone_2: mobile2.value,
+        receive_email: receiveEmail.value,
+        company_group: companyGroup.value,
+        default_commission_grade: commissionGrade.value,
+        assigned_pharmacist_contact: manager.value,
+        approval_status: approvalStatus.value,
+        remarks: remarks.value,
+        updated_at: new Date().toISOString(),
+        updated_by: adminUserId,
+      })
+      .eq('id', route.params.id);
 
-    if (fetchError) {
-      alert('기존 업체 정보 조회 실패: ' + fetchError.message);
-      loading.value = false;
-      return;
-    }
-
-    const updatePayload = {
-      company_name: companyName.value,
-      business_registration_number: businessNumber.value,
-      representative_name: representative.value,
-      business_address: address.value,
-      landline_phone: landline.value,
-      contact_person_name: contactPerson.value,
-      mobile_phone: mobile.value,
-      mobile_phone_2: mobile2.value,
-      receive_email: receiveEmail.value,
-      company_group: companyGroup.value,
-      default_commission_grade: commissionGrade.value,
-      assigned_pharmacist_contact: manager.value,
-      remarks: remarks.value,
-      approval_status: approvalStatus.value,
-      updated_at: new Date().toISOString(),
-      updated_by: adminUserId // 최종 수정자 ID 추가
-    };
-
-    // 승인 상태로 변경되고, 기존 approved_at이 없을 경우 (최초 승인)
-    if (approvalStatus.value === 'approved' && !existingCompany?.approved_at) {
-      updatePayload.approved_at = new Date().toISOString();
-    }
-
-    const { error } = await supabase.from('companies').update(updatePayload).eq('id', route.params.id);
-    if (error) {
-      alert('수정 실패: ' + error.message);
-      loading.value = false;
-      return;
-    }
+    if (error) throw error;
     alert('수정되었습니다.');
-    // 수정 후 목록으로 이동
     const from = route.query.from === 'pending' ? 'pending' : 'approved';
     router.push(`/admin/companies/${from}`);
   } catch (err) {
-    alert('오류: ' + (err.message || err));
+    console.error('업체 정보 수정 중 오류가 발생했습니다.', err);
+    alert('업체 정보 수정에 실패했습니다.');
   } finally {
     loading.value = false;
   }

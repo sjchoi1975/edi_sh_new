@@ -1,46 +1,52 @@
 <template>
+  <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 등록'" />
   <div class="board_960">
     <div class="form-title">공지사항 등록</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form" style="overflow-y:auto; max-height:70vh;">
+    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>제목 <span class="required">*</span></label>
+        <div class="form-col label-col label-60">
+          <label style="text-align: right;">제목 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col input-400">
           <input v-model="title" type="text" required />
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col col-3">
-          <label>내용 <span class="required">*</span></label>
-          <textarea 
-            v-model="content" 
-            required 
-            ref="contentArea"
-            @input="adjustTextareaHeight"
-            style="min-height:200px; overflow-y:hidden; resize: none;"
-          ></textarea>
+        <div class="form-col label-col label-60">
+          <label style="text-align: right;">내용 <span class="required">*</span></label>
+        </div>
+        <div class="form-col input-col input-400">
+          <textarea v-model="content" ref="contentArea" rows="6" required @input="adjustTextareaHeight"></textarea>
         </div>
       </div>
-      <div class="form-row" style="justify-content: flex-start;">
-        <div class="form-col" style="display: flex; align-items: center; width: auto; flex: none;">
-          <span style="margin:0;">필수 공지 (상단 고정)</span>
-          <input type="checkbox" v-model="isPinned" style="width:16px; height:16px; margin-left:8px;" />
+      <div class="form-row">
+        <div class="form-col label-col label-60">
+          <label style="text-align: right;">필수</label>
+        </div>
+        <div class="form-col input-col input-400">
+          <input type="checkbox" v-model="isRequired" id="requiredCheck" style="width:16px;height:16px;vertical-align:middle;" />
         </div>
       </div>
-      <div class="form-row file-row">
-        <div class="form-col col-3">
-          <label class="file-label" for="fileInput">파일 첨부</label>
-          <input id="fileInput" type="file" multiple @change="onFileChange" ref="fileInput" style="display:none" />
-          <div v-if="files.length" class="file-list">
-            <div v-for="(f, idx) in files" :key="f.name + idx" class="file-item">
-              <a :href="f.url || ''" class="file-link" :download="f.name">{{ f.name }}</a>
-              <span class="file-remove" @click="removeFile(idx)">삭제</span>
+      <div class="form-row" style="align-items:flex-start;">
+        <div class="form-col label-col label-60" style="padding-top:8px;">
+          <label style="text-align: right;">파일 첨부</label>
+        </div>
+        <div class="form-col input-col input-400">
+          <label class="file-upload-label" style="display:inline-block;cursor:pointer;background:#eee;padding:6px 18px;border-radius:4px;font-size:15px;">
+            파일 선택
+            <input type="file" multiple @change="onFileChange" class="file-upload-input" style="display:none;" />
+          </label>
+          <div v-if="files.length" style="margin-top:6px;">
+            <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:2px;">
+              <button type="button" class="btn delete-m" @click="removeFile(idx)">삭제</button>
+              <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem;">
-        <button class="btn-cancel" type="button" @click="goList">취소</button>
-        <button class="btn-primary" type="submit">등록</button>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+        <button class="btn-cancel btn-lg" type="button" @click="goList">취소</button>
+        <button class="btn-primary btn-lg" type="submit">등록</button>
       </div>
     </form>
   </div>
