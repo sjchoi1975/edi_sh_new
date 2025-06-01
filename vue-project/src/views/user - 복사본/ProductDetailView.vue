@@ -1,61 +1,55 @@
 <template>
-  <div class="board_640">
+  <div class="board_960">
     <div class="form-title">제품 상세</div>
-    <div class="notice-form single-row-form">
+    <div class="notice-form grid-form">
       <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">기준월</label>
+        <div class="form-col col-2">
+          <label>기준월</label>
+          <span class="input-readonly">{{ product.base_month }}</span>
         </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
+        <div class="form-col col-2">
+          <label>제품명</label>
+          <span class="input-readonly">{{ product.product_name }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">제품명</label>
+        <div class="form-col col-2">
+          <label>보험코드</label>
+          <span class="input-readonly">{{ product.insurance_code }}</span>
         </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">보험코드</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
+        <div class="form-col col-2">
+          <label>약가</label>
+          <span class="input-readonly">{{ product.price }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">약가</label>
+        <div class="form-col col-2">
+          <label>수수료율(%)</label>
+          <span class="input-readonly">{{ getCommissionRate() }}</span>
         </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료율(%)</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="getCommissionRate()" readonly disabled />
+        <div class="form-col col-2">
+          <label>표준코드</label>
+          <span class="input-readonly">{{ product.standard_code }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">상태</label>
+        <div class="form-col col-2">
+          <label>단위/포장형태</label>
+          <span class="input-readonly">{{ product.unit_packaging_desc }}</span>
         </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <div class="form-col col-2">
+          <label>단위수량</label>
+          <span class="input-readonly">{{ product.unit_quantity }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
+        <div class="form-col col-2">
+          <label>상태</label>
+          <span class="input-readonly">{{ product.status === 'active' ? '활성' : '비활성' }}</span>
         </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
+        <div class="form-col col-2">
+          <label>비고</label>
+          <span class="input-readonly">{{ product.remarks }}</span>
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">

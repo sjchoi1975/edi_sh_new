@@ -29,3 +29,18 @@ git push origin main
 
 ---------------------------------------------------------------------
 
+columnWidths 객체를 <script setup> 상단에 선언하여,
+공지사항 목록의 각 컬럼 너비를 한 곳에서 관리할 수 있게 해줘.
+각 <Column ...>의 :headerStyle에서 width: columnWidths.xxx로 참조하도록 변경해줘.
+
+
+이미 .input-readonly, .input-readonly-detail 등 읽기 전용 스타일이 있음
+추가로, "수정불가"를 더 명확히 하고 싶으면 .input-disabled 또는 .input-uneditable 등 별도 클래스를 만들어 적용 가능
+
+
+input-uneditable {
+       background: var(--bg-secondary) !important;
+       color: var(--text-light) !important;
+       cursor: not-allowed !important;
+       pointer-events: none !important;
+     }

@@ -134,6 +134,7 @@
           v-model="companySearch"
           placeholder="업체명, 사업자등록번호, 대표자명 검색"
           style="width: 100%; margin-bottom: 12px; margin-top: 0px"
+          class="modal-search-input"
         />
         <DataTable
           :value="filteredCompanies"
@@ -143,14 +144,15 @@
           class="custom-table"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
-          <Column field="company_name" header="업체명" :headerStyle="{ width: '20%' }" />
+          <Column field="company_name" header="업체명" :headerStyle="{ width: '20%' }" :sortable="true" />
           <Column
             field="business_registration_number"
             header="사업자등록번호"
-            :headerStyle="{ width: '14%' }"
+            :headerStyle="{ width: '16%' }"
+            :sortable="true"
           />
-          <Column field="representative_name" header="대표자명" :headerStyle="{ width: '12%' }" />
-          <Column field="business_address" header="사업장 소재지" :headerStyle="{ width: '48%' }" />
+          <Column field="representative_name" header="대표자명" :headerStyle="{ width: '12%' }" :sortable="true" />
+          <Column field="business_address" header="사업장 소재지" :headerStyle="{ width: '46%' }" :sortable="true" />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>

@@ -1,11 +1,9 @@
 <template>
-  <div class="admin-clients-view page-container">
-    <div class="page-header-title-area">
-      <div class="header-title">거래처 목록</div>
-    </div>
-    <div class="filter-card">
-      <div class="filter-row">
-        <span class="filter-item p-input-icon-left">
+  <div class="admin-clients-view">
+    <div class="header-title">거래처 목록</div>
+    <div class="table-container">
+      <div class="table-header">
+        <span class="p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
             placeholder="거래처코드, 병의원명, 사업자등록번호 검색"
@@ -13,21 +11,13 @@
           />
         </span>
       </div>
-    </div>
-    <div class="data-card">
-      <div class="data-card-header">
-        <div class="total-count-display">
-          전체 {{ clients.length }} 건
-        </div>
-        <!-- 이용자용은 버튼 없음 -->
-      </div>
       <DataTable
         :value="clients"
         paginator
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="680px"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
         class="custom-table"
@@ -35,19 +25,27 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
-          <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
-        </Column>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
-        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true">
+        <Column header="No" :headerStyle="{ width: '5%' }">
           <template #body="slotProps">
-            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.name }}</a>
+            {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: columnWidths.owner_name, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
-        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="name" header="병의원명" :headerStyle="{ width: '20%' }" :sortable="true">
+          <template #body="slotProps">
+            <a
+              href="#"
+              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
+              @click.prevent="goToDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.name }}
+            </a>
+          </template>
+        </Column>
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: '40%' }" :sortable="true" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: '16%' }" :sortable="true" />
       </DataTable>
     </div>
   </div>
@@ -65,17 +63,6 @@ const clients = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 const currentPageFirstIndex = ref(0);
-
-// 컬럼 너비 한 곳에서 관리
-const columnWidths = {
-  no: '6%',
-  client_code: '10%',
-  name: '18%',
-  business_registration_number: '10%',
-  owner_name: '10%',
-  address: '34%',
-  remarks: '12%'
-};
 
 function goToDetail(id) {
   router.push(`/clients/${id}`);

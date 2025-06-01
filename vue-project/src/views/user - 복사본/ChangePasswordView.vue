@@ -1,5 +1,5 @@
 <template>
-  <div class="board_640">
+  <div class="board_960">
     <div class="form-title">비밀번호 변경</div>
     <form @submit.prevent="handleSubmit" class="notice-form grid-form">
       <div class="form-row">

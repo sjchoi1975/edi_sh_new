@@ -18,7 +18,9 @@
       <div class="side-nav-profile">
         <i class="pi pi-user side-nav-profile-icon"></i>
         <div class="side-nav-profile-info">
-          <div class="side-nav-profile-email">{{ userEmail }}</div>
+          <div class="side-nav-profile-email" :title="companyName">
+            {{ companyName.length > 10 ? companyName.slice(0, 10) + '...' : companyName }}
+          </div>
           <div class="side-nav-profile-role">{{ userRole === 'admin' ? '관리자' : '사용자' }}</div>
         </div>
       </div>
@@ -40,6 +42,8 @@ const emit = defineEmits(['logout']);
 const router = useRouter();
 const route = useRoute();
 const openMenu = ref(0); // 첫 번째 대메뉴 기본 오픈
+
+const companyName = ref('');
 
 // 대메뉴/중메뉴 구조
 const adminMenuTree = [
@@ -154,11 +158,24 @@ function removeFile(idx) {
   files.value.splice(idx, 1);
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.__goToNotice = (id) => {
     router.push(`/notices/${id}`);
   };
   // ...기존 데이터 불러오기 코드...
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('company_name')
+        .eq('user_id', session.user.id)
+        .single();
+      if (!error && data && data.company_name) {
+        companyName.value = data.company_name;
+      }
+    }
+  } catch {}
 });
 </script>
 

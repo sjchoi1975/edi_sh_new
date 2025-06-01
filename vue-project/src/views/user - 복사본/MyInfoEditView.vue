@@ -1,11 +1,11 @@
 <template>
-  <div class="board_640">
+  <div class="board_960">
     <div class="form-title">내 정보 수정</div>
     <form @submit.prevent="handleSubmit" class="notice-form grid-form">
       <div class="form-row">
         <div class="form-col">
           <label>아이디(이메일)</label>
-          <input :value="email" readonly disabled class="input-uneditable" />
+          <span class="input-readonly">{{ email }}</span>
         </div>
         <div class="form-col"></div>
         <div class="form-col"></div>

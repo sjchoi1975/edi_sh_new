@@ -134,8 +134,7 @@
           v-model="pharmacySearch"
           placeholder="약국명, 사업자등록번호 검색"
           style="width: 100%; margin-bottom: 12px; margin-top: 0px"
-          class="modal-search-input"
-          />
+        />
         <DataTable
           :value="filteredPharmacies"
           v-model:selection="selectedPharmacies"
@@ -144,14 +143,13 @@
           class="custom-table"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
-          <Column field="name" header="약국명" :headerStyle="{ width: '30%' }" :sortable="true" />
+          <Column field="name" header="약국명" :headerStyle="{ width: '30%' }" />
           <Column
             field="business_registration_number"
             header="사업자등록번호"
-            :headerStyle="{ width: '16%' }"
-            :sortable="true"
+            :headerStyle="{ width: '20%' }"
           />
-          <Column field="address" header="주소" :headerStyle="{ width: '48%' }" :sortable="true" />
+          <Column field="address" header="주소" :headerStyle="{ width: '44%' }" />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>

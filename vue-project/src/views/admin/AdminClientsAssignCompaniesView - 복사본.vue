@@ -1,7 +1,7 @@
 <template>
-  <div class="admin-clients-assign-pharmacies page-container">
+  <div class="admin-clients-assign-companies page-container">
     <div class="page-header-title-area">
-      <div class="header-title">문전약국 지정</div>
+      <div class="header-title">담당업체 지정</div>
     </div>
     <div class="filter-card">
       <div class="filter-row">
@@ -71,29 +71,29 @@
           :sortable="true"
         />
         <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true" />
-        <Column header="약국명" :headerStyle="{ width: columnWidths.pharmacy_name }">
+        <Column header="업체명" :headerStyle="{ width: columnWidths.company_name }">
           <template #body="slotProps">
-            <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
               <div
-                v-for="(pharmacy, idx) in slotProps.data.pharmacies"
-                :key="pharmacy.id"
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center"
               >
-                {{ pharmacy.name }}
+                {{ company.company_name }}
               </div>
             </div>
             <div v-else style="min-height: 32px">-</div>
           </template>
         </Column>
-        <Column header="사업자등록번호" :headerStyle="{ width: columnWidths.pharmacy_brn }">
+        <Column header="사업자등록번호" :headerStyle="{ width: columnWidths.company_brn }">
           <template #body="slotProps">
-            <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
               <div
-                v-for="(pharmacy, idx) in slotProps.data.pharmacies"
-                :key="pharmacy.id"
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center"
               >
-                {{ pharmacy.business_registration_number }}
+                {{ company.business_registration_number }}
               </div>
             </div>
             <div v-else style="min-height: 32px">-</div>
@@ -101,17 +101,17 @@
         </Column>
         <Column header="작업" :headerStyle="{ width: columnWidths.actions }">
           <template #body="slotProps">
-            <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
               <div
-                v-for="(pharmacy, idx) in slotProps.data.pharmacies"
-                :key="pharmacy.id"
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center; gap: 4px"
               >
-                <button class="btn-delete-m" @click="deleteAssignment(slotProps.data, pharmacy)">
+                <button class="btn-delete-m" @click="deleteAssignment(slotProps.data, company)">
                   - 삭제
                 </button>
                 <button
-                  v-if="idx === slotProps.data.pharmacies.length - 1"
+                  v-if="idx === slotProps.data.companies.length - 1"
                   class="btn-add-m"
                   @click="openAssignModal(slotProps.data)"
                 >
@@ -127,38 +127,37 @@
       </DataTable>
     </div>
 
-    <!-- 담당약국 지정 모달 -->
-    <Dialog v-model:visible="assignModalVisible" header="약국 지정" :modal="true">
+    <!-- 담당업체 지정 모달 -->
+    <Dialog v-model:visible="assignModalVisible" header="업체 지정" :modal="true">
       <div>
         <InputText
-          v-model="pharmacySearch"
-          placeholder="약국명, 사업자등록번호 검색"
+          v-model="companySearch"
+          placeholder="업체명, 사업자등록번호, 대표자명 검색"
           style="width: 100%; margin-bottom: 12px; margin-top: 0px"
-          class="modal-search-input"
-          />
+        />
         <DataTable
-          :value="filteredPharmacies"
-          v-model:selection="selectedPharmacies"
+          :value="filteredCompanies"
+          v-model:selection="selectedCompanies"
           selectionMode="multiple"
           :rows="20"
           class="custom-table"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
-          <Column field="name" header="약국명" :headerStyle="{ width: '30%' }" :sortable="true" />
+          <Column field="company_name" header="업체명" :headerStyle="{ width: '20%' }" />
           <Column
             field="business_registration_number"
             header="사업자등록번호"
-            :headerStyle="{ width: '16%' }"
-            :sortable="true"
+            :headerStyle="{ width: '14%' }"
           />
-          <Column field="address" header="주소" :headerStyle="{ width: '48%' }" :sortable="true" />
+          <Column field="representative_name" header="대표자명" :headerStyle="{ width: '12%' }" />
+          <Column field="business_address" header="사업장 소재지" :headerStyle="{ width: '48%' }" />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
           <button
             class="btn-add"
-            :disabled="selectedPharmacies.length === 0"
-            @click="assignPharmacies"
+            :disabled="selectedCompanies.length === 0"
+            @click="assignCompanies"
           >
             지정
           </button>
@@ -178,12 +177,12 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 
 const clients = ref([])
-const pharmacies = ref([])
+const companies = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const assignModalVisible = ref(false)
 const selectedClient = ref(null)
-const selectedPharmacies = ref([])
-const pharmacySearch = ref('')
+const selectedCompanies = ref([])
+const companySearch = ref('')
 const currentPageFirstIndex = ref(0)
 const fileInput = ref(null)
 
@@ -195,8 +194,8 @@ const columnWidths = {
   business_registration_number: '10%',
   owner_name: '8%',
   address: '20%',
-  pharmacy_name: '12%',
-  pharmacy_brn: '10%',
+  company_name: '12%',
+  company_brn: '10%',
   actions: '12%'
 };
 
@@ -204,22 +203,27 @@ const fetchClients = async () => {
   const { data: clientsData, error } = await supabase
     .from('clients')
     .select(
-      `*, pharmacies:client_pharmacy_assignments(pharmacy:pharmacies(id, name, business_registration_number))`,
+      `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number))`,
     )
     .eq('status', 'active')
   if (!error && clientsData) {
     clients.value = clientsData.map((client) => {
-      const pharmaciesArr = client.pharmacies.map((p) => p.pharmacy)
+      const companiesArr = client.companies.map((c) => c.company)
       return {
         ...client,
-        pharmacies: pharmaciesArr,
+        companies: companiesArr,
       }
     })
   }
 }
-const fetchPharmacies = async () => {
-  const { data, error } = await supabase.from('pharmacies').select('*').eq('status', 'active')
-  if (!error && data) pharmacies.value = data
+const fetchCompanies = async () => {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .eq('approval_status', 'approved')
+    .eq('status', 'active')
+    .eq('user_type', 'user') // user만 불러오기
+  if (!error && data) companies.value = data
 }
 const filteredClients = computed(() => {
   if (!filters.value['global'].value) return clients.value
@@ -231,52 +235,55 @@ const filteredClients = computed(() => {
       c.business_registration_number.includes(search),
   )
 })
-const filteredPharmacies = computed(() => {
-  if (!pharmacySearch.value) return pharmacies.value
-  const search = pharmacySearch.value.toLowerCase()
-  return pharmacies.value.filter(
-    (p) => p.name.toLowerCase().includes(search) || p.business_registration_number.includes(search),
+const filteredCompanies = computed(() => {
+  if (!companySearch.value) return companies.value
+  const search = companySearch.value.toLowerCase()
+  return companies.value.filter(
+    (c) =>
+      c.company_name.toLowerCase().includes(search) ||
+      c.business_registration_number.includes(search) ||
+      c.representative_name.toLowerCase().includes(search),
   )
 })
 function openAssignModal(client) {
   selectedClient.value = client
-  selectedPharmacies.value = []
+  selectedCompanies.value = []
   assignModalVisible.value = true
 }
 function closeAssignModal() {
   assignModalVisible.value = false
   selectedClient.value = null
-  selectedPharmacies.value = []
+  selectedCompanies.value = []
 }
-async function assignPharmacies() {
-  if (!selectedClient.value || selectedPharmacies.value.length === 0) return
-  const assignments = selectedPharmacies.value.map((pharmacy) => ({
+async function assignCompanies() {
+  if (!selectedClient.value || selectedCompanies.value.length === 0) return
+  const assignments = selectedCompanies.value.map((company) => ({
     client_id: selectedClient.value.id,
-    pharmacy_id: pharmacy.id,
+    company_id: company.id,
   }))
   await supabase
-    .from('client_pharmacy_assignments')
-    .upsert(assignments, { onConflict: 'client_id,pharmacy_id' })
+    .from('client_company_assignments')
+    .upsert(assignments, { onConflict: 'client_id,company_id' })
   closeAssignModal()
   await fetchClients()
 }
-async function deleteAssignment(client, pharmacy = null) {
-  let query = supabase.from('client_pharmacy_assignments').delete().eq('client_id', client.id)
-  if (pharmacy) query = query.eq('pharmacy_id', pharmacy.id)
+async function deleteAssignment(client, company = null) {
+  let query = supabase.from('client_company_assignments').delete().eq('client_id', client.id)
+  if (company) query = query.eq('company_id', company.id)
   await query
   await fetchClients()
 }
 
 const downloadTemplate = () => {
   const templateData = [
-    { '거래처 사업자등록번호': '123-45-67890', '약국 사업자등록번호': '222-11-33333' },
-    { '거래처 사업자등록번호': '987-65-43210', '약국 사업자등록번호': '555-44-66666' },
+    { '거래처 사업자등록번호': '123-45-67890', '업체 사업자등록번호': '111-22-33333' },
+    { '거래처 사업자등록번호': '987-65-43210', '업체 사업자등록번호': '444-55-66666' },
   ]
   const ws = XLSX.utils.json_to_sheet(templateData)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '문전약국지정템플릿')
-  ws['!cols'] = [{ width: 20 }, { width: 20 }]
-  XLSX.writeFile(wb, '문전약국지정_업로드_템플릿_사업자번호.xlsx')
+  XLSX.utils.book_append_sheet(wb, ws, '담당업체지정템플릿')
+  ws['!cols'] = [{ width: 20 }, { width: 20 }] // 컬럼 너비 조정
+  XLSX.writeFile(wb, '담당업체지정_업로드_템플릿_사업자번호.xlsx') // 파일명 변경
 }
 
 const triggerFileUpload = () => {
@@ -303,50 +310,49 @@ const handleFileUpload = async (event) => {
     const assignmentsToUpload = []
     const errors = []
 
+    // 모든 거래처 및 업체 정보를 미리 로드하여 ID 조회용으로 사용 (성능 최적화)
     const { data: allClientsData, error: clientError } = await supabase
       .from('clients')
       .select('id, business_registration_number')
-    const { data: allPharmaciesData, error: pharmacyError } = await supabase
-      .from('pharmacies')
+    const { data: allCompaniesData, error: companyError } = await supabase
+      .from('companies')
       .select('id, business_registration_number')
 
-    if (clientError || pharmacyError) {
-      alert('거래처 또는 약국 정보 조회 중 오류가 발생했습니다.')
-      console.error(clientError || pharmacyError)
+    if (clientError || companyError) {
+      alert('거래처 또는 업체 정보 조회 중 오류가 발생했습니다.')
+      console.error(clientError || companyError)
       return
     }
 
     const clientMap = new Map(allClientsData.map((c) => [c.business_registration_number, c.id]))
-    const pharmacyMap = new Map(
-      allPharmaciesData.map((p) => [p.business_registration_number, p.id]),
-    )
+    const companyMap = new Map(allCompaniesData.map((c) => [c.business_registration_number, c.id]))
 
     for (const [index, row] of jsonData.entries()) {
       const rowNum = index + 2
       const clientBrn = row['거래처 사업자등록번호']
-      const pharmacyBrn = row['약국 사업자등록번호']
+      const companyBrn = row['업체 사업자등록번호']
 
-      if (!clientBrn || !pharmacyBrn) {
-        errors.push(`${rowNum}행: 거래처 또는 약국의 사업자등록번호가 비어있습니다.`)
+      if (!clientBrn || !companyBrn) {
+        errors.push(`${rowNum}행: 거래처 또는 업체의 사업자등록번호가 비어있습니다.`)
         continue
       }
 
       const clientId = clientMap.get(String(clientBrn))
-      const pharmacyId = pharmacyMap.get(String(pharmacyBrn))
+      const companyId = companyMap.get(String(companyBrn))
 
       if (!clientId) {
         errors.push(
           `${rowNum}행: 거래처 사업자등록번호 '${clientBrn}'에 해당하는 거래처를 찾을 수 없습니다.`,
         )
       }
-      if (!pharmacyId) {
+      if (!companyId) {
         errors.push(
-          `${rowNum}행: 약국 사업자등록번호 '${pharmacyBrn}'에 해당하는 약국을 찾을 수 없습니다.`,
+          `${rowNum}행: 업체 사업자등록번호 '${companyBrn}'에 해당하는 업체를 찾을 수 없습니다.`,
         )
       }
 
-      if (clientId && pharmacyId) {
-        assignmentsToUpload.push({ client_id: clientId, pharmacy_id: pharmacyId })
+      if (clientId && companyId) {
+        assignmentsToUpload.push({ client_id: clientId, company_id: companyId })
       }
     }
 
@@ -357,13 +363,13 @@ const handleFileUpload = async (event) => {
 
     if (assignmentsToUpload.length > 0) {
       const { error } = await supabase
-        .from('client_pharmacy_assignments')
-        .upsert(assignmentsToUpload, { onConflict: 'client_id,pharmacy_id' })
+        .from('client_company_assignments')
+        .upsert(assignmentsToUpload, { onConflict: 'client_id,company_id' })
       if (error) {
         alert('업로드 실패: ' + error.message)
       } else {
-        alert(`${assignmentsToUpload.length}건의 문전약국 지정 정보가 업로드/갱신되었습니다.`)
-        await fetchClients()
+        alert(`${assignmentsToUpload.length}건의 담당업체 지정 정보가 업로드/갱신되었습니다.`)
+        await fetchClients() // 목록 새로고침
       }
     }
   } catch (error) {
@@ -383,8 +389,8 @@ const downloadExcel = () => {
   }
   const excelData = []
   filteredClients.value.forEach((client) => {
-    if (client.pharmacies && client.pharmacies.length > 0) {
-      client.pharmacies.forEach((pharmacy) => {
+    if (client.companies && client.companies.length > 0) {
+      client.companies.forEach((company) => {
         excelData.push({
           거래처ID: client.id,
           거래처코드: client.client_code,
@@ -392,9 +398,9 @@ const downloadExcel = () => {
           사업자등록번호: client.business_registration_number,
           원장명: client.owner_name,
           주소: client.address,
-          약국ID: pharmacy.id,
-          '지정된 약국명': pharmacy.name,
-          '지정된 약국 사업자번호': pharmacy.business_registration_number,
+          업체ID: company.id,
+          '지정된 업체명': company.company_name,
+          '지정된 업체 사업자번호': company.business_registration_number,
         })
       })
     } else {
@@ -405,22 +411,22 @@ const downloadExcel = () => {
         사업자등록번호: client.business_registration_number,
         원장명: client.owner_name,
         주소: client.address,
-        약국ID: '-',
-        '지정된 약국명': '-',
-        '지정된 약국 사업자번호': '-',
+        업체ID: '-',
+        '지정된 업체명': '-',
+        '지정된 업체 사업자번호': '-',
       })
     }
   })
 
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '문전약국지정현황')
+  XLSX.utils.book_append_sheet(wb, ws, '담당업체지정현황')
   const today = new Date().toISOString().split('T')[0]
-  XLSX.writeFile(wb, `문전약국지정현황_${today}.xlsx`)
+  XLSX.writeFile(wb, `담당업체지정현황_${today}.xlsx`)
 }
 
 onMounted(() => {
   fetchClients()
-  fetchPharmacies()
+  fetchCompanies()
 })
 </script>

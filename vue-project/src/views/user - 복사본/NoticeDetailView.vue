@@ -1,46 +1,39 @@
 <template>
   <div class="board_960">
     <div class="form-title">공지사항 상세</div>
-    <form class="notice-form single-row-form">
+    <div class="notice-form grid-form">
       <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">제목 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <input :value="notice.title" type="text" readonly disabled />
+        <div class="form-col col-3">
+          <label>제목</label>
+          <span class="input-readonly">{{ notice.title }}</span>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">내용 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <div class="input-readonly-detail">{{ notice.content }}</div>
+        <div class="form-col col-3">
+          <label>내용</label>
+          <span class="input-readonly" style="white-space: pre-line; min-height: 200px; display: block;">{{ notice.content }}</span>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">필수</label>
-        </div>
-        <div class="form-col input-col input-400">
-          <input type="checkbox" :checked="notice.is_pinned" disabled style="width:16px;height:16px;vertical-align:middle;" />
-          <span style="margin-left:8px;">상단 고정</span>
+      <div class="form-row" style="justify-content: flex-start;">
+        <div class="form-col" style="display: flex; align-items: center; width: auto; flex: none;">
+          <span style="margin:0;">필수 공지 (상단 고정)</span>
+          <input type="checkbox" :checked="notice.is_pinned" disabled style="width:16px; height:16px; margin-left:8px;" />
         </div>
       </div>
-      <div class="form-row" v-if="notice.file_url && notice.file_url.length > 0" style="align-items:flex-start;">
-        <div class="form-col label-col label-60" style="padding-top:8px;">
-          <label style="text-align: right;">첨부 파일</label>
-        </div>
-        <div class="form-col input-col input-400">
-          <div v-for="(url, idx) in notice.file_url" :key="url" style="margin-bottom:2px;">
-            <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
+      <div v-if="notice.file_url && notice.file_url.length > 0" class="form-row file-row">
+        <div class="form-col col-3">
+          <label>첨부 파일</label>
+          <div class="file-list">
+            <div v-for="(url, idx) in notice.file_url" :key="url" class="file-item">
+              <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
+            </div>
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem; gap: 0.5rem;">
-        <button class="btn-list" type="button" @click="goList">목록</button>
-      </div>
-    </form>
+    </div>
+    <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem; gap: 0.5rem;">
+      <button class="btn-list" type="button" @click="goList">목록</button>
+    </div>
   </div>
 </template>
 
