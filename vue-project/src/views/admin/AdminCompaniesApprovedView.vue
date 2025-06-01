@@ -33,7 +33,7 @@
         :value="approvedCompanies"
         paginator :rows="20" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
-        scrollable scrollHeight="calc(100vh - 340px)" 
+        scrollable scrollHeight="calc(100vh - 310px)" 
         v-model:filters="filters"
         :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="custom-table"

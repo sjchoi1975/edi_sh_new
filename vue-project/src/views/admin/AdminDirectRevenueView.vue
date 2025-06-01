@@ -53,7 +53,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 340px)"
+        scrollHeight="calc(100vh - 310px)"
         v-model:filters="filters"
         :globalFilterFields="[
           'pharmacy_name',

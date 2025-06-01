@@ -99,9 +99,9 @@ body,
 
 /* 메인 콘텐츠 영역 */
 .main-content {
-  margin-left: 210px; 
-  margin-top: 50px;   
-  padding: 1.25rem; 
+  margin-left: 220px; 
+  margin-top: 54px;   
+  padding: 1rem; 
   background: transparent;
   box-sizing: border-box;
   min-height: calc(100vh - 40px);
@@ -267,6 +267,7 @@ select.input-editable {
   box-shadow: var(--box-shadow-sm);
   padding: 1.0rem;
   margin-bottom: 1rem;
+  height: calc(100vh - 180px);
 }
 
 /* 카드 헤더 */
@@ -353,7 +354,7 @@ select.input-editable {
   background: var(--bg-content);
   border: 1px solid var(--border-secondary);
   border-radius: var(--border-radius);
-  padding: 8px 0 0 0 !important;
+  padding: 0 0 0 0 !important;
 }
 
 /* 테이블 헤더 */
@@ -394,7 +395,7 @@ select.input-editable {
 .p-datatable .p-paginator {
   padding: 12px 0 0 0 !important;
   background: var(--bg-content) !important;
-  border-top: 1px solid var(--border-primary) !important;
+  border-top: none !important;
 }
 
 .p-datatable .p-paginator .p-paginator-current {
@@ -620,5 +621,11 @@ select.input-editable {
 
 .file-row {
   margin-top: 1rem;
+}
+
+.p-datatable-paginator-bottom {
+  border-top: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
 }
 
