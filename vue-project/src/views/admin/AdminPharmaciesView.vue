@@ -47,7 +47,7 @@
       >
         <template #empty>등록된 약국이 없습니다.</template>
         <template #loading>약국 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '6%' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -55,24 +55,31 @@
         <Column
           field="pharmacy_code"
           header="약국코드"
-          :headerStyle="{ width: '8%' }"
+          :headerStyle="{ width: columnWidths.pharmacy_code, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.pharmacy_code"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="name" header="약국명" :headerStyle="{ width: '16%' }" :sortable="true">
+        <Column
+          field="name"
+          header="약국명"
+          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'left' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <a
               v-else
@@ -87,39 +94,58 @@
         <Column
           field="business_registration_number"
           header="사업자등록번호"
-          :headerStyle="{ width: '10%' }"
+          :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true">
+        <Column
+          field="address"
+          header="주소"
+          :headerStyle="{ width: columnWidths.address, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'left' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.address"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.address }}</span>
           </template>
         </Column>
-        <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true">
+        <Column
+          field="remarks"
+          header="비고"
+          :headerStyle="{ width: columnWidths.remarks, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'left' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.remarks"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
-        <Column field="created_at" header="등록일" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column
+          field="created_at"
+          header="등록일자"
+          :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'center' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <span>{{
               slotProps.data.created_at
@@ -128,12 +154,18 @@
             }}</span>
           </template>
         </Column>
-        <Column field="status" header="상태" :headerStyle="{ width: '6%' }" :sortable="true">
+        <Column
+          field="status"
+          header="상태"
+          :headerStyle="{ width: columnWidths.status, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'center' }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <select
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.status"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             >
               <option value="active">활성</option>
               <option value="inactive">비활성</option>
@@ -146,7 +178,11 @@
             </span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '14%' }">
+        <Column
+          header="작업"
+          :headerStyle="{ width: columnWidths.actions, textAlign: 'center' }"
+          :bodyStyle="{ textAlign: 'center' }"
+        >
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
@@ -174,13 +210,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  pharmacy_code: '8%',
+  name: '14%',
+  business_registration_number: '10%',
+  owner_name: '8%',
+  address: '18%',
+  remarks: '10%',
+  created_at: '8%',
+  status: '6%',
+  actions: '12%'
+};
 
 const pharmacies = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })

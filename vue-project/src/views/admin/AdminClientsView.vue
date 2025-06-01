@@ -47,7 +47,7 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '6%' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -55,24 +55,24 @@
         <Column
           field="client_code"
           header="거래처코드"
-          :headerStyle="{ width: '8%' }"
+          :headerStyle="{ width: columnWidths.client_code }"
           :sortable="true"
         >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.client_code"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.client_code }}</span>
           </template>
         </Column>
-        <Column field="name" header="병의원명" :headerStyle="{ width: '14%' }" :sortable="true">
+        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <a
               v-else
@@ -87,49 +87,49 @@
         <Column
           field="business_registration_number"
           header="사업자등록번호"
-          :headerStyle="{ width: '10%' }"
+          :headerStyle="{ width: columnWidths.business_registration_number }"
           :sortable="true"
         >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: columnWidths.owner_name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.owner_name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.owner_name }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: '18%' }" :sortable="true">
+        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.address"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.address }}</span>
           </template>
         </Column>
-        <Column field="remarks" header="비고" :headerStyle="{ width: '12%' }" :sortable="true">
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.remarks"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             />
             <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
-        <Column field="created_at" header="등록일" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="created_at" header="등록일" :headerStyle="{ width: columnWidths.created_at }" :sortable="true">
           <template #body="slotProps">
             <span>{{
               slotProps.data.created_at
@@ -138,12 +138,12 @@
             }}</span>
           </template>
         </Column>
-        <Column field="status" header="상태" :headerStyle="{ width: '6%' }" :sortable="true">
+        <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }" :sortable="true">
           <template #body="slotProps">
             <select
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.status"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              class="inline-edit-input"
             >
               <option value="active">활성</option>
               <option value="inactive">비활성</option>
@@ -156,7 +156,7 @@
             </span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '12%' }">
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }">
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
@@ -197,6 +197,20 @@ const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const router = useRouter()
 const fileInput = ref(null)
 const currentPageFirstIndex = ref(0)
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  client_code: '8%',
+  name: '14%',
+  business_registration_number: '10%',
+  owner_name: '8%',
+  address: '18%',
+  remarks: '10%',
+  created_at: '8%',
+  status: '6%',
+  actions: '12%'
+};
 
 function goCreate() {
   router.push('/admin/clients/create')

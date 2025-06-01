@@ -62,7 +62,7 @@
       >
         <template #empty> 등록된 제품이 없습니다. </template>
         <template #loading> 제품 목록을 불러오는 중입니다... </template>
-        <Column header="No" :headerStyle="{ width: '5%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -70,7 +70,7 @@
         <Column
           field="product_name"
           header="제품명"
-          :headerStyle="{ width: '14%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.product_name, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
@@ -78,7 +78,7 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.product_name"
-              class="p-inputtext p-component p-inputtext-sm"
+              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
             <a
               v-else
@@ -93,7 +93,7 @@
         <Column
           field="insurance_code"
           header="보험코드"
-          :headerStyle="{ width: '8%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.insurance_code, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
@@ -101,42 +101,42 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.insurance_code"
-              class="p-inputtext p-component p-inputtext-sm"
+              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
             <span v-else>{{ slotProps.data.insurance_code }}</span>
           </template>
         </Column>
-        <Column field="price" header="약가" :headerStyle="{ width: '6%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.price"
               type="number"
-              class="p-inputtext p-component p-inputtext-sm text-right"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
             <span v-else>{{ slotProps.data.price?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column header="수수료A(%)" :headerStyle="{ width: '9%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column header="수수료A" :headerStyle="{ width: columnWidths.commission_rate_a, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_a"
               type="number"
               step="0.01"
-              class="p-inputtext p-component p-inputtext-sm text-right"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
             <span v-else>{{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료B(%)" :headerStyle="{ width: '9%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column header="수수료B" :headerStyle="{ width: columnWidths.commission_rate_b, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_b"
               type="number"
               step="0.01"
-              class="p-inputtext p-component p-inputtext-sm text-right"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
             <span v-else>{{ slotProps.data.commission_rate_b ? (slotProps.data.commission_rate_b * 100).toFixed(1) : '-' }}</span>
           </template>
@@ -144,7 +144,7 @@
         <Column
           field="standard_code"
           header="표준코드"
-          :headerStyle="{ width: '8%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.standard_code, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
@@ -152,7 +152,7 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.standard_code"
-              class="p-inputtext p-component p-inputtext-sm"
+              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
@@ -160,7 +160,7 @@
         <Column
           field="unit_packaging_desc"
           header="단위/포장형태"
-          :headerStyle="{ width: '10%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.unit_packaging_desc, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'left' }"
           :sortable="true"
         >
@@ -168,7 +168,7 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.unit_packaging_desc"
-              class="p-inputtext p-component p-inputtext-sm"
+              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
             <span v-else>{{ slotProps.data.unit_packaging_desc }}</span>
           </template>
@@ -176,7 +176,7 @@
         <Column
           field="unit_quantity"
           header="단위수량"
-          :headerStyle="{ width: '7%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.unit_quantity, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'right' }"
           :sortable="true"
         >
@@ -185,25 +185,15 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.unit_quantity"
               type="number"
-              class="p-inputtext p-component p-inputtext-sm text-right"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
             <span v-else>{{ slotProps.data.unit_quantity }}</span>
-          </template>
-        </Column>
-        <Column field="remarks" header="비고" :headerStyle="{ width: '10%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true">
-          <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.remarks"
-              class="p-inputtext p-component p-inputtext-sm"
-            />
-            <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
         <Column
           field="created_at"
           header="등록일자"
-          :headerStyle="{ width: '8%', textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'center' }"
           :sortable="true"
         >
@@ -211,12 +201,12 @@
             <span>{{ slotProps.data.created_at ? new Date(slotProps.data.created_at).toISOString().split('T')[0] : '' }}</span>
           </template>
         </Column>
-        <Column field="status" header="상태" :headerStyle="{ width: '6%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }" :sortable="true">
+        <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }" :sortable="true">
           <template #body="slotProps">
             <select
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.status"
-              class="p-inputtext p-component p-inputtext-sm"
+              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             >
               <option value="active">활성</option>
               <option value="inactive">비활성</option>
@@ -229,7 +219,7 @@
             </span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '9%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
             <div style="display: flex; gap: 0.25rem; justify-content: center;">
               <template v-if="slotProps.data.isEditing">
@@ -256,6 +246,22 @@ import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  product_name: '14%',
+  insurance_code: '8%',
+  price: '6%',
+  commission_rate_a: '8%',
+  commission_rate_b: '8%',
+  standard_code: '8%',
+  unit_packaging_desc: '10%',
+  unit_quantity: '8%',
+  created_at: '8%',
+  status: '6%',
+  actions: '9%'
+};
 
 const products = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
@@ -634,7 +640,3 @@ const deleteProduct = async (row) => {
   }
 }
 </script>
-
-<!-- <style scoped>
-모든 내용을 주석 처리 하거나 이 style 태그 전체를 삭제
-</style> -->

@@ -1,7 +1,7 @@
 <template>
-  <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 등록'" />
+  <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 수정'" />
   <div class="board_960">
-    <div class="form-title">공지사항 등록</div>
+    <div class="form-title">공지사항 수정</div>
     <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
         <div class="form-col label-col label-60">
@@ -38,15 +38,15 @@
           </label>
           <div v-if="files.length" style="margin-top:6px;">
             <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:2px;">
-              <button type="button" class="btn delete-m" @click="removeFile(idx)">삭제</button>
+              <button type="button" class="btn delete-m btn-md" style="min-width:32px;height:32px;font-size:15px;" @click="removeFile(idx)">삭제</button>
               <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
             </div>
           </div>
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-cancel btn-lg" type="button" @click="goList">취소</button>
-        <button class="btn-primary btn-lg" type="submit">등록</button>
+        <button class="btn-cancel" type="button" @click="goDetail">취소</button>
+        <button class="btn-primary" type="submit">저장</button>
       </div>
     </form>
   </div>
@@ -54,16 +54,17 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
+const route = useRoute();
+const router = useRouter();
 const title = ref('');
 const content = ref('');
 const contentArea = ref(null);
 const isPinned = ref(false);
 const files = ref([]);
 const fileInput = ref(null);
-const router = useRouter();
 
 const adjustTextareaHeight = () => {
   if (contentArea.value) {
@@ -72,13 +73,53 @@ const adjustTextareaHeight = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  const { data, error } = await supabase
+    .from('notices')
+    .select('*')
+    .eq('id', route.params.id)
+    .single();
+  if (error) {
+    alert('데이터 로드 실패: ' + error.message);
+    router.push('/admin/notices');
+    return;
+  }
+  title.value = data.title;
+  content.value = data.content;
+  isPinned.value = data.is_pinned;
+  if (data.file_url) {
+    let fileUrls = [];
+    if (typeof data.file_url === 'string') {
+      try {
+        fileUrls = JSON.parse(data.file_url);
+      } catch {
+        fileUrls = [data.file_url];
+      }
+    } else if (Array.isArray(data.file_url)) {
+      fileUrls = data.file_url;
+    }
+    files.value = fileUrls.map(url => ({
+      name: getFileName(url),
+      url: url
+    }));
+  }
   nextTick(adjustTextareaHeight);
 });
 
 watch(content, () => {
   nextTick(adjustTextareaHeight);
 });
+
+function getFileName(url) {
+  if (!url) return '';
+  try {
+    const fileName = url.split('/').pop();
+    const decodedName = decodeURIComponent(fileName);
+    return decodedName.replace(/^[0-9]+_/, '');
+  } catch {
+    return url;
+  }
+}
 
 function onFileChange(e) {
   const selected = Array.from(e.target.files);
@@ -95,42 +136,43 @@ const handleSubmit = async () => {
     alert('제목과 내용을 입력하세요.');
     return;
   }
-
-  let fileUrls = [];
+  let fileUrls = files.value.map(f => f.url || '');
   for (const f of files.value) {
-    const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filePath = `attachments/${Date.now()}_${safeName}`;
-    const { data, error } = await supabase.storage
-      .from('notices')
-      .upload(filePath, f);
-    if (error) {
-      alert('파일 업로드 실패: ' + error.message);
-      return;
+    if (!f.url) {
+      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `attachments/${Date.now()}_${safeName}`;
+      const { data, error } = await supabase.storage
+        .from('notices')
+        .upload(filePath, f);
+      if (error) {
+        alert('파일 업로드 실패: ' + error.message);
+        return;
+      }
+      const url = data?.path
+        ? supabase.storage.from('notices').getPublicUrl(data.path).data.publicUrl
+        : null;
+      fileUrls.push(url);
     }
-    const url = data?.path
-      ? supabase.storage.from('notices').getPublicUrl(data.path).data.publicUrl
-      : null;
-    fileUrls.push(url);
   }
-
-  const { error: insertError } = await supabase.from('notices').insert([
-    {
+  const { error: updateError } = await supabase
+    .from('notices')
+    .update({
       title: title.value,
       content: content.value,
       is_pinned: isPinned.value,
-      view_count: 0,
       file_url: fileUrls
-    }
-  ]);
-  if (insertError) {
-    alert('등록 실패: ' + insertError.message);
+    })
+    .eq('id', route.params.id);
+  if (updateError) {
+    alert('수정 실패: ' + updateError.message);
   } else {
-    alert('등록되었습니다.');
+    alert('수정되었습니다.');
     router.push('/admin/notices');
   }
 };
 
-function goList() {
-  router.push('/admin/notices');
+function goDetail() {
+  router.push(`/admin/notices/${route.params.id}`);
 }
 </script>
+

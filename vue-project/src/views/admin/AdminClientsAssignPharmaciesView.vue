@@ -46,7 +46,7 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '6%' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -54,24 +54,24 @@
         <Column
           field="client_code"
           header="거래처코드"
-          :headerStyle="{ width: '8%' }"
+          :headerStyle="{ width: columnWidths.client_code }"
           :sortable="true"
         />
-        <Column field="name" header="병의원명" :headerStyle="{ width: '14%' }" :sortable="true" />
+        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true" />
         <Column
           field="business_registration_number"
           header="사업자등록번호"
-          :headerStyle="{ width: '10%' }"
+          :headerStyle="{ width: columnWidths.business_registration_number }"
           :sortable="true"
         />
         <Column
           field="owner_name"
           header="원장명"
-          :headerStyle="{ width: '8%' }"
+          :headerStyle="{ width: columnWidths.owner_name }"
           :sortable="true"
         />
-        <Column field="address" header="주소" :headerStyle="{ width: '20%' }" :sortable="true" />
-        <Column header="약국명" :headerStyle="{ width: '12%' }">
+        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true" />
+        <Column header="약국명" :headerStyle="{ width: columnWidths.pharmacy_name }">
           <template #body="slotProps">
             <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
               <div
@@ -85,7 +85,7 @@
             <div v-else style="min-height: 32px">-</div>
           </template>
         </Column>
-        <Column header="사업자등록번호" :headerStyle="{ width: '10%' }">
+        <Column header="사업자등록번호" :headerStyle="{ width: columnWidths.pharmacy_brn }">
           <template #body="slotProps">
             <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
               <div
@@ -99,7 +99,7 @@
             <div v-else style="min-height: 32px">-</div>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '12%' }">
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }">
           <template #body="slotProps">
             <div v-if="slotProps.data.pharmacies && slotProps.data.pharmacies.length > 0">
               <div
@@ -184,6 +184,19 @@ const selectedPharmacies = ref([])
 const pharmacySearch = ref('')
 const currentPageFirstIndex = ref(0)
 const fileInput = ref(null)
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  client_code: '8%',
+  name: '14%',
+  business_registration_number: '10%',
+  owner_name: '8%',
+  address: '20%',
+  pharmacy_name: '12%',
+  pharmacy_brn: '10%',
+  actions: '12%'
+};
 
 const fetchClients = async () => {
   const { data: clientsData, error } = await supabase

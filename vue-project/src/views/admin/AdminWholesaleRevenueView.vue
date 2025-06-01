@@ -66,12 +66,12 @@
       >
         <template #empty>등록된 매출이 없습니다.</template>
         <template #loading>매출 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '6%' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: columnWidths.pharmacy_code }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -81,7 +81,7 @@
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: '12%' }" :sortable="true">
+        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: columnWidths.pharmacy_name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -94,7 +94,7 @@
         <Column
           field="business_registration_number"
           header="사업자번호"
-          :headerStyle="{ width: '10%' }"
+          :headerStyle="{ width: columnWidths.business_registration_number }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -106,7 +106,7 @@
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: '18%' }" :sortable="true">
+        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -116,7 +116,7 @@
             <span v-else>{{ slotProps.data.address }}</span>
           </template>
         </Column>
-        <Column field="standard_code" header="표준코드" :headerStyle="{ width: '10%' }" :sortable="true">
+        <Column field="standard_code" header="표준코드" :headerStyle="{ width: columnWidths.standard_code }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -126,7 +126,7 @@
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
         </Column>
-        <Column field="product_name" header="제품명" :headerStyle="{ width: '12%' }" :sortable="true">
+        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -136,7 +136,7 @@
             <span v-else>{{ slotProps.data.product_name }}</span>
           </template>
         </Column>
-        <Column field="sales_amount" header="매출액" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="sales_amount" header="매출액" :headerStyle="{ width: columnWidths.sales_amount }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -147,7 +147,7 @@
             <span v-else>{{ slotProps.data.sales_amount?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column field="sales_date" header="매출일자" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="sales_date" header="매출일자" :headerStyle="{ width: columnWidths.sales_date }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -158,7 +158,7 @@
             <span v-else>{{ slotProps.data.sales_date }}</span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: '14%' }">
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }">
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
@@ -193,6 +193,20 @@ import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  pharmacy_code: '8%',
+  pharmacy_name: '12%',
+  business_registration_number: '10%',
+  address: '14%',
+  standard_code: '10%',
+  product_name: '12%',
+  sales_amount: '8%',
+  sales_date: '8%',
+  actions: '12%'
+};
 
 const revenues = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })

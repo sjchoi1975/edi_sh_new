@@ -2,46 +2,55 @@
 @import './buttons.css';
 
 /* ========================================== */
-/* 1. CSS 변수 정의 (공통 색상, 크기값) */
+/* Shinil Pharm - 메인 스타일시트              */
+/* ========================================== */
+
+/* ========================================== */
+/* 1. CSS 변수 정의                           */
 /* ========================================== */
 :root {
-  /* 색상 변수 - CleanPay 스타일 참조 */
-  --primary-color: #5fa56b; /* CleanPay 녹색 계열 (예시) */
+  /* 브랜드 색상 */
+  --primary-color: #5fa56b;      /* 메인 브랜드 색상 (녹색) */
   --primary-color-light: #8fb395; /* 밝은 녹색 */
   --primary-color-dark: #528b5c;  /* 어두운 녹색 */
   --primary-color-hover: #5fa56b; /* 호버 시 녹색 */
 
-  --text-primary: #343a40;    /* 더 진한 회색 (기존 #212529 보다 약간 연하게) */
-  --text-secondary: #6c757d;  /* 기존 유지 또는 약간 연하게 */
-  --text-light: #adb5bd;      /* 기존 유지 */
-  --text-white: #ffffff;
-  --text-link: var(--primary-color); /* 링크 색상을 주 색상으로 */
+  /* 텍스트 색상 */
+  --text-primary: #343a40;    /* 기본 텍스트 */
+  --text-secondary: #6c757d;  /* 보조 텍스트 */
+  --text-light: #adb5bd;      /* 연한 텍스트 */
+  --text-white: #ffffff;      /* 흰색 텍스트 */
+  --text-link: var(--primary-color); /* 링크 색상 */
 
-  --bg-page: #f3f4f6;        /* 페이지 전체 배경 (매우 밝은 회색) */
-  --bg-content: #ffffff;     /* 콘텐츠 영역 배경 (흰색) */
-  --bg-sidebar: #ffffff;     /* 사이드바 배경 (흰색) */
-  --bg-topbar: #ffffff;      /* 상단바 배경 (흰색) */
-  --bg-secondary: #f1f3f5;   /* 보조 배경색 (카드 내부 등) */
-  --bg-hover: #e9ecef;       /* 호버 시 배경 */
-  --bg-even-row: transparent; /* 테이블 짝수행 배경 없음 */
+  /* 배경 색상 */
+  --bg-page: #f3f4f6;        /* 페이지 배경 */
+  --bg-content: #ffffff;     /* 콘텐츠 영역 */
+  --bg-sidebar: #ffffff;     /* 사이드바 */
+  --bg-topbar: #ffffff;      /* 상단바 */
+  --bg-secondary: #f1f3f5;   /* 보조 배경 */
+  --bg-hover: #e9ecef;       /* 호버 배경 */
+  --bg-even-row: transparent; /* 테이블 짝수행 */
 
-  --border-primary: #dee2e6;  /* 주요 구분선 */
-  --border-secondary: #d1dbe6;/* 연한 구분선 */
-  --border-input: #ced4da;   /* 입력 필드 테두리 */
-  --border-focus: var(--primary-color-light); /* 포커스 시 테두리/그림자 */
+  /* 테두리 색상 */
+  --border-primary: #dee2e6;   /* 주요 구분선 */
+  --border-secondary: #d1dbe6; /* 연한 구분선 */
+  --border-input: #ced4da;     /* 입력 필드 */
+  --border-focus: var(--primary-color-light); /* 포커스 */
 
-  /* 크기 변수 */
-  --border-radius: 4px;       /* 모서리 둥근 정도 통일 (4px) */
-  --input-height: 36px;       
-  --search-input-height: 36px;
-  --search-input-width: 320px; 
-  --font-size-base: 0.9375rem; 
-  --font-size-sm: 0.8125rem;   
-  --font-size-md: 0.9375rem;  
-  --font-size-lg: 1.0625rem;  
-  --font-size-title: 1.25rem; 
+  /* 크기 */
+  --border-radius: 4px;        /* 모서리 둥글기 */
+  --input-height: 36px;        /* 입력 필드 높이 */
+  --search-input-height: 36px; /* 검색창 높이 */
+  --search-input-width: 320px; /* 검색창 너비 */
 
-  /* 그림자 변수 */
+  /* 폰트 크기 */
+  --font-size-base: 0.9375rem; /* 기본 */
+  --font-size-sm: 0.8125rem;   /* 작게 */
+  --font-size-md: 0.9375rem;   /* 중간 */
+  --font-size-lg: 1.0625rem;   /* 크게 */
+  --font-size-title: 1.25rem;  /* 제목 */
+
+  /* 그림자 */
   --box-shadow-sm: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
   --box-shadow: 0 4px 12px rgba(0,0,0,.08);
   --box-shadow-lg: 0 8px 24px rgba(0,0,0,.1);
@@ -52,14 +61,14 @@
   --z-index-modal: 1050;
   --z-index-dropdown: 1010;
 
-  /* 페이지네이터 변수 */
+  /* 페이지네이터 */
   --paginator-dropdown-font-size: 0.95rem;
   --paginator-dropdown-height: 32px;
   --paginator-dropdown-padding: 2px 8px;
 }
 
 /* ========================================== */
-/* 2. 전역 스타일 (html, body, #app) */
+/* 2. 전역 스타일                             */
 /* ========================================== */
 html,
 body,
@@ -79,158 +88,226 @@ body,
 }
 
 /* ========================================== */
-/* 3. 앱 기본 레이아웃 (App.vue) */
+/* 3. 레이아웃 스타일                          */
 /* ========================================== */
+/* 메인 컨테이너 */
 #app-container {
   min-height: 100vh;
   background: var(--bg-page);
   font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
 }
 
+/* 메인 콘텐츠 영역 */
 .main-content {
-  margin-left: 220px; 
-  margin-top: 40px;   /* 탑메뉴 높이(48px)에 맞게 수정 */
+  margin-left: 210px; 
+  margin-top: 50px;   
   padding: 1.25rem; 
   background: transparent;
   box-sizing: border-box;
-  min-height: calc(100vh - 40px); /* 탑메뉴 높이(48px)에 맞게 수정 */
+  min-height: calc(100vh - 40px);
+}
+
+/* 로그인/회원가입 화면 여백 제거 */
+body.no-main-padding .main-content {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* ========================================== */
-/* 4. 공통 링크 스타일 */
+/* 4. 링크 스타일                             */
 /* ========================================== */
 a {
   color: var(--text-link);
   text-decoration: none;
   background-color: transparent;
 }
+
 a:hover {
   color: var(--primary-color-dark);
   text-decoration: underline;
 }
 
-/* 기존 .green 클래스는 .text-primary-accent 등으로 변경 후, --text-link 사용 권장 */
-.green {
-  color: var(--text-link) !important;
+/* ========================================== */
+/* 5. 폼 요소 스타일                          */
+/* ========================================== */
+/* 라벨 */
+label {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 0em;
+}
+
+/* 필수 입력 표시 */
+.required {
+  color: #1976d2;
+}
+
+/* 기본 입력창 */
+input,
+textarea,
+select {
+  background: var(--bg-content);
+  border: 1px solid var(--border-input);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  color: var(--text-primary);
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height);
+  margin-bottom: 0.5rem;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* 입력창 포커스 */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-color-light);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem var(--primary-color-light);
+}
+
+
+
+/* 인라인 편집 */
+.inline-edit-input {
+  border: 1.5px solid #d1e7dd !important;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+  box-shadow: none;
+}
+.inline-edit-input:focus {
+  border: 2.5px solid #5fa56b !important; /* 녹색 계열 두꺼운 아웃라인 */
+  outline: none !important;
+  border-radius: 4px !important;
+  background-color: #fff !important;
+  box-shadow: 0 0 0 2px #d1e7dd33;
+}
+
+
+
+/* textarea 높이 */
+textarea {
+  min-height: 120px;
+}
+
+/* 읽기 전용 입력창 */
+.input-readonly {
+  background: var(--bg-secondary);
+  border-color: var(--border-secondary);
+  padding: 0rem 0.4rem !important;
+  width: 100%;
+}
+
+/* 편집 가능한 입력창 */
+input.input-editable,
+select.input-editable {
+  border: 2px solid var(--border-focus);
+  background: var(--bg-secondary);
+  width: 100%;
+  font-weight: 500;
+}
+
+/* 검색 입력창 */
+.search-input {
+  width: var(--search-input-width) !important;
+  height: var(--search-input-height) !important;
+  padding: 0rem 0.4rem !important;
+  font-size: var(--font-size-base) !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-input) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color-light) !important;
+  box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
+}
+
+/* 플레이스홀더 */
+.p-inputtext::placeholder {
+  color: var(--text-light);
+  font-size: var(--font-size-base);
+  font-weight: 400;
+}
+
+/* 연월 선택창 */
+.select_month {
+  width: 100px !important;
+  text-align: center !important;
+  height: var(--search-input-height) !important;
+  padding: 0.4rem 0rem !important;
+  font-size: var(--font-size-base) !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-input) !important;
+  border-radius: var(--border-radius) !important;
 }
 
 /* ========================================== */
-/* 5. 네비게이션 메뉴 스타일 */
+/* 6. 카드 스타일                             */
 /* ========================================== */
-
-/* 최상위 메뉴 아이템 - 기본 상태 */
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  span.p-menubar-item-label,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem
-  > .p-menuitem-content
-  > a.p-menuitem-link,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  span,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  .p-menuitem-icon,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  .p-submenu-icon {
-  color: var(--text-white) !important;
+/* 필터 카드 */
+.filter-card {
+  background: var(--bg-content);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  padding: 1.0rem;
+  margin-bottom: 1rem;
 }
 
-/* 최상위 메뉴 아이템 - 호버 상태 */
-#app .p-menubar.actual-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content:hover {
-  background-color: var(--primary-color-hover) !important;
+/* 데이터 카드 */
+.data-card {
+  background: var(--bg-content);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  padding: 1.0rem;
+  margin-bottom: 1rem;
 }
 
-/* 최상위 메뉴 아이템 - 활성 상태 */
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content {
-  background-color: var(--primary-color-dark) !important;
+/* 카드 헤더 */
+.data-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  span.p-menubar-item-label,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content
-  > a.p-menuitem-link,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  span,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  .p-menuitem-icon,
-#app
-  .p-menubar.actual-menubar
-  .p-menubar-root-list
-  > .p-menuitem.p-menuitem-active
-  > .p-menuitem-content
-  > a.p-menuitem-link
-  .p-submenu-icon {
-  color: var(--text-white) !important;
+/* 필터 행 */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-/* 하위 메뉴 아이템 - 기본 상태 */
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link span,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link .p-menuitem-icon,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link .p-submenu-icon {
+/* 필터 아이템 */
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 총 개수 표시 */
+.total-count-display {
+  margin-top: 1rem;
+  margin-left: 0.5rem;
+  font-size: var(--font-size-md);
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
-/* 하위 메뉴 아이템 - 호버 상태 */
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover {
-  background-color: #e9ecef;
-}
 
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover span,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover .p-menuitem-icon,
-#app .p-menubar.actual-menubar .p-menuitem .p-menuitem-link:hover .p-submenu-icon {
-  color: var(--text-secondary);
-}
 
-/* ========================================== */
-/* 6. 폼 레이아웃 및 카드 스타일 */
-/* ========================================== */
-/* .board_960: (예시) 일부 구형 레이아웃에서 사용, 현재는 거의 사용하지 않음 */
+
+
+
 .board_640 {
   max-width: 640px;
   background: var(--bg-content);
@@ -258,67 +335,6 @@ a:hover {
   margin-right: auto;
 }
 
-/* .filter-card: AdminProductsView, AdminClientsView, AdminCompaniesView, AdminPharmaciesView, AdminWholesaleRevenueView, AdminDirectRevenueView 등에서 사용 */
-.filter-card {
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 1.0rem;
-  margin-bottom: 1rem;
-}
-
-/* .filter-row: AdminProductsView, AdminClientsView 등에서 사용 (filter-card 내부에서 주로 사용) */
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* .filter-item: AdminProductsView, AdminClientsView 등에서 사용 (filter-card 내부에서 주로 사용) */
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* .data-card: AdminProductsView, AdminClientsView, AdminCompaniesView, AdminPharmaciesView, AdminWholesaleRevenueView, AdminDirectRevenueView 등에서 사용 */
-.data-card {
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 1.0rem;
-  margin-bottom: 1rem;
-}
-
-/* .total-count-display: AdminProductsView, AdminClientsView 등에서 사용 (data-card 내부에서 주로 사용) */
-.total-count-display {
-  margin-top: 1rem;
-  margin-left: 0.5rem;
-  font-size: var(--font-size-md);
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* .data-card-header: AdminProductsView, AdminClientsView 등에서 사용 (data-card 내부에서 주로 사용) */
-.data-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-/* .action-buttons-group: AdminProductsView, AdminClientsView 등에서 사용 (data-card-header 내부에서 주로 사용) */
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .form-title {
   font-size: var(--font-size-title);
   font-weight: 600;
@@ -326,330 +342,59 @@ a:hover {
   margin-bottom: 1.5rem;
 }
 
-.table-header { /* DataTable 상단 검색/필터 영역 */
-  padding-bottom: 1rem;
-  /* display: flex 등은 유지 */
-}
+
 
 /* ========================================== */
-/* 7. 입력창 스타일 (통합) */
+/* 7. 테이블 스타일                           */
 /* ========================================== */
-
-/* 라벨 스타일 - 모든 폼에서 사용 */
-label {
-  font-size: var(--font-size-base);
-  font-weight: 400;
-  color: var(--text-primary);
-  letter-spacing: 0em;
-}
-
-/* 필수 입력 표시 - 모든 등록/수정 화면에서 사용 */
-.required {
-  color: #1976d2;
-}
-
-/* 기본 입력창 스타일 - 모든 폼 입력창에서 사용 */
-input,
-textarea,
-select {
-  background: var(--bg-content); /* 배경을 흰색으로 */
-  border: 1px solid var(--border-input);
-  border-radius: var(--border-radius);
-  padding: 0.5rem 0.75rem; /* Bootstrap과 유사한 패딩 */
-  font-size: var(--font-size-base); /* 기본 폰트 크기 사용 */
-  font-weight: 400;
-  color: var(--text-primary);
-  width: 100%;
-  box-sizing: border-box;
-  height: var(--input-height);
-  margin-bottom: 0.5rem;
-  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--primary-color-light);
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem var(--primary-color-light); /* Bootstrap 포커스 효과 */
-}
-
-/* textarea 높이 조정 - 공지사항, 정산월 등록/수정 화면에서 사용 */
-textarea {
-  min-height: 120px; /* 높이 증가 */
-}
-
-/* 읽기 전용 입력창 - 모든 상세 화면에서 사용 */
-.input-readonly {
-  background: var(--bg-secondary);
-  border-color: var(--border-secondary);
-  padding: 0rem 0.4rem !important; /* 다른 input과 통일 */
-  width: 100%;
-}
-
-/* 편집 가능한 입력창 (강조) */
-input.input-editable,
-select.input-editable {
-  border: 2px solid var(--border-focus);
-  background: var(--bg-secondary);
-  width: 100%;
-  font-weight: 500;
-}
-
-/* 검색 입력창 - 모든 목록 화면의 검색창에서 사용 */
-.search-input {
-  width: var(--search-input-width) !important; /* CSS 변수를 사용하도록 !important 유지 또는 제거 후 우선순위 조정 */
-  height: var(--search-input-height) !important;
-  padding: 0rem 0.4rem !important; /* 다른 input과 통일 */
-  font-size: var(--font-size-base) !important;
-  background: var(--bg-content) !important;
-  border: 1px solid var(--border-input) !important;
-  border-radius: var(--border-radius) !important; /* 변수 적용 */
-}
-
-.search-input:focus {
-  border-color: var(--primary-color-light) !important;
-  box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
-  background: var(--bg-content) !important; /* 포커스 시 배경색 변경 제거 또는 조정 */
-}
-
-/* 플레이스홀더 스타일 */
-.p-inputtext::placeholder {
-  background: none;
-  border: none;
-  border-radius: 0px;
-  padding: 2px 8px;
-  font-size: var(--font-size-base);
-  font-weight: 400;
-  color: var(--text-light);
-  width: 100%;
-  box-sizing: border-box;
-  height: 28px;
-  align-items: center !important;
-}
-
-/* 연월 선택창 - 제품 목록, 도매,직거래 매출.. */
-.select_month {
-  width: 100px !important; /* CSS 변수를 사용하도록 !important 유지 또는 제거 후 우선순위 조정 */
-  text-align: center !important;
-  height: var(--search-input-height) !important;
-  padding: 0.4rem 0rem !important; /* 다른 input과 통일 */
-  font-size: var(--font-size-base) !important;
-  background: var(--bg-content) !important;
-  border: 1px solid var(--border-input) !important;
-  border-radius: var(--border-radius) !important; /* 변수 적용 */
-}
-
-/* ========================================== */
-/* 8. 버튼 스타일 */
-/* ========================================== */
-
-/* 버튼 행 레이아웃 - 모든 폼 하단에서 사용 */
-.btn-row {
-  margin-top: 1.5rem; /* 상단 여백 추가 */
-}
-
-/* 테이블 목록 상단 우측 버튼 */
-.top-btns {
-  margin-bottom: 1rem; /* 하단 여백 일관성 */
-  gap: 0.75rem; /* 버튼 간 간격 조정 */
-}
-
-.bottom-btns {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-
-/* 비밀번호 초기화 버튼 - 업체 상세 화면에서 사용 */
-/* .btn-reset-password { ... } 이 부분 전체 주석 또는 삭제 */
-
-/* ========================================== */
-/* 9. 파일 관련 스타일 */
-/* ========================================== */
-
-/* 파일 목록 - 공지사항 등록/수정/상세 화면에서 사용 */
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-left: 8px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.file-link {
-  color: #1976d2;
-  text-decoration: underline;
-  font-size: var(--font-size-base);
-}
-
-.file-remove {
-  color: #e74c3c;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-left: 8px;
-}
-
-/* 파일 첨부 라벨 (버튼 스타일) - 공지사항 등록/수정 화면에서 사용 */
-/* .file-label { ... } 이 부분 전체 주석 또는 삭제 */
-/* .file-label:hover { ... } 이 부분 전체 주석 또는 삭제 */
-
-/* 파일 행 - 공지사항 등록/수정/상세 화면에서 사용 */
-.file-row {
-  margin-top: 1rem;
-}
-
-/* ========================================== */
-/* 10. 테이블 스타일 (통합) */
-/* ========================================== */
-
-/********************************************/
-/* 10.1. PrimeVue DataTable 관련 스타일     */
-/********************************************/
-
 /* PrimeVue DataTable 기본 스타일 */
 .p-datatable {
   font-size: var(--font-size-base);
-  flex: 1 1 auto;
-  min-height: 100%;
   background: var(--bg-content);
-  border-bottom: none !important;
-  padding: 8px 0 0 0 !important;
-  border-radius: 4px;
-  border-color: #888 !important;
   border: 1px solid var(--border-secondary);
-  position: relative;
-  z-index: 1;
+  border-radius: var(--border-radius);
+  padding: 8px 0 0 0 !important;
 }
 
-/* 테이블 헤더 스타일 */
+/* 테이블 헤더 */
 .p-datatable .p-datatable-thead > tr > th {
-  padding: 0.5rem 1rem !important; 
-  background: var(--bg-secondary) !important; 
-  font-size: var(--font-size-md) !important; 
-  font-weight: 800 !important; /* 굵기를 800으로 증가 */
-  color: var(--text-primary) !important; 
-  border-bottom: 1px solid var(--border-primary) !important; 
-  border-top: none !important; 
-  /* text-align: center !important; */ 
+  padding: 0.5rem 1rem !important;
+  background: var(--bg-secondary) !important;
+  font-size: var(--font-size-md) !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
 }
 
-/* 정렬 화살표 크기 조절 - 등록 현황 목록의 정렬 화살표에서 사용 */
-.p-datatable .p-datatable-thead > tr > th[style*="cursor:pointer"] {
-  font-size: var(--font-size-base) !important;
-}
-
-/* 정렬 화살표만 작게 표시 */
-.p-datatable .p-datatable-thead > tr > th[style*="cursor:pointer"]:after {
-  font-size: 0.7em !important;
-}
-
-/* 정렬 화살표 크기 조절 클래스 - 등록 현황 목록에서 사용 */
-.sort-arrow {
-  font-size: 0.7em !important;
-  margin-left: 2px;
-}
-
-/* 테이블 바디 스타일 */
+/* 테이블 바디 */
 .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.5rem 1rem !important; /* 상하 패딩 0.5rem으로 수정 */
+  padding: 0.5rem 1rem !important;
   font-size: var(--font-size-md) !important;
   font-weight: 400 !important;
   color: var(--text-primary) !important;
-  border-bottom: 1px solid var(--border-secondary) !important; 
-  white-space: normal !important; 
-  overflow: visible !important; 
-  text-overflow: clip !important; 
-  max-width: none !important; 
+  border-bottom: 1px solid var(--border-secondary) !important;
 }
 
-.p-datatable .p-datatable-tbody > tr:last-child > td {
-  border-bottom: none !important; /* 마지막 행 하단 테두리 제거 */
-}
-
-/* 테이블 행 배경색 (짝수행) - 제거 */
-.p-datatable .p-datatable-tbody > tr:nth-child(even) {
-  background: transparent !important;
-}
-
-/* 테이블 행 호버 효과 */
+/* 테이블 행 호버 */
 .p-datatable .p-datatable-tbody > tr:hover {
-  background: var(--bg-hover) !important; /* 연한 회색 호버 */
+  background: var(--bg-hover) !important;
 }
 
-/* 데이터 테이블 인라인 편집 시 입력 필드 폰트 크기 조정 */
+/* 테이블 내 입력 필드 */
 .p-datatable .p-datatable-tbody > tr > td input,
-.p-datatable .p-datatable-tbody > tr > td .p-inputtext, /* PrimeVue InputText 컴포넌트 대응 */
+.p-datatable .p-datatable-tbody > tr > td .p-inputtext,
 .p-datatable .p-datatable-tbody > tr > td textarea,
 .p-datatable .p-datatable-tbody > tr > td select {
-  font-size: var(--font-size-base) !important; /* 테이블 셀의 기본 폰트 크기와 동일하게 설정 */
+  font-size: var(--font-size-base) !important;
 }
 
-/* 테이블 보더 제거 */
-.p-datatable,
-.p-datatable-table,
-.p-datatable-wrapper,
-.p-datatable .p-datatable-tbody > tr:last-child > td,
-.p-datatable-header,
-.p-datatable-paginator-bottom {
-  border-bottom: none !important;
-  box-shadow: none !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-}
-
-/* 테이블 세로선 - 모든 목록 화면에서 사용 (.custom-table에 적용) */
-.custom-table :deep(.p-datatable-table) {
-  border-collapse: separate !important;
-}
-
-.custom-table :deep(.p-datatable-thead > tr > th),
-.custom-table :deep(.p-datatable-tbody > tr > td) {
-  border-right: 1px solid var(--border-secondary) !important; /* 세로 구분선 색상 */
-}
-.custom-table :deep(.p-datatable-thead > tr > th:first-child),
-.custom-table :deep(.p-datatable-tbody > tr > td:first-child) {
-  border-left: none; /* 첫번째 세로선 제거 */
-}
-.custom-table :deep(.p-datatable-thead > tr > th:last-child),
-.custom-table :deep(.p-datatable-tbody > tr > td:last-child) {
-  border-right: none; /* 마지막 세로선 제거 */
-}
-
-/* 페이지별 특수 스타일 (PrimeVue DataTable 대상) */
-/* 예: 공지사항 테이블 정렬 (개별 View에서 bodyStyle로 제어 권장) */
-/*
-.admin-notices-view .p-datatable .p-datatable-tbody > tr > td {
-  text-align: center !important;
-}
-*/
-/*
-.admin-notices-view .p-datatable .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: left !important;
-}
-*/
-
-/* 페이지네이터 스타일 */
+/* ========================================== */
+/* 8. 페이지네이터 스타일                      */
+/* ========================================== */
 .p-datatable .p-paginator {
-  padding: 0.5rem !important;
-  position: static !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  width: auto !important;
-  border-color: transparent !important;
-  border-width: 0px !important;
-  background: var(--bg-content) !important;
-  border-top: 1px solid #bbb !important;
-  z-index: 10 !important;
-  box-shadow: none !important;
   padding: 12px 0 0 0 !important;
+  background: var(--bg-content) !important;
+  border-top: 1px solid var(--border-primary) !important;
 }
 
 .p-datatable .p-paginator .p-paginator-current {
@@ -660,86 +405,7 @@ select.input-editable {
   min-width: 4rem !important;
 }
 
-:deep(.p-paginator .p-dropdown) {
-  font-size: var(--paginator-dropdown-font-size);
-  height: var(--paginator-dropdown-height);
-  min-width: 60px;
-  border-radius: var(--border-radius);
-}
-
-:deep(.p-paginator .p-dropdown-label) {
-  font-size: var(--paginator-dropdown-font-size);
-  padding: var(--paginator-dropdown-padding);
-}
-
-/* DataTable 내 인라인 편집 시 input 스타일 */
-.p-datatable .p-datatable-tbody > tr > td .p-inputtext.p-inputtext-sm {
-  width: 100%; 
-  padding: 0.25rem 0.5rem !important; /* PrimeVue 기본 패딩과 충돌 방지 */
-  font-size: var(--font-size-md) !important; 
-  border: 1px solid var(--border-input) !important;
-  border-radius: var(--border-radius) !important;
-  line-height: 1.5; /* 추가 */
-  height: auto; /* 추가 */
-}
-.p-datatable .p-datatable-tbody > tr > td .p-inputtext.p-inputtext-sm.text-right {
-  text-align: right;
-}
-
-/* ========================================== */
-/* 유틸리티 스타일 (Utility Styles)           */
-/* ========================================== */
-.text-link {
-  color: var(--text-link) !important; /* 링크 색상 강조 */
-  text-decoration: none; /* 기본 밑줄 없음 */
-  cursor: pointer; 
-}
-.text-link:hover {
-  color: var(--primary-color-dark) !important;
-  text-decoration: underline !important; /* 호버 시 밑줄 */
-}
-
-.text-right { 
-  text-align: right !important; 
-}
-
-.text-center { 
-  text-align: center !important; 
-}
-
-.text-left { 
-  text-align: left !important; 
-}
-
-/* ========================================== */
-/* 11. 페이지네이터 스타일 */
-/* ========================================== */
-
-.p-datatable .p-paginator {
-  padding: 0.5rem !important;
-  position: static !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  width: auto !important;
-  border-color: transparent !important;
-  border-width: 0px !important;
-  background: var(--bg-content) !important;
-  border-top: 1px solid #bbb !important;
-  z-index: 10 !important;
-  box-shadow: none !important;
-  padding: 12px 0 0 0 !important;
-}
-
-.p-datatable .p-paginator .p-paginator-current {
-  margin-right: 0.5rem !important;
-}
-
-.p-datatable .p-paginator .p-dropdown {
-  min-width: 4rem !important;
-}
-
-/* 페이지네이터 드롭다운 스타일 */
+/* 페이지네이터 드롭다운 */
 :deep(.p-paginator .p-dropdown) {
   font-size: var(--paginator-dropdown-font-size);
   height: var(--paginator-dropdown-height);
@@ -753,22 +419,21 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 12. 모달/다이얼로그 스타일 */
+/* 9. 모달/다이얼로그 스타일                   */
 /* ========================================== */
-
-/* 모달 배경 오버레이 */
+/* 모달 배경 */
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important;
 }
 
-/* 모달 전체 컨테이너 - 담당업체/약국 지정 모달에서 사용 */
+/* 모달 컨테이너 */
 .p-dialog {
   background: var(--bg-content) !important;
   width: 960px !important;
   max-width: 96vw !important;
   height: 720px !important;
   max-height: 72vh !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: var(--box-shadow-lg) !important;
   border-radius: var(--border-radius) !important;
 }
 
@@ -782,12 +447,12 @@ select.input-editable {
 .p-dialog-title {
   font-size: var(--font-size-title) !important;
   font-weight: 600 !important;
-  color: #222 !important;
+  color: var(--text-primary) !important;
   margin-left: 8px !important;
   padding: 0 !important;
 }
 
-/* 모달 내용 영역 */
+/* 모달 내용 */
 .p-dialog-content {
   min-height: 720px;
   max-height: 720px;
@@ -797,68 +462,33 @@ select.input-editable {
 }
 
 /* ========================================== */
-/* 13. 날짜/캘린더 관련 스타일 */
+/* 10. 유틸리티 클래스                        */
 /* ========================================== */
-
-/* 캘린더 입력창 - 제품 목록 화면의 기준월 선택에서 사용 -> x 미사용으로 변경 */
-.p-calendar .p-inputtext {
-  background: var(--bg-content) !important;
-  border: none !important;
-  border-radius: var(--border-radius) !important;
-  padding: 0px 0px !important;
-  width: 120px !important;
-  height: var(--search-input-height) !important;
-  font-style: underline !important;
+.text-link {
+  color: var(--text-link) !important;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-/* 날짜 선택기 컨테이너 */
-.p-datepicker {
-  background: var(--bg-content) !important;
-  border: 0px solid var(--border-secondary) !important;
-  border-radius: 12px !important;
-  padding: 0px 0px !important;
-  width: 120px !important;
-  height: var(--search-input-height) !important;
-  font-size: var(--font-size-lg) !important;
-  font-style: underline !important;
+.text-link:hover {
+  color: var(--primary-color-dark) !important;
+  text-decoration: underline !important;
 }
 
-/* 달력 팝업 */
-.p-datepicker-panel {
-  background: var(--bg-content) !important;
-  border: 1px solid var(--border-secondary) !important;
-  border-radius: var(--border-radius) !important;
-  width: 240px !important;
-}
-
-.p-datepicker-calendar {
-  background: var(--bg-content) !important;
-  padding: 0px 4px !important;
-  width: 240px !important;
-}
-
-.p-datepicker-header {
-  background: var(--bg-content) !important;
-  border: none !important;
-  width: 230px !important;
-}
+.text-right { text-align: right !important; }
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
 
 /* ========================================== */
-/* 14. 기타 공통 스타일 */
+/* 11. 페이지별 특수 스타일                    */
 /* ========================================== */
-
-/* 페이지 제목 - 모든 목록 화면 상단에서 사용 */
+/* 페이지 제목 */
 .header-title {
   font-size: var(--font-size-title);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 16px;
-  margin-left: 0;
-  margin-top: 0;
-  padding-left: 0;
-  padding-top: 0;
-  position: relative;
-  z-index: 1;
+  display: none !important; /* 현재 숨김 처리 */
 }
 
 /* 상세 페이지 헤더 */
@@ -869,76 +499,25 @@ select.input-editable {
   margin-bottom: 0.5rem;
 }
 
-/* 로그인/회원가입 화면 여백 제거 */
-body.no-main-padding .main-content {
-  margin: 0 !important;
-  padding: 0 !important;
+/* 실적 등록 화면 */
+.performance-register-view {
+  /* 실적 등록 화면 특수 스타일 */
 }
 
-/* PrimeVue Dropdown 모서리 둥글기 통일 */
-:root .p-dropdown,
-:root .p-dropdown-label,
-:root .p-dropdown-panel,
-:root .p-dropdown-items-wrapper,
-:root .p-dropdown-item,
-:root .p-dropdown .p-inputtext,
-:root .p-dropdown .p-dropdown-trigger {
-  border-radius: var(--border-radius) !important;
-}
-
-/* ========================================== */
-/* 15. 페이지별 특수 스타일 */
-/* ========================================== */
-
-/* 관리자 공지사항 뷰 */
-.admin-notices-view {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-}
-
-/* 관리자 거래처 뷰 - 담당업체/약국 지정 화면에서 사용 */
-.admin-clients-view,
-.admin-clients-assign-companies,
-.admin-clients-assign-pharmacies {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-}
-
-/* 관리자 업체 뷰 - 승인/미승인 업체 목록 화면에서 사용 */
-.admin-companies-view {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-}
-
-/* 관리자 제품 뷰 */
-.admin-products-view {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-}
-
-/* 관리자 정산월 뷰 */
-.admin-settlement-months-view {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-}
-
-/* 관리자 매출 뷰 - 직거래/도매 매출 목록 화면에서 사용 */
-.admin-revenue-view {
-  display: flex;
-  flex-direction: column;
-  height: auto;
+/* 흡수율 분석 화면 */
+.performance-register-view.absorption-analysis .footer-table td {
+  padding: 8px;
+  border: 1px solid var(--border-secondary);
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  border-top: 2px solid var(--primary-color);
 }
 
 /* ========================================== */
-/* 16. 드롭다운 공통 스타일 (전역) */
+/* 12. 드롭다운 스타일                        */
 /* ========================================== */
-
-/* 드롭다운 화살표 버튼 공통 스타일 - 실적 등록/현황 화면에서 사용 */
+/* 드롭다운 화살표 버튼 */
 .dropdown-arrow-btn {
   position: absolute;
   right: 2px;
@@ -952,7 +531,7 @@ body.no-main-padding .main-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2px;
+  border-radius: var(--border-radius);
   transition: background 0.2s;
   z-index: 10;
 }
@@ -967,20 +546,20 @@ body.no-main-padding .main-content {
 
 .dropdown-arrow {
   font-size: 10px;
-  color: #888;
+  color: var(--text-secondary);
   line-height: 1;
 }
 
-/* 검색 드롭다운 공통 스타일 */
+/* 검색 드롭다운 */
 .search-dropdown {
   position: absolute;
-  background-color: none;
-  border: 1px solid #ccc;
+  background-color: var(--bg-content);
+  border: 1px solid var(--border-input);
   border-top: none;
   max-height: 600px;
   overflow-y: auto;
-  z-index: 9999;  /* 매우 높은 z-index로 설정 */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 9999;
+  box-shadow: var(--box-shadow);
 }
 
 .search-dropdown ul {
@@ -990,9 +569,9 @@ body.no-main-padding .main-content {
 }
 
 .search-dropdown li {
-  padding: 8px 8px;
+  padding: 8px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .search-dropdown li:last-child {
@@ -1000,482 +579,46 @@ body.no-main-padding .main-content {
 }
 
 .search-dropdown li:hover {
-  background-color: #1976d2;
-  color: #fff;
+  background-color: var(--primary-color);
+  color: var(--text-white);
 }
 
 .search-dropdown li.selected {
-  background-color: #1976d2;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-white);
 }
 
-/* 병원 검색 드롭다운 특화 스타일 */
-.hospital-search-dropdown {
-  position: absolute;
-  background-color: #fff;
-  border: 1px solid #888;
-  
-  min-height: 60px;
-  max-height: 640px;
-  overflow-y: auto;
-  width: 320px;
-  left: 80px;
-  top: 100%;
-  z-index: 9999;  /* 매우 높은 z-index로 설정 */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.hospital-search-dropdown ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.hospital-search-dropdown li {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
+/* ========================================== */
+/* 13. 파일 업로드 스타일                      */
+/* ========================================== */
+/* 파일 목록 */
+.file-list {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  gap: 4px;
+  margin-left: 8px;
 }
 
-.hospital-search-dropdown li:last-child {
-  border-bottom: none;
-}
-
-.hospital-search-dropdown li:hover {
-  background-color: #1976d2;
-  color: white;
-}
-
-.hospital-search-dropdown li:hover .hospital-name,
-.hospital-search-dropdown li:hover .hospital-reg-number,
-.hospital-search-dropdown li:hover .hospital-address {
-  color: white;
-}
-
-.hospital-search-dropdown li.selected {
-  background-color: #1976d2;
-  color: white;
-}
-
-.hospital-search-dropdown .hospital-info-row {
+.file-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
-  margin-bottom: 4px;
-}
-
-.hospital-search-dropdown .hospital-name {
-  flex: 1;
-  text-align: left;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-right: 16px;
-}
-
-.hospital-search-dropdown .hospital-reg-number {
-  flex-shrink: 0;
-  text-align: right;
-  font-size: 0.9em;
-  color: #666;
-  min-width: 120px;
-}
-
-.hospital-search-dropdown .hospital-address {
-  font-size: 0.9em;
-  color: #666;
-  width: 100%;
-  text-align: left;
-}
-
-.hospital-search-dropdown li.selected .hospital-reg-number,
-.hospital-search-dropdown li.selected .hospital-address {
-  color: #fff;
-}
-
-/* 제품 검색 드롭다운 특화 스타일 */
-.product-search-dropdown {
-  position: absolute;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  min-height: 48px;
-  max-height: 640px;
-  overflow-y: auto;
-  width: calc(100% - 2px);
-  left: 0;
-  top: 100%;
-  z-index: 9999;  /* 매우 높은 z-index로 설정 */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.product-search-dropdown ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.product-search-dropdown li {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.product-search-dropdown li:last-child {
-  border-bottom: none;
-}
-
-.product-search-dropdown li:hover {
-  background-color: #1976d2;
-  color: white;
-}
-
-.product-search-dropdown li.selected {
-  background-color: #1976d2;
-  color: white;
-}
-
-.product-search-dropdown .product-name {
-  flex: 1;
-  text-align: left;
-  font-weight: bold;
-  padding-left: 12px;
-  margin-right: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.product-search-dropdown .insurance-code {
-  flex-shrink: 0;
-  text-align: right;
-  padding-right: 12px;
-  min-width: 80px;
-}
-
-/* 제품 입력 컨테이너 - 실적 등록/현황 화면에서 사용 */
-.product-input-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.product-input-container input {
-  padding-right: 30px !important;
-}
-
-/* 페이지 제목 숨김 처리 */
-.header-title {
-  display: none !important;
-}
-
-/* 등록 현황 테이블 헤더 고정 - PerformanceRegisterList.vue에서 사용 */
-.input-table thead tr th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #666 !important;
-  color: #fff !important;
-  border-bottom: 2px solid #dee2e6 !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* 등록 현황 화면 - 액션 버튼 그룹 */
-.action-buttons {
-  display: flex;
   gap: 8px;
-  margin-left: 16px;
 }
 
-/* 흡수율 분석 화면 - 합계 테이블 셀 */
-.performance-register-view.absorption-analysis .footer-table td {
-  padding: 8px;
-  border: 1px solid #ddd;
-  background-color: #f8f9fa;
-  font-weight: 600;
-  white-space: nowrap;
-  border-top: 2px solid #007bff;
+.file-link {
+  color: var(--primary-color);
+  text-decoration: underline;
+  font-size: var(--font-size-base);
 }
 
-/* 실적 등록 화면 - 상단 정보 박스(정산월, 제출기간, 처방월) */
-.info-box {
-  display: flex;
-  align-items: center;
-  height: 32px !important;
-  border: 1px solid #aaa;
-  background: #fff;
-}
-
-/* 실적 등록 화면 - 정산월 정보 박스 */
-.info-box-settlement {
-  width: 200px;
-}
-
-/* 실적 등록 화면 - 제출기간 정보 박스 */
-.info-box-period {
-  width: 300px;
-}
-
-/* 실적 등록 화면 - 처방월 정보 박스 */
-.info-box-prescription {
-  width: 200px;
-}
-
-/* 실적 등록 화면 - 상단 정보 박스 내 라벨(정산월/제출기간/처방월) */
-.info-box-label {
-  display: inline-block;
-  width: 80px;
-  text-align: center;
-  background: #f5f5f5;
-  height: 100% !important;
-  line-height: 32px !important;
-  border-right: 1px solid #aaa;
-}
-
-/* 실적 등록 화면 - 상단 정보 박스 내 값(정산월/제출기간/처방월) */
-.info-box-content {
-  flex: 1;
-  text-align: center;
-}
-
-/* 실적 등록 화면 - 처방월 선택 드롭다운 */
-.prescription-select {
-  flex: 1;
-  height: 32px !important;
-  border: none;
-  background: transparent;
-  outline: none;
-  text-align: center;
-  font-size: 1rem;
-  line-height: 32px !important;
-  padding: 0;
-  vertical-align: middle;
-  box-sizing: border-box;
-}
-
-/* 실적 등록 화면 - 병원 선택 영역 전체 */
-.hospital-selection-container {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-/* 실적 등록 화면 - 병원명 입력 박스(검색창+드롭다운) */
-.hospital-input-box {
-  display: flex;
-  align-items: center;
-  width: 400px;
-  height: 32px !important;
-  border: 1px solid #aaa;
-  background: none;
-  position: relative;
-  overflow: visible;
-}
-
-/* 실적 등록 화면 - 병원명 입력창 */
-.hospital-input {
-  flex: 1;
-  height: 32px !important;
-  border: none;
-  padding: 0 0 0 8px;
-  background: none;
-  outline: none;
+.file-remove {
+  color: var(--danger);
   cursor: pointer;
-  line-height: 32px !important;
-  vertical-align: middle;
-  box-sizing: border-box;
+  font-size: 0.85rem;
+  margin-left: 8px;
 }
 
-/* 실적 등록 화면 - 병원명 입력창 포커스 효과 */
-.hospital-input-focused {
-  font-size: 1rem;
-  height: 34px !important;
-  background: #ffffaa !important;
-  outline: 2px solid #e74c3c !important;
-  font-weight: bold;
-  z-index: 2;
+.file-row {
+  margin-top: 1rem;
 }
 
-/* 실적 등록 화면 - 병원 정보(사업자번호, 대표자, 주소) 표시 */
-.hospital-info {
-  margin-left: 12px;
-  font-size: 1rem;
-  color: #333;
-  white-space: nowrap;
-}
-
-/* 실적 등록 화면 - 상단 필터/액션 행(병원선택+등록버튼) */
-.performance-header-row {
-  display: flex;
-  gap: 32px;
-  margin-bottom: 12px;
-  align-items: center;
-  position: relative;
-  z-index: 1;
-}
-
-/* 실적 등록 화면 - 병원선택/등록버튼 행 */
-.performance-action-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-/* 실적 등록 화면 - 등록 버튼 */
-.register-button {
-  margin-left: 16px;
-}
-
-/* 실적 등록 화면 - 입력 비활성화(병원 미선택 시) */
-.disabled-area {
-  pointer-events: none;
-  user-select: none;
-}
-
-/* 실적 등록 화면 - 비활성화 상태에서 readonly-field만 연회색 배경 */
-.disabled-area.readonly-field {
-  background: #f5f5f5 !important;
-  color: #555 !important;
-}
-
-/* ========================================== */
-/* 증빙파일 제출 화면 모달 (PerformanceUploadView.vue) */
-/* ========================================== */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
-  z-index: 1001;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #ddd;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #ddd;
-}
-
-/* 페이지 제목 영역 */
-.page-header-title-area {
-  margin-bottom: 0.75rem; /* 하단 카드와의 여백 줄임 */
-}
-
-.page-header-title-area .header-title {
-  margin-bottom: 0.25rem; /* 부가 설명이 있을 경우를 대비한 여백 */
-}
-
-/* 상단 필터/검색 카드 */
-.filter-card .table-header { 
-  display: flex;
-  flex-wrap: wrap; 
-  align-items: center;
-  gap: 1rem; 
-  padding-bottom: 0; 
-}
-
-.action-buttons-strip .left-actions,
-.action-buttons-strip .right-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem; 
-}
-
-.data-card .total-count-display {
-  margin-bottom: 1rem;
-  font-size: var(--font-size-md);
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* 기존 .table-container는 이제 .data-card의 역할로 대체되거나, 
-   혹은 .data-card 내부에서 DataTable만 감싸는 용도로 사용된다면 
-   스타일 조정이 필요할 수 있습니다. 
-   여기서는 .table-container를 .data-card와 유사한 스타일로 업데이트하고,
-   AdminNoticesView.vue에서는 .data-card를 사용했으므로, 
-   만약 다른 View에서 여전히 .table-container를 외부 래퍼로 사용한다면 
-   그 스타일을 유지하거나 .data-card 스타일로 병합합니다. 
-   일단은 .table-container의 기존 카드 스타일은 유지된 것으로 가정하고,
-   필요시 추가 조정합니다. 
-*/
-
-/* 기존 .table-container의 패딩이 DataTable과 중복될 수 있으므로, 
-   .data-card를 사용할 때는 DataTable 자체 패딩을 활용하거나, 
-   .data-card에 패딩을 주고 DataTable의 외부 패딩을 제거할 수 있습니다.
-   AdminNoticesView.vue 에서는 DataTable이 .data-card 내부에 직접 있으므로,
-   .data-card에 패딩을 주고 DataTable의 자체 패딩/margin은 0으로 설정하는 것이 깔끔할 수 있습니다.
-*/
-
-.data-card > .p-datatable-wrapper { /* DataTable이 data-card의 직계 자식일 경우 */
-  /* padding: 0; */ /* 카드 패딩을 사용하고 DataTable 자체 패딩 제거 */
-  /* border: none; */ /* 카드 테두리를 사용하고 DataTable 자체 테두리 제거 */
-}
-
-/* 업체 등록 등 1줄 입력 폼용 */
-.single-row-form .form-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 18px;
-}
-.label-col {
-  flex: 0 0 180px;
-  text-align: right;
-  padding-right: 16px;
-  font-weight: 500;
-}
-.input-col {
-  flex: 1 1 auto;
-}
-
-.input-readonly-detail {
-  width: 100%;
-}
