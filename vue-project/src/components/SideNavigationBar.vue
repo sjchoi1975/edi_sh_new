@@ -200,7 +200,7 @@ onMounted(() => {
   padding: 0.75rem 0rem;
   display: flex;
   align-items: center;
-  font-size: var(--font-size-md);
+  font-size: 1.15rem;
   color: var(--text-primary) !important;
   font-weight: 700 !important;
   background: transparent;
@@ -239,8 +239,8 @@ onMounted(() => {
   cursor: pointer;
   padding: 0.6rem 1rem 0.6rem 1.6rem;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 1.0rem;
+  font-weight: 600;
   background: transparent;
   border-radius: 0;
   margin-bottom: 0;
@@ -282,26 +282,28 @@ onMounted(() => {
 .side-nav-profile-icon {
   font-size: 1.4rem;
   color: var(--text-secondary);
-  margin-right: 0.5rem;
+  margin-left: 1rem;
 }
 .side-nav-profile-info {
   display: flex;
   flex-direction: column;
 }
 .side-nav-profile-email {
-  font-size: var(--font-size-sm);
+  font-size: 1rem;
   color: var(--text-primary);
+  margin-left: 1rem;
   font-weight: 500;
 }
 .side-nav-profile-role {
-  font-size: 0.75rem;
-  color: var(--text-light);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-left: 1rem;
 }
 .side-nav-logout {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
@@ -309,7 +311,7 @@ onMounted(() => {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
 }
 .side-nav-logout:hover {
   color: var(--primary-color);

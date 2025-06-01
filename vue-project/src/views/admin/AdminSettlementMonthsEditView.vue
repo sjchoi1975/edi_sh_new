@@ -7,13 +7,6 @@
           <label>정산월 <span class="required">*</span></label>
           <input v-model="settlementMonth" type="month" required />
         </div>
-        <div class="form-col col-2">
-          <label>상태</label>
-          <select v-model="status">
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </div>
       </div>
       <div class="form-row">
         <div class="form-col col-2">
@@ -28,13 +21,22 @@
       <div class="form-row">
         <div class="form-col col-3">
           <label>전달 사항</label>
-          <textarea v-model="notice" rows="6" style="resize:vertical; min-height:80px; height:120px;"></textarea>
+          <textarea v-model="notice" ref="noticeArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustTextareaHeight"></textarea>
         </div>
       </div>
       <div class="form-row">
         <div class="form-col col-3">
           <label>비고</label>
           <input v-model="remarks" type="text" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col col-2">
+          <label>상태</label>
+          <select v-model="status">
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
+          </select>
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
@@ -46,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -58,6 +60,18 @@ const endDate = ref('');
 const notice = ref('');
 const status = ref('active');
 const remarks = ref('');
+const noticeArea = ref(null);
+
+const adjustTextareaHeight = () => {
+  if (noticeArea.value) {
+    noticeArea.value.style.height = 'auto';
+    noticeArea.value.style.height = `${noticeArea.value.scrollHeight}px`;
+  }
+};
+
+watch(notice, () => {
+  nextTick(adjustTextareaHeight);
+});
 
 onMounted(async () => {
   const { data, error } = await supabase
@@ -72,6 +86,7 @@ onMounted(async () => {
     notice.value = data.notice;
     status.value = data.status;
     remarks.value = data.remarks;
+    nextTick(adjustTextareaHeight);
   }
 });
 

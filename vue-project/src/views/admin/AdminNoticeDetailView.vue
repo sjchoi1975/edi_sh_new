@@ -16,7 +16,7 @@
           <label style="text-align: right;">내용 <span class="required">*</span></label>
         </div>
         <div class="form-col input-col input-400">
-          <textarea :value="notice.content" rows="12" readonly disabled style="resize:none;"></textarea>
+          <div class="input-readonly-detail">{{ notice.content }}</div>
         </div>
       </div>
       <div class="form-row">

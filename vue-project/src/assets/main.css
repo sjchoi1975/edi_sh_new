@@ -170,8 +170,6 @@ select:focus {
   box-shadow: 0 0 0 0.2rem var(--primary-color-light);
 }
 
-
-
 /* 인라인 편집 */
 .inline-edit-input {
   border: 1.5px solid #d1e7dd !important;
@@ -186,8 +184,6 @@ select:focus {
   background-color: #fff !important;
   box-shadow: 0 0 0 2px #d1e7dd33;
 }
-
-
 
 /* textarea 높이 */
 textarea {
@@ -304,11 +300,6 @@ select.input-editable {
   font-weight: 500;
 }
 
-
-
-
-
-
 .board_640 {
   max-width: 640px;
   background: var(--bg-content);
@@ -342,8 +333,6 @@ select.input-editable {
   color: var(--text-primary);
   margin-bottom: 1.5rem;
 }
-
-
 
 /* ========================================== */
 /* 7. 테이블 스타일                           */
@@ -627,5 +616,20 @@ select.input-editable {
   border-top: none !important;
   border-width: 0 !important;
   border-style: none !important;
+}
+
+.input-readonly-detail {
+  border: 1px solid var(--border-input);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-content);
+  min-height: 36px;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
 }
 

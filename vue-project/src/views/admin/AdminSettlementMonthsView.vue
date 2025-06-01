@@ -1,12 +1,30 @@
 <template>
-  <div class="admin-settlement-months-view">
-    <div class="header-title">정산월 관리</div>
-    <div class="table-container">
-      <div class="table-header">
-        <button class="btn-primary" @click="goCreate">등록</button>
+  <div class="admin-settlement-months-view page-container">
+    <div class="page-header-title-area">
+      <div class="header-title">정산월 관리</div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-row">
+        <span class="p-input-icon-left">
+          <InputText
+            v-model="filters['global'].value"
+            placeholder="정산월, 내용 검색"
+            class="search-input"
+          />
+        </span>
+      </div>
+    </div>
+    <div class="data-card">
+      <div class="data-card-header">
+        <div class="total-count-display">
+          전체 {{ filteredSettlementMonths.length }} 건
+        </div>
+        <div>
+          <button class="btn-primary" @click="goCreate">등록</button>
+        </div>
       </div>
       <DataTable
-        :value="settlementMonths"
+        :value="filteredSettlementMonths"
         paginator
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -14,15 +32,17 @@
         scrollHeight="680px"
         class="custom-table"
         v-model:first="currentPageFirstIndex"
+        v-model:filters="filters"
+        :globalFilterFields="['settlement_month', 'notice']"
       >
         <template #empty>등록된 정산월이 없습니다.</template>
         <template #loading>정산월 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: '6%' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="settlement_month" header="정산월" :headerStyle="{ width: '8%' }" :sortable="true">
+        <Column field="settlement_month" header="정산월" :headerStyle="{ width: columnWidths.settlement_month }" :sortable="true">
           <template #body="slotProps">
             <a
               href="#"
@@ -33,11 +53,11 @@
             </a>
           </template>
         </Column>
-        <Column field="start_date" header="실적입력 시작일" :headerStyle="{ width: '10%' }" />
-        <Column field="end_date" header="실적입력 종료일" :headerStyle="{ width: '10%' }" />
-        <Column field="notice" header="전달 사항" :headerStyle="{ width: '38%' }" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: '20%' }" />
-        <Column field="status" header="상태" :headerStyle="{ width: '10%' }">
+        <Column field="start_date" header="실적입력 시작일" :headerStyle="{ width: columnWidths.start_date }" />
+        <Column field="end_date" header="실적입력 종료일" :headerStyle="{ width: columnWidths.end_date }" />
+        <Column field="notice" header="전달 사항" :headerStyle="{ width: columnWidths.notice }" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
+        <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }">
           <template #body="slotProps">
             <span :class="slotProps.data.status === 'active' ? 'active-badge' : 'inactive-badge'">
               {{ slotProps.data.status === 'active' ? '활성' : '비활성' }}
@@ -50,15 +70,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import InputText from 'primevue/inputtext';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
+
+// 컬럼 너비 한 곳에서 관리
+const columnWidths = {
+  no: '6%',
+  settlement_month: '8%',
+  start_date: '10%',
+  end_date: '10%',
+  notice: '38%',
+  remarks: '20%',
+  status: '10%'
+};
 
 const settlementMonths = ref([]);
 const router = useRouter();
 const currentPageFirstIndex = ref(0);
+const filters = ref({ global: { value: null, matchMode: 'contains' } });
+
+const filteredSettlementMonths = computed(() => {
+  if (!filters.value.global.value) return settlementMonths.value;
+  const keyword = filters.value.global.value.toLowerCase();
+  return settlementMonths.value.filter(item =>
+    (item.settlement_month || '').toLowerCase().includes(keyword) ||
+    (item.notice || '').toLowerCase().includes(keyword)
+  );
+});
 
 function goCreate() {
   router.push('/admin/settlement-months/create');
