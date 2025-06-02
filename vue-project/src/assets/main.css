@@ -351,10 +351,10 @@ select.input-editable {
   padding: 0.5rem 1rem !important;
   background: var(--bg-secondary) !important;
   font-size: var(--font-size-md) !important;
-  font-weight: 800 !important;
+  font-weight: 900 !important;
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--border-primary) !important;
-  text-align: left !important;
+  text-align: center !important;
 }
 
 /* 테이블 바디 */
@@ -364,7 +364,6 @@ select.input-editable {
   font-weight: 400 !important;
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--border-secondary) !important;
-  text-align: left !important;
 }
 
 /* 테이블 행 호버 */
@@ -691,12 +690,12 @@ button:disabled {
   width: 240px;
 }
 
-/* PrimeVue DataTable 전역 정렬 - 모두 왼쪽 정렬 */
+/* PrimeVue DataTable 전역 정렬 */
 .p-datatable .p-datatable-thead > tr > th {
-  text-align: left !important;
+  text-align: center !important;
 }
 .p-datatable .p-datatable-tbody > tr > td {
-  text-align: left !important;
+  /* 정렬은 화면별 CSS 클래스에서 관리 */
 }
 .text-left { text-align: left !important; }
 .text-right { text-align: right !important; }
@@ -778,6 +777,17 @@ button:disabled {
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   border-radius: 6px;
   overflow: hidden;
+  display: table;
+  position: relative;
+  padding: 0px 0px; 
+}
+
+.input-table.prime-like-table td {
+  border-bottom: 1px solid #f0f0f0;
+  border-right: 1px solid #dee2e6;
+  padding: 4px 8px 0px 8px;
+  background: #fff;
+  transition: background 0.2s;
 }
 
 .input-table.prime-like-table th {
@@ -785,15 +795,15 @@ button:disabled {
   color: #495057;
   font-weight: 600;
   border-bottom: 2px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
   padding: 8px 4px;
   text-align: center;
 }
 
-.input-table.prime-like-table td {
-  border-bottom: 1px solid #f0f0f0;
-  padding: 6px 4px;
-  background: #fff;
-  transition: background 0.2s;
+/* 마지막 컬럼은 세로 선 제거 */
+.input-table.prime-like-table td:last-child,
+.input-table.prime-like-table th:last-child {
+  border-right: none;
 }
 
 .input-table.prime-like-table tr:hover td {
@@ -830,7 +840,7 @@ button:disabled {
   background: none;
   border: none;
   color: #222;
-  padding: 0 4px;
+  padding: 0 1rem;
   text-align: inherit;
 }
 
@@ -840,21 +850,249 @@ button:disabled {
   top: 100%;
   z-index: 10;
   width: 100%;
-  max-height: 220px;
+  min-height: 360px;
+  max-height: 480px;
   overflow-y: auto;
   background: #fff;
   border: 1px solid #d0d7e2;
-  border-radius: 0 0 6px 6px;
+  border-radius: 0px 0px 6px 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .input-table-wrapper {
   position: relative;
-  max-height: 420px;
-  overflow-y: auto;
+  height: 690px;
+  overflow: hidden;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-table.prime-like-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #f4f6fa !important;
+  color: #495057;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  padding: 0px 4px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .product-input-container {
   position: relative;
+  margin: 0 0.5rem;
+  padding: 0 0;
 }
+
+/* 헤더 고정 강화 */
+.input-table.prime-like-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.input-table.prime-like-table tbody {
+  position: relative;
+  z-index: 1;
+}
+
+/* 고정 헤더 영역 */
+.table-header-fixed {
+  background: #f4f6fa;
+  border: 1px solid #dee2e6;
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 0px 0px 0 0;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+.table-header-fixed table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.table-header-fixed th {
+  background: #f1f3f5 !important;
+  color: #495057;
+  font-weight: 400;
+  padding: 8px 4px;
+  text-align: center;
+  border: none;
+  border-right: 1px solid #dee2e6;
+}
+
+/* 스크롤 가능한 바디 영역 */
+.table-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 0px 0px;
+}
+
+.table-body-scroll table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.table-header-fixed table,
+.table-body-scroll table {
+  table-layout: fixed !important;
+}
+
+/* ========================================== */
+/* 15. 화면별 테이블 정렬 스타일                */
+/* ========================================== */
+
+/* ------ 공지사항 목록 (NoticesView.vue) ------ */
+.notices-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.notices-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: center !important; }  /* 필수 */
+.notices-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 제목 */
+.notices-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 첨부파일 */
+.notices-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }   /* 조회수 */
+.notices-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: center !important; }  /* 작성일시 */
+
+/* 공지사항 테이블 헤더 가운데 정렬 */
+.notices-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 제품 목록 (ProductsView.vue) ------ */
+.products-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.products-table .p-datatable-tbody > td:nth-child(2) { text-align: left !important; }    /* 제품명 */
+.products-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: center !important; }  /* 보험코드 */
+.products-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: right !important; }   /* 약가 */
+.products-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }   /* 수수료율(%) */
+.products-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: left !important; }    /* 비고 */
+
+/* 제품 목록 테이블 헤더 가운데 정렬 */
+.products-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 거래처 목록 (ClientsView.vue) ------ */
+.clients-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.clients-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: center !important; }  /* 거래처코드 */
+.clients-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 병의원명 */
+.clients-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 사업자등록번호 */
+.clients-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }    /* 원장명 */
+.clients-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: left !important; }    /* 주소 */
+.clients-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: left !important; }    /* 비고 */
+
+/* 거래처 목록 테이블 헤더 가운데 정렬 */
+.clients-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 실적 등록 (PerformanceRegister.vue) ------ */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: center !important; }  /* 거래처코드 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 병의원명 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: left !important; }    /* 주소 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 처방건수 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: right !important; }   /* 처방액 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 조회 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: center !important; }  /* 등록 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: center !important; }  /* 증빙파일 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: center !important; }  /* 보기 */
+.performance-register-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; }  /* 업로드 */
+
+/* 실적 등록 테이블 헤더 가운데 정렬 */
+.performance-register-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 실적 입력 테이블 (PerformanceRegisterEdit.vue) ------ */
+.performance-edit-table .input-table td:nth-child(1) { text-align: center !important; }  /* No */
+.performance-edit-table .input-table td:nth-child(2) { text-align: left !important; }    /* 제품명 */
+.performance-edit-table .input-table td:nth-child(3) { text-align: center !important; }  /* 보험코드 */
+.performance-edit-table .input-table td:nth-child(4) { text-align: right !important; }   /* 단가 */
+.performance-edit-table .input-table td:nth-child(5) { text-align: right !important; }   /* 처방수량 */
+.performance-edit-table .input-table td:nth-child(6) { text-align: right !important; }   /* 처방액 */
+.performance-edit-table .input-table td:nth-child(7) { text-align: center !important; }  /* 처방구분 */
+.performance-edit-table .input-table td:nth-child(8) { text-align: left !important; }    /* 비고 */
+.performance-edit-table .input-table td:nth-child(9) { text-align: center !important; }  /* 삭제 */
+.performance-edit-table .input-table td:nth-child(10) { text-align: center !important; } /* 추가 */
+
+/* ------ 실적 등록 현황 (PerformanceRegisterList.vue) ------ */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 거래처 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: center !important; }  /* 처방월 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: left !important; }    /* 제품명 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 보험코드 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: right !important; }   /* 약가 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: right !important; }   /* 처방수량 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 처방액 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: center !important; }  /* 처방구분 */
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: left !important; }   /* 비고 */
+
+/* 실적 등록 현황 테이블 헤더 가운데 정렬 */
+.performance-list-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 실적 등록 (PerformanceRegister.vue) 주소 컬럼 오버플로우 처리 ------ */
+.performance-register-table.custom-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
+.performance-register-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
+.performance-register-table td:nth-child(4),
+.performance-register-table .p-datatable-tbody tr td:nth-child(4) {
+  text-align: left !important;
+  max-width: 16% !important;
+  width: 16% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  position: relative !important;
+}
+
+.performance-register-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4) span,
+.performance-register-table td:nth-child(4) span {
+  display: block !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* 실적 등록 테이블 고정 레이아웃 강제 적용 */
+.performance-register-table .p-datatable .p-datatable-table,
+.performance-register-table .p-datatable table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* 실적 등록 테이블 헤더 가운데 정렬 강제 적용 */
+.performance-register-table .p-datatable .p-datatable-thead > tr > th,
+.performance-register-table.custom-table .p-datatable-thead > tr > th,
+.performance-register-table th {
+  text-align: center !important;
+}
+
 

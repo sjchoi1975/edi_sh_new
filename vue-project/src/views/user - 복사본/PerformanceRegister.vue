@@ -30,22 +30,29 @@
         :value="clientList"
         scrollable
         scrollHeight="calc(100vh - 340px)"
-        class="custom-table performance-register-table"
+        class="custom-table"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
 
         <!-- No 컬럼 -->
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + 1 }}
           </template>
         </Column>
         <!-- 거래처 정보 -->
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }" />
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
         <Column 
           header="병의원명" 
-          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }" 
+          :headerStyle="{ width: columnWidths.name }" 
+          :bodyStyle="{ 
+            'max-width': '0',
+            'overflow': 'hidden',
+            'text-overflow': 'ellipsis',
+            'white-space': 'nowrap'
+          }"
+          :sortable="true"
         >
           <template #body="slotProps">
             <span 
@@ -58,12 +65,19 @@
         </Column>
         <Column 
           header="주소" 
-          :headerStyle="{ width: columnWidths.address, textAlign: 'center' }" 
+          :headerStyle="{ width: columnWidths.address }" 
+          :bodyStyle="{ 
+            'max-width': '0',
+            'overflow': 'hidden',
+            'text-overflow': 'ellipsis',
+            'white-space': 'nowrap'
+          }"
+          :sortable="true"
         >
           <template #body="slotProps">
             <span 
               :title="slotProps.data.address"
-              style="display: block; max-width: 100%; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box;"
+              style="display: block; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; width: 100%;"
             >
               {{ slotProps.data.address }}
             </span>
@@ -71,19 +85,19 @@
         </Column>
 
         <!-- 실적 정보 -->
-        <Column header="처방건수" :headerStyle="{ width: columnWidths.performance_count, textAlign: 'center' }">
+        <Column header="처방건수" :headerStyle="{ width: columnWidths.performance_count }" :sortable="true">
           <template #body="slotProps">
             {{ slotProps.data.performance_count ? slotProps.data.performance_count : '-' }}
           </template>
         </Column>
-        <Column header="처방액" :headerStyle="{ width: columnWidths.total_prescription_amount, textAlign: 'center' }">
+        <Column header="처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
           <template #body="slotProps">
             {{ slotProps.data.total_prescription_amount ? formatNumber(slotProps.data.total_prescription_amount) : '-' }}
           </template>
         </Column>
 
         <!-- 버튼 영역 -->
-        <Column header="조회" :headerStyle="{ width: columnWidths.view_button, textAlign: 'center' }">
+        <Column header="조회" :headerStyle="{ width: columnWidths.view_button }">
           <template #body="slotProps">
             <button 
               class="btn-view" 
@@ -92,7 +106,7 @@
             >조회</button>
           </template>
         </Column>
-        <Column header="등록" :headerStyle="{ width: columnWidths.input_button, textAlign: 'center' }">
+        <Column header="등록" :headerStyle="{ width: columnWidths.input_button }">
           <template #body="slotProps">
             <button 
               class="btn-input" 
@@ -101,12 +115,12 @@
             >등록</button>
           </template>
         </Column>
-        <Column header="증빙파일" :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }">
+        <Column header="증빙파일" :headerStyle="{ width: columnWidths.evidence_files_count }" :sortable="true">
           <template #body="slotProps">
             {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
           </template>
         </Column>
-        <Column header="보기" :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }">
+        <Column header="보기" :headerStyle="{ width: columnWidths.view_files_button }">
           <template #body="slotProps">
             <button 
               class="btn-view" 
@@ -115,7 +129,7 @@
             >보기</button>
           </template>
         </Column>
-        <Column header="업로드" :headerStyle="{ width: columnWidths.upload_button, textAlign: 'center' }">
+        <Column header="업로드" :headerStyle="{ width: columnWidths.upload_button }">
           <template #body="slotProps">
             <button 
               class="btn-upload" 
@@ -128,22 +142,25 @@
       <!-- 합계 행: 테이블 하단 고정 -->
       <div class="table-footer-wrapper"
         style="width:100%;
-        padding: 0 2rem 0 0;
         background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
+        border-top:1px solid #dee2e6;
+        border-bottom:1px solid #bcc0c4;
         position:sticky;
         bottom:0;
         z-index:2;">
         <table style="width:100%; table-layout:fixed;">
           <tr>
-            <td style="width:52%; text-align:center; font-weight:600;">합계</td>
-            <td style="width:7%; text-align:center; font-weight:600;">{{ totalPerformanceCount }}</td>
-            <td style="width:7%; text-align:right; font-weight:600;">{{ formatNumber(totalPrescriptionAmount) }}</td>
-            <td style="width:15%;"></td>
-            <td style="width:6%; text-align:center; font-weight:600;">{{ totalEvidenceFilesCount }}</td>
-            <td style="width:13%;"></td>
+            <td style="width:6%; text-align:center; font-weight:600;">합계</td>
+            <td style="width:8%;"></td>
+            <td style="width:16%;"></td>
+            <td style="width:16%;"></td>
+            <td style="width:10%; text-align:left; font-weight:600;">{{ totalPerformanceCount }}</td>
+            <td style="width:10%; text-align:left; font-weight:600;">{{ formatNumber(totalPrescriptionAmount) }}</td>
+            <td style="width:6%;"></td>
+            <td style="width:6%;"></td>
+            <td style="width:10%; text-align:left; font-weight:600;">{{ totalEvidenceFilesCount }}</td>
+            <td style="width:6%;"></td>
+            <td style="width:6%;"></td>
           </tr>
         </table>
       </div>
@@ -288,14 +305,14 @@ const columnWidths = {
   no: '6%',
   client_code: '8%',
   name: '16%',
-  address: '21%',
-  performance_count: '7%',
-  total_prescription_amount: '7%',
-  view_button: '7%',
-  input_button: '7%',
-  evidence_files_count: '7%',
-  view_files_button: '7%',
-  upload_button: '7%'
+  address: '16%',
+  performance_count: '10%',
+  total_prescription_amount: '10%',
+  view_button: '6%',
+  input_button: '6%',
+  evidence_files_count: '10%',
+  view_files_button: '6%',
+  upload_button: '6%'
 }
 
 const availableMonths = ref([])
@@ -776,29 +793,4 @@ function downloadExcel() {
   // 파일 다운로드
   XLSX.writeFile(wb, fileName);
 }
-</script>
-
-<style scoped>
-/* 실적 등록 테이블 헤더 가운데 정렬 */
-:deep(.performance-register-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-
-/* 테이블 레이아웃 고정 */
-:deep(.performance-register-table .p-datatable-table) {
-  table-layout: fixed !important;
-  width: 100% !important;
-}
-
-/* 주소 컬럼 강제 너비 제한 */
-:deep(.performance-register-table .p-datatable-tbody > tr > td:nth-child(4)) {
-  max-width: 21% !important;
-  width: 21% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-</style> 
+</script> 

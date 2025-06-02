@@ -30,31 +30,31 @@
         scrollHeight="calc(100vh - 310px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
-        class="custom-table notices-table"
+        class="custom-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 공지사항이 없습니다.</template>
         <template #loading>공지사항 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }" bodyClass="text-center">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned }">
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned }" bodyClass="text-center">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
           </template>
         </Column>
-        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }">
+        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }" bodyClass="text-left">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.title }}</a>
           </template>
         </Column>
-        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }">
+        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }" bodyClass="text-center">
           <template #body="slotProps">
             <span>{{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}</span>
           </template>
         </Column>
-        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count }" />
-        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at }">
+        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count }" bodyClass="text-right" />
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at }" bodyClass="text-center">
           <template #body="slotProps">{{ formatKST(slotProps.data.created_at) }}</template>
         </Column>
       </DataTable>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -156,18 +156,9 @@ onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession();
   userType.value = session?.user?.user_metadata?.user_type || '';
 });
+import { watch } from 'vue';
 
 watch(filteredNotices, (val) => {
   console.log('filteredNotices:', val);
 });
 </script>
-
-<style scoped>
-/* 공지사항 테이블 헤더 가운데 정렬 */
-:deep(.notices-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style>

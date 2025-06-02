@@ -34,24 +34,24 @@
         scrollHeight="calc(100vh - 310px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
-        class="custom-table clients-table"
+        class="custom-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
-        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true">
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.name }}</a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true" />
-        <Column field="owner_name" header="원장명" :headerStyle="{ width: columnWidths.owner_name }" :sortable="true" />
-        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="owner_name" header="원장명" :headerStyle="{ width: columnWidths.owner_name, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
       </DataTable>
     </div>
   </div>
@@ -178,14 +178,4 @@ function downloadExcel() {
 onMounted(() => {
   fetchClients();
 });
-</script>
-
-<style scoped>
-/* 거래처 목록 테이블 헤더 가운데 정렬 */
-:deep(.clients-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 
+</script> 

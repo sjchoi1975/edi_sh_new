@@ -2,20 +2,20 @@
   <div class="performance-register-view">
     <div class="header-title">실적 등록</div>
     <!-- 선택된 정산월 병원 정보를 상단에 고정 표시 -->
-    <div class="filter-card" style="display:flex; align-items:center; margin-bottom:1rem; padding:0.5rem 1rem;">
+    <div class="filter-card" style="display:flex; align-items:center; margin-bottom:1.5rem;">
       <div>
-        <div style="font-size:1.0rem; color:#555; font-weight:500; margin-bottom:-0.1rem;">정산월 : {{ selectedSettlementMonth }}</div>
+        <div style="font-size:1.1rem; font-weight:700; margin-bottom:2px;">정산월: {{ selectedSettlementMonth }}</div>
         <div style="font-size:1.2rem; font-weight:700;">{{ route.query.clientName }}</div>
-        <div style="font-size:0.95rem; color:#555;">
+        <div style="font-size:0.95rem; color:#888;">
           {{ route.query.businessRegistrationNumber }} / {{ route.query.address }}
         </div>
       </div>
     </div>
     <div class="data-card">
-      <div class="input-table-wrapper performance-edit-table">
+      <div class="input-table-wrapper">
         <div class="top-bar-row">
           <div class="left-group">
-            <label style="font-weight:500; margin-right:0.5rem;">처방월</label>
+            <label style="font-weight:500; margin-right:0.5rem;">처방월:</label>
             <select v-model="prescriptionOffset" class="select_month">
               <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
                 {{ opt.month }}
@@ -24,189 +24,174 @@
           </div>
           <button class="btn-primary register-button" @click="onSave" :disabled="!canSave">저장</button>
         </div>
-
-        <!-- 실적 입력 테이블 - 헤더와 바디 분리 -->
-        <div class="table-header-fixed">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:5%;">No</th>
-                <th style="width:22%;">제품명</th>
-                <th style="width:9%;">보험코드</th>
-                <th style="width:9%;">단가</th>
-                <th style="width:9%;">처방수량</th>
-                <th style="width:10%;">처방액</th>
-                <th style="width:10%;">처방구분</th>
-                <th style="width:14%;">비고</th>
-                <th style="width:6%;">삭제</th>
-                <th style="width:6%;">추가</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-        
-        <div class="table-body-scroll">
-          <table class="input-table prime-like-table">
-            <tbody>
-              <tr v-for="(row, rowIdx) in inputRows" :key="rowIdx">
-                <td style="text-align:center; width:5%;">{{ rowIdx + 1 }}</td>
-                <td style="position:relative;text-align:left; width:22%;">
-                  <div class="product-input-container">
-                    <input
-                      v-model="row.product_name_display"
-                      :tabindex="isInputEnabled ? 0 : -1"
-                      :readonly="!isInputEnabled"
-                      @input="handleProductNameInput(rowIdx, $event)"
-                      @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                      @keydown.down.prevent="navigateProductSearchList('down')"
-                      @keydown.up.prevent="navigateProductSearchList('up')"
-                      @keydown="onArrowKey($event, rowIdx, 'product_name')"
-                      @focus="handleProductNameFocus(rowIdx)"
-                      @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                      :disabled="!isInputEnabled"
-                      :class="[
-                        cellClass(rowIdx, 'product_name'),
-                        { 'disabled-area': !isInputEnabled }
-                      ]"
-                      autocomplete="off"
-                      :ref="el => setProductInputRef(rowIdx, el)"
-                    />
-                    <button 
-                      type="button"
-                      @click="toggleProductDropdown(rowIdx)"
-                      @mousedown.prevent
-                      class="dropdown-arrow-btn"
-                      tabindex="-1"
-                      :disabled="!isInputEnabled"
-                    >
-                      <span class="dropdown-arrow">▼</span>
-                    </button>
-                  </div>
-                  <teleport to="body">
-                    <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0"
-                      class="search-dropdown product-search-dropdown"
-                      :style="productDropdownStyle[rowIdx]"
-                    >
-                      <ul>
-                        <li
-                          v-for="(product, index) in productSearchForRow.results"
-                          :key="product.id"
-                          @click="clickProductFromSearchList(product, rowIdx)"
-                          :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                        >
-                          <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                          <span class="insurance-code">{{ product.insurance_code }}</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </teleport>
-                </td>
-                <td style="text-align:center; width:9%;">
-                  <span class="readonly-span">{{ row.insurance_code }}</span>
-                </td>
-                <td style="text-align:right; width:9%;">
-                  <span class="readonly-span">{{ row.price }}</span>
-                </td>
-                <td style="text-align:right; position:relative; width:9%;">
+        <!-- 실적 입력 테이블 -->
+        <table class="input-table prime-like-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">No</th>
+              <th style="width:20%;">제품명</th>
+              <th style="width:8%;">보험코드</th>
+              <th style="width:8%;">단가</th>
+              <th style="width:8%;">처방수량</th>
+              <th style="width:10%;">처방액</th>
+              <th style="width:10%;">처방구분</th>
+              <th style="width:14%;">비고</th>
+              <th style="width:40px;">행삭제</th>
+              <th style="width:40px;">추가</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, rowIdx) in inputRows" :key="rowIdx">
+              <td style="text-align:center;">{{ rowIdx + 1 }}</td>
+              <td style="position:relative;text-align:left;">
+                <div class="product-input-container">
                   <input
-                    v-model="row.prescription_qty"
+                    v-model="row.product_name_display"
                     :tabindex="isInputEnabled ? 0 : -1"
                     :readonly="!isInputEnabled"
-                    @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                    @keydown="onArrowKey($event, rowIdx, 'prescription_qty')"
-                    @input="onQtyInput(rowIdx)"
-                    @focus="handlePrescriptionQtyFocus(rowIdx)"
-                    @blur="row.prescription_qty = row.prescription_qty ? Number(row.prescription_qty.toString().replace(/,/g, '')).toLocaleString() : ''"
+                    @input="handleProductNameInput(rowIdx, $event)"
+                    @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
+                    @keydown.down.prevent="navigateProductSearchList('down')"
+                    @keydown.up.prevent="navigateProductSearchList('up')"
+                    @keydown="onArrowKey($event, rowIdx, 'product_name')"
+                    @focus="handleProductNameFocus(rowIdx)"
+                    @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
                     :disabled="!isInputEnabled"
                     :class="[
-                      cellClass(rowIdx, 'prescription_qty'),
+                      cellClass(rowIdx, 'product_name'),
                       { 'disabled-area': !isInputEnabled }
                     ]"
-                    style="text-align:right;"
+                    autocomplete="off"
+                    :ref="el => setProductInputRef(rowIdx, el)"
                   />
-                </td>
-                <td style="text-align:right; width:10%;">
-                  <span class="readonly-span">{{ row.prescription_amount }}</span>
-                </td>
-                <td style="text-align:center; width:10%;">
-                  <select
-                    v-model="row.prescription_type"
-                    :tabindex="isInputEnabled ? 0 : -1"
-                    :readonly="!isInputEnabled"
-                    @change="onPrescriptionTypeInput(rowIdx)"
-                    @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
-                    @focus="handleFieldFocus(rowIdx, 'prescription_type')"
+                  <button 
+                    type="button"
+                    @click="toggleProductDropdown(rowIdx)"
+                    @mousedown.prevent
+                    class="dropdown-arrow-btn"
+                    tabindex="-1"
                     :disabled="!isInputEnabled"
-                    :class="[
-                      cellClass(rowIdx, 'prescription_type'),
-                      { 'disabled-area': !isInputEnabled }
-                    ]"
-                    style="text-align:center;"
                   >
-                    <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-                  </select>
-                </td>
-                <td style="text-align:left; width:14%;">
-                  <input
-                    v-model="row.remarks"
-                    :tabindex="isInputEnabled ? 0 : -1"
-                    :readonly="!isInputEnabled"
-                    @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                    @keydown="onArrowKey($event, rowIdx, 'remarks')"
-                    @focus="handleFieldFocus(rowIdx, 'remarks')"
-                    :disabled="!isInputEnabled"
-                    :class="[
-                      cellClass(rowIdx, 'remarks'),
-                      { 'disabled-area': !isInputEnabled }
-                    ]"
-                    style="text-align:left;"
-                  />
-                </td>
-                <td class="action-cell" style="width:6%;">
-                  <button 
-                    class="btn-delete-m" 
-                    @click="confirmDeleteRow(rowIdx)" 
-                    :disabled="inputRows.length === 1 || !isInputEnabled" 
-                    title="삭제"
-                    :class="{ 'disabled-area': !isInputEnabled }"
-                  >✕</button>
-                </td>
-                <td class="action-cell" style="width:6%;">
-                  <button 
-                    class="btn-add-m" 
-                    @click="confirmAddRowBelow(rowIdx)" 
-                    title="추가"
-                    :disabled="!isInputEnabled"
-                    :class="{ 'disabled-area': !isInputEnabled }"
-                  >＋</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                    <span class="dropdown-arrow">▼</span>
+                  </button>
+                </div>
+                <teleport to="body">
+                  <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0"
+                    class="search-dropdown product-search-dropdown"
+                    :style="productDropdownStyle[rowIdx]"
+                  >
+                    <ul>
+                      <li
+                        v-for="(product, index) in productSearchForRow.results"
+                        :key="product.id"
+                        @click="clickProductFromSearchList(product, rowIdx)"
+                        :class="{ 'selected': productSearchForRow.selectedIndex === index }"
+                      >
+                        <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
+                        <span class="insurance-code">{{ product.insurance_code }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </teleport>
+              </td>
+              <td style="text-align:center;">
+                <span class="readonly-span">{{ row.insurance_code }}</span>
+              </td>
+              <td style="text-align:right;">
+                <span class="readonly-span">{{ row.price }}</span>
+              </td>
+              <td style="text-align:right; position:relative;">
+                <input
+                  v-model="row.prescription_qty"
+                  :tabindex="isInputEnabled ? 0 : -1"
+                  :readonly="!isInputEnabled"
+                  @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
+                  @keydown="onArrowKey($event, rowIdx, 'prescription_qty')"
+                  @input="onQtyInput(rowIdx)"
+                  @focus="handlePrescriptionQtyFocus(rowIdx)"
+                  @blur="row.prescription_qty = row.prescription_qty ? Number(row.prescription_qty.toString().replace(/,/g, '')).toLocaleString() : ''"
+                  :disabled="!isInputEnabled"
+                  :class="[
+                    cellClass(rowIdx, 'prescription_qty'),
+                    { 'disabled-area': !isInputEnabled }
+                  ]"
+                  style="text-align:right;"
+                />
+              </td>
+              <td style="text-align:right;">
+                <span class="readonly-span">{{ row.prescription_amount }}</span>
+              </td>
+              <td style="text-align:center;">
+                <select
+                  v-model="row.prescription_type"
+                  :tabindex="isInputEnabled ? 0 : -1"
+                  :readonly="!isInputEnabled"
+                  @change="onPrescriptionTypeInput(rowIdx)"
+                  @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
+                  @focus="handleFieldFocus(rowIdx, 'prescription_type')"
+                  :disabled="!isInputEnabled"
+                  :class="[
+                    cellClass(rowIdx, 'prescription_type'),
+                    { 'disabled-area': !isInputEnabled }
+                  ]"
+                  style="text-align:center;"
+                >
+                  <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
+                </select>
+              </td>
+              <td style="text-align:left;">
+                <input
+                  v-model="row.remarks"
+                  :tabindex="isInputEnabled ? 0 : -1"
+                  :readonly="!isInputEnabled"
+                  @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
+                  @keydown="onArrowKey($event, rowIdx, 'remarks')"
+                  @focus="handleFieldFocus(rowIdx, 'remarks')"
+                  :disabled="!isInputEnabled"
+                  :class="[
+                    cellClass(rowIdx, 'remarks'),
+                    { 'disabled-area': !isInputEnabled }
+                  ]"
+                  style="text-align:left;"
+                />
+              </td>
+              <td class="action-cell">
+                <button 
+                  class="btn-delete-m" 
+                  @click="confirmDeleteRow(rowIdx)" 
+                  :disabled="inputRows.length === 1 || !isInputEnabled" 
+                  title="행삭제"
+                  :class="{ 'disabled-area': !isInputEnabled }"
+                >✕</button>
+              </td>
+              <td class="action-cell">
+                <button 
+                  class="btn-add-m" 
+                  @click="confirmAddRowBelow(rowIdx)" 
+                  title="아래행을 추가"
+                  :disabled="!isInputEnabled"
+                  :class="{ 'disabled-area': !isInputEnabled }"
+                >＋</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <!-- 합계 행을 하단 고정 -->
       <div class="table-footer-wrapper"
-      style="width:100%;
+        style="width:100%;
         background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
+        border-top:1px solid #dee2e6;
+        border-bottom:1px solid #bcc0c4;
         position:sticky;
         bottom:0;
         z-index:2;">
         <table style="width:100%; table-layout:fixed;">
           <tr>
-            <td style="width:5%;"></td>
-            <td style="width:22%; text-align:center;font-weight:bold;">합계</td>
-            <td style="width:9%;"></td>
-            <td style="width:9%;"></td>
-            <td style="width:9%; text-align:right;font-weight:bold;">{{ totalQty }}</td>
-            <td style="width:10%; text-align:right;font-weight:bold;">{{ totalAmount }}</td>
-            <td style="width:10%;"></td>
-            <td style="width:14%;"></td>
-            <td style="width:6%;"></td>
-            <td style="width:6%;"></td>
+            <td colspan="4" style="text-align:center;font-weight:bold;">합계</td>
+            <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
+            <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
+            <td colspan="4"></td>
           </tr>
         </table>
       </div>

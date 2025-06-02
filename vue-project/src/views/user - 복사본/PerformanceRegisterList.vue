@@ -1,79 +1,65 @@
 <template>
-  <div class="performance-register-view page-container">
-    <div class="page-header-title-area">
-      <div class="header-title">등록 현황</div>
-    </div>
-
-    <!-- 필터 카드: 정산월, 처방월, 거래처 드롭다운 -->
-    <div class="filter-card">
-      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">정산월</label>
-          <select v-model="selectedSettlementMonth" class="select_month">
-            <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
-          </select>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">처방월</label>
-          <select v-model="prescriptionOffset" class="select_month">
-            <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
-          </select>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">거래처</label>
-          <select v-model="selectedHospitalId" class="select_240px">
-            <option value="">- 전체 -</option>
-            <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
-          </select>
-        </div>
+  <div class="performance-register-view">
+    <div class="filter-card" style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.5rem;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">정산월</label>
+        <select v-model="selectedSettlementMonth" class="select_month">
+          <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">처방월</label>
+        <select v-model="prescriptionOffset" class="select_month">
+          <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">거래처</label>
+        <select v-model="selectedHospitalId" class="select_240px">
+          <option value="">- 전체 -</option>
+          <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
+        </select>
       </div>
     </div>
-
-    <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
     <div class="data-card">
-      <div class="data-card-header">
-        <div class="total-count-display">전체 {{ sortedDisplayRows.length }}건</div>
-        <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">
-            엑셀 다운로드
-          </button>
-        </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <div>전체 {{ sortedDisplayRows.length }}건</div>
+        <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">엑셀 다운로드</button>
       </div>
-      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 340px)" class="custom-table performance-list-table">
+      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 340px)" class="custom-table">
         <template #empty>등록된 실적이 없습니다.</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
-          <template #body="slotProps">
-            {{ slotProps.index + 1 }}
-          </template>
-        </Column>
+        <Column header="No" :body="noBody" :headerStyle="{ width: columnWidths.no }" />
         <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true"/>
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
         <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true"/>
-        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true"/>
-        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true"/>
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price, textAlign: 'right' }" :sortable="true"/>
+        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty, textAlign: 'right' }" :sortable="true"/>
+        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount, textAlign: 'right' }" :sortable="true"/>
         <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true"/>
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
       </DataTable>
       <!-- 합계 행: 테이블 하단 고정 -->
       <div class="table-footer-wrapper"
         style="width:100%;
-        padding: 0 2rem 0 0;
         background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
+        border-top:1px solid #dee2e6;
+        border-bottom:1px solid #bcc0c4;
         position:sticky;
         bottom:0;
         z-index:2;">
         <table style="width:100%; table-layout:fixed;">
           <tr>
-            <td style="width:62%; text-align:center; font-weight:600;">합계</td>            
-            <td style="width:8%; text-align:right; font-weight:600;">{{ totalQty }}</td>
-            <td style="width:8%; text-align:right; font-weight:600;">{{ totalAmount }}</td>
+            <td style="width:6%; text-align:center; font-weight:600;">합계</td>
+            <td style="width:16%;"></td>
             <td style="width:8%;"></td>
-            <td style="width:14%;"></td>
+            <td style="width:16%;"></td>
+            <td style="width:10%;"></td>
+            <td style="width:6%;"></td>
+            <td style="width:8%; text-align:left; font-weight:600;">{{ totalQty }}</td>
+            <td style="width:8%; text-align:left; font-weight:600;">{{ totalAmount }}</td>
+            <td style="width:8%;"></td>
+            <td style="width:12%;"></td>
           </tr>
         </table>
       </div>
@@ -90,19 +76,6 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
-
-const columnWidths = {
-  no: '6%',
-  client_name: '16%',
-  prescription_month: '8%',
-  product_name_display: '16%',
-  insurance_code: '10%',
-  price: '6%',
-  prescription_qty: '8%',
-  prescription_amount: '8%',
-  prescription_type: '8%',
-  remarks: '14%'
-};
 
 // 반응형 데이터
 const availableMonths = ref([]); // 선택 가능한 정산월 목록
@@ -297,10 +270,8 @@ watch(selectedSettlementMonth, () => {
   checkEditMode();
   
   if (selectedSettlementMonth.value) {
-    fetchHospitals(); // 거래처 목록 다시 조회
     fetchPerformanceRecords();
   } else {
-    hospitals.value = []; // 정산월이 없으면 거래처 목록도 비우기
     displayRows.value = [];
     performanceRecords.value = [];
   }
@@ -313,7 +284,6 @@ watch(prescriptionOffset, (val) => {
     prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, val);
   }
   if (selectedSettlementMonth.value) {
-    fetchHospitals(); // 거래처 목록 다시 조회
     fetchPerformanceRecords();
   }
 });
@@ -395,66 +365,62 @@ function checkForChanges() {
 // 데이터 fetch 함수들
 async function fetchHospitals() {
   try {
-    // 정산월이 선택되지 않으면 빈 배열
-    if (!selectedSettlementMonth.value) {
-      hospitals.value = [];
-      return;
-    }
-
-    // 현재 선택된 정산월과 처방월에 실적이 있는 거래처 조회
-    let query = supabase
-      .from('performance_records')
-      .select(`
-        client_id,
-        clients!inner(id, name, business_registration_number, owner_name, address)
-      `)
-      .eq('settlement_month', selectedSettlementMonth.value);
-
-    // 처방월 필터링 (0이 아닐 때만)
-    if (prescriptionOffset.value !== 0 && prescriptionMonth.value) {
-      query = query.eq('prescription_month', prescriptionMonth.value);
-    }
-
-    // 사용자 타입에 따른 필터링
-    if (userType.value === 'user' && currentUserCompanyId.value) {
-      query = query.eq('company_id', currentUserCompanyId.value);
-    }
-
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('실적이 있는 거래처 조회 오류:', error);
-      hospitals.value = [];
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      hospitals.value = [];
-      return;
-    }
-
-    // 중복 제거 후 거래처 정보만 추출
-    const uniqueHospitals = [];
-    const seenIds = new Set();
-    
-    data.forEach(record => {
-      if (record.clients && !seenIds.has(record.clients.id)) {
-        seenIds.add(record.clients.id);
-        uniqueHospitals.push({
-          id: record.clients.id,
-          name: record.clients.name,
-          business_registration_number: record.clients.business_registration_number,
-          owner_name: record.clients.owner_name,
-          address: record.clients.address
-        });
+    if (userType.value === 'admin') {
+      // 관리자는 모든 병원 조회
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('병원 조회 오류 (관리자):', error);
+        hospitals.value = [];
+        return;
       }
-    });
-
-    // 이름순으로 정렬
-    hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
-    
+      
+      hospitals.value = data || [];
+    } else {
+      // 일반 사용자는 할당된 병원만 조회
+      if (!currentUserCompanyId.value) {
+        hospitals.value = [];
+        return;
+      }
+      
+      const { data: assignments, error: assignError } = await supabase
+        .from('client_company_assignments')
+        .select('client_id')
+        .eq('company_id', currentUserCompanyId.value);
+        
+      if (assignError) {
+        console.error('병원 할당 조회 오류:', assignError);
+        hospitals.value = [];
+        return;
+      }
+      
+      if (!assignments || assignments.length === 0) {
+        hospitals.value = [];
+        return;
+      }
+      
+      const clientIds = assignments.map(a => a.client_id);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .in('id', clientIds)
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('병원 조회 오류 (사용자):', error);
+        hospitals.value = [];
+        return;
+      }
+      
+      hospitals.value = data || [];
+    }
   } catch (err) {
-    console.error('거래처 조회 예외:', err);
+    console.error('병원 조회 예외:', err);
     hospitals.value = [];
   }
 }
@@ -1177,9 +1143,10 @@ onMounted(async () => {
     await fetchUserInfo();
     console.log('사용자 정보 로드 완료:', { userType: userType.value, companyId: currentUserCompanyId.value });
     
-    // 2. 기본 데이터들 병렬로 로드 (거래처는 제외)
+    // 2. 기본 데이터들 병렬로 로드
     await Promise.all([
       fetchAvailableMonths(),
+      fetchHospitals(),
       fetchProducts()
     ]);
     console.log('기본 데이터 로드 완료');
@@ -1188,16 +1155,14 @@ onMounted(async () => {
     await setDefaultSettlementMonth();
     console.log('기본 정산월 설정 완료:', selectedSettlementMonth.value);
     
-    // 4. 정산월이 설정되면 거래처 조회 (watch에서 자동으로 호출됨)
-    
-    // 5. 전역 키보드 이벤트 리스너 추가
+    // 4. 전역 키보드 이벤트 리스너 추가
     document.addEventListener('keydown', handleGlobalKeydown);
     document.addEventListener('click', handleGlobalClick);
     
-    // 6. 테이블 너비 동기화
+    // 5. 테이블 너비 동기화
     syncTableWidths();
     
-    // 7. 윈도우 리사이즈 시에도 너비 동기화
+    // 6. 윈도우 리사이즈 시에도 너비 동기화
     window.addEventListener('resize', syncTableWidths);
     
     console.log('컴포넌트 마운트 완료');
@@ -1502,14 +1467,20 @@ function addNewRow() {
     focusField(displayRows.value.length - 1, 'client_name');
   });
 }
-</script>
 
-<style scoped>
-/* 실적 등록 현황 테이블 헤더 가운데 정렬 */
-:deep(.performance-list-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 
+const columnWidths = {
+  no: '6%',
+  client_name: '13%',
+  prescription_month: '6%',
+  product_name_display: '18%',
+  insurance_code: '8%',
+  price: '6%',
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '8%',
+  remarks: '11%'
+};
+
+// No 컬럼용 함수
+const noBody = (_, { rowIndex }) => rowIndex + 1;
+</script> 

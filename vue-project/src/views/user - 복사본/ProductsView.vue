@@ -6,7 +6,7 @@
     <div class="filter-card">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-          <label style="white-space: nowrap; font-weight: 400">기준월</label>
+          <label style="white-space: nowrap; font-weight: 500">기준월</label>
           <select v-model="selectedMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
@@ -42,27 +42,27 @@
         scrollHeight="calc(100vh - 310px)"
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
-        class="custom-table products-table"
+        class="custom-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 제품이 없습니다.</template>
         <template #loading>제품 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
+        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.product_name }}</a>
           </template>
         </Column>
-        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
-        <Column header="수수료율(%)" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="false">
+        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true" />
+        <Column header="수수료율(%)" :headerStyle="{ width: columnWidths.commission_rate, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="false">
           <template #body="slotProps">
             {{ getCommissionRate(slotProps.data) }}
           </template>
         </Column>
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" />
       </DataTable>
     </div>
   </div>
@@ -231,14 +231,4 @@ onMounted(async () => {
   await fetchUserCommissionGrade();
   await fetchProducts();
 });
-</script>
-
-<style scoped>
-/* 제품 목록 테이블 헤더 가운데 정렬 */
-:deep(.products-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 
+</script> 
