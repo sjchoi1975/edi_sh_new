@@ -52,7 +52,7 @@
         </Column>
         <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
           <template #body="slotProps">
-            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.product_name }}</a>
+            <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.product_name }}</a>
           </template>
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />

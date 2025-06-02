@@ -22,7 +22,7 @@
           전체 {{ filteredNotices.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-primary btn-sm" @click="goCreate">등록</button>
+          <button class="btn-primary btn" @click="goCreate">등록</button>
         </div>
       </div>
 

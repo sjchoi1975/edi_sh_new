@@ -14,6 +14,7 @@
   --primary-color-light: #8fb395; /* 밝은 녹색 */
   --primary-color-dark: #528b5c;  /* 어두운 녹색 */
   --primary-color-hover: #5fa56b; /* 호버 시 녹색 */
+  --primary-color-lightest: #badac0; /* 밝은 녹색 */
 
   /* 텍스트 색상 */
   --text-primary: #343a40;    /* 기본 텍스트 */
@@ -61,10 +62,10 @@
   --z-index-modal: 1050;
   --z-index-dropdown: 1010;
 
-  /* 페이지네이터 */
-  --paginator-dropdown-font-size: 0.95rem;
-  --paginator-dropdown-height: 32px;
-  --paginator-dropdown-padding: 2px 8px;
+  /* 페이지네이터 설정 */
+  --paginator-dropdown-font-size: 0.95rem; /* 행 개수 드롭다운 폰트 크기 */
+  --paginator-dropdown-height: 32px;       /* 행 개수 드롭다운 높이 */
+  --paginator-dropdown-padding: 2px 8px;   /* 행 개수 드롭다운 내부 패딩 */
 }
 
 /* ========================================== */
@@ -157,7 +158,7 @@ select {
   width: 100%;
   box-sizing: border-box;
   height: var(--input-height);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
 
@@ -382,21 +383,26 @@ select.input-editable {
 /* ========================================== */
 /* 8. 페이지네이터 스타일                      */
 /* ========================================== */
+
+/* 기본 페이지네이터 컨테이너 */
 .p-datatable .p-paginator {
   padding: 8px 0px 8px 0px !important;
   background: var(--bg-content) !important;
   border-top: none !important;
 }
 
+/* 현재 페이지 정보 텍스트 */
 .p-datatable .p-paginator .p-paginator-current {
   margin-right: 0.5rem !important;
 }
 
+/* 행 개수 선택 드롭다운 기본 설정 */
 .p-datatable .p-paginator .p-dropdown {
   min-width: 4rem !important;
+  background-color: #f8f9fa !important;
 }
 
-/* 페이지네이터 드롭다운 */
+/* 행 개수 드롭다운 상세 스타일 */
 :deep(.p-paginator .p-dropdown) {
   font-size: var(--paginator-dropdown-font-size);
   height: var(--paginator-dropdown-height);
@@ -407,6 +413,33 @@ select.input-editable {
 :deep(.p-paginator .p-dropdown-label) {
   font-size: var(--paginator-dropdown-font-size);
   padding: var(--paginator-dropdown-padding);
+}
+
+/* 페이지 이동 버튼 간격 조정 */
+.p-paginator .p-paginator-page,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-last {
+  margin: 0 1.2rem !important;
+}
+
+/* 행 개수 드롭다운 색상 설정 */
+.p-paginator .p-dropdown-panel {
+  background-color: #ffffff !important;
+}
+
+.p-paginator .p-dropdown-item {
+  background-color: #ffffff !important;
+}
+
+.p-paginator .p-dropdown-item:hover {
+  background-color: var(--primary-color-light) !important;
+}
+
+.p-paginator .p-dropdown-item.p-highlight {
+  background-color: var(--primary-color) !important;
+  color: white !important;
 }
 
 /* ========================================== */
@@ -744,7 +777,8 @@ button:disabled {
 .modal-close {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -773,7 +807,6 @@ button:disabled {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   border-radius: 6px;
   overflow: hidden;
@@ -782,22 +815,19 @@ button:disabled {
   padding: 0px 0px; 
 }
 
-.input-table.prime-like-table td {
-  border-bottom: 1px solid #f0f0f0;
-  border-right: 1px solid #dee2e6;
-  padding: 4px 8px 0px 8px;
-  background: #fff;
-  transition: background 0.2s;
+.input-table.prime-like-table th {
+  background: var(--bg-secondary) !important;  /* #f1f3f5 */
+  border-bottom: 1px solid var(--border-primary) !important;  /* #dee2e6 */
+  border-right: 1px solid var(--border-primary) !important;  /* #dee2e6 */
+  padding: 4px 4px;
+  text-align: center;
 }
 
-.input-table.prime-like-table th {
-  background: #f4f6fa;
-  color: #495057;
-  font-weight: 600;
-  border-bottom: 2px solid #dee2e6;
-  border-right: 1px solid #dee2e6;
-  padding: 8px 4px;
-  text-align: center;
+.input-table.prime-like-table td {
+  border-bottom: 1px solid var(--border-secondary) !important;  /* #d1dbe6 */
+  border-right: 1px solid var(--border-secondary) !important;  /* #d1dbe6 */
+  padding: 4px 8px 0px 8px;
+  transition: background 0.2s;
 }
 
 /* 마지막 컬럼은 세로 선 제거 */
@@ -850,8 +880,8 @@ button:disabled {
   top: 100%;
   z-index: 10;
   width: 100%;
-  min-height: 360px;
-  max-height: 480px;
+  min-height: 36px;
+  max-height: 600px;
   overflow-y: auto;
   background: #fff;
   border: 1px solid #d0d7e2;

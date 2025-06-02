@@ -280,13 +280,23 @@ function updateProductDropdownPosition(rowIdx) {
     const el = productInputRefs.value[rowIdx];
     if (!el) return;
     const rect = el.getBoundingClientRect();
+    
+    // 화면 높이와 드롭다운 높이 계산
+    const windowHeight = window.innerHeight;
+    const dropdownHeight = 220; // 드롭다운 예상 높이
+    const spaceBelow = windowHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // 아래쪽 공간이 부족하고 위쪽 공간이 충분하면 위로 표시
+    const showAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
+    
     productDropdownStyle.value[rowIdx] = {
       position: 'fixed',
       left: rect.left + 'px',
-      top: rect.bottom + 'px',
+      top: showAbove ? (rect.top - dropdownHeight) + 'px' : rect.bottom + 'px',
       width: rect.width + 'px',
       zIndex: 9999,
-      maxHeight: '220px',
+      maxHeight: showAbove ? Math.min(dropdownHeight, spaceAbove - 10) + 'px' : Math.min(dropdownHeight, spaceBelow - 10) + 'px',
       overflowY: 'auto',
     };
   });

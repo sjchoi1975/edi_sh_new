@@ -45,7 +45,7 @@
         <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
         <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true">
           <template #body="slotProps">
-            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.name }}</a>
+            <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.name }}</a>
           </template>
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true" />

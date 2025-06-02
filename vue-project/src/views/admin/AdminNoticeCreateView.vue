@@ -45,8 +45,8 @@
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-cancel btn-lg" type="button" @click="goList">취소</button>
-        <button class="btn-primary btn-lg" type="submit">등록</button>
+        <button class="btn-cancel btn" type="button" @click="goList">취소</button>
+        <button class="btn-primary btn" type="submit">등록</button>
       </div>
     </form>
   </div>

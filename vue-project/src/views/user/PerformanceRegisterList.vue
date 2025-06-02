@@ -46,7 +46,11 @@
             {{ slotProps.index + 1 }}
           </template>
         </Column>
-        <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true"/>
+        <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
+          </template>
+        </Column>
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
         <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>

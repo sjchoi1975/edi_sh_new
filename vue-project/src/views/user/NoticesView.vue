@@ -45,7 +45,9 @@
         </Column>
         <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }">
           <template #body="slotProps">
-            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.title }}</a>
+            <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">
+              {{ slotProps.data.title }}
+            </a>
           </template>
         </Column>
         <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }">

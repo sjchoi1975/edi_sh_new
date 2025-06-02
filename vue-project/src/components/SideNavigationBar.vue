@@ -1,6 +1,8 @@
 <template>
   <nav class="side-nav">
-    <div class="side-nav-logo">신일제약 실적관리</div>
+    <div class="side-nav-logo">
+      <img src="@/assets/logo.png" alt="신일제약 실적관리" class="logo-image" />
+    </div>
     <ul class="side-nav-list">
       <li v-for="(menu, idx) in menuTree" :key="menu.label" class="side-nav-section">
         <div class="side-nav-section-label" :class="{ open: openMenu === idx }" @click="toggleMenu(idx)">
@@ -24,7 +26,7 @@
           <div class="side-nav-profile-role">{{ userRole === 'admin' ? '관리자' : '사용자' }}</div>
         </div>
       </div>
-      <button class="side-nav-logout" @click="handleLogout">로그아웃</button>
+      <button class="side-nav-logout" @click="handleLogout" style="text-align: center;">로그아웃</button>
     </div>
   </nav>
 </template>
@@ -201,6 +203,11 @@ onMounted(async () => {
   font-size: 1.25rem;
   color: var(--primary-color);
 }
+.logo-image {
+  max-height: 40px;
+  max-width: 180px;
+  object-fit: contain;
+}
 .side-nav-list {
   flex: 1;
   list-style: none;
@@ -210,13 +217,13 @@ onMounted(async () => {
   overflow-y: auto;
 }
 .side-nav-section {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 .side-nav-section-label {
-  padding: 0.75rem 0rem;
+  padding: 0.4rem 0rem;
   display: flex;
   align-items: center;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   color: var(--text-primary) !important;
   font-weight: 700 !important;
   background: transparent;
@@ -226,9 +233,13 @@ onMounted(async () => {
   gap: 0.5rem;
   text-shadow: none;
 }
+
 .side-nav-section-label:hover {
-  background: var(--bg-hover);
-  color: var(--primary-color) !important;
+  
+  background-color: var(--primary-color-lightest);
+  color: #333;
+  border-radius: 6px;
+  margin-right: 1rem;
 }
 .side-nav-section-label.open {
   color: var(--primary-color) !important;
@@ -247,44 +258,35 @@ onMounted(async () => {
 .side-nav-sub-list {
   list-style: none;
   margin: 0;
-  padding: 0.25rem 0 0.75rem 0;
+  padding: 0.25rem 0;
 }
 .side-nav-sub-item {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 0.6rem 1rem 0.6rem 1.6rem;
+  padding: 0.4rem 1rem 0.4rem 1.6rem;
   color: var(--text-secondary);
-  font-size: 1.0rem;
+  font-size: 0.95rem;
   font-weight: 600;
   background: transparent;
-  border-radius: 0;
-  margin-bottom: 0;
+  border-radius: 8;
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 .side-nav-sub-item.active {
-  background-color: var(--primary-color-light);
+  background-color: var(--primary-color);
   color: #fff;
   font-weight: 600;
+  border-radius: 6px;
+  margin-right: 1rem;
 }
-/* 활성 메뉴 아이템 왼쪽에 세로 바 표시 (주석 처리) */
-/*
-.side-nav-sub-item.active::before {
-  content: '';
-  position: absolute;
-  left: 1rem; 
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 60%; 
-  background-color: var(--primary-color); 
-  border-radius: 2px;
-}
-*/
 .side-nav-sub-item:not(.active):hover {
-  background-color: var(--bg-hover);
-  color: var(--primary-color);
+  background-color: var(--primary-color-lightest);
+  border-radius: 8px;
+  margin-right: 1rem;
 }
+
+
+
 .side-nav-bottom {
   border-top: 1px solid var(--border-secondary);
   padding: 1rem 1rem;
@@ -311,7 +313,7 @@ onMounted(async () => {
   font-weight: 500;
 }
 .side-nav-profile-role {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   margin-left: 1rem;
 }
@@ -319,8 +321,7 @@ onMounted(async () => {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.9rem;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s;
@@ -331,5 +332,6 @@ onMounted(async () => {
 }
 .side-nav-logout:hover {
   color: var(--primary-color);
+  text-decoration-line: underline;
 }
 </style> 

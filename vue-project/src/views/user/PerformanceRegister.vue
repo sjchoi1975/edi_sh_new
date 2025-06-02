@@ -45,12 +45,12 @@
         <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }" />
         <Column 
           header="병의원명" 
-          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }" 
+          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span 
               :title="slotProps.data.name"
-              style="display: block; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; width: 100%;"
+              style="display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400;"
             >
               {{ slotProps.data.name }}
             </span>
@@ -154,7 +154,7 @@
       <div v-if="detailModalVisible" class="modal-overlay" @click="closeDetailModal">
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
-            <h3>{{ truncateText(selectedClient?.name || '', 20) }}</h3>
+            <h2>{{ truncateText(selectedClient?.name || '', 20) }}</h2>
             <button @click="closeDetailModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
@@ -163,7 +163,7 @@
             </div>
             <div v-else>
               <!-- 테이블 헤더 -->
-              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 2px solid #ddd; margin-bottom: 0.5rem;">
+              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 1px solid #bbb; margin-bottom: 0.5rem;">
                 <div style="flex: 1; text-align: center;">파일명</div>
                 <div style="width: 80px; text-align: center;">삭제</div>
               </div>
@@ -177,7 +177,7 @@
                 <div style="width: 80px; text-align: center;">
                   <button 
                     @click="deleteFile(file, index)" 
-                    style="color: red; border: none; background: none; cursor: pointer; font-size: 1.2rem; font-weight: bold;"
+                    style="color: red; border: none; background: none; cursor: pointer; font-size: 1.2rem; font-weight: 400;"
                     title="파일 삭제"
                     :disabled="!isInputPeriod"
                   >
@@ -202,7 +202,7 @@
       <div v-if="uploadModalVisible" class="modal-overlay" @click="closeUploadModal">
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
-            <h3>증빙 파일 업로드 - {{ selectedClient?.name }}</h3>
+            <h2>{{ selectedClient?.name }}</h2>
             <button @click="closeUploadModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
@@ -217,7 +217,7 @@
                 style="width: 100%;"
               />
               <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
-                허용 파일: PDF, 이미지(JPG, PNG), 문서(DOC, DOCX, XLS, XLSX)
+                등록 가능 파일: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX
               </div>
             </div>
             <div v-if="selectedFiles.length > 0" style="margin-bottom: 1rem;">
@@ -243,7 +243,7 @@
       <div v-if="viewModalVisible" class="modal-overlay" @click="closeViewModal">
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
-            <h3>{{ truncateText(viewModalClient?.name || '', 20) }}</h3>
+            <h2>{{ truncateText(viewModalClient?.name || '', 20) }}</h2>
             <button @click="closeViewModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
@@ -252,7 +252,7 @@
             </div>
             <div v-else>
               <!-- 테이블 헤더 -->
-              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 2px solid #ddd; margin-bottom: 0.5rem;">
+              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 1px solid #bbb; margin-bottom: 0.5rem;">
                 <div style="flex: 1; text-align: center;">제품명</div>
                 <div style="width: 100px; text-align: center;">수량</div>
               </div>
