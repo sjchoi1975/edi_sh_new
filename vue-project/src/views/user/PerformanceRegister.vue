@@ -1,1256 +1,704 @@
 <template>
-  <div class="performance-register-view">
-    <div class="header-title">실적 등록</div>
-    <div class="table-container" style="position:relative;">
-      <div class="performance-header-row">
-        <div class="info-box info-box-settlement">
-          <span class="info-box-label">정산월</span>
-          <span class="info-box-content">{{ activeMonth ? activeMonth.settlement_month : '' }}</span>
-        </div>
-        <div class="info-box info-box-period">
-          <span class="info-box-label">제출기간</span>
-          <span class="info-box-content">{{ activeMonth ? (activeMonth.start_date + ' ~ ' + activeMonth.end_date) : '' }}</span>
-        </div>
-        <!-- 처방월 박스 -->
-        <div class="info-box info-box-prescription">
-          <span class="info-box-label">처방월</span>
-          <select v-model="prescriptionOffset" class="prescription-select">
-            <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
-              {{ opt.month }}
-            </option>
+  <div class="performance-register-view page-container">
+    <div class="page-header-title-area">
+      <div class="header-title">실적 등록</div>
+    </div>
+
+    <!-- 필터 카드: 정산월 드롭다운 -->
+    <div class="filter-card">
+      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:500;">정산월</label>
+          <select v-model="selectedSettlementMonth" class="select_month">
+            <option v-for="month in availableMonths" :key="month" :value="month">{{ month }}</option>
           </select>
         </div>
       </div>
-      
-      <div class="performance-action-row">
-        <div class="hospital-selection-container">
-          <div class="hospital-input-box" style="position:relative;">
-            <span class="info-box-label">병원 선택</span>
-            <input 
-              type="text" 
-              v-model="hospitalSearchQuery" 
-              @input="handleHospitalSearchInput"
-              @keydown.enter.prevent="applySelectedHospitalFromSearch"
-              @keydown.down.prevent="navigateHospitalSearchList('down')"
-              @keydown.up.prevent="navigateHospitalSearchList('up')"
-              @focus="handleHospitalSearchFocus"
-              @blur="setTimeout(() => hideHospitalSearchList(), 200)"
-              class="hospital-input"
-              :class="currentCell.row === -1 && currentCell.col === 'hospital' ? 'hospital-input-focused' : ''"
-              placeholder="병원명 또는 사업자등록번호 검색" 
-              tabindex="0"
-              autocomplete="off"
-            />
-            <button 
-              type="button"
-              @click="toggleHospitalDropdown"
-              @mousedown.prevent
-              class="dropdown-arrow-btn"
-              tabindex="-1"
+    </div>
+
+    <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
+    <div class="data-card">
+      <div class="total-count-display" style="margin-bottom: 0.5rem;">전체 {{ clientList.length }}건</div>
+      <DataTable
+        :value="clientList"
+        scrollable
+        scrollHeight="calc(100vh - 340px)"
+        class="custom-table"
+      >
+        <template #empty>등록된 거래처가 없습니다.</template>
+        <template #loading>거래처 목록을 불러오는 중입니다...</template>
+
+        <!-- No 컬럼 -->
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
+          <template #body="slotProps">
+            {{ slotProps.index + 1 }}
+          </template>
+        </Column>
+        <!-- 거래처 정보 -->
+        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
+        <Column 
+          header="병의원명" 
+          :headerStyle="{ width: columnWidths.name }" 
+          :bodyStyle="{ 
+            'max-width': '0',
+            'overflow': 'hidden',
+            'text-overflow': 'ellipsis',
+            'white-space': 'nowrap'
+          }"
+          :sortable="true"
+        >
+          <template #body="slotProps">
+            <span 
+              :title="slotProps.data.name"
+              style="display: block; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; width: 100%;"
             >
-              <span class="dropdown-arrow">▼</span>
-            </button>
-            <div v-if="hospitalSearchForRow.show && hospitalSearchForRow.results.length > 0" class="search-dropdown hospital-search-dropdown">
-              <ul>
-                <li
-                  v-for="(hospital, index) in hospitalSearchForRow.results"
-                  :key="hospital.id"
-                  @click="clickHospitalFromSearchList(hospital)"
-                  :class="{ 'selected': hospitalSearchForRow.selectedIndex === index }"
-                >
-                  <div class="hospital-info-row">
-                    <span class="hospital-name">{{ hospital.name }}</span>
-                    <span class="hospital-reg-number">{{ hospital.business_registration_number }}</span>
-                  </div>
-                  <div class="hospital-address">{{ truncateText(hospital.address, 20) }}</div>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <span v-if="selectedHospitalInfo" class="hospital-info">
-            ({{ selectedHospitalInfo.business_registration_number }}, {{ selectedHospitalInfo.owner_name }}, {{ selectedHospitalInfo.address }})
-          </span>
-        </div>
-        <button 
-          class="btn-primary register-button" 
-          @click="onRegister" 
-          :disabled="!canRegister" 
-          :class="{ 'disabled-area': !isInputEnabled }"
-        >등록</button>
-      </div>
-      
-      <table class="input-table" :class="{ 'disabled-area': !isInputEnabled }">
-        <thead>
+              {{ slotProps.data.name }}
+            </span>
+          </template>
+        </Column>
+        <Column 
+          header="주소" 
+          :headerStyle="{ width: columnWidths.address }" 
+          :bodyStyle="{ 
+            'max-width': '0',
+            'overflow': 'hidden',
+            'text-overflow': 'ellipsis',
+            'white-space': 'nowrap'
+          }"
+          :sortable="true"
+        >
+          <template #body="slotProps">
+            <span 
+              :title="slotProps.data.address"
+              style="display: block; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; width: 100%;"
+            >
+              {{ slotProps.data.address }}
+            </span>
+          </template>
+        </Column>
+
+        <!-- 실적 정보 -->
+        <Column header="처방건수" :headerStyle="{ width: columnWidths.performance_count }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.performance_count ? slotProps.data.performance_count : '-' }}
+          </template>
+        </Column>
+        <Column header="처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.total_prescription_amount ? formatNumber(slotProps.data.total_prescription_amount) : '-' }}
+          </template>
+        </Column>
+
+        <!-- 버튼 영역 -->
+        <Column header="조회" :headerStyle="{ width: columnWidths.view_button }">
+          <template #body="slotProps">
+            <button 
+              class="btn-view" 
+              @click="viewDetails(slotProps.data)"
+              :disabled="!isInputPeriod || !(slotProps.data.performance_count > 0)"
+            >조회</button>
+          </template>
+        </Column>
+        <Column header="등록" :headerStyle="{ width: columnWidths.input_button }">
+          <template #body="slotProps">
+            <button 
+              class="btn-input" 
+              @click="registerPerformance(slotProps.data)"
+              :disabled="!isInputPeriod"
+            >등록</button>
+          </template>
+        </Column>
+        <Column header="증빙파일" :headerStyle="{ width: columnWidths.evidence_files_count }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
+          </template>
+        </Column>
+        <Column header="보기" :headerStyle="{ width: columnWidths.view_files_button }">
+          <template #body="slotProps">
+            <button 
+              class="btn-view" 
+              @click="openDetailModal(slotProps.data)"
+              :disabled="!isInputPeriod || !(slotProps.data.evidence_files_count > 0)"
+            >보기</button>
+          </template>
+        </Column>
+        <Column header="업로드" :headerStyle="{ width: columnWidths.upload_button }">
+          <template #body="slotProps">
+            <button 
+              class="btn-upload" 
+              @click="openUploadModal(slotProps.data)"
+              :disabled="!isInputPeriod"
+            >업로드</button>
+          </template>
+        </Column>
+      </DataTable>
+      <!-- 합계 행: 테이블 하단 고정 -->
+      <div class="table-footer-wrapper"
+        style="width:100%;
+        background:#f8f9fa;
+        border-top:1px solid #dee2e6;
+        border-bottom:1px solid #bcc0c4;
+        position:sticky;
+        bottom:0;
+        z-index:2;">
+        <table style="width:100%; table-layout:fixed;">
           <tr>
-            <th style="width:40px;">No</th>
-            <th style="width:20%;">제품명</th>
-            <th style="width:8%;">보험코드</th>
-            <th style="width:8%;">약가</th>
-            <th style="width:8%;">처방수량</th>
-            <th style="width:10%;">처방액</th>
-            <th style="width:10%;">처방구분</th>
-            <th style="width:14%;">비고</th>
-            <th style="width:40px;">삭제</th>
-            <th style="width:40px;">추가</th>
+            <td style="width:6%; text-align:center; font-weight:600;">합계</td>
+            <td style="width:8%;"></td>
+            <td style="width:16%;"></td>
+            <td style="width:10%;"></td>
+            <td style="width:9%; text-align:left; font-weight:600;">{{ totalPerformanceCount }}</td>
+            <td style="width:9%; text-align:left; font-weight:600;">{{ formatNumber(totalPrescriptionAmount) }}</td>
+            <td style="width:8%;"></td>
+            <td style="width:8%;"></td>
+            <td style="width:9%; text-align:left; font-weight:600;">{{ totalEvidenceFilesCount }}</td>
+            <td style="width:8%;"></td>
+            <td style="width:8%;"></td>
           </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, rowIdx) in inputRows" :key="rowIdx">
-            <td style="text-align:center;">{{ rowIdx + 1 }}</td>
-            <td style="position:relative;text-align:left;">
-              <div class="product-input-container">
-                <input
-                  v-model="row.product_name_display"
-                  :tabindex="isInputEnabled ? 0 : -1"
-                  :readonly="!isInputEnabled"
-                  @input="handleProductNameInput(rowIdx, $event)"
-                  @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                  @keydown.down.prevent="navigateProductSearchList('down')"
-                  @keydown.up.prevent="navigateProductSearchList('up')"
-                  @keydown="onArrowKey($event, rowIdx, 'product_name')"
-                  @focus="handleProductNameFocus(rowIdx)"
-                  @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                  :disabled="!isInputEnabled"
-                  :class="[
-                    cellClass(rowIdx, 'product_name'),
-                    { 'disabled-area': !isInputEnabled }
-                  ]"
-                  autocomplete="off"
-                  style="text-align:left;"
-                />
-                <button 
-                  type="button"
-                  @click="toggleProductDropdown(rowIdx)"
-                  @mousedown.prevent
-                  class="dropdown-arrow-btn"
-                  tabindex="-1"
-                  :disabled="!isInputEnabled"
-                >
-                  <span class="dropdown-arrow">▼</span>
-                </button>
-              </div>
-              <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="search-dropdown product-search-dropdown">
-                <ul>
-                  <li
-                    v-for="(product, index) in productSearchForRow.results"
-                    :key="product.id"
-                    @click="clickProductFromSearchList(product, rowIdx)"
-                    :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                  >
-                    <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                    <span class="insurance-code">{{ product.insurance_code }}</span>
-                  </li>
-                </ul>
-              </div>
-            </td>
-            <td style="text-align:center;">
-              <input 
-                v-model="row.insurance_code" 
-                readonly 
-                tabindex="-1" 
-                class="disabled-area readonly-field"
-                style="text-align:center;"
-              />
-            </td>
-            <td style="text-align:right;">
-              <input 
-                v-model="row.price" 
-                readonly 
-                tabindex="-1" 
-                class="disabled-area readonly-field"
-                style="text-align:right;"
-              />
-            </td>
-            <td style="text-align:right; position:relative;">
-              <input
-                v-model="row.prescription_qty"
-                :tabindex="isInputEnabled ? 0 : -1"
-                :readonly="!isInputEnabled"
-                @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                @keydown="onArrowKey($event, rowIdx, 'prescription_qty')"
-                @input="onQtyInput(rowIdx)"
-                @focus="handlePrescriptionQtyFocus(rowIdx)"
-                @blur="row.prescription_qty = row.prescription_qty ? Number(row.prescription_qty.toString().replace(/,/g, '')).toLocaleString() : ''"
-                :disabled="!isInputEnabled"
-                :class="[
-                  cellClass(rowIdx, 'prescription_qty'),
-                  { 'disabled-area': !isInputEnabled }
-                ]"
-                style="text-align:right;"
-              />
-            </td>
-            <td style="text-align:right;">
-              <input 
-                v-model="row.prescription_amount" 
-                readonly 
-                tabindex="-1" 
-                class="disabled-area readonly-field"
-                style="text-align:right;"
-              />
-            </td>
-            <td style="text-align:center;">
-              <select
-                v-model="row.prescription_type"
-                :tabindex="isInputEnabled ? 0 : -1"
-                :readonly="!isInputEnabled"
-                @change="onPrescriptionTypeInput(rowIdx)"
-                @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
-                @focus="handleFieldFocus(rowIdx, 'prescription_type')"
-                :disabled="!isInputEnabled"
-                :class="[
-                  cellClass(rowIdx, 'prescription_type'),
-                  { 'disabled-area': !isInputEnabled }
-                ]"
-                style="text-align:center;"
-              >
-                <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-              </select>
-            </td>
-            <td style="text-align:left;">
-              <input
-                v-model="row.remarks"
-                :tabindex="isInputEnabled ? 0 : -1"
-                :readonly="!isInputEnabled"
-                @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                @keydown="onArrowKey($event, rowIdx, 'remarks')"
-                @focus="handleFieldFocus(rowIdx, 'remarks')"
-                :disabled="!isInputEnabled"
-                :class="[
-                  cellClass(rowIdx, 'remarks'),
-                  { 'disabled-area': !isInputEnabled }
-                ]"
-                style="text-align:left;"
-              />
-            </td>
-            <td class="action-cell">
-              <button 
-                class="btn-delete-m" 
-                @click="confirmDeleteRow(rowIdx)" 
-                :disabled="inputRows.length === 1 || !isInputEnabled" 
-                title="행 삭제"
-                :class="{ 'disabled-area': !isInputEnabled }"
-              >－</button>
-            </td>
-            <td class="action-cell">
-              <button 
-                class="btn-add-m" 
-                @click="confirmAddRowBelow(rowIdx)" 
-                title="아래에 행 추가"
-                :disabled="!isInputEnabled"
-                :class="{ 'disabled-area': !isInputEnabled }"
-              >＋</button>
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="4" style="text-align:center;font-weight:bold;">합계</td>
-            <td style="text-align:right;font-weight:bold;">{{ totalQty }}</td>
-            <td style="text-align:right;font-weight:bold;">{{ totalAmount }}</td>
-            <td colspan="4"></td>
-          </tr>
-        </tfoot>
-      </table>
-      
-      <div v-if="!activeMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0);">
-        <div style="font-size:1.8rem;color:#d32f2f;text-align:center;">지금은 실적 입력 기간이 아닙니다.</div>
+        </table>
       </div>
     </div>
+
+    <!-- 증빙파일 상세 모달: teleport로 body에 위치 -->
+    <teleport to="body">
+      <div v-if="detailModalVisible" class="modal-overlay" @click="closeDetailModal">
+        <div class="modal-content modal-center" @click.stop>
+          <div class="modal-header">
+            <h3>{{ truncateText(selectedClient?.name || '', 20) }}</h3>
+            <button @click="closeDetailModal" class="modal-close">×</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="clientFiles.length === 0" style="text-align: center; color: #666; padding: 2rem;">
+              등록된 파일이 없습니다.
+            </div>
+            <div v-else>
+              <!-- 테이블 헤더 -->
+              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 2px solid #ddd; margin-bottom: 0.5rem;">
+                <div style="flex: 1; text-align: center;">파일명</div>
+                <div style="width: 80px; text-align: center;">삭제</div>
+              </div>
+              <!-- 테이블 데이터 -->
+              <div v-for="(file, index) in clientFiles" :key="file.id" style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                <div style="flex: 1; text-align: left; padding-left: 1rem;">
+                  <a @click="downloadFile(file)" style="color: #1976d2; cursor: pointer; text-decoration: underline;">
+                    {{ file.file_name }}
+                  </a>
+                </div>
+                <div style="width: 80px; text-align: center;">
+                  <button 
+                    @click="deleteFile(file, index)" 
+                    style="color: red; border: none; background: none; cursor: pointer; font-size: 1.2rem; font-weight: bold;"
+                    title="파일 삭제"
+                    :disabled="!isInputPeriod"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="downloadAllFiles" :disabled="clientFiles.length === 0">
+              전체 다운로드
+            </button>
+            <button class="btn-cancel" @click="closeDetailModal">닫기</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 업로드 모달: teleport로 body에 위치 -->
+    <teleport to="body">
+      <div v-if="uploadModalVisible" class="modal-overlay" @click="closeUploadModal">
+        <div class="modal-content modal-center" @click.stop>
+          <div class="modal-header">
+            <h3>증빙 파일 업로드 - {{ selectedClient?.name }}</h3>
+            <button @click="closeUploadModal" class="modal-close">×</button>
+          </div>
+          <div class="modal-body">
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem;">파일 선택 (최대 10개)</label>
+              <input 
+                ref="fileInput"
+                type="file" 
+                multiple 
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                @change="handleFileSelect"
+                style="width: 100%;"
+              />
+              <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
+                허용 파일: PDF, 이미지(JPG, PNG), 문서(DOC, DOCX, XLS, XLSX)
+              </div>
+            </div>
+            <div v-if="selectedFiles.length > 0" style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem;">선택된 파일</label>
+              <div v-for="(file, index) in selectedFiles" :key="index" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #ddd; margin-bottom: 0.25rem;">
+                <span>{{ file.name }}</span>
+                <button @click="removeFile(index)" style="color: red; border: none; background: none; cursor: pointer;">×</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeUploadModal">취소</button>
+            <button class="btn-primary" @click="uploadFiles" :disabled="selectedFiles.length === 0 || uploading">
+              {{ uploading ? '업로드 중...' : '업로드' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <!-- 조회 모달: teleport로 body에 위치 -->
+    <teleport to="body">
+      <div v-if="viewModalVisible" class="modal-overlay" @click="closeViewModal">
+        <div class="modal-content modal-center" @click.stop>
+          <div class="modal-header">
+            <h3>{{ truncateText(viewModalClient?.name || '', 20) }}</h3>
+            <button @click="closeViewModal" class="modal-close">×</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="viewModalData.length === 0" style="text-align: center; color: #666; padding: 2rem;">
+              등록된 실적이 없습니다.
+            </div>
+            <div v-else>
+              <!-- 테이블 헤더 -->
+              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 2px solid #ddd; margin-bottom: 0.5rem;">
+                <div style="flex: 1; text-align: center;">제품명</div>
+                <div style="width: 100px; text-align: center;">수량</div>
+              </div>
+              <!-- 테이블 데이터 -->
+              <div v-for="(record, index) in viewModalData" :key="index" style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                <div style="flex: 1; text-align: left; padding-left: 1rem;">
+                  {{ record.product_name }}
+                </div>
+                <div style="width: 100px; text-align: right; padding-right: 2rem;">
+                  {{ formatNumber(record.prescription_qty) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeViewModal">닫기</button>
+          </div>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
-import { onBeforeRouteLeave } from 'vue-router';
-import { supabase } from '@/supabase';
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import { supabase } from '@/supabase'
+import { useRouter } from 'vue-router'
 
-// 반응형 데이터
-const activeMonth = ref(null);
-const prescriptionMonth = ref('');
-const prescriptionOffset = ref(1); // 1: -1M, 2: -2M, 3: -3M
-const prescriptionOptions = ref([]);
-const selectedHospitalName = ref('');
-const selectedHospitalInfo = ref(null);
-const selectedHospitalId = ref(null);
-const hospitals = ref([]);
-const hospitalSearchQuery = ref('');
-
-// 실적 입력용 행 (최소 1개 빈 행)
-const inputRows = ref([{ 
-  product_name_display: '', 
-  product_id: null, 
-  insurance_code: '', 
-  price: '', 
-  prescription_qty: '', 
-  prescription_amount: '', 
-  prescription_type: 'EDI', 
-  remarks: '' 
-}]);
-
-// 계산된 속성
-const isInputEnabled = computed(() => !!selectedHospitalId.value);
-const canRegister = computed(() => {
-  return inputRows.value.some(row => row.product_id && row.prescription_qty);
-});
-
-const currentCell = ref({ row: 0, col: 'product_name' });
-
-// 상수
-const prescriptionTypeOptions = [
-  'EDI',
-  '약국조제',
-  '도매매출',
-  '직거래매출',
-  '차감',
-  '원내매출',
-  '원외매출',
-];
-
-const products = ref([]); // 전체 제품 목록
-const productSearchForRow = ref({
-  query: '',
-  results: [],
-  selectedIndex: -1,
-  show: false,
-  activeRowIndex: -1,
-});
-
-// 병원 검색 관련
-const hospitalSearchForRow = ref({
-  query: '',
-  results: [],
-  selectedIndex: -1,
-  show: false,
-});
-
-// 병원 검색이 열려있는지 확인하는 computed
-const isHospitalSearchOpen = computed(() => {
-  return hospitalSearchForRow.value.show;
-});
-
-// 유틸리티 함수들
-function getPrescriptionMonth(settlementMonth, offset) {
-  if (!settlementMonth) return '';
-  const [y, m] = settlementMonth.split('-');
-  let mm = parseInt(m, 10) - offset;
-  let yy = parseInt(y, 10);
-  while (mm <= 0) { mm += 12; yy -= 1; }
-  return `${yy}-${String(mm).padStart(2, '0')}`;
+const columnWidths = {
+  no: '6%',
+  client_code: '8%',
+  name: '16%',
+  address: '14%',
+  performance_count: '8%',
+  total_prescription_amount: '8%',
+  view_button: '8%',
+  input_button: '8%',
+  evidence_files_count: '8%',
+  view_files_button: '8%',
+  upload_button: '8%'
 }
 
-function truncateText(text, maxLength) {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+const availableMonths = ref([])
+const selectedSettlementMonth = ref('')
+const clientList = ref([])
+const isInputPeriod = ref(false)
+const currentCompanyId = ref(null)
+const loading = ref(false)
+const router = useRouter()
+const detailModalVisible = ref(false)
+const selectedClient = ref(null)
+const clientFiles = ref([])
+const uploadModalVisible = ref(false)
+const selectedFiles = ref([])
+const uploading = ref(false)
+const fileInput = ref(null)
+
+// 조회 모달 관련 변수 추가
+const viewModalVisible = ref(false)
+const viewModalData = ref([])
+const viewModalClient = ref(null)
+
+const formatNumber = (value) => {
+  if (!value) return '0'
+  return new Intl.NumberFormat('ko-KR').format(value)
 }
 
-function updatePrescriptionOptions() {
-  if (!activeMonth.value) {
-    prescriptionOptions.value = [];
-    return;
-  }
-  prescriptionOptions.value = [1, 2, 3].map(offset => ({
-    value: offset,
-    month: getPrescriptionMonth(activeMonth.value.settlement_month, offset)
-  }));
-}
-
-// 워치어
-watch([activeMonth], () => {
-  updatePrescriptionOptions();
-  prescriptionOffset.value = 1;
-  prescriptionMonth.value = getPrescriptionMonth(activeMonth.value?.settlement_month, 1);
-});
-
-watch(prescriptionOffset, (val) => {
-  prescriptionMonth.value = getPrescriptionMonth(activeMonth.value?.settlement_month, val);
-});
-
-// 병원 관련 함수들
-function openHospitalModal() {
-  if (!activeMonth.value) return;
-  
-  // 제품 검색 드롭다운이 열려있으면 차단
-  if (isProductSearchOpen.value) {
-    return;
-  }
-  
-  hospitalModalVisible.value = true;
-}
-
-// 병원 검색 관련 함수들
-function handleHospitalSearchInput(event) {
-  if (!activeMonth.value) return;
-  const query = event.target.value.toLowerCase();
-  hospitalSearchQuery.value = event.target.value;
-  
-  // 선택된 병원 초기화
-  if (!query || query !== selectedHospitalName.value.toLowerCase()) {
-    selectedHospitalName.value = '';
-    selectedHospitalInfo.value = null;
-    selectedHospitalId.value = null;
-  }
-
-  hospitalSearchForRow.value.query = query;
-  if (query.length < 1) {
-    hospitalSearchForRow.value.show = false;
-    hospitalSearchForRow.value.results = [];
-    return;
-  }
-  
-  hospitalSearchForRow.value.results = hospitals.value.filter(h =>
-    (h.name && h.name.toLowerCase().includes(query)) ||
-    (h.business_registration_number && h.business_registration_number.includes(query))
-  );
-  hospitalSearchForRow.value.selectedIndex = -1;
-  hospitalSearchForRow.value.show = hospitalSearchForRow.value.results.length > 0;
-}
-
-function navigateHospitalSearchList(direction) {
-  if (!hospitalSearchForRow.value.show || hospitalSearchForRow.value.results.length === 0) return;
-  if (direction === 'down') {
-    hospitalSearchForRow.value.selectedIndex = (hospitalSearchForRow.value.selectedIndex + 1) % hospitalSearchForRow.value.results.length;
-  } else if (direction === 'up') {
-    hospitalSearchForRow.value.selectedIndex = (hospitalSearchForRow.value.selectedIndex - 1 + hospitalSearchForRow.value.results.length) % hospitalSearchForRow.value.results.length;
-  }
-}
-
-function applySelectedHospital(hospital) {
-  selectedHospitalName.value = hospital.name;
-  selectedHospitalInfo.value = hospital;
-  selectedHospitalId.value = hospital.id;
-  hospitalSearchQuery.value = hospital.name;
-  hospitalSearchForRow.value.show = false;
-  
-  // 병원 선택 시 첫 번째 제품명 입력란으로 포커스 이동
-  nextTick(() => focusField(0, 'product_name'));
-}
-
-function applySelectedHospitalFromSearch() {
-  const idx = hospitalSearchForRow.value.selectedIndex;
-  if (hospitalSearchForRow.value.show && idx !== -1 && hospitalSearchForRow.value.results[idx]) {
-    const hospital = hospitalSearchForRow.value.results[idx];
-    applySelectedHospital(hospital);
-  } else if (hospitalSearchForRow.value.show && hospitalSearchForRow.value.results.length > 0) {
-    const hospital = hospitalSearchForRow.value.results[0];
-    applySelectedHospital(hospital);
-  }
-}
-
-function clickHospitalFromSearchList(hospital) {
-  applySelectedHospital(hospital);
-}
-
-function hideHospitalSearchList() {
-  if (!selectedHospitalId.value) {
-    hospitalSearchQuery.value = '';
-  }
-  hospitalSearchForRow.value.show = false;
-}
-
-function toggleHospitalDropdown() {
-  if (!activeMonth.value) return;
-  
-  // 제품 검색 드롭다운이 열려있으면 차단
-  if (isProductSearchOpen.value) {
-    return;
-  }
-  
-  // 현재 드롭다운이 열려있으면 닫기
-  if (hospitalSearchForRow.value.show) {
-    hospitalSearchForRow.value.show = false;
-    return;
-  }
-  
-  // 전체 병원 목록 표시
-  hospitalSearchForRow.value.results = hospitals.value;
-  hospitalSearchForRow.value.selectedIndex = -1;
-  hospitalSearchForRow.value.show = hospitalSearchForRow.value.results.length > 0;
-  
-  // 입력창에 포커스
-  nextTick(() => {
-    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
-    if (hospitalInput) {
-      hospitalInput.focus();
-    }
-  });
-}
-
-function handleHospitalSearchFocus() {
-  // 제품 검색 드롭다운이 열려있으면 포커스 차단
-  if (isProductSearchOpen.value) {
-    event.target.blur();
-    return;
-  }
-  
-  currentCell.value = { row: -1, col: 'hospital' };
-}
-
-// 데이터 fetch 함수들
-async function fetchHospitals() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const userUid = session?.user?.id;
-  if (!userUid) return;
-  
-  const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', userUid).single();
-  if (!myCompany) return;
-  
-  const { data: assignments } = await supabase.from('client_company_assignments').select('client_id').eq('company_id', myCompany.id);
-  if (!assignments || assignments.length === 0) {
-    hospitals.value = [];
-    return;
-  }
-  
-  const clientIds = assignments.map(a => a.client_id);
-  const { data } = await supabase.from('clients').select('*').in('id', clientIds).eq('status', 'active');
-  if (data) hospitals.value = data;
-  // 병원이 1개일 때만 자동 선택
-  if (data && data.length === 1) {
-    selectedHospitalName.value = data[0].name;
-    selectedHospitalInfo.value = data[0];
-    selectedHospitalId.value = data[0].id;
-    // 자동 선택 시 첫 번째 제품명 입력란으로 포커스 이동
-    nextTick(() => focusField(0, 'product_name'));
-  }
-}
-
-async function fetchProducts() {
-  const { data, error } = await supabase.from('products').select('id, product_name, insurance_code, price').eq('status', 'active');
+// 정산월 목록 fetch
+const fetchAvailableMonths = async () => {
+  const { data, error } = await supabase
+    .from('settlement_months')
+    .select('settlement_month')
+    .eq('status', 'active')
+    .order('settlement_month', { ascending: false })
   if (!error && data) {
-    const uniqByInsurance = {};
-    const noInsurance = [];
-    data.forEach(p => {
-      if (p.insurance_code) {
-        if (!uniqByInsurance[p.insurance_code]) uniqByInsurance[p.insurance_code] = p;
-      } else {
-        noInsurance.push(p);
-      }
-    });
-    products.value = [...Object.values(uniqByInsurance), ...noInsurance];
-  }
-}
-
-// 🔥 중요: 누락되었던 fetchActiveMonth 함수
-async function fetchActiveMonth() {
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  console.log('🔍 Debug - 오늘 날짜:', todayStr);
-  
-  try {
-    // 1단계: 모든 active 상태인 settlement_months 조회
-    const { data: allActive, error: queryError } = await supabase
-      .from('settlement_months')
-      .select('*')
-      .eq('status', 'active');
-      
-    console.log('🔍 Debug - 모든 활성 월:', allActive);
-    
-    if (queryError) {
-      console.error('❌ 쿼리 오류:', queryError);
-      activeMonth.value = null;
-      return;
-    }
-    
-    // 2단계: JavaScript에서 날짜 범위 필터링
-    const validMonths = allActive?.filter(month => {
-      const startDate = new Date(month.start_date);
-      const endDate = new Date(month.end_date);
-      const todayDate = new Date(todayStr);
-      
-      console.log(`🔍 검사 중: ${month.settlement_month}`, {
-        start: month.start_date,
-        end: month.end_date,
-        today: todayStr,
-        startDate,
-        endDate,
-        todayDate,
-        isValid: todayDate >= startDate && todayDate <= endDate
-      });
-      
-      return todayDate >= startDate && todayDate <= endDate;
-    }) || [];
-    
-    console.log('🔍 유효한 월:', validMonths);
-    
-    if (validMonths.length > 0) {
-      // 가장 최근 settlement_month 선택
-      const activeData = validMonths.sort((a, b) => b.settlement_month.localeCompare(a.settlement_month))[0];
-      activeMonth.value = activeData;
-      prescriptionOffset.value = 1;
-      prescriptionMonth.value = getPrescriptionMonth(activeData.settlement_month, 1);
-      console.log('✅ 활성 월 설정 완료:', activeData);
-    } else {
-      activeMonth.value = null;
-      prescriptionMonth.value = '';
-      prescriptionOffset.value = 1;
-      console.log('❌ 오늘 날짜에 해당하는 활성 월이 없습니다');
-    }
-  } catch (err) {
-    console.error('❌ fetchActiveMonth 오류:', err);
-    activeMonth.value = null;
-  }
-}
-
-// 제품 검색 관련 함수들
-function handleProductNameInput(rowIndex, event) {
-  if (!isInputEnabled.value) return;
-  const query = event.target.value.toLowerCase();
-  inputRows.value[rowIndex].product_name_display = event.target.value;
-  inputRows.value[rowIndex].product_id = null;
-  inputRows.value[rowIndex].insurance_code = '';
-  inputRows.value[rowIndex].price = '';
-
-  productSearchForRow.value.activeRowIndex = rowIndex;
-  if (query.length < 1) {
-    productSearchForRow.value.show = false;
-    productSearchForRow.value.results = [];
-    return;
-  }
-  productSearchForRow.value.results = products.value.filter(p =>
-    (p.product_name && p.product_name.toLowerCase().includes(query)) ||
-    (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
-  );
-  productSearchForRow.value.selectedIndex = -1;
-  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
-}
-
-function navigateProductSearchList(direction) {
-  if (!productSearchForRow.value.show || productSearchForRow.value.results.length === 0) return;
-  if (direction === 'down') {
-    productSearchForRow.value.selectedIndex = (productSearchForRow.value.selectedIndex + 1) % productSearchForRow.value.results.length;
-  } else if (direction === 'up') {
-    productSearchForRow.value.selectedIndex = (productSearchForRow.value.selectedIndex - 1 + productSearchForRow.value.results.length) % productSearchForRow.value.results.length;
-  }
-}
-
-function applySelectedProduct(product, rowIndex) {
-  inputRows.value[rowIndex].product_name_display = product.product_name;
-  inputRows.value[rowIndex].product_id = product.id;
-  inputRows.value[rowIndex].insurance_code = product.insurance_code;
-  inputRows.value[rowIndex].price = product.price ? Number(product.price).toLocaleString() : '';
-  productSearchForRow.value.show = false;
-  productSearchForRow.value.activeRowIndex = -1;
-  nextTick(() => {
-    focusField(rowIndex, 'prescription_qty');
-  });
-}
-
-function applySelectedProductFromSearch(rowIndexToApply) {
-  const idx = productSearchForRow.value.selectedIndex;
-  const currentActionRow = productSearchForRow.value.activeRowIndex;
-  if (productSearchForRow.value.show && idx !== -1 && productSearchForRow.value.results[idx] && currentActionRow === rowIndexToApply) {
-    const product = productSearchForRow.value.results[idx];
-    applySelectedProduct(product, currentActionRow);
-  } else if (productSearchForRow.value.show && productSearchForRow.value.results.length > 0 && currentActionRow === rowIndexToApply) {
-    const product = productSearchForRow.value.results[0];
-    applySelectedProduct(product, currentActionRow);
-  } else {
-    focusField(rowIndexToApply, 'prescription_qty');
-  }
-  productSearchForRow.value.show = false;
-}
-
-function clickProductFromSearchList(product, rowIndex) {
-  applySelectedProduct(product, rowIndex);
-}
-
-function hideProductSearchList(rowIndex) {
-  if (productSearchForRow.value.activeRowIndex === rowIndex) {
-    if (!inputRows.value[rowIndex].product_id) {
-      inputRows.value[rowIndex].product_name_display = '';
-    }
-    productSearchForRow.value.show = false;
-    productSearchForRow.value.activeRowIndex = -1;
-  }
-}
-
-function toggleProductDropdown(rowIndex) {
-  if (!isInputEnabled.value) return;
-  
-  // 다른 행의 제품 검색이 열려있으면 차단
-  if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex !== rowIndex) {
-    return;
-  }
-  
-  // 현재 드롭다운이 열려있으면 닫기
-  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIndex) {
-    productSearchForRow.value.show = false;
-    productSearchForRow.value.activeRowIndex = -1;
-    return;
-  }
-  
-  // 전체 제품 목록 표시
-  productSearchForRow.value.activeRowIndex = rowIndex;
-  productSearchForRow.value.results = products.value;
-  productSearchForRow.value.selectedIndex = -1;
-  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
-  
-  // 해당 행의 제품명 입력창에 포커스
-  nextTick(() => {
-    focusField(rowIndex, 'product_name');
-  });
-}
-
-// 제품 검색 드롭다운이 열려있는지 확인하는 computed
-const isProductSearchOpen = computed(() => {
-  return productSearchForRow.value.show && productSearchForRow.value.activeRowIndex !== -1;
-});
-
-// 제품명 필드 포커스 핸들러
-function handleProductNameFocus(rowIdx) {
-  if (!isInputEnabled.value) {
-    event.target.blur();
-    return;
-  }
-  
-  // 다른 행의 제품 검색이 열려있으면 차단
-  if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex !== rowIdx) {
-    event.target.blur();
-    return;
-  }
-  
-  currentCell.value = { row: rowIdx, col: 'product_name' };
-  productSearchForRow.value.activeRowIndex = rowIdx;
-}
-
-// 일반 필드 포커스 핸들러
-function handleFieldFocus(rowIdx, col) {
-  if (!isInputEnabled.value) {
-    event.target.blur();
-    return;
-  }
-  
-  // 제품 검색 드롭다운이 열려있으면 포커스 차단
-  if (isProductSearchOpen.value) {
-    event.target.blur();
-    return;
-  }
-  
-  currentCell.value = { row: rowIdx, col: col };
-}
-
-// 처방수량 필드 포커스 핸들러
-function handlePrescriptionQtyFocus(rowIdx) {
-  if (!isInputEnabled.value) {
-    event.target.blur();
-    return;
-  }
-  
-  // 제품 검색 드롭다운이 열려있으면 포커스 차단
-  if (isProductSearchOpen.value) {
-    event.target.blur();
-    return;
-  }
-  
-  // 포커스 시 콤마 제거
-  inputRows.value[rowIdx].prescription_qty = inputRows.value[rowIdx].prescription_qty ? inputRows.value[rowIdx].prescription_qty.toString().replace(/,/g, '') : '';
-  
-  currentCell.value = { row: rowIdx, col: 'prescription_qty' };
-}
-
-function openProductModalForAdd() {
-  // 제품 선택 모달 열기 (향후 구현)
-  console.log('제품 선택 모달 열기');
-}
-
-// 테이블 네비게이션 함수들
-function focusField(rowIdx, col) {
-  nextTick(() => {
-    const table = document.querySelector('.input-table');
-    if (!table) return;
-    const row = table.querySelectorAll('tbody tr')[rowIdx];
-    if (!row) return;
-    let el = null;
-    if (col === 'product_name') el = row.querySelector('td:nth-child(2) input');
-    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(5) input');
-    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(7) select');
-    else if (col === 'remarks') el = row.querySelector('td:nth-child(8) input');
-    if (el) el.focus();
-  });
-}
-
-function addOrFocusNextRow(rowIdx) {
-  const currentRow = inputRows.value[rowIdx];
-  
-  // 현재 행의 제품명 입력 중일 때
-  if (currentCell.value.col === 'product_name') {
-    // 제품이 선택되어 있지 않으면 다음으로 진행하지 않음
-    if (!currentRow.product_id) {
-      return;
-    }
-    // 제품이 선택되어 있으면 수량 입력으로 이동
-    focusField(rowIdx, 'prescription_qty');
-    return;
-  }
-  
-  // 현재 행의 수량 입력 중일 때
-  if (currentCell.value.col === 'prescription_qty') {
-    // 제품명과 수량이 모두 입력되어 있어야 새 행 생성
-    if (!currentRow.product_id || !currentRow.prescription_qty) {
-      return;
-    }
-    
-    // 마지막 행이면 새 행 추가
-    if (rowIdx === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '' 
-      });
-    }
-    // 다음 행의 제품명으로 이동
-    focusField(rowIdx + 1, 'product_name');
-  }
-  
-  // 비고 입력 중일 때
-  if (currentCell.value.col === 'remarks') {
-    // 제품명과 수량이 모두 입력되어 있어야 새 행 생성
-    if (!currentRow.product_id || !currentRow.prescription_qty) {
-      return;
-    }
-    
-    // 마지막 행이면 새 행 추가
-    if (rowIdx === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '' 
-      });
-    }
-    // 다음 행의 제품명으로 이동
-    focusField(rowIdx + 1, 'product_name');
-  }
-}
-
-function onPrescriptionTypeInput(rowIdx) {
-  const value = inputRows.value[rowIdx].prescription_type;
-  for (let i = rowIdx + 1; i < inputRows.value.length; i++) {
-    inputRows.value[i].prescription_type = value;
-  }
-}
-
-function onPrescriptionTypeKeydown(e, rowIdx) {
-  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
-  e.preventDefault();
-  const cols = ["product_name", "prescription_qty", "prescription_type", "remarks"];
-  let currentColIdx = cols.indexOf(currentCell.value.col);
-  let newRow = currentCell.value.row;
-  let newColIdx = currentColIdx;
-
-  if (e.key === "ArrowUp") newRow = Math.max(0, currentCell.value.row - 1);
-  if (e.key === "ArrowDown") {
-    // 아래 화살표: 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새 행 생성
-    const currentRow = inputRows.value[currentCell.value.row];
-    if (currentRow.product_id && currentRow.prescription_qty && currentCell.value.row === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '' 
-      });
-      newRow = currentCell.value.row + 1;
-      newColIdx = 0; // 제품명으로 이동
-    } else {
-      newRow = Math.min(inputRows.value.length - 1, currentCell.value.row + 1);
+    availableMonths.value = data.map(m => m.settlement_month)
+    if (availableMonths.value.length > 0) {
+      selectedSettlementMonth.value = availableMonths.value[0]
     }
   }
-  if (e.key === "ArrowLeft") newColIdx = Math.max(0, currentColIdx - 1);
-  if (e.key === "ArrowRight") newColIdx = Math.min(cols.length - 1, currentColIdx + 1);
-
-  if (e.key === "ArrowLeft" && currentColIdx === 0) newColIdx = 0;
-  if (e.key === "ArrowRight" && currentColIdx === cols.length - 1) newColIdx = cols.length - 1;
-  
-  currentCell.value = { row: newRow, col: cols[newColIdx] };
-  focusField(newRow, cols[newColIdx]);
 }
 
-function onQtyInput(rowIdx) {
-  const qty = Number(inputRows.value[rowIdx].prescription_qty.toString().replace(/,/g, ''));
-  const price = Number(inputRows.value[rowIdx].price.toString().replace(/,/g, ''));
-  if (!isNaN(qty) && !isNaN(price) && price > 0) {
-    inputRows.value[rowIdx].prescription_amount = (qty * price).toLocaleString();
-  } else {
-    inputRows.value[rowIdx].prescription_amount = '';
-  }
+// 내 회사ID fetch
+const fetchCurrentCompanyId = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return
+  const { data: company } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .single()
+  if (company) currentCompanyId.value = company.id
 }
 
-function onArrowKey(e, rowIdx, col) {
-  // 제품 검색 드롭다운이 열려있을 때는 위/아래 화살표만 허용
-  if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex === rowIdx) {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      return; // 제품 검색 리스트 네비게이션은 별도 함수에서 처리
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault();
-      return; // 좌우 화살표 차단
-    }
-    return;
+// 내 거래처ID fetch
+const fetchMyClientIds = async () => {
+  if (!currentCompanyId.value) return []
+  const { data, error } = await supabase
+    .from('client_company_assignments')
+    .select('client_id')
+    .eq('company_id', currentCompanyId.value)
+  if (!error && data) {
+    return data.map(a => a.client_id)
   }
-  
-  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
-  e.preventDefault();
-  const cols = ["product_name", "prescription_qty", "prescription_type", "remarks"];
-  let currentColIdx = cols.indexOf(col);
-  let newRow = rowIdx;
-  let newColIdx = currentColIdx;
-
-  if (e.key === "ArrowUp") newRow = Math.max(0, rowIdx - 1);
-  if (e.key === "ArrowDown") {
-    // 아래 화살표: 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새 행 생성
-    const currentRow = inputRows.value[rowIdx];
-    if (currentRow.product_id && currentRow.prescription_qty && rowIdx === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '' 
-      });
-      newRow = rowIdx + 1;
-      newColIdx = 0; // 제품명으로 이동
-    } else {
-      newRow = Math.min(inputRows.value.length - 1, rowIdx + 1);
-    }
-  }
-  if (e.key === "ArrowLeft") newColIdx = Math.max(0, currentColIdx - 1);
-  if (e.key === "ArrowRight") newColIdx = Math.min(cols.length - 1, currentColIdx + 1);
-
-  if (e.key === "ArrowLeft" && currentColIdx === 0) newColIdx = 0;
-  if (e.key === "ArrowRight" && currentColIdx === cols.length - 1) newColIdx = cols.length - 1;
-  
-  currentCell.value = { row: newRow, col: cols[newColIdx] };
-  focusField(newRow, cols[newColIdx]);
+  return []
 }
 
-function cellClass(rowIdx, col) {
-  return currentCell.value.row === rowIdx && currentCell.value.col === col ? 'cell-focused' : '';
-}
-
-// 입력 중인 실적이 있는지 체크하는 함수
-function hasInputData() {
-  return inputRows.value.some(row => 
-    row.product_id || 
-    row.prescription_qty || 
-    row.product_name_display.trim()
-  );
-}
-
-// 페이지 이탈 시 확인
-onBeforeRouteLeave(async (to, from, next) => {
-  // 입력 중인 데이터가 없으면 바로 이동
-  if (!hasInputData()) {
-    next();
-    return;
+// 거래처+실적 집계 fetch
+const fetchClientList = async () => {
+  loading.value = true
+  clientList.value = []
+  if (!selectedSettlementMonth.value || !currentCompanyId.value) {
+    loading.value = false
+    return
   }
-
-  // 입력 중인 실적이 있으면 사용자에게 확인
-  const shouldLeave = confirm('입력중인 실적이 있습니다. 등록하지 않고 이동하시겠습니까?');
-  
-  if (shouldLeave) {
-    next(); // 확인 시 이동
-  } else {
-    next(false); // 취소 시 이동 취소
+  const clientIds = await fetchMyClientIds()
+  if (clientIds.length === 0) {
+    loading.value = false
+    return
   }
-});
-
-// 실적 저장 로직을 별도 함수로 분리
-async function savePerformanceData() {
-  if (!activeMonth.value || !selectedHospitalId.value) {
-    throw new Error('정산월 또는 병원이 선택되지 않았습니다.');
+  // 거래처 정보
+  const { data: clients, error: clientError } = await supabase
+    .from('clients')
+    .select('id, client_code, name, business_registration_number, address')
+    .in('id', clientIds)
+    .eq('status', 'active')
+    .order('name', { ascending: true })
+  if (clientError || !clients) {
+    loading.value = false
+    return
   }
-
-  // 1. 행 분류
-  const completeRows = [];
-  const partialRows = [];
-
-  inputRows.value.forEach((row, index) => {
-    const hasProduct = !!row.product_id;
-    const hasQty = !!row.prescription_qty;
-
-    if (hasProduct && hasQty) {
-      completeRows.push({ ...row, rowNumber: index + 1 });
-    } else if (hasProduct || hasQty) {
-      partialRows.push({ ...row, rowNumber: index + 1 });
-    }
-  });
-
-  // 2. 저장할 데이터가 없는 경우
-  if (completeRows.length === 0) {
-    throw new Error('저장할 실적 데이터가 없습니다.');
-  }
-
-  // 3. 현재 사용자 정보 가져오기
-  const { data: { session } } = await supabase.auth.getSession();
-  const userUid = session?.user?.id;
-  if (!userUid) {
-    throw new Error('로그인 정보를 확인할 수 없습니다.');
-  }
-
-  // 4. 사용자의 회사 정보 가져오기
-  const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', userUid).single();
-  if (!myCompany) {
-    throw new Error('회사 정보를 찾을 수 없습니다.');
-  }
-
-  // 5. 저장할 데이터 준비
-  const performanceData = completeRows.map(row => ({
-    company_id: myCompany.id,
-    settlement_month: activeMonth.value.settlement_month,
-    prescription_month: prescriptionMonth.value,
-    client_id: selectedHospitalId.value,
-    product_id: row.product_id,
-    prescription_qty: parseInt(row.prescription_qty.toString().replace(/,/g, '')),
-    prescription_type: row.prescription_type || 'EDI',
-    remarks: row.remarks || null,
-    registered_by: userUid
-  }));
-
-  // 6. 데이터베이스에 저장
-  const { error } = await supabase
+  // 실적 집계
+  const { data: perfData } = await supabase
     .from('performance_records')
-    .insert(performanceData);
+    .select('client_id, prescription_qty, products(price)')
+    .eq('company_id', currentCompanyId.value)
+    .eq('settlement_month', selectedSettlementMonth.value)
 
-  if (error) {
-    throw new Error('실적 저장 중 오류가 발생했습니다.');
+  // 거래처별 증빙파일 개수 집계 (PerformanceUploadView.vue 참고)
+  const evidenceCounts = {}
+  for (const client of clients) {
+    const { count } = await supabase
+      .from('performance_evidence_files')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', currentCompanyId.value)
+      .eq('client_id', client.id)
+      .eq('settlement_month', selectedSettlementMonth.value)
+    evidenceCounts[client.id] = count || 0
   }
 
-  return completeRows.length;
+  // 집계
+  clientList.value = clients.map(client => {
+    const perfRows = perfData?.filter(p => p.client_id === client.id) || []
+    const performance_count = perfRows.length
+    const total_prescription_amount = perfRows.reduce((sum, p) => sum + ((p.prescription_qty || 0) * (p.products?.price || 0)), 0)
+    const evidence_files_count = evidenceCounts[client.id] || 0
+    return {
+      ...client,
+      performance_count,
+      total_prescription_amount,
+      evidence_files_count
+    }
+  })
+  loading.value = false
 }
 
-// 기존 onRegister 함수 수정 (savePerformanceData 함수 활용)
-async function onRegister() {
-  // 제품 검색 드롭다운이 열려있으면 차단
-  if (isProductSearchOpen.value) {
-    return;
+// 입력 가능 기간 체크
+const checkInputPeriod = async () => {
+  if (!selectedSettlementMonth.value) return
+  const { data, error } = await supabase
+    .from('settlement_months')
+    .select('start_date, end_date')
+    .eq('settlement_month', selectedSettlementMonth.value)
+    .single()
+  if (!error && data) {
+    const now = new Date();
+    const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // 한국시간 보정
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    isInputPeriod.value = koreaNow >= startDate && koreaNow <= endDate;
+  } else {
+    isInputPeriod.value = false
   }
-  
-  if (!activeMonth.value || !selectedHospitalId.value) {
-    alert('정산월 또는 병원이 선택되지 않았습니다.');
-    return;
-  }
-
-  // 1. 행 분류 (부분 누락 행 확인용)
-  const partialRows = [];
-  inputRows.value.forEach((row, index) => {
-    const hasProduct = !!row.product_id;
-    const hasQty = !!row.prescription_qty;
-
-    if ((hasProduct || hasQty) && !(hasProduct && hasQty)) {
-      partialRows.push({ ...row, rowNumber: index + 1 });
-    }
-  });
-
-  // 2. 부분 누락 행이 있는 경우 사용자 확인
-  if (partialRows.length > 0) {
-    const partialRowNumbers = partialRows.map(row => `No ${row.rowNumber}`).join(', ');
-    const message = `${partialRows.length}건의 실적이 필수 정보(제품, 처방수량)가 누락되었습니다.\n${partialRowNumbers}\n제외하고 등록하시겠습니까?`;
-    
-    if (!confirm(message)) {
-      return; // 취소 시 등록 중단
-    }
-  }
-
-  try {
-    // 3. 저장 처리
-    const savedCount = await savePerformanceData();
-    
-    // 4. 성공 메시지
-    alert(`${savedCount}건의 실적이 저장되었습니다.`);
-
-    // 5. 화면 초기화
-    resetForm();
-
-  } catch (err) {
-    console.error('등록 처리 오류:', err);
-    alert(err.message || '실적 등록 중 오류가 발생했습니다.');
-  }
-}
-
-// 화면 초기화 함수
-function resetForm() {
-  // 병원 선택 초기화
-  selectedHospitalName.value = '';
-  selectedHospitalInfo.value = null;
-  selectedHospitalId.value = null;
-  hospitalSearchQuery.value = '';
-  
-  // 입력 행 초기화 (1개 빈 행만 남김)
-  inputRows.value = [{ 
-    product_name_display: '', 
-    product_id: null, 
-    insurance_code: '', 
-    price: '', 
-    prescription_qty: '', 
-    prescription_amount: '', 
-    prescription_type: 'EDI', 
-    remarks: '' 
-  }];
-  
-  // 현재 셀 초기화
-  currentCell.value = { row: 0, col: 'product_name' };
-  
-  // 제품 검색 상태 초기화
-  productSearchForRow.value = {
-    query: '',
-    results: [],
-    selectedIndex: -1,
-    show: false,
-    activeRowIndex: -1,
-  };
-  
-  // 병원 검색 상태 초기화
-  hospitalSearchForRow.value = {
-    query: '',
-    results: [],
-    selectedIndex: -1,
-    show: false,
-  };
-  
-  // 병원명 input에 포커스
-  nextTick(() => {
-    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
-    if (hospitalInput) {
-      hospitalInput.focus();
-      // 병원명 input 포커스 상태 설정
-      currentCell.value = { row: -1, col: 'hospital' };
-    }
-  });
 }
 
 // 합계 계산
-const totalQty = computed(() => {
-  const total = inputRows.value.reduce((sum, row) => {
-    const qty = Number(row.prescription_qty.toString().replace(/,/g, '')) || 0;
-    return sum + qty;
-  }, 0);
-  return total.toLocaleString();
-});
-const totalAmount = computed(() => {
-  return inputRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
-});
+const totalPerformanceCount = computed(() => clientList.value.reduce((sum, c) => sum + (c.performance_count || 0), 0))
+const totalPrescriptionAmount = computed(() => clientList.value.reduce((sum, c) => sum + (c.total_prescription_amount || 0), 0))
+const totalEvidenceFilesCount = computed(() => clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0))
 
-// 행 추가/삭제
-function addRowBelow(idx) {
-  inputRows.value.splice(idx + 1, 0, {
-    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', remarks: ''
+const viewDetails = (client) => {
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 선택해주세요.');
+    return;
+  }
+  
+  openViewModal(client);
+}
+
+// 조회 모달 열기
+async function openViewModal(client) {
+  viewModalClient.value = client;
+  viewModalData.value = [];
+  viewModalVisible.value = true;
+  await fetchViewModalData(client.id);
+}
+
+// 조회 모달 닫기
+function closeViewModal() {
+  viewModalVisible.value = false;
+  viewModalClient.value = null;
+  viewModalData.value = [];
+}
+
+// 조회 모달용 실적 데이터 조회
+async function fetchViewModalData(clientId) {
+  if (!currentCompanyId.value || !selectedSettlementMonth.value) return;
+  
+  try {
+    const { data, error } = await supabase
+      .from('performance_records')
+      .select(`
+        prescription_qty,
+        products (
+          product_name
+        )
+      `)
+      .eq('company_id', currentCompanyId.value)
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('client_id', clientId);
+
+    if (!error && data) {
+      viewModalData.value = data.map(record => ({
+        product_name: record.products?.product_name || '',
+        prescription_qty: record.prescription_qty || 0
+      }));
+    }
+  } catch (err) {
+    console.error('조회 데이터 로드 오류:', err);
+  }
+}
+
+const registerPerformance = (client) => {
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 선택해주세요.');
+    return;
+  }
+  
+  router.push({
+    name: 'PerformanceRegisterEdit',
+    query: {
+      clientId: client.id,
+      clientName: client.name,
+      businessRegistrationNumber: client.business_registration_number,
+      address: client.address,
+      settlementMonth: selectedSettlementMonth.value
+    }
+  })
+}
+const viewFiles = (client) => {}
+
+function truncateText(text, maxLength) {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+function formatDate(dateString) {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('ko-KR');
+}
+
+async function openDetailModal(client) {
+  console.log('모달 오픈', client); // 디버깅용
+  selectedClient.value = client;
+  detailModalVisible.value = false; // 강제 반응성 트리거
+  await nextTick();
+  detailModalVisible.value = true;
+  await fetchClientFiles(client.id);
+}
+function closeDetailModal() {
+  detailModalVisible.value = false;
+  selectedClient.value = null;
+  clientFiles.value = [];
+}
+async function fetchClientFiles(clientId) {
+  const { data, error } = await supabase
+    .from('performance_evidence_files')
+    .select('*')
+    .eq('company_id', currentCompanyId.value)
+    .eq('client_id', clientId)
+    .eq('settlement_month', selectedSettlementMonth.value)
+    .order('uploaded_at', { ascending: false });
+  if (!error && data) {
+    clientFiles.value = data;
+  } else {
+    clientFiles.value = [];
+  }
+}
+async function downloadFile(file) {
+  const { data, error } = await supabase.storage
+    .from('performance-evidence')
+    .download(file.file_path);
+  if (error) {
+    alert('파일 다운로드에 실패했습니다.');
+    return;
+  }
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.file_name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+async function deleteFile(file, index) {
+  if (!confirm('이 파일을 삭제하시겠습니까?')) return;
+  await supabase.storage.from('performance-evidence').remove([file.file_path]);
+  await supabase.from('performance_evidence_files').delete().eq('id', file.id);
+  clientFiles.value.splice(index, 1);
+  await fetchClientFiles(selectedClient.value.id);
+  await fetchClientList(); // 테이블 새로고침
+}
+async function downloadAllFiles() {
+  if (clientFiles.value.length === 0) {
+    alert('다운로드할 파일이 없습니다.');
+    return;
+  }
+  const zip = new window.JSZip();
+  const today = new Date().toISOString().slice(0, 10);
+  const folderNameInZip = `${selectedClient.value.name}_${selectedSettlementMonth.value}`;
+  const folder = zip.folder(folderNameInZip);
+  const filePromises = clientFiles.value.map(async (file) => {
+    const { data, error } = await supabase.storage.from('performance-evidence').download(file.file_path);
+    if (!error) folder.file(file.file_name, data, { binary: true });
   });
-  nextTick(() => focusField(idx + 1, 'product_name'));
-}
-function deleteRow(idx) {
-  if (inputRows.value.length === 1) return;
-  inputRows.value.splice(idx, 1);
-}
-
-// 확인 다이얼로그 함수들을 브라우저 confirm으로 변경
-function confirmDeleteRow(idx) {
-  // 제품 검색 드롭다운이 열려있으면 차단
-  if (isProductSearchOpen.value) {
-    return;
-  }
-  
-  if (confirm('선택된 행을 삭제하시겠습니까?')) {
-    deleteRow(idx);
-  }
+  await Promise.all(filePromises);
+  zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } })
+    .then(function (content) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = `${folderNameInZip}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    })
+    .catch(err => {
+      alert('ZIP 파일 생성에 실패했습니다.');
+    });
 }
 
-function confirmAddRowBelow(idx) {
-  // 제품 검색 드롭다운이 열려있으면 차단
-  if (isProductSearchOpen.value) {
-    return;
-  }
-  
-  if (confirm('아래에 새 행을 추가하시겠습니까?')) {
-    addRowBelow(idx);
-  }
-}
-
-// 단축키 처리
-function handleGlobalKeydown(e) {
-  // 제품 검색 드롭다운이 열려있으면 Insert/Delete 키 차단
-  if (isProductSearchOpen.value) {
-    if (e.key === 'Delete' || e.key === 'Insert') {
-      e.preventDefault();
-      return;
-    }
-  }
-  
-  if (e.key === 'Delete') {
-    e.preventDefault();
-    const currentRowIdx = currentCell.value.row;
-    if (inputRows.value.length > 1) {
-      confirmDeleteRow(currentRowIdx);
-    }
-  } else if (e.key === 'Insert') {
-    e.preventDefault();
-    const currentRowIdx = currentCell.value.row;
-    confirmAddRowBelow(currentRowIdx);
-  }
-}
-
-// 전역 클릭 이벤트 처리
-function handleGlobalClick(e) {
-  // 병원 검색 드롭다운 처리
-  if (hospitalSearchForRow.value.show) {
-    const hospitalContainer = e.target.closest('.hospital-selection-container');
-    const searchDropdown = e.target.closest('.search-dropdown');
-    
-    if (!hospitalContainer && !searchDropdown) {
-      hideHospitalSearchList();
-    }
-  }
-  
-  // 제품 검색 드롭다운 처리
-  if (isProductSearchOpen.value) {
-    const productContainer = e.target.closest('.product-input-container');
-    const searchDropdown = e.target.closest('.search-dropdown');
-    
-    if (!productContainer && !searchDropdown) {
-      const activeRowIndex = productSearchForRow.value.activeRowIndex;
-      if (activeRowIndex !== -1) {
-        hideProductSearchList(activeRowIndex);
-      }
-    }
-  }
-}
-
-// 라이프사이클
-onMounted(() => {
-  fetchActiveMonth();
-  fetchHospitals();
-  fetchProducts();
-  // 진입 시 병원명 input에 포커스
+function openUploadModal(client) {
+  selectedClient.value = client
+  selectedFiles.value = []
+  uploadModalVisible.value = true
   nextTick(() => {
-    const hospitalInput = document.querySelector('input[placeholder*="병원명"]');
-    if (hospitalInput) {
-      hospitalInput.focus();
-      // 병원명 input 포커스 상태 설정
-      currentCell.value = { row: -1, col: 'hospital' };
+    if (fileInput.value) fileInput.value.value = ''
+  })
+}
+function closeUploadModal() {
+  uploadModalVisible.value = false
+  selectedClient.value = null
+  selectedFiles.value = []
+  if (fileInput.value) fileInput.value.value = ''
+}
+function handleFileSelect(event) {
+  const newFiles = Array.from(event.target.files)
+  const totalFiles = selectedFiles.value.length + newFiles.length
+  
+  if (totalFiles > 10) {
+    alert('최대 10개의 파일만 선택할 수 있습니다.')
+    return
+  }
+  
+  selectedFiles.value = [...selectedFiles.value, ...newFiles]
+  
+  // 파일 input 초기화 (같은 파일 다시 선택 가능하도록)
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+function removeFile(index) {
+  selectedFiles.value.splice(index, 1)
+}
+async function uploadFiles() {
+  if (selectedFiles.value.length === 0) return
+  if (!selectedClient.value || !currentCompanyId.value) return
+  uploading.value = true
+  try {
+    for (const file of selectedFiles.value) {
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(2, 8)
+      const fileName = `${timestamp}_${randomId}_${cleanFileName}`
+      const filePath = `private/${fileName}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('performance-evidence')
+        .upload(filePath, file)
+      if (uploadError) {
+        alert(`파일 업로드 실패: ${file.name}`)
+        continue
+      }
+      await supabase
+        .from('performance_evidence_files')
+        .insert({
+          company_id: currentCompanyId.value,
+          client_id: selectedClient.value.id,
+          settlement_month: selectedSettlementMonth.value,
+          file_name: file.name,
+          file_path: uploadData.path,
+          file_size: file.size,
+          uploaded_by: null // 필요시 사용자 ID로 변경
+        })
     }
-  });
-  // 전역 키보드 이벤트 리스너 추가
-  document.addEventListener('keydown', handleGlobalKeydown);
-  document.addEventListener('click', handleGlobalClick);
-});
+    alert('파일 업로드가 완료되었습니다.')
+    closeUploadModal()
+    await fetchClientList() // 목록 새로고침
+  } catch (err) {
+    alert('파일 업로드 중 오류가 발생했습니다.')
+  } finally {
+    uploading.value = false
+  }
+}
 
-// 컴포넌트 언마운트 시 이벤트 리스너 제거
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleGlobalKeydown);
-  document.removeEventListener('click', handleGlobalClick);
-});
+// 정산월 변경 시 데이터 새로고침
+watch(selectedSettlementMonth, async () => {
+  await checkInputPeriod()
+  await fetchClientList()
+})
+
+onMounted(async () => {
+  await fetchAvailableMonths()
+  await fetchCurrentCompanyId()
+  await checkInputPeriod()
+  await fetchClientList()
+})
 </script> 

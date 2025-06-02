@@ -1,331 +1,67 @@
 <template>
   <div class="performance-register-view">
-    <div class="header-title">등록 현황</div>
-    <div class="table-container" style="position:relative;">
-      <div class="performance-header-row">
-        <!-- 정산월 선택 드롭다운 -->
-        <div class="info-box info-box-settlement">
-          <span class="info-box-label">정산월</span>
-          <select v-model="selectedSettlementMonth" class="prescription-select" @change="onSettlementMonthChange">
-            <option value="">- 선택하세요 -</option>
-            <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
-              {{ month.settlement_month }}
-            </option>
-          </select>
-        </div>
-        <div class="info-box info-box-period">
-          <span class="info-box-label">제출기간</span>
-          <span class="info-box-content">{{ selectedMonthInfo ? (selectedMonthInfo.start_date + ' ~ ' + selectedMonthInfo.end_date) : '' }}</span>
-        </div>
-        <!-- 처방월 표시 -->
-        <div class="info-box info-box-prescription">
-          <span class="info-box-label">처방월</span>
-          <select v-model="prescriptionOffset" class="prescription-select" @change="onPrescriptionOffsetChange">
-            <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
-              {{ opt.month }}
-            </option>
-          </select>
-        </div>
+    <div class="filter-card" style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.5rem;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">정산월</label>
+        <select v-model="selectedSettlementMonth" class="select_month">
+          <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
+        </select>
       </div>
-      
-      <div class="performance-action-row">
-        <div class="hospital-selection-container">
-          <div class="hospital-input-box">
-            <span class="info-box-label">병원 선택</span>
-            <select 
-              v-model="selectedHospitalId" 
-              class="hospital-input"
-              @change="onHospitalChange"
-              :class="currentCell.row === -1 && currentCell.col === 'hospital' ? 'hospital-input-focused' : ''"
-            >
-              <option value="">- 전체 -</option>
-              <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">
-                {{ hospital.name }}
-              </option>
-            </select>
-          </div>
-          <span v-if="selectedHospitalInfo" class="hospital-info">
-            ({{ selectedHospitalInfo.business_registration_number }}, {{ selectedHospitalInfo.owner_name }}, {{ selectedHospitalInfo.address }})
-          </span>
-        </div>
-        <div class="action-buttons">
-          <button 
-            class="btn-secondary" 
-            @click="downloadExcel" 
-            :disabled="sortedDisplayRows.length === 0"
-            title="엑셀 다운로드"
-          >엑셀 다운로드</button>
-          <button 
-            class="btn-primary register-button" 
-            @click="onSave" 
-            :disabled="!canSave" 
-            :class="{ 'disabled-area': !isEditMode }"
-            v-if="isEditMode"
-          >{{ isEditMode ? '저장' : '저장' }}</button>
-        </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">처방월</label>
+        <select v-model="prescriptionOffset" class="select_month">
+          <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
+        </select>
       </div>
-      
-      <div class="table-scroll-wrapper">
-        <table class="input-table" :class="{ 'disabled-area': !isEditMode }">
-          <thead>
-            <tr>
-              <th style="width:40px;">No</th>
-              <th :style="isEditMode ? 'width:12%;' : 'width:13%;'" @click="sortBy('client_name')" style="cursor:pointer;" v-html="'거래처' + getSortIcon('client_name')"></th>
-              <th :style="isEditMode ? 'width:6%;' : 'width:6%;'" @click="sortBy('prescription_month')" style="cursor:pointer;" v-html="'처방월' + getSortIcon('prescription_month')"></th>
-              <th :style="isEditMode ? 'width:18%;' : 'width:18%;'" @click="sortBy('product_name_display')" style="cursor:pointer;" v-html="'제품명' + getSortIcon('product_name_display')"></th>
-              <th :style="isEditMode ? 'width:8%;' : 'width:8%;'" @click="sortBy('insurance_code')" style="cursor:pointer;" v-html="'보험코드' + getSortIcon('insurance_code')"></th>
-              <th :style="isEditMode ? 'width:6%;' : 'width:6%;'" @click="sortBy('price')" style="cursor:pointer;" v-html="'약가' + getSortIcon('price')"></th>
-              <th :style="isEditMode ? 'width:6%;' : 'width:6%;'" @click="sortBy('prescription_qty')" style="cursor:pointer;" v-html="'처방수량' + getSortIcon('prescription_qty')"></th>
-              <th :style="isEditMode ? 'width:6%;' : 'width:6%;'" @click="sortBy('prescription_amount')" style="cursor:pointer;" v-html="'처방액' + getSortIcon('prescription_amount')"></th>
-              <th :style="isEditMode ? 'width:8%;' : 'width:8%;'" @click="sortBy('prescription_type')" style="cursor:pointer;" v-html="'처방구분' + getSortIcon('prescription_type')"></th>
-              <th :style="isEditMode ? 'width:10%;' : 'width:11%;'">비고</th>
-              <th v-if="isEditMode" style="width:40px;">삭제</th>
-              <th v-if="isEditMode" style="width:40px;">추가</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="displayRows.length === 0">
-              <td :colspan="isEditMode ? 12 : 10" style="text-align:center;padding:2rem;color:#666;">
-                <div v-if="!selectedSettlementMonth">정산월을 선택하세요.</div>
-                <div v-else-if="!isEditMode">등록된 실적이 없습니다.</div>
-                <div v-else>
-                  <div style="margin-bottom:1rem;">등록된 실적이 없습니다.</div>
-                  <button class="btn-primary" @click="addNewRow">새 실적 추가</button>
-                </div>
-              </td>
-            </tr>
-            <tr v-for="(row, rowIdx) in sortedDisplayRows" :key="rowIdx" v-else>
-              <td style="text-align:center;">{{ rowIdx + 1 }}</td>
-              <td style="text-align:left;">
-                <div v-if="isEditMode" class="product-input-container">
-                  <input 
-                    v-model="row.client_name" 
-                    :tabindex="isEditMode ? 0 : -1"
-                    :readonly="!isEditMode"
-                    @input="handleClientNameInput(rowIdx, $event)"
-                    @keydown.enter.prevent="applySelectedClientFromSearch(rowIdx)"
-                    @keydown.down.prevent="navigateClientSearchList('down')"
-                    @keydown.up.prevent="navigateClientSearchList('up')"
-                    @focus="handleClientNameFocus(rowIdx)"
-                    @blur="setTimeout(() => hideClientSearchList(rowIdx), 200)"
-                    :class="cellClass(rowIdx, 'client_name')"
-                    autocomplete="off"
-                    style="text-align:left;"
-                  />
-                  <button 
-                    type="button"
-                    @click="toggleClientDropdown(rowIdx)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-                  <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === rowIdx && clientSearchForRow.results.length > 0" class="search-dropdown hospital-search-dropdown">
-                    <ul>
-                      <li
-                        v-for="(client, index) in clientSearchForRow.results"
-                        :key="client.id"
-                        @click="clickClientFromSearchList(client, rowIdx)"
-                        :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
-                      >
-                        <div class="hospital-info-row">
-                          <span class="hospital-name">{{ client.name }}</span>
-                          <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
-                        </div>
-                        <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <input 
-                  v-else
-                  v-model="row.client_name" 
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:left; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:center;">
-                <input 
-                  v-model="row.prescription_month" 
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:center; background: #fff !important;"
-                />
-              </td>
-              <td style="position:relative;text-align:left;">
-                <div v-if="isEditMode" class="product-input-container">
-                  <input
-                    v-model="row.product_name_display"
-                    :tabindex="isEditMode ? 0 : -1"
-                    :readonly="!isEditMode"
-                    @input="handleProductNameInput(rowIdx, $event)"
-                    @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                    @keydown.down.prevent="navigateProductSearchList('down')"
-                    @keydown.up.prevent="navigateProductSearchList('up')"
-                    @keydown="onArrowKey($event, rowIdx, 'product_name')"
-                    @focus="handleProductNameFocus(rowIdx)"
-                    @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                    :class="cellClass(rowIdx, 'product_name')"
-                    autocomplete="off"
-                    style="text-align:left;"
-                  />
-                  <button 
-                    type="button"
-                    @click="toggleProductDropdown(rowIdx)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-                  <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="search-dropdown product-search-dropdown">
-                    <ul>
-                      <li
-                        v-for="(product, index) in productSearchForRow.results"
-                        :key="product.id"
-                        @click="clickProductFromSearchList(product, rowIdx)"
-                        :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                      >
-                        <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                        <span class="insurance-code">{{ product.insurance_code }}</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <input
-                  v-else
-                  v-model="row.product_name_display"
-                  readonly
-                  tabindex="-1"
-                  style="text-align:left; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:center;">
-                <input 
-                  v-model="row.insurance_code" 
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:center; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:right;">
-                <input 
-                  v-model="row.price" 
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:right; position:relative;">
-                <input
-                  v-model="row.prescription_qty"
-                  :tabindex="isEditMode ? 0 : -1"
-                  :readonly="!isEditMode"
-                  @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                  @keydown="onArrowKey($event, rowIdx, 'prescription_qty')"
-                  @input="onQtyInput(rowIdx)"
-                  @focus="handlePrescriptionQtyFocus(rowIdx)"
-                  @blur="handlePrescriptionQtyBlur(rowIdx)"
-                  :disabled="!isEditMode"
-                  :class="[
-                    cellClass(rowIdx, 'prescription_qty'),
-                    { 'disabled-area': !isEditMode }
-                  ]"
-                  :style="isEditMode ? 'text-align:right;' : 'text-align:right; background: #fff !important;'"
-                />
-              </td>
-              <td style="text-align:right;">
-                <input 
-                  v-model="row.prescription_amount" 
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:center;">
-                <select
-                  v-if="isEditMode"
-                  v-model="row.prescription_type"
-                  :tabindex="isEditMode ? 0 : -1"
-                  @change="onPrescriptionTypeInput(rowIdx)"
-                  @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
-                  @focus="handleFieldFocus(rowIdx, 'prescription_type')"
-                  :class="cellClass(rowIdx, 'prescription_type')"
-                  style="text-align:center;"
-                >
-                  <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-                </select>
-                <input
-                  v-else
-                  v-model="row.prescription_type"
-                  readonly
-                  tabindex="-1"
-                  style="text-align:center; background: #fff !important;"
-                />
-              </td>
-              <td style="text-align:left;">
-                <input
-                  v-model="row.remarks"
-                  :tabindex="isEditMode ? 0 : -1"
-                  :readonly="!isEditMode"
-                  @keydown.enter.prevent="addOrFocusNextRow(rowIdx)"
-                  @keydown="onArrowKey($event, rowIdx, 'remarks')"
-                  @focus="handleFieldFocus(rowIdx, 'remarks')"
-                  :disabled="!isEditMode"
-                  :class="[
-                    cellClass(rowIdx, 'remarks'),
-                    { 'disabled-area': !isEditMode }
-                  ]"
-                  :style="isEditMode ? 'text-align:left;' : 'text-align:left; background: #fff !important;'"
-                />
-              </td>
-              <td v-if="isEditMode" :class="isEditMode ? 'action-cell' : 'action-cell-disabled'">
-                <button 
-                  :class="isEditMode ? 'btn-delete-m' : 'btn-delete-m-d'"
-                  @click="isEditMode ? confirmDeleteRow(rowIdx) : null" 
-                  :disabled="displayRows.length === 1 || !isEditMode" 
-                  title="행 삭제"
-                >－</button>
-              </td>
-              <td v-if="isEditMode" :class="isEditMode ? 'action-cell' : 'action-cell-disabled'">
-                <button 
-                  :class="isEditMode ? 'btn-add-m' : 'btn-add-m-d'"
-                  @click="isEditMode ? confirmAddRowBelow(rowIdx) : null" 
-                  title="아래에 행 추가"
-                  :disabled="!isEditMode"
-                >＋</button>
-              </td>
-            </tr>
-          </tbody>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-weight:500;">거래처</label>
+        <select v-model="selectedHospitalId" class="select_240px">
+          <option value="">- 전체 -</option>
+          <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="data-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <div>전체 {{ sortedDisplayRows.length }}건</div>
+        <button class="btn-secondary" @click="downloadExcel" :disabled="sortedDisplayRows.length === 0">엑셀 다운로드</button>
+      </div>
+      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 340px)" class="custom-table">
+        <template #empty>등록된 실적이 없습니다.</template>
+        <Column header="No" :body="noBody" :headerStyle="{ width: columnWidths.no }" />
+        <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true"/>
+        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
+        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
+        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price, textAlign: 'right' }" :sortable="true"/>
+        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty, textAlign: 'right' }" :sortable="true"/>
+        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount, textAlign: 'right' }" :sortable="true"/>
+        <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true"/>
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
+      </DataTable>
+      <!-- 합계 행: 테이블 하단 고정 -->
+      <div class="table-footer-wrapper"
+        style="width:100%;
+        background:#f8f9fa;
+        border-top:1px solid #dee2e6;
+        border-bottom:1px solid #bcc0c4;
+        position:sticky;
+        bottom:0;
+        z-index:2;">
+        <table style="width:100%; table-layout:fixed;">
+          <tr>
+            <td style="width:6%; text-align:center; font-weight:600;">합계</td>
+            <td style="width:16%;"></td>
+            <td style="width:8%;"></td>
+            <td style="width:16%;"></td>
+            <td style="width:10%;"></td>
+            <td style="width:6%;"></td>
+            <td style="width:8%; text-align:left; font-weight:600;">{{ totalQty }}</td>
+            <td style="width:8%; text-align:left; font-weight:600;">{{ totalAmount }}</td>
+            <td style="width:8%;"></td>
+            <td style="width:12%;"></td>
+          </tr>
         </table>
-      </div>
-      
-      <!-- 합계 행을 별도 테이블로 분리하여 하단 고정 -->
-      <div class="table-footer-wrapper">
-        <table class="input-table footer-table" :class="{ 'disabled-area': !isEditMode }">
-          <tfoot>
-            <tr>
-              <td style="width:40px;"></td>
-              <td :style="isEditMode ? 'width:12%;' : 'width:13%;'"></td>
-              <td :style="isEditMode ? 'width:6%;' : 'width:6%;'"></td>
-              <td :style="isEditMode ? 'width:18%;' : 'width:18%;'"></td>
-              <td :style="isEditMode ? 'width:8%;' : 'width:8%;'"></td>
-              <td :style="isEditMode ? 'width:6%;' : 'width:6%;'" style="text-align:center;">합계</td>
-              <td :style="isEditMode ? 'width:6%;' : 'width:6%;'" style="text-align:right;">{{ totalQty }}</td>
-              <td :style="isEditMode ? 'width:6%;' : 'width:6%;'" style="text-align:right;">{{ totalAmount }}</td>
-              <td :style="isEditMode ? 'width:8%;' : 'width:8%;'"></td>
-              <td :style="isEditMode ? 'width:10%;' : 'width:11%;'"></td>
-              <td v-if="isEditMode" style="width:40px;"></td>
-              <td v-if="isEditMode" style="width:40px;"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      
-      <div v-if="!selectedSettlementMonth" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10;background:rgba(255,255,255,0.85);">
-        <div style="font-size:1.3rem;color:#666;text-align:center;">정산월을 선택하세요.</div>
       </div>
     </div>
   </div>
@@ -1595,118 +1331,9 @@ async function fetchPerformanceRecords() {
   }
 }
 
-// 저장 함수
-async function onSave() {
-  if (!isEditMode.value || !hasChanges.value) return;
-  
-  try {
-    // 유효한 행들만 필터링 (제품과 수량이 모두 입력된 행)
-    const validRows = displayRows.value.filter(row => row.product_id && row.prescription_qty);
-    
-    if (validRows.length === 0) {
-      alert('저장할 데이터가 없습니다.');
-      return;
-    }
-    
-    // 거래처가 선택되지 않은 행이 있는지 확인
-    const rowsWithoutClient = validRows.filter(row => !row.client_name);
-    if (rowsWithoutClient.length > 0) {
-      alert('모든 행에 거래처를 선택해주세요.');
-      return;
-    }
-    
-    // 현재 사용자 정보 가져오기
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
-    
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .single();
-      
-    if (!company) {
-      alert('회사 정보를 찾을 수 없습니다.');
-      return;
-    }
-    
-    // 기존 데이터 삭제 (현재 조건에 맞는 데이터만)
-    let deleteQuery = supabase
-      .from('performance_records')
-      .delete()
-      .eq('company_id', company.id)
-      .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('prescription_month', prescriptionMonth.value);
-    
-    // 병원이 선택된 경우 해당 병원 데이터만 삭제
-    if (selectedHospitalId.value) {
-      deleteQuery = deleteQuery.eq('client_id', selectedHospitalId.value);
-    }
-    
-    const { error: deleteError } = await deleteQuery;
-    
-    if (deleteError) {
-      console.error('기존 데이터 삭제 오류:', deleteError);
-      throw new Error('기존 데이터 삭제 실패: ' + deleteError.message);
-    }
-    
-    // 새 데이터 저장을 위한 준비
-    const savePromises = [];
-    
-    for (const row of validRows) {
-      // 거래처 ID 찾기
-      const client = hospitals.value.find(h => h.name === row.client_name);
-      if (!client) {
-        throw new Error(`거래처 '${row.client_name}'을 찾을 수 없습니다.`);
-      }
-      
-      const saveData = {
-        company_id: company.id,
-        settlement_month: selectedSettlementMonth.value,
-        prescription_month: prescriptionMonth.value,
-        client_id: client.id,
-        product_id: row.product_id,
-        prescription_qty: parseInt(row.prescription_qty.toString().replace(/,/g, '')),
-        prescription_type: row.prescription_type,
-        remarks: row.remarks || null,
-        registered_by: session.user.id
-      };
-      
-      savePromises.push(
-        supabase.from('performance_records').insert(saveData)
-      );
-    }
-    
-    // 모든 데이터 저장
-    const results = await Promise.all(savePromises);
-    
-    // 저장 결과 확인
-    for (const result of results) {
-      if (result.error) {
-        console.error('데이터 저장 오류:', result.error);
-        throw new Error('데이터 저장 실패: ' + result.error.message);
-      }
-    }
-    
-    alert('저장되었습니다.');
-    
-    // 데이터 다시 로드하여 원본 데이터 갱신
-    await fetchPerformanceRecords();
-    
-    // 변경사항 플래그 명시적으로 초기화
-    hasChanges.value = false;
-    
-  } catch (err) {
-    console.error('저장 오류:', err);
-    alert('저장 중 오류가 발생했습니다: ' + err.message);
-  }
-}
-
 function downloadExcel() {
-  if (sortedDisplayRows.value.length === 0) {
+  console.log('엑셀 다운로드 - sortedDisplayRows:', sortedDisplayRows.value);
+  if (!sortedDisplayRows.value || sortedDisplayRows.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
@@ -1724,11 +1351,16 @@ function downloadExcel() {
     '처방구분': row.prescription_type || '',
     '비고': row.remarks || ''
   }));
+  console.log('엑셀 다운로드 - excelData:', excelData);
+
+  if (!excelData || excelData.length === 0) {
+    alert('엑셀로 변환할 데이터가 없습니다.');
+    return;
+  }
 
   // 합계 행 추가 - 숫자값으로 계산
   const totalQtyNum = excelData.reduce((sum, row) => sum + (row['처방수량'] || 0), 0);
   const totalAmountNum = excelData.reduce((sum, row) => sum + (row['처방액'] || 0), 0);
-  
   excelData.push({
     'No': '',
     '거래처': '',
@@ -1747,36 +1379,33 @@ function downloadExcel() {
   const ws = XLSX.utils.json_to_sheet(excelData);
 
   // 컬럼 너비 설정
-  const colWidths = [
-    { wch: 5 },   // No
-    { wch: 20 },  // 거래처
-    { wch: 10 },  // 처방월
-    { wch: 30 },  // 제품명
-    { wch: 12 },  // 보험코드
-    { wch: 12 },  // 약가
-    { wch: 12 },  // 처방수량
-    { wch: 15 },  // 처방액
-    { wch: 12 },  // 처방구분
-    { wch: 20 }   // 비고
-  ];
-  ws['!cols'] = colWidths;
+  const colWidths = {
+    no: '6%',
+    client_name: '16%',
+    prescription_month: '8%',
+    product_name_display: '16%',
+    insurance_code: '10%',
+    price: '8%',
+    prescription_qty: '8%',
+    prescription_amount: '8%',
+    prescription_type: '8%',
+    remarks: '12%'
+  };
+  ws['!cols'] = Object.values(colWidths);
 
   // 숫자 형식 설정 (천단위 구분자 적용)
   const range = XLSX.utils.decode_range(ws['!ref']);
-  
   for (let R = range.s.r + 1; R <= range.e.r; R++) { // 헤더 제외하고 시작
     // 약가 컬럼 (F열, 인덱스 5)
     const priceCell = XLSX.utils.encode_cell({ r: R, c: 5 });
     if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
       ws[priceCell].z = '#,##0';
     }
-    
     // 처방수량 컬럼 (G열, 인덱스 6)
     const qtyCell = XLSX.utils.encode_cell({ r: R, c: 6 });
     if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
       ws[qtyCell].z = '#,##0';
     }
-    
     // 처방액 컬럼 (H열, 인덱스 7)
     const amountCell = XLSX.utils.encode_cell({ r: R, c: 7 });
     if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
@@ -1790,7 +1419,6 @@ function downloadExcel() {
   // 파일명 생성 (정산월_처방월_병원명_날짜)
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  
   let fileName = '실적등록현황';
   if (selectedSettlementMonth.value) {
     fileName += `_${selectedSettlementMonth.value}`;
@@ -1833,4 +1461,20 @@ function addNewRow() {
     focusField(displayRows.value.length - 1, 'client_name');
   });
 }
+
+const columnWidths = {
+  no: '6%',
+  client_name: '13%',
+  prescription_month: '6%',
+  product_name_display: '18%',
+  insurance_code: '8%',
+  price: '6%',
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '8%',
+  remarks: '11%'
+};
+
+// No 컬럼용 함수
+const noBody = (_, { rowIndex }) => rowIndex + 1;
 </script> 

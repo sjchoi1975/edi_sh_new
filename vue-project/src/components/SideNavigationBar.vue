@@ -91,8 +91,7 @@ const userMenuTree = [
   ]},
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '실적 등록', path: '/performance/register' },
-    { label: '등록 현황', path: '/performance/list' },
-    { label: '증빙 파일 제출', path: '/performance/upload' }
+    { label: '등록 현황', path: '/performance/list' }
   ]},
   { label: '정산내역서 조회', icon: 'pi pi-file', children: [
     { label: '월별 정산 목록', path: '/settlements' }

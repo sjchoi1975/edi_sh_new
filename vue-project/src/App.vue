@@ -110,7 +110,7 @@ const userMenuTree = [
   { label: '공지사항 조회', children: [ { label: '공지사항 목록', path: '/notices' } ] },
   { label: '제품 조회', children: [ { label: '제품 목록', path: '/products' } ] },
   { label: '거래처 조회', children: [ { label: '거래처 목록', path: '/clients' } ] },
-  { label: '실적 관리', children: [ { label: '실적 등록', path: '/performance/register' }, { label: '등록 현황', path: '/performance/list' }, { label: '증빙 파일 제출', path: '/performance/upload' } ] },
+  { label: '실적 관리', children: [ { label: '실적 등록', path: '/performance/register' }, { label: '등록 현황', path: '/performance/list' } ] },
   { label: '정산내역서 조회', children: [ { label: '월별 정산 목록', path: '/settlements' } ] },
   { label: '내 정보', children: [ { label: '내 정보', path: '/my-info' } ] }
 ];

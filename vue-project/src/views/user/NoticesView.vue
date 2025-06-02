@@ -35,26 +35,26 @@
       >
         <template #empty>등록된 공지사항이 없습니다.</template>
         <template #loading>공지사항 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }" bodyClass="text-center">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned }" bodyClass="text-center">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
           </template>
         </Column>
-        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }">
+        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }" bodyClass="text-left">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.title }}</a>
           </template>
         </Column>
-        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }" bodyClass="text-center">
           <template #body="slotProps">
             <span>{{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}</span>
           </template>
         </Column>
-        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" />
-        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count }" bodyClass="text-right" />
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at }" bodyClass="text-center">
           <template #body="slotProps">{{ formatKST(slotProps.data.created_at) }}</template>
         </Column>
       </DataTable>

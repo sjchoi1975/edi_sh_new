@@ -324,9 +324,9 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'user' }
     },
     {
-      path: '/performance/upload',
-      name: 'performance-upload',
-      component: () => import('@/views/user/PerformanceUploadView.vue'),
+      path: '/performance/register/edit',
+      name: 'PerformanceRegisterEdit',
+      component: () => import('@/views/user/PerformanceRegisterEdit.vue'),
       meta: { requiresAuth: true, role: 'user' }
     },
     {
