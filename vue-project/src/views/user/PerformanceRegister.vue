@@ -29,7 +29,7 @@
       <DataTable
         :value="clientList"
         scrollable
-        scrollHeight="calc(100vh - 340px)"
+        scrollHeight="calc(100vh - 290px)"
         class="custom-table performance-register-table"
       >
         <template #empty>등록된 거래처가 없습니다.</template>

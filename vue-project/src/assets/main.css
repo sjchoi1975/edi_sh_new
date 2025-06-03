@@ -889,9 +889,10 @@ button:disabled {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* 실적 등록 테이블 높이 조정 */
 .input-table-wrapper {
   position: relative;
-  height: 690px;
+  height: 710px;
   overflow: hidden;
   border: none;
   border-radius: 6px;
@@ -1392,16 +1393,18 @@ button:disabled {
 
 /* ------ 관리자 업체별 등록 현황 (AdminPerformanceCompaniesView.vue) ------ */
 .admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 업체명 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: center !important; }  /* 사업자등록번호 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 대표자 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 총 거래처 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: center !important; }  /* 제출 거래처 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 처방건수 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 처방액 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: center !important; }  /* 증빙 파일 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: center !important; } /* 파일 보기 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; } /* 최종 등록일시 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }  /* 구분 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 업체명 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 사업자등록번호 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 대표자 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: center !important; }    /* 관리자 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 총 거래처 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: center !important; }  /* 제출 거래처 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: center !important; }  /* 처방건수 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: right !important; }   /* 처방액 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; }  /* 증빙 파일 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(12) { text-align: center !important; } /* 파일 보기 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(13) { text-align: center !important; } /* 최종 등록일시 */
 
 
 /* 관리자 전체 등록 현황 테이블 헤더 가운데 정렬 */
@@ -1414,18 +1417,54 @@ button:disabled {
 
 /* ------ 관리자 전체 등록 현황 (AdminPerformanceWholeView.vue) ------ */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 업체명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 거래처명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 처방월 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: left !important; }    /* 제품명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: center !important; }  /* 보험코드 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: right !important; }   /* 약가 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 처방수량 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: right !important; }   /* 처방액 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: center !important; }  /* 처방구분 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: left !important; }    /* 비고 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(12) { text-align: center !important; }  /* 등록일시 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(13) { text-align: center !important; }  /* 등록자 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 구분 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 업체명 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: left !important; }    /* 거래처명 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 처방월 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: left !important; }    /* 제품명 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 보험코드 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 약가 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: right !important; }   /* 처방수량 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: right !important; }   /* 처방액 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; }  /* 처방구분 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(12) { text-align: left !important; }    /* 비고 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(13) { text-align: center !important; }  /* 등록일시 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(14) { text-align: left !important; }  /* 등록자 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(15) { text-align: center !important; }  /* 관리자 */
+
+
+/* 관리자 흡수율 분석 테이블 헤더 가운데 정렬 */
+.admin-absorption-analysis-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 구분 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 업체명 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: left !important; }    /* 거래처 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 처방월 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: left !important; }    /* 제품명 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 보험코드 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 약가 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: right !important; }   /* 처방수량 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: right !important; }  /* 처방액 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; } /* 처방구분 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(12) { text-align: right !important; }  /* 도매매출 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(13) { text-align: right !important; }  /* 직거래매출 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(14) { text-align: right !important; }  /* 합산액 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(15) { text-align: center !important; }  /* 흡수율 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16) { text-align: center !important; }  /* 수수료율 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17) { text-align: right !important; }  /* 지급액 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18) { text-align: left !important; }   /* 비고 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19) { text-align: center !important; } /* 등록일시 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20) { text-align: left !important; } /* 등록자 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(21) { text-align: center !important; } /* 관리자 */
+.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(22) { text-align: center !important; } /* 작업 */
+
 
 
 

@@ -46,13 +46,28 @@
           </button>
         </div>
       </div>
-      <DataTable :value="displayRows" scrollable scrollHeight="calc(100vh - 290px)" class="admin-performance-whole-table">
+      <DataTable 
+        :value="displayRows" 
+        scrollable 
+        scrollHeight="calc(100vh - 290px)" 
+        scrollDirection="both"
+        class="admin-performance-whole-table"
+        :pt="{
+          wrapper: { style: 'min-width: 2200px;' },
+          table: { style: 'min-width: 2200px;' }
+        }"
+      >
         <template #empty>등록된 실적이 없습니다.</template>
         <template #loading>전체 실적을 불러오는 중입니다...</template>
         
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + 1 }}
+          </template>
+        </Column>
+        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.company_group }}</span>
           </template>
         </Column>
         <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
@@ -75,24 +90,34 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
         <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
         <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true"/>
+        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact }}</span>
+          </template>
+        </Column>
       </DataTable>
       <!-- 합계 행: 테이블 하단 고정 -->
-      <div class="table-footer-wrapper"
-        style="width:100%;
-        padding: 0 2rem 0 0;
-        background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
-        position:sticky;
-        bottom:0;
-        z-index:2;">
-        <table style="width:100%; table-layout:fixed;">
+      <div
+        class="table-footer-wrapper"
+        style="
+          width: 100%;
+          min-width: 2200px;
+          padding: 0 2rem 0 0;
+          background: #f8f9fa;
+          height: 38px;
+          border: 1px solid #dee2e6;
+          border-bottom: 2px solid #aaa;
+          position: sticky;
+          bottom: 0;
+          z-index: 2;
+        "
+      >
+        <table style="width: 100%; table-layout: fixed; min-width: 2200px">
           <tr>
-            <td style="width:60%; text-align:center; font-weight:600;">합계</td>            
-            <td style="width:8%; text-align:right; font-weight:600;">{{ totalQty }}</td>
-            <td style="width:8%; text-align:right; font-weight:600;">{{ totalAmount }}</td>
-            <td style="width:24%;"></td>
+            <td style="width: 47%; text-align: center; font-weight: 600">합계</td>
+            <td style="width: 4%; text-align: right; font-weight: 600">{{ totalQty }}</td>
+            <td style="width: 5%; text-align: right; font-weight: 600">{{ totalAmount }}</td>
+            <td style="width: 44%;"></td>
           </tr>
         </table>
       </div>
@@ -108,19 +133,21 @@ import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
-  no: '6%',
+  no: '4%',
+  company_group: '6%',
   company_name: '10%',
   client_name: '10%',
-  prescription_month: '6%',
-  product_name_display: '11%',
+  prescription_month: '5%',
+  product_name_display: '10%',
   insurance_code: '6%',
   price: '5%',
-  prescription_qty: '6%',
+  prescription_qty: '5%',
   prescription_amount: '6%',
-  prescription_type: '6%',
-  remarks: '10%',
-  created_date: '10%',
-  created_by: '8%'
+  prescription_type: '5%',
+  remarks: '8%',
+  created_date: '8%',
+  created_by: '7%',
+  assigned_pharmacist_contact: '5%'
 };
 
 // 반응형 데이터
@@ -290,7 +317,9 @@ async function fetchCompanies() {
         companyIds.add(record.company_id);
         uniqueCompanies.push({
           id: record.companies.id,
-          company_name: record.companies.company_name
+          company_name: record.companies.company_name,
+          company_group: record.companies.company_group,
+          assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact
         });
       }
     });
@@ -368,7 +397,7 @@ async function fetchPerformanceRecords() {
       .from('performance_records')
       .select(`
         *,
-        companies!inner(company_name),
+        companies!inner(company_name, company_group, assigned_pharmacist_contact),
         clients!inner(name),
         products!inner(product_name, insurance_code, price)
       `)
@@ -411,6 +440,7 @@ async function fetchPerformanceRecords() {
       
       return {
         id: record.id,
+        company_group: record.companies?.company_group || '',
         company_name: record.companies?.company_name || '',
         client_name: record.clients?.name || '',
         prescription_month: record.prescription_month || '',
@@ -430,7 +460,8 @@ async function fetchPerformanceRecords() {
           const minutes = String(date.getMinutes()).padStart(2, '0')
           return `${year}-${month}-${day} ${hours}:${minutes}`
         })() : '',
-        created_by: record.companies?.company_name || '' // 등록자는 업체명으로 표시
+        created_by: record.companies?.company_name || '', // 등록자는 업체명으로 표시
+        assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || ''
       };
     });
     
@@ -462,6 +493,7 @@ const downloadExcel = () => {
   // 엑셀용 데이터 준비
   const excelData = displayRows.value.map((row, index) => ({
     'No': index + 1,
+    '구분': row.company_group || '',
     '업체명': row.company_name || '',
     '거래처명': row.client_name || '',
     '처방월': row.prescription_month || '',
@@ -473,12 +505,14 @@ const downloadExcel = () => {
     '처방구분': row.prescription_type || '',
     '비고': row.remarks || '',
     '등록일시': row.created_date || '',
-    '등록자': row.created_by || ''
+    '등록자': row.created_by || '',
+    '관리자': row.assigned_pharmacist_contact || ''
   }));
 
   // 합계 행 추가
   excelData.push({
     'No': '',
+    '구분': '',
     '업체명': '',
     '거래처명': '',
     '처방월': '',
@@ -490,7 +524,8 @@ const downloadExcel = () => {
     '처방구분': '',
     '비고': '',
     '등록일시': '',
-    '등록자': ''
+    '등록자': '',
+    '관리자': ''
   });
 
   // 워크북 생성
@@ -500,6 +535,7 @@ const downloadExcel = () => {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 6 },   // No
+    { width: 10 },  // 구분
     { width: 15 },  // 업체명
     { width: 20 },  // 거래처명
     { width: 10 },  // 처방월
@@ -511,24 +547,25 @@ const downloadExcel = () => {
     { width: 10 },  // 처방구분
     { width: 15 },  // 비고
     { width: 12 },  // 등록일시
-    { width: 10 }   // 등록자
+    { width: 10 },  // 등록자
+    { width: 10 }   // 관리자
   ];
 
   // 숫자 형식 지정 (천 단위 구분)
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let row = 1; row <= range.e.r; row++) {
-    // 약가 컬럼 (G열)
-    const priceCell = XLSX.utils.encode_cell({ r: row, c: 6 });
+    // 약가 컬럼 (H열)
+    const priceCell = XLSX.utils.encode_cell({ r: row, c: 7 });
     if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
       ws[priceCell].z = '#,##0';
     }
-    // 처방수량 컬럼 (H열)
-    const qtyCell = XLSX.utils.encode_cell({ r: row, c: 7 });
+    // 처방수량 컬럼 (I열)
+    const qtyCell = XLSX.utils.encode_cell({ r: row, c: 8 });
     if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
       ws[qtyCell].z = '#,##0';
     }
-    // 처방액 컬럼 (I열)
-    const amountCell = XLSX.utils.encode_cell({ r: row, c: 8 });
+    // 처방액 컬럼 (J열)
+    const amountCell = XLSX.utils.encode_cell({ r: row, c: 9 });
     if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
       ws[amountCell].z = '#,##0';
     }

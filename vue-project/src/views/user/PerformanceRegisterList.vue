@@ -39,7 +39,7 @@
           </button>
         </div>
       </div>
-      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 340px)" class="custom-table performance-list-table">
+      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 290px)" class="custom-table performance-list-table">
         <template #empty>등록된 실적이 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">

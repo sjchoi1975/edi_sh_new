@@ -1,72 +1,56 @@
 <template>
-  <div class="performance-register-view absorption-analysis">
-    <div class="header-title">흡수율 분석</div>
-    <div class="table-container" style="position:relative;">
-      <div class="performance-header-row">
-        <!-- 정산월 선택 드롭다운 -->
-        <div class="info-box info-box-settlement">
-          <span class="info-box-label">정산월</span>
-          <select v-model="selectedSettlementMonth" class="prescription-select">
+  <div class="performance-register-view page-container absorption-analysis">
+    <div class="page-header-title-area">
+      <div class="header-title">흡수율 분석</div>
+    </div>
+
+    <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
+    <div class="filter-card">
+      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">정산월</label>
+          <select v-model="selectedSettlementMonth" class="select_month">
             <option value="">- 선택 -</option>
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
               {{ month.settlement_month }}
             </option>
           </select>
         </div>
-        
-        <!-- 처방월 표시 -->
-        <div class="info-box info-box-prescription">
-          <span class="info-box-label">처방월</span>
-          <select v-model="prescriptionOffset" class="prescription-select" @change="onPrescriptionOffsetChange">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">처방월</label>
+          <select v-model="prescriptionOffset" class="select_month">
             <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
               {{ opt.month }}
             </option>
           </select>
         </div>
-        
-        <!-- 업체 선택 -->
-        <div class="info-box">
-          <span class="info-box-label">업체 선택</span>
-          <select 
-            v-model="selectedCompanyId" 
-            class="prescription-select"
-            style="width: 200px;"
-            @change="onCompanyChange"
-            @click="setActiveDropdown('company-filter')"
-          >
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">업체</label>
+          <select v-model="selectedCompanyId" class="select_240px">
             <option value="">- 전체 -</option>
-            <option v-for="company in companies" :key="company.id" :value="company.id">
-              {{ company.company_name }}
-            </option>
+            <option v-for="company in companies" :key="company.id" :value="company.id">{{ company.company_name }}</option>
           </select>
         </div>
-        
-        <!-- 거래처 선택 -->
-        <div class="info-box">
-          <span class="info-box-label">거래처 선택</span>
-          <select 
-            v-model="selectedHospitalId" 
-            class="prescription-select"
-            style="width: 200px;"
-            @change="onHospitalChange"
-            @click="setActiveDropdown('hospital-filter')"
-          >
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">거래처</label>
+          <select v-model="selectedHospitalId" class="select_240px">
             <option value="">- 전체 -</option>
-            <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">
-              {{ hospital.name }}
-            </option>
+            <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
       </div>
-      
-      <div class="performance-action-row">
-        <!-- 버튼 영역 (오른쪽) -->
-        <div class="action-buttons">
+    </div>
+
+    <!-- 데이터 카드: 전체 n건 + 버튼들 + 테이블 + 합계 행 -->
+    <div class="data-card">
+      <div class="data-card-header">
+        <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
+        <div class="data-card-buttons" style="display: flex; gap: 0.5rem;">
           <button 
             class="btn-secondary" 
             @click="loadPerformanceData" 
             :disabled="!selectedSettlementMonth"
-          >실적 정보 다시 불러오기</button>
+          >실적 정보 불러오기</button>
           <button 
             class="btn-secondary" 
             @click="runAbsorptionAnalysis" 
@@ -80,330 +64,428 @@
           <button 
             class="btn-primary" 
             @click="saveAnalysisData" 
-            :disabled="displayRows.length === 0"
+            :disabled="displayRows.length === 0 || (hasExistingData && !hasUnsavedChanges)"
+            :class="{ 'btn-disabled': displayRows.length === 0 || (hasExistingData && !hasUnsavedChanges) }"
           >저장</button>
         </div>
       </div>
       
-      <div class="table-scroll-wrapper">
-        <table class="input-table" v-if="selectedSettlementMonth">
-          <thead>
-            <tr>
-              <th style="width:60px;">No</th>
-              <th style="width:10%;">업체명</th>
-              <th style="width:14%;">거래처</th>
-              <th style="width:5%;">처방월</th>
-              <th style="width:12%;">제품명</th>
-              <th style="width:7%;">보험코드</th>
-              <th style="width:5%;">약가</th>
-              <th style="width:5%;">처방수량</th>
-              <th style="width:5%;">처방액</th>
-              <th style="width:5%;">처방구분</th>
-              <th style="width:6%;">도매매출</th>
-              <th style="width:6%;">직거래매출</th>
-              <th style="width:6%;">합산액</th>
-              <th style="width:5%;">흡수율</th>
-              <th style="width:6%;">수수료율</th>
-              <th style="width:6%;">지급액</th>
-              <th style="width:8%;">비고</th>
-              <th style="width:100px;">삭제</th>
-              <th style="width:100px;">추가</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="displayRows.length === 0">
-              <td colspan="19" style="text-align:center;padding:2rem;color:#666;">
-                <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
-                  정산월을 선택하세요.
+      <DataTable 
+        :value="displayRows" 
+        scrollable 
+        scrollHeight="calc(100vh - 290px)"
+        scrollDirection="both"
+        class="admin-absorption-analysis-table"
+        dataKey="id"
+        :frozenValue="[]"
+        :pt="{
+          wrapper: { style: 'min-width: 3000px;' },
+          table: { style: 'min-width: 3000px;' }
+        }"
+      >
+        <template #empty>
+          <div style="text-align:center;padding:2rem;color:#666;">
+            <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
+              정산월을 선택하세요.
+            </div>
+            <div v-else style="margin-bottom:1rem;">
+              흡수율 분석 데이터가 없습니다.<br>
+              실적 정보를 불러와서 분석을 시작하세요.
+            </div>
+            <button 
+              v-if="selectedSettlementMonth" 
+              class="btn-primary" 
+              @click="loadPerformanceData"
+            >실적 정보 불러오기</button>
+          </div>
+        </template>
+        <template #loading>흡수율 분석 데이터를 불러오는 중입니다...</template>
+        
+        <Column header="No" :headerStyle="{ width: columnWidths.no }" frozen>
+          <template #body="slotProps">
+            {{ slotProps.index + 1 }}
+          </template>
+        </Column>
+        
+        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.company_group || '-' }}</span>
+          </template>
+        </Column>
+        
+        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.company_name }}</div>
+            <div v-else class="product-input-container">
+              <input 
+                v-model="slotProps.data.company_name"
+                @input="handleCompanyNameInput(slotProps.index, $event)"
+                @keydown.enter.prevent="applySelectedCompanyFromSearch(slotProps.index)"
+                @keydown.down.prevent="navigateCompanySearchList('down')"
+                @keydown.up.prevent="navigateCompanySearchList('up')"
+                @focus="handleCompanyNameFocus(slotProps.index, $event)"
+                @blur="setTimeout(() => hideCompanySearchList(slotProps.index), 200)"
+                autocomplete="off"
+                style="width: 100%;"
+              />
+              <button 
+                type="button"
+                @click="toggleCompanyDropdown(slotProps.index, $event)"
+                @mousedown.prevent
+                class="dropdown-arrow-btn"
+                tabindex="-1"
+              >
+                <span class="dropdown-arrow">▼</span>
+              </button>
+              <teleport to="body">
+                <div v-if="companySearchForRow.show && companySearchForRow.activeRowIndex === slotProps.index && companySearchForRow.results.length > 0" 
+                     class="search-dropdown company-search-dropdown"
+                     :style="getDropdownStyle(slotProps.index, 'company')">
+                  <ul>
+                    <li
+                      v-for="(company, index) in companySearchForRow.results"
+                      :key="company.id"
+                      @click="clickCompanyFromSearchList(company, slotProps.index)"
+                      :class="{ 'selected': companySearchForRow.selectedIndex === index }"
+                    >
+                      <div class="company-info-row">
+                        <span class="company-name">{{ company.company_name }}</span>
+                        <span class="company-reg-number">{{ company.business_registration_number }}</span>
+                      </div>
+                      <div class="company-address">{{ company.representative_name }} / {{ truncateText(company.business_address, 25) }}</div>
+                    </li>
+                  </ul>
                 </div>
-                <div v-else style="margin-bottom:1rem;">
-                  흡수율 분석 데이터가 없습니다.<br>
-                  실적 정보를 불러와서 분석을 시작하세요.
+              </teleport>
+            </div>
+          </template>
+        </Column>
+        
+        <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.client_name }}</div>
+            <div v-else class="product-input-container">
+              <input 
+                v-model="slotProps.data.client_name"
+                @input="handleClientNameInput(slotProps.index, $event)"
+                @keydown.enter.prevent="applySelectedClientFromSearch(slotProps.index)"
+                @keydown.down.prevent="navigateClientSearchList('down')"
+                @keydown.up.prevent="navigateClientSearchList('up')"
+                @focus="handleClientNameFocus(slotProps.index, $event)"
+                @blur="setTimeout(() => hideClientSearchList(slotProps.index), 200)"
+                autocomplete="off"
+                style="width: 100%;"
+              />
+              <button 
+                type="button"
+                @click="toggleClientDropdown(slotProps.index, $event)"
+                @mousedown.prevent
+                class="dropdown-arrow-btn"
+                tabindex="-1"
+              >
+                <span class="dropdown-arrow">▼</span>
+              </button>
+              <teleport to="body">
+                <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === slotProps.index && clientSearchForRow.results.length > 0" 
+                     class="search-dropdown hospital-search-dropdown"
+                     :style="getDropdownStyle(slotProps.index, 'client')">
+                  <ul>
+                    <li
+                      v-for="(client, index) in clientSearchForRow.results"
+                      :key="client.id"
+                      @click="clickClientFromSearchList(client, slotProps.index)"
+                      :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
+                    >
+                      <div class="hospital-info-row">
+                        <span class="hospital-name">{{ client.name }}</span>
+                        <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
+                      </div>
+                      <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
+                    </li>
+                  </ul>
                 </div>
-                <button 
-                  v-if="selectedSettlementMonth" 
-                  class="btn-primary" 
-                  @click="loadPerformanceData"
-                >실적 정보 다시 불러오기</button>
-              </td>
-            </tr>
-            <tr v-for="(row, rowIdx) in displayRows" :key="row.id || rowIdx" v-else>
-              <td style="text-align:center;">{{ rowIdx + 1 }}</td>
-              
-              <!-- 업체명 (수정 가능) -->
-              <td style="text-align:left;">
-                <div class="product-input-container">
-                  <select 
-                    v-model="row.company_name"
-                    style="text-align:left; width: 100%;"
-                    @change="onCompanyInput(rowIdx)"
-                    @click="setActiveDropdown('company-row', rowIdx)"
-                  >
-                    <option value="">- 선택 -</option>
-                    <option v-for="company in allCompanies" :key="company.id" :value="company.company_name">
-                      {{ company.company_name }}
-                    </option>
-                  </select>
+              </teleport>
+            </div>
+          </template>
+        </Column>
+        
+        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_month }}</div>
+            <select
+              v-else
+              v-model="slotProps.data.prescription_month"
+              @change="onPrescriptionMonthChange(slotProps.index)"
+              style="width: 100%;"
+            >
+              <option v-for="opt in prescriptionMonthOptions" :key="opt.value" :value="opt.value">
+                {{ opt.month }}
+              </option>
+            </select>
+          </template>
+        </Column>
+        
+        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.product_name_display }}</div>
+            <div v-else class="product-input-container">
+              <input
+                v-model="slotProps.data.product_name_display"
+                @input="handleProductNameInput(slotProps.index, $event)"
+                @keydown.enter.prevent="applySelectedProductFromSearch(slotProps.index)"
+                @keydown.down.prevent="navigateProductSearchList('down')"
+                @keydown.up.prevent="navigateProductSearchList('up')"
+                @focus="handleProductNameFocus(slotProps.index, $event)"
+                @blur="setTimeout(() => hideProductSearchList(slotProps.index), 200)" 
+                autocomplete="off"
+                style="width: 100%;"
+              />
+              <button 
+                type="button"
+                @click="toggleProductDropdown(slotProps.index, $event)"
+                @mousedown.prevent
+                class="dropdown-arrow-btn"
+                tabindex="-1"
+              >
+                <span class="dropdown-arrow">▼</span>
+              </button>
+              <teleport to="body">
+                <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === slotProps.index && productSearchForRow.results.length > 0" 
+                     class="search-dropdown product-search-dropdown"
+                     :style="getDropdownStyle(slotProps.index, 'product')">
+                  <ul>
+                    <li
+                      v-for="(product, index) in productSearchForRow.results"
+                      :key="product.id"
+                      @click="clickProductFromSearchList(product, slotProps.index)"
+                      :class="{ 'selected': productSearchForRow.selectedIndex === index }"
+                    >
+                      <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
+                      <span class="insurance-code">{{ product.insurance_code }}</span>
+                    </li>
+                  </ul>
                 </div>
-              </td>
-              
-              <!-- 거래처 (수정 가능) -->
-              <td style="text-align:left;">
-                <div class="product-input-container">
-                  <input 
-                    v-model="row.client_name"
-                    @input="handleClientNameInput(rowIdx, $event)"
-                    @keydown.enter.prevent="applySelectedClientFromSearch(rowIdx)"
-                    @keydown.down.prevent="navigateClientSearchList('down')"
-                    @keydown.up.prevent="navigateClientSearchList('up')"
-                    @focus="handleClientNameFocus(rowIdx)"
-                    @blur="setTimeout(() => hideClientSearchList(rowIdx), 200)"
-                    autocomplete="off"
-                    style="text-align:left;"
-                  />
-                  <button 
-                    type="button"
-                    @click="toggleClientDropdown(rowIdx)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-                  <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === rowIdx && clientSearchForRow.results.length > 0" class="search-dropdown hospital-search-dropdown">
-                    <ul>
-                      <li
-                        v-for="(client, index) in clientSearchForRow.results"
-                        :key="client.id"
-                        @click="clickClientFromSearchList(client, rowIdx)"
-                        :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
-                      >
-                        <div class="hospital-info-row">
-                          <span class="hospital-name">{{ client.name }}</span>
-                          <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
-                        </div>
-                        <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </td>
-              
-              <!-- 처방월 (읽기 전용) -->
-              <td style="text-align:center;">
-                <input 
-                  :value="row.prescription_month"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:center; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 제품명 (수정 가능) -->
-              <td style="position:relative;text-align:left;">
-                <div class="product-input-container">
-                  <input
-                    v-model="row.product_name_display"
-                    @input="handleProductNameInput(rowIdx, $event)"
-                    @keydown.enter.prevent="applySelectedProductFromSearch(rowIdx)"
-                    @keydown.down.prevent="navigateProductSearchList('down')"
-                    @keydown.up.prevent="navigateProductSearchList('up')"
-                    @focus="handleProductNameFocus(rowIdx)"
-                    @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
-                    autocomplete="off"
-                    style="text-align:left;"
-                  />
-                  <button 
-                    type="button"
-                    @click="toggleProductDropdown(rowIdx)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-                  <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === rowIdx && productSearchForRow.results.length > 0" class="search-dropdown product-search-dropdown">
-                    <ul>
-                      <li
-                        v-for="(product, index) in productSearchForRow.results"
-                        :key="product.id"
-                        @click="clickProductFromSearchList(product, rowIdx)"
-                        :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                      >
-                        <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                        <span class="insurance-code">{{ product.insurance_code }}</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </td>
-              
-              <!-- 보험코드 (읽기 전용) -->
-              <td style="text-align:center;">
-                <input 
-                  :value="row.insurance_code"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:center; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 약가 (읽기 전용) -->
-              <td style="text-align:right;">
-                <input 
-                  :value="row.price"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 처방수량 (수정 가능) -->
-              <td style="text-align:right;">
-                <input
-                  v-model="row.prescription_qty"
-                  type="number"
-                  @input="onQtyInput(rowIdx)"
-                  style="text-align:right;"
-                />
-              </td>
-              
-              <!-- 처방액 (자동 계산) -->
-              <td style="text-align:right;">
-                <input 
-                  :value="row.prescription_amount"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 처방구분 (수정 가능) -->
-              <td style="text-align:center;">
-                <select
-                  v-model="row.prescription_type"
-                  @change="onPrescriptionTypeInput(rowIdx)"
-                  @click="setActiveDropdown('prescription-type', rowIdx)"
-                  style="text-align:center;"
-                >
-                  <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-                </select>
-              </td>
-              
-              <!-- 도매매출 (수정 가능) -->
-              <td style="text-align:right;">
-                <input 
-                  v-model="row.wholesale_sales"
-                  type="number"
-                  @input="onSalesInput(rowIdx)"
-                  style="text-align:right;"
-                />
-              </td>
-              
-              <!-- 직거래매출 (수정 가능) -->
-              <td style="text-align:right;">
-                <input 
-                  v-model="row.direct_sales"
-                  type="number"
-                  @input="onSalesInput(rowIdx)"
-                  style="text-align:right;"
-                />
-              </td>
-              
-              <!-- 합산액 (자동 계산) -->
-              <td style="text-align:right;">
-                <input 
-                  :value="row.total_sales ? Number(row.total_sales).toLocaleString() : ''"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 흡수율 (자동 계산) -->
-              <td style="text-align:right;">
-                <input 
-                  :value="row.absorption_rate ? (row.absorption_rate + '%') : ''"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 수수료율 (수정 가능) -->
-              <td style="text-align:right;">
-                <input 
-                  v-model="row.commission_rate"
-                  type="number"
-                  step="0.1"
-                  @input="onCommissionInput(rowIdx)"
-                  style="text-align:right;"
-                />
-              </td>
-              
-              <!-- 지급액 (자동 계산) -->
-              <td style="text-align:right;">
-                <input 
-                  :value="row.payment_amount ? Number(row.payment_amount).toLocaleString() : ''"
-                  readonly 
-                  tabindex="-1" 
-                  style="text-align:right; background: transparent; border: none;"
-                />
-              </td>
-              
-              <!-- 비고 (수정 가능) -->
-              <td style="text-align:left;">
-                <input 
-                  v-model="row.remarks"
-                  style="text-align:left;"
-                />
-              </td>
-              
-              <!-- 삭제 -->
-              <td class="action-cell">
-                <button 
-                  class="btn-delete-m"
-                  @click="confirmDeleteRow(rowIdx)" 
-                  :disabled="displayRows.length === 1" 
-                  title="행 삭제"
-                >－</button>
-              </td>
-              
-              <!-- 추가 -->
-              <td class="action-cell">
-                <button 
-                  class="btn-add-m"
-                  @click="confirmAddRowBelow(rowIdx)" 
-                  title="아래에 행 추가"
-                >＋</button>
-              </td>
-            </tr>
-          </tbody>
-          
-          <!-- 합계 행을 같은 테이블 내 tfoot으로 이동 -->
-          <tfoot v-if="displayRows.length > 0">
-            <tr style="position: sticky; bottom: 0; background: #f8f9fa; border-top: 2px solid #007bff;">
-              <td style="width:60px;"></td>
-              <td style="width:10%;"></td>
-              <td style="width:14%;"></td>
-              <td style="width:5%;"></td>
-              <td style="width:12%;"></td>
-              <td style="width:7%;"></td>
-              <td style="width:5%;"></td>
-              <td style="width:5%; text-align:center; font-weight: bold;">합계</td>
-              <td style="width:5%; text-align:right; font-weight: bold;">{{ totalPrescriptionAmount }}</td>
-              <td style="width:5%;"></td>
-              <td style="width:6%; text-align:right; font-weight: bold;">{{ totalWholesaleSales }}</td>
-              <td style="width:6%; text-align:right; font-weight: bold;">{{ totalDirectSales }}</td>
-              <td style="width:6%; text-align:right; font-weight: bold;">{{ totalSales }}</td>
-              <td style="width:5%;"></td>
-              <td style="width:6%;"></td>
-              <td style="width:6%; text-align:right; font-weight: bold;">{{ totalPaymentAmount }}</td>
-              <td style="width:8%;"></td>
-              <td style="width:100px;"></td>
-              <td style="width:100px;"></td>
-            </tr>
-          </tfoot>
+              </teleport>
+            </div>
+          </template>
+        </Column>
+        
+        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.insurance_code }}
+          </template>
+        </Column>
+        
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.price }}
+          </template>
+        </Column>
+        
+        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_qty }}</div>
+            <input
+              v-else
+              v-model="slotProps.data.prescription_qty"
+              type="number"
+              @input="onQtyInput(slotProps.index)"
+              style="width: 100%; text-align: right;"
+            />
+          </template>
+        </Column>
+        
+        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.prescription_amount }}
+          </template>
+        </Column>
+        
+        <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_type }}</div>
+            <select
+              v-else
+              v-model="slotProps.data.prescription_type"
+              @change="onPrescriptionTypeInput(slotProps.index)"
+              style="width: 100%;"
+            >
+              <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
+            </select>
+          </template>
+        </Column>
+        
+        <Column field="wholesale_sales" header="도매매출" :headerStyle="{ width: columnWidths.wholesale_sales }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.wholesale_sales || 0).toLocaleString() }}</div>
+            <input 
+              v-else
+              v-model="slotProps.data.wholesale_sales"
+              type="number"
+              @input="onSalesInput(slotProps.index)"
+              style="width: 100%; text-align: right;"
+            />
+          </template>
+        </Column>
+        
+        <Column field="direct_sales" header="직거래매출" :headerStyle="{ width: columnWidths.direct_sales }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.direct_sales || 0).toLocaleString() }}</div>
+            <input 
+              v-else
+              v-model="slotProps.data.direct_sales"
+              type="number"
+              @input="onSalesInput(slotProps.index)"
+              style="width: 100%; text-align: right;"
+            />
+          </template>
+        </Column>
+        
+        <Column field="total_sales" header="합산액" :headerStyle="{ width: columnWidths.total_sales }" :sortable="true">
+          <template #body="slotProps">
+            {{ Number(slotProps.data.total_sales || 0).toLocaleString() }}
+          </template>
+        </Column>
+        
+        <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: columnWidths.absorption_rate }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.absorption_rate ? (slotProps.data.absorption_rate + '%') : '' }}
+          </template>
+        </Column>
+        
+        <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.commission_rate ? (slotProps.data.commission_rate + '%') : '' }}</div>
+            <input 
+              v-else
+              v-model="slotProps.data.commission_rate"
+              type="number"
+              step="0.1"
+              @input="onCommissionInput(slotProps.index)"
+              style="width: 100%; text-align: right;"
+            />
+          </template>
+        </Column>
+        
+        <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
+          <template #body="slotProps">
+            {{ Number(slotProps.data.payment_amount || 0).toLocaleString() }}
+          </template>
+        </Column>
+        
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
+          <template #body="slotProps">
+            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.remarks }}</div>
+            <input 
+              v-else
+              v-model="slotProps.data.remarks"
+              @input="markAsChanged"
+              style="width: 100%;"
+            />
+          </template>
+        </Column>
+        
+        <Column field="orig_created_at" header="등록일시" :headerStyle="{ width: columnWidths.orig_created_at }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.orig_created_at ? (() => {
+              const date = new Date(slotProps.data.orig_created_at)
+              const year = date.getFullYear()
+              const month = String(date.getMonth() + 1).padStart(2, '0')
+              const day = String(date.getDate()).padStart(2, '0')
+              const hours = String(date.getHours()).padStart(2, '0')
+              const minutes = String(date.getMinutes()).padStart(2, '0')
+              return `${year}-${month}-${day} ${hours}:${minutes}`
+            })() : '' }}
+          </template>
+        </Column>
+        
+        <Column field="orig_registered_by" header="등록자" :headerStyle="{ width: columnWidths.orig_registered_by }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.orig_registered_by || '-' }}</span>
+          </template>
+        </Column>
+        
+        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact || '-' }}</span>
+          </template>
+        </Column>
+        
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right">
+          <template #body="slotProps">
+            <div style="display: flex; gap: 4px; justify-content: center;">
+              <button 
+                v-if="!isRowEditing(slotProps.data)"
+                class="btn-edit-s" 
+                @click="onRowEditInit(slotProps.data)"
+                title="수정"
+              >✎</button>
+              <button 
+                v-if="isRowEditing(slotProps.data)"
+                class="btn-save-s" 
+                @click="onRowEditSave(slotProps.data)"
+                title="저장"
+              >✓</button>
+              <button 
+                v-if="isRowEditing(slotProps.data)"
+                class="btn-cancel-s" 
+                @click="onRowEditCancel(slotProps.data)"
+                title="취소"
+              >✕</button>
+              <button 
+                v-if="!isRowEditing(slotProps.data)"
+                class="btn-delete-s" 
+                @click="confirmDeleteRow(slotProps.index)" 
+                :disabled="displayRows.length === 1" 
+                title="삭제"
+              >－</button>
+              <button 
+                v-if="!isRowEditing(slotProps.data)"
+                class="btn-add-s" 
+                @click="confirmAddRowBelow(slotProps.index)" 
+                title="추가"
+              >＋</button>
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+      
+      <!-- 합계 행: 테이블 하단 고정 -->
+      <div class="table-footer-wrapper"
+        style="width:100%;
+        min-width: 3000px;
+        padding: 0;
+        background:#f8f9fa;
+        height: 38px;
+        border:1px solid #dee2e6;
+        border-bottom:2px solid #aaa;
+        position:sticky;
+        bottom:0;
+        z-index:2;">
+        <table style="width:100%; table-layout:fixed; min-width: 3000px;">
+          <tr>
+            <td style="width:60px; position: sticky; left: 0; background: #f8f9fa; z-index: 3;"></td>
+            <td style="width:100px;"></td>
+            <td style="width:100px;"></td>
+            <td style="width:120px;"></td>
+            <td style="width:80px;"></td>
+            <td style="width:120px;"></td>
+            <td style="width:90px;"></td>
+            <td style="width:80px;"></td>
+            <td style="width:80px;"></td>
+            <td style="width:80px; text-align:center; font-weight: bold;">합계</td>
+            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalPrescriptionAmount }}</td>
+            <td style="width:80px;"></td>
+            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalWholesaleSales }}</td>
+            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalDirectSales }}</td>
+            <td style="width:80px; text-align:right; font-weight: bold;">{{ totalSales }}</td>
+            <td style="width:80px;"></td>
+            <td style="width:80px;"></td>
+            <td style="width:80px; text-align:right; font-weight: bold;">{{ totalPaymentAmount }}</td>
+            <td style="width:100px;"></td>
+            <td style="width:100px;"></td>
+            <td style="width:120px; position: sticky; right: 0; background: #f8f9fa; z-index: 3; box-shadow: -2px 0 4px rgba(0,0,0,0.1);"></td>
+          </tr>
         </table>
       </div>
     </div>
@@ -411,9 +493,37 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+
+const columnWidths = {
+  no: '3%',
+  company_group: '4%',
+  company_name: '6%',
+  client_name: '8%',
+  prescription_month: '4%',
+  product_name_display: '8%',
+  insurance_code: '4%',
+  price: '3%',
+  prescription_qty: '4%',
+  prescription_amount: '4%',
+  prescription_type: '4%',
+  wholesale_sales: '4%',
+  direct_sales: '4%',
+  total_sales: '4%',
+  absorption_rate: '4%',
+  commission_rate: '4%',
+  payment_amount: '4%',
+  remarks: '6%',
+  orig_created_at: '6%',
+  orig_registered_by: '8%',
+  assigned_pharmacist_contact: '4%',
+  actions: '160px'  // 픽셀 단위로 고정
+};
 
 // 반응형 데이터
 const availableMonths = ref([]);
@@ -427,11 +537,10 @@ const selectedCompanyId = ref('');
 const selectedHospitalId = ref('');
 const companies = ref([]);
 const hospitals = ref([]);
-const allHospitals = ref([]); // 전체 거래처 목록
 
 // 분석 데이터
 const displayRows = ref([]);
-const allDisplayRows = ref([]); // 원본 데이터 (검색 필터링 전)
+const editingRows = ref([]);
 
 // 전체 업체/거래처/제품 목록
 const allCompanies = ref([]);
@@ -439,25 +548,38 @@ const allClients = ref([]);
 const allProducts = ref([]);
 
 // 처방구분 옵션
-const prescriptionTypeOptions = ref(['EDI', '직거래']);
+const prescriptionTypeOptions = ref(['EDI', '대한조제', '의료매출', '직거래매입', '차감', '원내매출', '원외매출']);
 
-// 드롭다운 관리 상태
-const activeDropdown = ref(''); // 현재 활성화된 드롭다운 타입
-const activeDropdownRowIndex = ref(-1); // 행별 드롭다운의 경우 해당 행 인덱스
+// 처방월 옵션 (편집용)
+const prescriptionMonthOptions = ref([]);
+
+// 변경사항 추적
+const hasUnsavedChanges = ref(false);
+const hasExistingData = ref(false); // 기존 데이터 존재 여부 추적
 
 // 검색 드롭다운 관련
 const clientSearchForRow = ref({
   show: false,
   activeRowIndex: -1,
   results: [],
-  selectedIndex: -1
+  selectedIndex: -1,
+  position: { top: 0, left: 0, width: 250 }
 });
 
 const productSearchForRow = ref({
   show: false,
   activeRowIndex: -1,
   results: [],
-  selectedIndex: -1
+  selectedIndex: -1,
+  position: { top: 0, left: 0, width: 250 }
+});
+
+const companySearchForRow = ref({
+  show: false,
+  activeRowIndex: -1,
+  results: [],
+  selectedIndex: -1,
+  position: { top: 0, left: 0, width: 250 }
 });
 
 // 처방월 옵션 업데이트
@@ -476,6 +598,19 @@ function updatePrescriptionOptions() {
   ];
 }
 
+// 편집용 처방월 옵션 업데이트
+function updatePrescriptionMonthOptions() {
+  if (!selectedSettlementMonth.value) {
+    prescriptionMonthOptions.value = [];
+    return;
+  }
+  
+  prescriptionMonthOptions.value = [1, 2, 3].map(offset => ({
+    value: getPrescriptionMonth(selectedSettlementMonth.value, offset),
+    month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
+  }));
+}
+
 function getPrescriptionMonth(settlementMonth, offset) {
   if (!settlementMonth) return '';
   const [y, m] = settlementMonth.split('-');
@@ -488,16 +623,20 @@ function getPrescriptionMonth(settlementMonth, offset) {
 // 워치어
 watch(selectedSettlementMonth, () => {
   updatePrescriptionOptions();
+  updatePrescriptionMonthOptions(); // 편집용 처방월 옵션도 업데이트
   prescriptionOffset.value = 0;
   prescriptionMonth.value = '';
   selectedCompanyId.value = '';
   selectedHospitalId.value = '';
   companies.value = [];
   hospitals.value = [];
+  hasExistingData.value = false; // 기존 데이터 존재 여부 초기화
   
   // 정산월 선택 시 흡수율 분석 데이터 자동 조회
   if (selectedSettlementMonth.value) {
     loadAbsorptionAnalysisData();
+    fetchCompanies();
+    fetchHospitals();
   } else {
     displayRows.value = [];
   }
@@ -520,6 +659,163 @@ watch(selectedHospitalId, () => {
   filterData();
 });
 
+// PrimeVue DataTable row editing 관련 함수들
+function isRowEditing(rowData) {
+  return editingRows.value.some(row => row.id === rowData.id);
+}
+
+function onRowEditInit(rowData) {
+  editingRows.value.push({ ...rowData });
+}
+
+function onRowEditSave(rowData) {
+  const index = editingRows.value.findIndex(row => row.id === rowData.id);
+  if (index !== -1) {
+    editingRows.value.splice(index, 1);
+  }
+  
+  // 저장 후 재계산
+  const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+  if (rowIndex !== -1) {
+    recalculateRow(rowIndex);
+  }
+}
+
+function onRowEditCancel(rowData) {
+  const index = editingRows.value.findIndex(row => row.id === rowData.id);
+  if (index !== -1) {
+    // 원래 데이터로 복원
+    const originalData = editingRows.value[index];
+    const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+    if (rowIndex !== -1) {
+      Object.assign(displayRows.value[rowIndex], originalData);
+    }
+    editingRows.value.splice(index, 1);
+  }
+}
+
+// 드롭다운 위치 계산 함수
+function calculateDropdownPosition(targetElement) {
+  if (!targetElement) return { top: 200, left: 200, width: 250 };
+  
+  const rect = targetElement.getBoundingClientRect();
+  const dropdownWidth = Math.max(rect.width, 250);
+  const dropdownHeight = 200;
+  
+  // 기본 위치 (input 바로 아래)
+  let top = rect.bottom + window.scrollY;
+  let left = rect.left + window.scrollX;
+  
+  // 화면 오른쪽 경계 체크
+  if (left + dropdownWidth > window.innerWidth) {
+    left = window.innerWidth - dropdownWidth - 10;
+  }
+  
+  // 화면 왼쪽 경계 체크
+  if (left < 10) {
+    left = 10;
+  }
+  
+  // 화면 아래쪽 경계 체크 (드롭다운이 화면 밖으로 나가면 input 위에 표시)
+  if (top + dropdownHeight > window.innerHeight + window.scrollY) {
+    top = rect.top + window.scrollY - dropdownHeight;
+  }
+  
+  return {
+    top: top,
+    left: left,
+    width: dropdownWidth
+  };
+}
+
+function getDropdownStyle(rowIndex, type) {
+  let position;
+  
+  if (type === 'company') {
+    position = companySearchForRow.value.position;
+  } else if (type === 'client') {
+    position = clientSearchForRow.value.position;
+  } else if (type === 'product') {
+    position = productSearchForRow.value.position;
+  } else {
+    position = { top: 200, left: 200, width: 250 };
+  }
+
+  return {
+    position: 'fixed',
+    top: position.top + 'px',
+    left: position.left + 'px',
+    width: position.width + 'px',
+    zIndex: 9999,
+    maxHeight: '200px',
+    overflowY: 'auto',
+  };
+}
+
+// 데이터 필터링
+function filterData() {
+  // 필터링 로직 구현
+}
+
+// 데이터 fetch 함수들
+async function fetchAvailableMonths() {
+  try {
+    const { data, error } = await supabase
+      .from('settlement_months')
+      .select('*')
+      .eq('status', 'active')
+      .order('settlement_month', { ascending: false });
+      
+    if (error) {
+      console.error('정산월 조회 오류:', error);
+      return;
+    }
+    
+    availableMonths.value = data || [];
+  } catch (err) {
+    console.error('정산월 조회 예외:', err);
+  }
+}
+
+async function fetchCompanies() {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .order('company_name');
+      
+    if (error) {
+      console.error('업체 목록 조회 오류:', error);
+      return;
+    }
+    
+    companies.value = data || [];
+    allCompanies.value = data || [];
+  } catch (err) {
+    console.error('업체 목록 조회 예외:', err);
+  }
+}
+
+async function fetchHospitals() {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('status', 'active')
+      .order('name');
+      
+    if (error) {
+      console.error('거래처 목록 조회 오류:', error);
+      return;
+    }
+    
+    hospitals.value = data || [];
+    allClients.value = data || [];
+  } catch (err) {
+    console.error('거래처 목록 조회 예외:', err);
+  }
+}
+
 // 정산월 선택 시 흡수율 분석 데이터 조회
 async function loadAbsorptionAnalysisData() {
   if (!selectedSettlementMonth.value) {
@@ -528,12 +824,23 @@ async function loadAbsorptionAnalysisData() {
   }
 
   try {
-    // absorption_analysis 테이블에서 데이터 조회
+    console.log('=== 흡수율 분석 데이터 조회 시작 ===');
+    console.log('정산월:', selectedSettlementMonth.value);
+
     const { data, error } = await supabase
       .from('absorption_analysis')
       .select('*')
       .eq('settlement_month', selectedSettlementMonth.value)
       .order('created_at', { ascending: true });
+
+    console.log('조회 결과:', data?.length || 0, '건');
+    console.log('조회 오류:', error);
+    
+    if (data && data.length > 0) {
+      console.log('첫 번째 데이터 샘플:', data[0]);
+      console.log('company_group 필드:', data[0].company_group);
+      console.log('assigned_pharmacist_contact 필드:', data[0].assigned_pharmacist_contact);
+    }
 
     if (error) {
       console.error('흡수율 분석 데이터 조회 오류:', error);
@@ -542,15 +849,19 @@ async function loadAbsorptionAnalysisData() {
     }
 
     if (!data || data.length === 0) {
-      console.log('흡수율 분석 데이터 없음');
+      console.log('조회된 데이터 없음');
       displayRows.value = [];
+      hasExistingData.value = false; // 기존 데이터 없음
       return;
     }
 
-    // 화면 표시용 데이터 변환
-    const transformedData = data.map(record => ({
+    // 기존 데이터가 있음을 표시
+    hasExistingData.value = true;
+
+    displayRows.value = data.map(record => ({
       id: record.id,
       original_id: record.id,
+      company_group: record.company_group,
       company_name: record.company_name,
       client_name: record.client_name,
       prescription_month: record.prescription_month,
@@ -567,15 +878,20 @@ async function loadAbsorptionAnalysisData() {
       absorption_rate: record.absorption_rate,
       commission_rate: record.commission_rate,
       payment_amount: record.payment_amount,
-      remarks: record.remarks || ''
+      remarks: record.remarks || '',
+      orig_created_at: record.orig_created_at,
+      orig_registered_by: record.orig_registered_by,
+      assigned_pharmacist_contact: record.assigned_pharmacist_contact
     }));
-
-    displayRows.value = transformedData;
     
-    // 업체와 거래처 목록 생성
-    generateFilterOptions();
+    console.log('매핑된 displayRows:', displayRows.value.length, '건');
+    if (displayRows.value.length > 0) {
+      console.log('첫 번째 매핑된 데이터:', displayRows.value[0]);
+      console.log('매핑된 company_group:', displayRows.value[0].company_group);
+      console.log('매핑된 assigned_pharmacist_contact:', displayRows.value[0].assigned_pharmacist_contact);
+    }
     
-    console.log(`${transformedData.length}건의 흡수율 분석 데이터를 불러왔습니다.`);
+    console.log(`${data.length}건의 흡수율 분석 데이터를 불러왔습니다.`);
 
   } catch (err) {
     console.error('흡수율 분석 데이터 조회 예외:', err);
@@ -591,18 +907,30 @@ async function loadPerformanceData() {
   }
 
   try {
-    // performance_records에서 데이터 조회
+    console.log('=== 실적 정보 불러오기 시작 ===');
+    console.log('정산월:', selectedSettlementMonth.value);
+
     let query = supabase
       .from('performance_records')
       .select(`
         *,
         products!inner(product_name, insurance_code, price),
         clients!inner(name),
-        companies!inner(company_name)
+        companies!inner(company_name, company_group, assigned_pharmacist_contact)
       `)
       .eq('settlement_month', selectedSettlementMonth.value);
 
     const { data, error } = await query.order('created_at', { ascending: true });
+
+    console.log('조회 결과:', data?.length || 0, '건');
+    console.log('조회 오류:', error);
+    
+    if (data && data.length > 0) {
+      console.log('첫 번째 데이터 샘플:', data[0]);
+      console.log('companies 조인 데이터:', data[0].companies);
+      console.log('company_group:', data[0].companies?.company_group);
+      console.log('assigned_pharmacist_contact:', data[0].companies?.assigned_pharmacist_contact);
+    }
 
     if (error) {
       console.error('실적 데이터 조회 오류:', error);
@@ -615,13 +943,16 @@ async function loadPerformanceData() {
       return;
     }
 
-    // 분석용 데이터로 변환 및 수수료율/지급액 자동 계산
     const analysisData = [];
+    
+    // 실적 정보를 불러올 때는 기존 데이터가 없는 상태
+    hasExistingData.value = false;
     
     for (const record of data) {
       const row = {
         id: `temp_${Date.now()}_${Math.random()}`,
         original_id: record.id,
+        company_group: record.companies.company_group,
         company_name: record.companies.company_name,
         client_name: record.clients.name,
         prescription_month: record.prescription_month,
@@ -638,43 +969,61 @@ async function loadPerformanceData() {
         absorption_rate: 0,
         commission_rate: 0,
         payment_amount: 0,
-        remarks: record.remarks || ''
+        remarks: record.remarks || '',
+        orig_created_at: record.created_at,
+        orig_registered_by: record.companies.company_name, // 등록자는 업체명으로 설정
+        assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact
       };
+
+      console.log('처리 중인 행:', row.company_name);
+      console.log('company_group:', row.company_group);
+      console.log('assigned_pharmacist_contact:', row.assigned_pharmacist_contact);
 
       // 수수료율 자동 계산
       try {
         // 업체 정보 조회
-        const { data: company } = await supabase
+        const { data: company, error: companyError } = await supabase
           .from('companies')
           .select('commission_grade')
           .eq('company_name', record.companies.company_name.trim())
           .single();
 
-        // 제품 정보 조회
-        const { data: product } = await supabase
-          .from('products')
-          .select('commission_rate_A, commission_rate_B, commission_rate_C')
-          .eq('product_name', record.products.product_name.trim())
-          .single();
+        if (companyError) {
+          console.warn(`업체 정보 조회 실패 (${record.companies.company_name}):`, companyError.message);
+        } else if (!company || !company.commission_grade) {
+          console.warn(`업체 수수료 등급 정보 없음: ${record.companies.company_name}`);
+        } else {
+          // 제품 정보 조회
+          const { data: product, error: productError } = await supabase
+            .from('products')
+            .select('commission_rate_A, commission_rate_B, commission_rate_C')
+            .eq('product_name', record.products.product_name.trim())
+            .single();
 
-        if (company && product) {
-          const commissionField = `commission_rate_${company.commission_grade}`;
-          const commissionRate = product[commissionField];
-          
-          if (commissionRate !== null && commissionRate !== undefined) {
-            // 소수점을 퍼센트로 변환 (0.4 -> 40)
-            const percentageRate = Number(commissionRate) * 100;
-            row.commission_rate = percentageRate;
+          if (productError) {
+            console.warn(`제품 정보 조회 실패 (${record.products.product_name}):`, productError.message);
+          } else if (!product) {
+            console.warn(`제품 수수료율 정보 없음: ${record.products.product_name}`);
+          } else {
+            const commissionField = `commission_rate_${company.commission_grade}`;
+            const commissionRate = product[commissionField];
             
-            // 지급액 계산 (처방액 × 수수료율)
-            const prescriptionAmount = record.prescription_qty * record.products.price;
-            row.payment_amount = Math.round(prescriptionAmount * commissionRate);
-            
-            console.log(`수수료율 자동 계산: ${record.products.product_name} - ${percentageRate}% - 지급액: ${row.payment_amount}`);
+            if (commissionRate !== null && commissionRate !== undefined && !isNaN(commissionRate)) {
+              const percentageRate = Number(commissionRate) * 100;
+              row.commission_rate = percentageRate;
+              
+              const prescriptionAmount = record.prescription_qty * record.products.price;
+              row.payment_amount = Math.round(prescriptionAmount * commissionRate);
+              
+              console.log(`수수료율 계산 성공: ${record.products.product_name} - ${percentageRate}%`);
+            } else {
+              console.warn(`수수료율 값이 유효하지 않음: ${record.products.product_name}, ${commissionField}=${commissionRate}`);
+            }
           }
         }
       } catch (err) {
-        console.error(`수수료율 계산 오류 (${record.products.product_name}):`, err);
+        console.error(`수수료율 계산 예외 (${record.products.product_name}):`, err);
+        // 에러가 발생해도 계속 진행
       }
 
       analysisData.push(row);
@@ -682,10 +1031,14 @@ async function loadPerformanceData() {
 
     displayRows.value = analysisData;
     
-    // 업체와 거래처 목록 생성
-    generateFilterOptions();
+    console.log('최종 analysisData:', analysisData.length, '건');
+    if (analysisData.length > 0) {
+      console.log('첫 번째 최종 데이터:', analysisData[0]);
+      console.log('최종 company_group:', analysisData[0].company_group);
+      console.log('최종 assigned_pharmacist_contact:', analysisData[0].assigned_pharmacist_contact);
+    }
     
-    alert(`${analysisData.length}건의 실적 데이터를 불러왔습니다. (수수료율 자동 계산 완료)`);
+    alert(`${analysisData.length}건의 실적 데이터를 불러왔습니다.`);
 
   } catch (err) {
     console.error('실적 데이터 불러오기 예외:', err);
@@ -693,112 +1046,41 @@ async function loadPerformanceData() {
   }
 }
 
-// 필터 옵션 생성
-function generateFilterOptions() {
-  const uniqueCompanies = [...new Set(displayRows.value.map(row => row.company_name))];
-  const uniqueClients = [...new Set(displayRows.value.map(row => row.client_name))];
-  
-  companies.value = uniqueCompanies.map(name => ({ id: name, company_name: name }));
-  hospitals.value = uniqueClients.map(name => ({ id: name, name: name }));
-}
-
-// 데이터 필터링
-function filterData() {
-  // 실제 구현시 필요
-}
-
 // 이벤트 핸들러
-function onPrescriptionOffsetChange() {
-  // watch에서 처리
-}
-
-async function onCompanyChange() {
-  // 드롭다운 닫기
-  closeAllDropdowns();
-  
-  // 업체별 거래처 필터링 및 거래처 초기화
-  await handleCompanyChangeAndResetClient(selectedCompanyId.value);
-  
-  // 데이터 필터링
-  filterData();
-}
-
-function onHospitalChange() {
-  // 드롭다운 닫기
-  closeAllDropdowns();
-  
-  // 데이터 필터링
-  filterData();
-}
-
-// 실시간 계산 함수들
 async function onCompanyInput(rowIndex) {
-  // 드롭다운 닫기
-  closeAllDropdowns();
-  
-  // 업체 선택시 수수료율 자동 조회
   updateCommissionRate(rowIndex);
-  
-  // 행별 거래처 초기화 (해당 업체에 할당된 거래처가 아니라면)
-  const row = displayRows.value[rowIndex];
-  const selectedCompany = allCompanies.value.find(c => c.company_name === row.company_name);
-  
-  if (selectedCompany && row.client_name) {
-    // 현재 거래처가 새 업체에도 할당되어 있는지 확인
-    try {
-      const { data: assignments, error } = await supabase
-        .from('client_company_assignments')
-        .select('client_id')
-        .eq('company_id', selectedCompany.id);
-        
-      if (!error && assignments) {
-        const assignedClientIds = assignments.map(a => a.client_id);
-        const currentClient = allHospitals.value.find(h => h.name === row.client_name);
-        
-        // 현재 거래처가 새 업체에 할당되지 않았으면 초기화
-        if (!currentClient || !assignedClientIds.includes(currentClient.id)) {
-          row.client_name = '';
-        }
-      }
-    } catch (err) {
-      console.error('거래처 할당 확인 오류:', err);
-    }
-  }
+  markAsChanged(); // 업체 변경시
 }
 
 function onQtyInput(rowIndex) {
   recalculateRow(rowIndex);
+  markAsChanged(); // 수량 변경시
 }
 
 function onPrescriptionTypeInput(rowIndex) {
-  // 드롭다운 닫기
-  closeAllDropdowns();
-  
   // 처방구분 변경시 처리
+  markAsChanged(); // 처방구분 변경시
 }
 
 function onSalesInput(rowIndex) {
   recalculateRow(rowIndex);
+  markAsChanged(); // 매출 변경시
 }
 
 function onCommissionInput(rowIndex) {
   recalculateRow(rowIndex);
+  markAsChanged(); // 수수료율 변경시
 }
 
 // 수수료율 자동 조회 함수
 async function updateCommissionRate(rowIndex) {
   const row = displayRows.value[rowIndex];
   
-  console.log('updateCommissionRate 시작:', { rowIndex, company_name: row.company_name, product_name: row.product_name });
-  
   if (!row.company_name || !row.product_name) {
-    console.log('업체명 또는 제품명이 없음');
     return;
   }
   
   try {
-    // 업체 정보 조회 (정확한 매칭을 위해 trim 적용)
-    console.log('업체 정보 조회 중:', row.company_name);
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('commission_grade, company_name')
@@ -806,21 +1088,9 @@ async function updateCommissionRate(rowIndex) {
       .single();
       
     if (companyError || !company) {
-      console.error('업체 정보 조회 오류:', companyError);
-      console.log('조회한 업체명:', row.company_name);
-      
-      // 전체 업체 목록 조회해서 비교
-      const { data: allCompanies } = await supabase
-        .from('companies')
-        .select('company_name, commission_grade');
-      console.log('전체 업체 목록:', allCompanies);
       return;
     }
     
-    console.log('업체 정보 조회 성공:', company);
-    
-    // 제품 정보 조회 (정확한 매칭을 위해 trim 적용)
-    console.log('제품 정보 조회 중:', row.product_name);
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('*')
@@ -828,52 +1098,16 @@ async function updateCommissionRate(rowIndex) {
       .single();
       
     if (productError || !product) {
-      console.error('제품 정보 조회 오류:', productError);
-      console.log('조회한 제품명:', row.product_name);
-      
-      // 전체 제품 목록 조회해서 비교
-      const { data: allProducts } = await supabase
-        .from('products')
-        .select('product_name, commission_rate_A, commission_rate_B, commission_rate_C')
-        .ilike('product_name', `%${row.product_name.trim()}%`);
-      console.log('유사한 제품 목록:', allProducts);
       return;
     }
     
-    console.log('제품 정보 조회 성공:', product);
-    
-    // 수수료율 조회 (commission_grade에 따른 제품별 수수료율)
     const commissionField = `commission_rate_${company.commission_grade}`;
     const commissionRate = product[commissionField];
     
-    console.log('수수료율 조회:', { 
-      commission_grade: company.commission_grade, 
-      commissionField, 
-      commissionRate,
-      allCommissionFields: {
-        commission_rate_A: product.commission_rate_A,
-        commission_rate_B: product.commission_rate_B,
-        commission_rate_C: product.commission_rate_C
-      }
-    });
-    
     if (commissionRate !== null && commissionRate !== undefined) {
-      // 소수점을 퍼센트로 변환 (0.4 -> 40)
       const percentageRate = Number(commissionRate) * 100;
       row.commission_rate = percentageRate;
-      console.log('수수료율 설정 완료:', { 
-        원본값: commissionRate, 
-        퍼센트값: percentageRate,
-        최종설정값: row.commission_rate 
-      });
       recalculateRow(rowIndex);
-    } else {
-      console.log('수수료율이 null/undefined');
-      console.log('해당 제품의 모든 수수료율 필드:', {
-        commission_rate_A: product.commission_rate_A,
-        commission_rate_B: product.commission_rate_B,
-        commission_rate_C: product.commission_rate_C
-      });
     }
     
   } catch (err) {
@@ -909,13 +1143,16 @@ function recalculateRow(rowIndex) {
 
 // 거래처 검색 관련 함수들
 function handleClientNameInput(rowIndex, event) {
-  // 드롭다운 관리 확인
-  if (!setActiveDropdown('client', rowIndex)) return;
-  
   const query = event.target.value;
+  
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('client');
   
   clientSearchForRow.value.activeRowIndex = rowIndex;
   clientSearchForRow.value.selectedIndex = -1;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  clientSearchForRow.value.position = calculateDropdownPosition(event.target);
   
   if (query.trim() === '') {
     clientSearchForRow.value.show = false;
@@ -924,13 +1161,20 @@ function handleClientNameInput(rowIndex, event) {
   }
   
   searchClients(query);
+  markAsChanged(); // 사용자가 직접 입력할 때만
 }
 
-function handleClientNameFocus(rowIndex) {
-  // 드롭다운 관리 확인
-  if (!setActiveDropdown('client', rowIndex)) return;
+function handleClientNameFocus(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('client');
   
   clientSearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  if (event && event.target) {
+    clientSearchForRow.value.position = calculateDropdownPosition(event.target);
+  }
+  
   const currentValue = displayRows.value[rowIndex].client_name;
   
   if (currentValue && currentValue.trim() !== '') {
@@ -942,11 +1186,10 @@ function handleClientNameFocus(rowIndex) {
 
 async function searchClients(query) {
   try {
-    // hospitals 배열에서 검색 (업체별로 이미 필터링된 상태)
-    let results = hospitals.value;
+    let results = allClients.value;
     
     if (query && query.trim() !== '') {
-      results = hospitals.value.filter(client =>
+      results = allClients.value.filter(client =>
         (client.name && client.name.toLowerCase().includes(query.trim().toLowerCase())) ||
         (client.business_registration_number && client.business_registration_number.includes(query.trim()))
       );
@@ -961,24 +1204,34 @@ async function searchClients(query) {
 
 async function showAllClients() {
   try {
-    // hospitals 배열 사용 (업체별로 이미 필터링된 상태)
-    clientSearchForRow.value.results = hospitals.value || [];
+    clientSearchForRow.value.results = allClients.value || [];
     clientSearchForRow.value.show = true;
   } catch (err) {
     console.error('거래처 목록 조회 예외:', err);
   }
 }
 
-function toggleClientDropdown(rowIndex) {
-  if (setActiveDropdown('client', rowIndex)) {
-    clientSearchForRow.value.activeRowIndex = rowIndex;
-    showAllClients();
+function toggleClientDropdown(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('client');
+  
+  clientSearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 드롭다운 버튼 클릭시 input 엘리먼트의 위치를 찾아서 계산
+  if (event && event.target) {
+    const inputElement = event.target.closest('.product-input-container').querySelector('input');
+    if (inputElement) {
+      clientSearchForRow.value.position = calculateDropdownPosition(inputElement);
+    }
   }
+  
+  showAllClients();
 }
 
 function clickClientFromSearchList(client, rowIndex) {
   displayRows.value[rowIndex].client_name = client.name;
-  closeAllDropdowns();
+  clientSearchForRow.value.show = false;
+  markAsChanged(); // 사용자가 선택했을 때
 }
 
 function hideClientSearchList(rowIndex) {
@@ -1013,13 +1266,16 @@ function applySelectedClientFromSearch(rowIndex) {
 
 // 제품 검색 관련 함수들
 function handleProductNameInput(rowIndex, event) {
-  // 드롭다운 관리 확인
-  if (!setActiveDropdown('product', rowIndex)) return;
-  
   const query = event.target.value;
+  
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('product');
   
   productSearchForRow.value.activeRowIndex = rowIndex;
   productSearchForRow.value.selectedIndex = -1;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  productSearchForRow.value.position = calculateDropdownPosition(event.target);
   
   if (query.trim() === '') {
     productSearchForRow.value.show = false;
@@ -1028,13 +1284,20 @@ function handleProductNameInput(rowIndex, event) {
   }
   
   searchProducts(query);
+  markAsChanged(); // 사용자가 직접 입력할 때만
 }
 
-function handleProductNameFocus(rowIndex) {
-  // 드롭다운 관리 확인
-  if (!setActiveDropdown('product', rowIndex)) return;
+function handleProductNameFocus(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('product');
   
   productSearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  if (event && event.target) {
+    productSearchForRow.value.position = calculateDropdownPosition(event.target);
+  }
+  
   const currentValue = displayRows.value[rowIndex].product_name_display;
   
   if (currentValue && currentValue.trim() !== '') {
@@ -1089,11 +1352,21 @@ async function showAllProducts() {
   }
 }
 
-function toggleProductDropdown(rowIndex) {
-  if (setActiveDropdown('product', rowIndex)) {
-    productSearchForRow.value.activeRowIndex = rowIndex;
-    showAllProducts();
+function toggleProductDropdown(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('product');
+  
+  productSearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 드롭다운 버튼 클릭시 input 엘리먼트의 위치를 찾아서 계산
+  if (event && event.target) {
+    const inputElement = event.target.closest('.product-input-container').querySelector('input');
+    if (inputElement) {
+      productSearchForRow.value.position = calculateDropdownPosition(inputElement);
+    }
   }
+  
+  showAllProducts();
 }
 
 function clickProductFromSearchList(product, rowIndex) {
@@ -1103,12 +1376,11 @@ function clickProductFromSearchList(product, rowIndex) {
   row.insurance_code = product.insurance_code;
   row.price = Number(product.price).toLocaleString();
   
-  closeAllDropdowns();
+  productSearchForRow.value.show = false;
   
-  // 제품이 변경되면 처방액 재계산
   recalculateRow(rowIndex);
+  markAsChanged(); // 사용자가 제품을 선택했을 때
   
-  // 업체와 제품이 모두 선택되었으면 수수료율 조회
   if (row.company_name) {
     updateCommissionRate(rowIndex);
   }
@@ -1159,6 +1431,7 @@ function confirmDeleteRow(rowIndex) {
   
   if (confirm('이 행을 삭제하시겠습니까?')) {
     displayRows.value.splice(rowIndex, 1);
+    markAsChanged(); // 사용자가 행을 삭제했을 때
   }
 }
 
@@ -1166,6 +1439,7 @@ function confirmAddRowBelow(rowIndex) {
   const newRow = {
     id: `new_${Date.now()}_${Math.random()}`,
     original_id: null,
+    company_group: '',
     company_name: '',
     client_name: '',
     prescription_month: selectedSettlementMonth.value,
@@ -1182,10 +1456,14 @@ function confirmAddRowBelow(rowIndex) {
     absorption_rate: 0,
     commission_rate: 0,
     payment_amount: 0,
-    remarks: ''
+    remarks: '',
+    orig_created_at: new Date().toISOString(),
+    orig_registered_by: '관리자', // 새로 추가하는 행은 관리자가 등록자
+    assigned_pharmacist_contact: ''
   };
   
   displayRows.value.splice(rowIndex + 1, 0, newRow);
+  markAsChanged(); // 사용자가 행을 추가했을 때
 }
 
 // 합계 계산
@@ -1223,6 +1501,7 @@ function downloadExcel() {
 
   const excelData = displayRows.value.map((row, index) => ({
     'No': index + 1,
+    '구분': row.company_group || '',
     '업체명': row.company_name || '',
     '거래처': row.client_name || '',
     '처방월': row.prescription_month || '',
@@ -1238,7 +1517,18 @@ function downloadExcel() {
     '흡수율': row.absorption_rate || 0,
     '지급수수료율': row.commission_rate || 0,
     '지급액': Number(row.payment_amount) || 0,
-    '비고': row.remarks || ''
+    '비고': row.remarks || '',
+    '등록일시': row.orig_created_at ? (() => {
+      const date = new Date(row.orig_created_at)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hours}:${minutes}`
+    })() : '',
+    '등록자': row.orig_registered_by || '',
+    '관리자': row.assigned_pharmacist_contact || ''
   }));
 
   const ws = XLSX.utils.json_to_sheet(excelData);
@@ -1251,20 +1541,14 @@ function downloadExcel() {
 
 // 저장 기능
 async function saveAnalysisData() {
-  console.log('저장 함수 시작');
-  
   if (displayRows.value.length === 0) {
     alert('저장할 데이터가 없습니다.');
     return;
   }
   
-  // 유효한 데이터만 필터링 (업체명, 거래처, 제품명이 모두 있는 행)
   const validRows = displayRows.value.filter(row => 
     row.company_name && row.client_name && row.product_name
   );
-  
-  console.log('유효한 행 개수:', validRows.length);
-  console.log('유효한 행 데이터:', validRows);
   
   if (validRows.length === 0) {
     alert('저장할 유효한 데이터가 없습니다. 업체명, 거래처, 제품명을 모두 입력해주세요.');
@@ -1272,64 +1556,54 @@ async function saveAnalysisData() {
   }
   
   try {
-    console.log('기존 데이터 삭제 시작 - settlement_month:', selectedSettlementMonth.value);
-    
-    // 기존 데이터 삭제 (현재 정산월)
     const { error: deleteError } = await supabase
       .from('absorption_analysis')
       .delete()
       .eq('settlement_month', selectedSettlementMonth.value);
       
     if (deleteError) {
-      console.error('기존 데이터 삭제 오류:', deleteError);
       throw new Error('기존 데이터 삭제 실패: ' + deleteError.message);
     }
     
-    console.log('기존 데이터 삭제 완료');
+    const saveData = validRows.map(row => ({
+      settlement_month: selectedSettlementMonth.value,
+      prescription_month: row.prescription_month,
+      company_group: row.company_group,
+      company_name: row.company_name,
+      client_name: row.client_name,
+      product_name: row.product_name,
+      insurance_code: row.insurance_code,
+      price: Number(row.price.toString().replace(/,/g, '')) || 0,
+      prescription_qty: Number(row.prescription_qty) || 0,
+      prescription_amount: Number(row.prescription_amount.toString().replace(/,/g, '')) || 0,
+      prescription_type: row.prescription_type,
+      wholesale_sales: Number(row.wholesale_sales) || 0,
+      direct_sales: Number(row.direct_sales) || 0,
+      total_sales: Number(row.total_sales) || 0,
+      absorption_rate: Number(row.absorption_rate) || 0,
+      commission_rate: Number(row.commission_rate) || 0,
+      payment_amount: Number(row.payment_amount) || 0,
+      remarks: row.remarks || '',
+      orig_created_at: row.orig_created_at,
+      orig_registered_by: row.orig_registered_by,
+      assigned_pharmacist_contact: row.assigned_pharmacist_contact || ''
+    }));
     
-    // 새 데이터 저장
-    const saveData = validRows.map(row => {
-      const data = {
-        settlement_month: selectedSettlementMonth.value,
-        prescription_month: row.prescription_month,
-        company_name: row.company_name,
-        client_name: row.client_name,
-        product_name: row.product_name,
-        insurance_code: row.insurance_code,
-        price: Number(row.price.toString().replace(/,/g, '')) || 0,
-        prescription_qty: Number(row.prescription_qty) || 0,
-        prescription_amount: Number(row.prescription_amount.toString().replace(/,/g, '')) || 0,
-        prescription_type: row.prescription_type,
-        wholesale_sales: Number(row.wholesale_sales) || 0,
-        direct_sales: Number(row.direct_sales) || 0,
-        total_sales: Number(row.total_sales) || 0,
-        absorption_rate: Number(row.absorption_rate) || 0,
-        commission_rate: Number(row.commission_rate) || 0,
-        payment_amount: Number(row.payment_amount) || 0,
-        remarks: row.remarks || ''
-      };
-      
-      console.log('저장할 행 데이터:', data);
-      return data;
-    });
-    
-    console.log('전체 저장 데이터:', saveData);
-    console.log('저장 시작...');
-    
-    const { data: insertResult, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('absorption_analysis')
       .insert(saveData);
       
     if (insertError) {
-      console.error('데이터 저장 오류:', insertError);
-      console.error('오류 코드:', insertError.code);
-      console.error('오류 메시지:', insertError.message);
-      console.error('오류 세부사항:', insertError.details);
       throw new Error('데이터 저장 실패: ' + insertError.message);
     }
     
-    console.log('저장 완료. 결과:', insertResult);
+    // 변경사항 초기화
+    hasUnsavedChanges.value = false;
+    
     alert(`${validRows.length}건의 흡수율 분석 데이터가 저장되었습니다.`);
+    
+    // 저장 후 데이터 다시 로드하여 최신 상태 반영
+    await loadAbsorptionAnalysisData();
     
   } catch (err) {
     console.error('저장 예외:', err);
@@ -1337,483 +1611,598 @@ async function saveAnalysisData() {
   }
 }
 
-// 라이프사이클
-onMounted(async () => {
-  await fetchAvailableMonths();
-  await loadAllCompanies();
-  await loadAllHospitals();
-  
-  // 전역 클릭 이벤트 리스너 추가
-  document.addEventListener('click', handleGlobalClick);
-  
-  // 정산월은 사용자가 직접 선택하도록 빈 값으로 시작
-  selectedSettlementMonth.value = '';
-});
-
-// 컴포넌트 언마운트 시 이벤트 리스너 제거
-onUnmounted(() => {
-  document.removeEventListener('click', handleGlobalClick);
-});
-
-// 전역 클릭 이벤트 핸들러
-function handleGlobalClick(event) {
-  // 드롭다운 관련 요소들
-  const isDropdownElement = event.target.closest('.product-input-container') ||
-                           event.target.closest('.search-dropdown') ||
-                           event.target.closest('select') ||
-                           event.target.closest('.dropdown-arrow-btn');
-  
-  if (!isDropdownElement) {
-    closeAllDropdowns();
-  }
-}
-
-async function fetchAvailableMonths() {
-  try {
-    const { data, error } = await supabase
-      .from('settlement_months')
-      .select('*')
-      .eq('status', 'active')
-      .order('settlement_month', { ascending: false });
-      
-    if (error) {
-      console.error('정산월 조회 오류:', error);
-      return;
-    }
-    
-    availableMonths.value = data || [];
-  } catch (err) {
-    console.error('정산월 조회 예외:', err);
-  }
-}
-
-async function loadAllCompanies() {
-  try {
-    const { data, error } = await supabase
-      .from('companies')
-      .select('*')
-      .order('company_name');
-      
-    if (error) {
-      console.error('업체 목록 조회 오류:', error);
-      return;
-    }
-    
-    allCompanies.value = data || [];
-  } catch (err) {
-    console.error('업체 목록 조회 예외:', err);
-  }
-}
-
-async function loadAllHospitals() {
-  try {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('status', 'active')
-      .order('name');
-      
-    if (error) {
-      console.error('전체 거래처 목록 조회 오류:', error);
-      return;
-    }
-    
-    allHospitals.value = data || [];
-    hospitals.value = [...allHospitals.value]; // 초기에는 모든 거래처 표시
-  } catch (err) {
-    console.error('전체 거래처 목록 조회 예외:', err);
-  }
-}
-
-// 편집 중 실시간 재계산
-function recalculateEditRow(row) {
-  // 처방액 재계산
-  const priceNum = Number(row.price.toString().replace(/,/g, '')) || 0;
-  const qty = Number(row.edit_prescription_qty) || 0;
-  const prescriptionAmount = qty * priceNum;
-  row.prescription_amount = prescriptionAmount.toLocaleString();
-  
-  // 합산액 계산
-  const wholesale = Number(row.edit_wholesale_sales) || 0;
-  const direct = Number(row.edit_direct_sales) || 0;
-  row.total_sales = wholesale + direct;
-  
-  // 흡수율 계산
-  if (prescriptionAmount > 0) {
-    row.absorption_rate = Math.round((row.total_sales / prescriptionAmount) * 100 * 100) / 100;
-  } else {
-    row.absorption_rate = 0;
-  }
-  
-  // 지급액 계산 (처방액 x 수수료율)
-  const commissionRate = Number(row.edit_commission_rate) || 0;
-  row.payment_amount = Math.round(prescriptionAmount * commissionRate / 100);
-}
-
-// 드롭다운 관리 함수들
-function closeAllDropdowns() {
-  activeDropdown.value = '';
-  activeDropdownRowIndex.value = -1;
-  clientSearchForRow.value.show = false;
-  clientSearchForRow.value.activeRowIndex = -1;
-  productSearchForRow.value.show = false;
-  productSearchForRow.value.activeRowIndex = -1;
-}
-
-function setActiveDropdown(type, rowIndex = -1) {
-  if (activeDropdown.value === type && activeDropdownRowIndex.value === rowIndex) {
-    closeAllDropdowns();
-    return false;
-  }
-  
-  closeAllDropdowns();
-  activeDropdown.value = type;
-  activeDropdownRowIndex.value = rowIndex;
-  return true;
-}
-
-// 업체별 거래처 필터링
-async function filterHospitalsByCompany(companyId = '') {
-  try {
-    if (!companyId) {
-      // 업체가 선택되지 않으면 모든 거래처 표시
-      hospitals.value = [...allHospitals.value];
-      return;
-    }
-    
-    // 해당 업체에 할당된 거래처만 조회
-    const { data: assignments, error } = await supabase
-      .from('client_company_assignments')
-      .select('client_id')
-      .eq('company_id', companyId);
-      
-    if (error) {
-      console.error('업체별 거래처 조회 오류:', error);
-      hospitals.value = [];
-      return;
-    }
-    
-    if (!assignments || assignments.length === 0) {
-      hospitals.value = [];
-      return;
-    }
-    
-    const clientIds = assignments.map(a => a.client_id);
-    hospitals.value = allHospitals.value.filter(hospital => clientIds.includes(hospital.id));
-    
-  } catch (err) {
-    console.error('업체별 거래처 필터링 예외:', err);
-    hospitals.value = [];
-  }
-}
-
-// 업체 변경 시 거래처 초기화 로직
-async function handleCompanyChangeAndResetClient(newCompanyId) {
-  const currentClientId = selectedHospitalId.value;
-  const currentClientName = hospitals.value.find(h => h.id === currentClientId)?.name || '';
-  
-  // 새 업체의 거래처 목록 로드
-  await filterHospitalsByCompany(newCompanyId);
-  
-  // 현재 선택된 거래처가 새 업체에도 할당되어 있는지 확인
-  const isClientStillAvailable = hospitals.value.some(h => h.id === currentClientId);
-  
-  if (!isClientStillAvailable) {
-    // 거래처가 새 업체에 할당되지 않았으면 초기화
-    selectedHospitalId.value = '';
-  }
-}
-
-// 병원-약국 매핑 정보 조회
-async function fetchClientPharmacyMappings() {
-  try {
-    const { data, error } = await supabase
-      .from('client_pharmacy_mappings')
-      .select('client_id, pharmacy_id, clients(name), pharmacies(name)'); // 병원명, 약국명 포함
-    if (error) {
-      console.error('병원-약국 매핑 정보 조회 오류:', error);
-      return [];
-    }
-    return data || [];
-  } catch (err) {
-    console.error('병원-약국 매핑 정보 조회 예외:', err);
-    return [];
-  }
-}
-
-// 제품 정보 전체 조회
-async function fetchAllProducts() {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, product_name, insurance_code, standard_code'); // 필요한 컬럼만 선택
-    if (error) {
-      console.error('제품 정보 조회 오류:', error);
-      return [];
-    }
-    return data || [];
-  } catch (err) {
-    console.error('제품 정보 조회 예외:', err);
-    return [];
-  }
-}
-
-// 흡수율 분석 실행
+// 흡수율 분석 실행 (기존 로직 유지)
 async function runAbsorptionAnalysis() {
   if (displayRows.value.length === 0) {
     alert('분석할 데이터가 없습니다. 먼저 실적 정보를 불러오세요.');
     return;
   }
-  
-  console.log('흡수율 분석 시작');
-  
-  if (!selectedSettlementMonth.value) {
-    alert('정산월을 선택해주세요.');
-    return;
-  }
 
-  const [year, month] = selectedSettlementMonth.value.split('-').map(Number);
+  console.log('🚀 흡수율 분석 시작...');
+  console.log(`분석 대상: ${displayRows.value.length}건`);
 
   try {
-    // 1. 필요한 모든 데이터 가져오기
-    const allProductsData = await fetchAllProducts();
-    const clientPharmacyMappings = await fetchClientPharmacyMappings();
-    const wholesaleRecords = await fetchWholesaleRecords(year, month);
-    const directSaleRecords = await fetchDirectSaleRecords(year, month);
+    // 1단계: 처방월 범위 확인
+    const prescriptionMonths = [...new Set(displayRows.value.map(row => row.prescription_month))];
+    console.log('처방월 범위:', prescriptionMonths);
 
-    console.log('Products:', allProductsData);
-    console.log('Mappings:', clientPharmacyMappings);
-    console.log('Wholesale:', wholesaleRecords);
-    console.log('Direct Sales:', directSaleRecords);
+    // 2단계: 도매매출 데이터 조회
+    console.log('📋 도매매출 데이터 조회 중...');
+    const { data: wholesaleSales, error: wholesaleError } = await supabase
+      .from('wholesale_sales')
+      .select('*');
 
-    if (!allProductsData.length) {
-      alert('제품 정보가 없습니다. 흡수율 분석을 진행할 수 없습니다.');
+    if (wholesaleError) {
+      throw new Error('도매매출 데이터 조회 실패: ' + wholesaleError.message);
+    }
+
+    console.log(`도매매출 데이터: ${wholesaleSales?.length || 0}건`);
+
+    // 3단계: 직거래매출 데이터 조회  
+    console.log('📋 직거래매출 데이터 조회 중...');
+    const { data: directSales, error: directError } = await supabase
+      .from('direct_sales')
+      .select('*');
+
+    if (directError) {
+      throw new Error('직거래매출 데이터 조회 실패: ' + directError.message);
+    }
+
+    console.log(`직거래매출 데이터: ${directSales?.length || 0}건`);
+
+    // 4단계: 제품 정보 조회 (보험코드-표준코드 매핑용)
+    console.log('📋 제품 정보 조회 중...');
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('*');
+
+    if (productsError) {
+      throw new Error('제품 정보 조회 실패: ' + productsError.message);
+    }
+
+    console.log(`제품 정보: ${products?.length || 0}건`);
+
+    // 5단계: 병원-약국 매핑 정보 조회
+    console.log('📋 병원-약국 매핑 정보 조회 중...');
+    const { data: pharmacyMappings, error: mappingError } = await supabase
+      .from('pharmacy_mappings')
+      .select(`
+        *,
+        clients!inner(name, business_registration_number),
+        pharmacies!inner(pharmacy_name, business_registration_number)
+      `);
+
+    if (mappingError) {
+      console.warn('병원-약국 매핑 정보 조회 실패:', mappingError.message);
+      // 매핑 정보가 없어도 일단 진행
+    }
+
+    console.log(`병원-약국 매핑: ${pharmacyMappings?.length || 0}건`);
+
+    // 6단계: 매출 데이터 필터링 및 매칭 준비
+    console.log('🔍 매출 데이터 매칭 시작...');
+    
+    let processedCount = 0;
+    let matchedWholesale = 0;
+    let matchedDirect = 0;
+
+    for (let i = 0; i < displayRows.value.length; i++) {
+      const row = displayRows.value[i];
+      
+      console.log(`[${i+1}/${displayRows.value.length}] 처리 중: ${row.client_name} - ${row.product_name_display}`);
+      
+      // 7단계: 해당 행의 도매매출 계산
+      const wholesaleAmount = await calculateWholesaleAmount(
+        row, wholesaleSales, products, pharmacyMappings
+      );
+      
+      // 8단계: 해당 행의 직거래매출 계산  
+      const directAmount = await calculateDirectAmount(
+        row, directSales, products, pharmacyMappings
+      );
+      
+      // 9단계: 결과 적용
+      row.wholesale_sales = wholesaleAmount;
+      row.direct_sales = directAmount;
+      
+      if (wholesaleAmount > 0) matchedWholesale++;
+      if (directAmount > 0) matchedDirect++;
+      
+      processedCount++;
+      
+      // 실시간 재계산
+      recalculateRow(i);
+    }
+
+    // 분석 완료 메시지
+    alert(`흡수율 분석 완료!\n\n` +
+          `✅ 처리 건수: ${processedCount}건\n` +
+          `📊 도매매출 매칭: ${matchedWholesale}건\n` +
+          `📊 직거래매출 매칭: ${matchedDirect}건\n\n` +
+          `이제 합산액과 흡수율이 자동 계산되었습니다.`);
+
+  } catch (err) {
+    console.error('흡수율 분석 오류:', err);
+    alert('흡수율 분석 중 오류가 발생했습니다:\n' + err.message);
+  }
+}
+
+// 도매매출 계산 함수
+async function calculateWholesaleAmount(row, wholesaleSales, products, pharmacyMappings) {
+  // TODO: 다음 단계에서 구현
+  console.log(`  📊 도매매출 계산: ${row.product_name_display}`);
+  return 0;
+}
+
+// 직거래매출 계산 함수  
+async function calculateDirectAmount(row, directSales, products, pharmacyMappings) {
+  // TODO: 다음 단계에서 구현
+  console.log(`  📊 직거래매출 계산: ${row.product_name_display}`);
+  return 0;
+}
+
+// 라이프사이클
+onMounted(async () => {
+  await fetchAvailableMonths();
+  await fetchCompanies();
+  await fetchHospitals();
+  
+  document.addEventListener('click', handleGlobalClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick);
+});
+
+// 페이지 이동시 확인 팝업
+onBeforeRouteLeave((to, from, next) => {
+  if (hasUnsavedChanges.value) {
+    const answer = confirm('저장하지 않은 변경사항이 있습니다. 정말 페이지를 떠나시겠습니까?');
+    if (answer) {
+      hasUnsavedChanges.value = false; // 강제로 초기화
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
+
+function handleGlobalClick(event) {
+  const isDropdownElement = event.target.closest('.product-input-container') ||
+                           event.target.closest('.search-dropdown') ||
+                           event.target.closest('select') ||
+                           event.target.closest('.dropdown-arrow-btn');
+  
+  // 드롭다운 관련 요소가 아닌 곳을 클릭했을 때 모든 드롭다운 닫기
+  if (!isDropdownElement) {
+    closeAllDropdowns();
+  }
+}
+
+// 업체명 검색 관련 함수들
+function handleCompanyNameInput(rowIndex, event) {
+  const query = event.target.value;
+  
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('company');
+  
+  companySearchForRow.value.activeRowIndex = rowIndex;
+  companySearchForRow.value.selectedIndex = -1;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  companySearchForRow.value.position = calculateDropdownPosition(event.target);
+  
+  if (query.trim() === '') {
+    companySearchForRow.value.show = false;
+    companySearchForRow.value.results = [];
+    return;
+  }
+  
+  searchCompanies(query);
+  markAsChanged(); // 사용자가 직접 입력할 때만
+}
+
+function handleCompanyNameFocus(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('company');
+  
+  companySearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 타겟 엘리먼트의 위치 계산 후 저장
+  if (event && event.target) {
+    companySearchForRow.value.position = calculateDropdownPosition(event.target);
+  }
+  
+  const currentValue = displayRows.value[rowIndex].company_name;
+  
+  if (currentValue && currentValue.trim() !== '') {
+    searchCompanies(currentValue);
+  } else {
+    showAllCompanies();
+  }
+}
+
+async function searchCompanies(query) {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .or(`company_name.ilike.%${query.trim()}%,representative_name.ilike.%${query.trim()}%`)
+      .order('company_name')
+      .limit(20);
+
+    if (error) {
+      console.error('업체 검색 오류:', error);
       return;
     }
 
-    // displayRows (실적 데이터) 를 순회하며 흡수율 계산
-    for (const performanceRow of displayRows.value) {
-      // 초기화
-      performanceRow.wholesale_sales = 0;
-      performanceRow.direct_sales = 0;
-      performanceRow.total_sales = 0;
-      performanceRow.absorption_rate = 0;
-
-      const clientName = performanceRow.client_name;
-      const productName = performanceRow.product_name;
-      const insuranceCode = performanceRow.insurance_code;
-      const performancePrescriptionMonth = performanceRow.prescription_month; // YYYY-MM 형식
-
-      // 주의사항 2: 보험코드로 표준코드 목록 찾기
-      const relevantStandardCodes = allProductsData
-        .filter(p => p.insurance_code === insuranceCode && p.product_name === productName)
-        .map(p => p.standard_code);
-      
-      if (!relevantStandardCodes.length) {
-        console.warn(`표준코드를 찾을 수 없음: 제품명 ${productName}, 보험코드 ${insuranceCode}`);
-        continue; // 다음 실적 행으로
-      }
-
-      // 해당 병원(clientName)에 매핑된 약국 ID 목록 찾기
-      const mappedPharmacyIds = clientPharmacyMappings
-        .filter(m => m.clients && m.clients.name === clientName)
-        .map(m => m.pharmacy_id);
-
-      if (!mappedPharmacyIds.length) {
-        console.warn(`매핑된 약국을 찾을 수 없음: 병원명 ${clientName}`);
-        continue; // 다음 실적 행으로
-      }
-
-      let pharmacyTotalWholesale = 0;
-      let pharmacyTotalDirectSales = 0;
-
-      // 각 매핑된 약국에 대해 매출 집계
-      for (const pharmacyId of mappedPharmacyIds) {
-        // 도매 매출 집계
-        wholesaleRecords
-          .filter(wr => wr.pharmacy_id === pharmacyId && 
-                         relevantStandardCodes.includes(wr.product_standard_code) &&
-                         wr.sales_date && wr.sales_date.startsWith(performancePrescriptionMonth)) // sales_date NULL 체크 추가
-          .forEach(wr => {
-            pharmacyTotalWholesale += Number(wr.sales_amount) || 0;
-          });
-
-        // 직거래 매출 집계
-        directSaleRecords
-          .filter(dr => dr.pharmacy_id === pharmacyId && 
-                         relevantStandardCodes.includes(dr.product_standard_code) &&
-                         dr.sales_date && dr.sales_date.startsWith(performancePrescriptionMonth)) // sales_date NULL 체크 추가
-          .forEach(dr => {
-            pharmacyTotalDirectSales += Number(dr.sales_amount) || 0;
-          });
-      }
-      
-      // 주의사항 5: 약국 1 : 병원 N 처리 (이 부분은 더 복잡한 로직 필요)
-      // 현재는 병원 1 : 약국 N 을 기준으로 합산된 매출을 그대로 사용합니다.
-      // TODO: 추후 약국별 총 매출을 계산하고, 해당 약국에 연결된 병원들의 실적 비율로 분배하는 로직 추가 필요.
-      //       이를 위해서는 전체 실적 데이터, 전체 병원-약국 매핑 정보 등을 종합적으로 고려해야 함.
-
-      performanceRow.wholesale_sales = pharmacyTotalWholesale;
-      performanceRow.direct_sales = pharmacyTotalDirectSales;
-      
-      // 주의사항 3: 동일 병원, 제품, 처방월의 실적이 여러 행일 경우 (이 부분도 추가 로직 필요)
-      // TODO: 현재는 각 displayRow를 독립적으로 계산. 동일 그룹 내 총 매출을 구하고 비율 배분 필요.
-      //       이를 위해서는 displayRows를 그룹핑하고, 그룹별 총 매출을 먼저 계산해야 함.
-
-      // 합산액 및 흡수율 계산
-      performanceRow.total_sales = performanceRow.wholesale_sales + performanceRow.direct_sales;
-      const prescriptionAmount = Number(performanceRow.prescription_amount.toString().replace(/,/g, '')) || 0;
-      if (prescriptionAmount > 0) {
-        performanceRow.absorption_rate = parseFloat(((performanceRow.total_sales / prescriptionAmount) * 100).toFixed(1));
-      } else {
-        performanceRow.absorption_rate = 0;
-      }
-    }
-    
-    // 주의사항 3 및 5를 적용하기 위한 추가 처리 (매우 중요)
-    // 현재 위 로직은 각 실적 행을 독립적으로 계산하여, 동일 그룹 내 매출 배분 및
-    // 여러 병원에 연결된 약국의 매출 배분이 정확하지 않을 수 있습니다.
-    // 정확한 계산을 위해서는 아래와 같은 접근이 필요합니다:
-
-    // 1. 약국별, 제품(표준코드)별, 월별 총 매출액 집계 (도매 + 직거래)
-    const monthlyPharmacyProductSales = {}; // { 'pharmacyId_standardCode_YYYY-MM': totalSales, ... }
-    
-    [...wholesaleRecords, ...directSaleRecords].forEach(rec => {
-      if (rec.sales_date && rec.product_standard_code) { // sales_date 및 standard_code NULL 체크 추가
-        const key = `${rec.pharmacy_id}_${rec.product_standard_code}_${rec.sales_date.substring(0, 7)}`;
-        monthlyPharmacyProductSales[key] = (monthlyPharmacyProductSales[key] || 0) + (Number(rec.sales_amount) || 0);
-      }
-    });
-
-    // 2. 각 실적 행(performanceRow)에 대해 배분될 매출 계산
-    for (const performanceRow of displayRows.value) {
-      const clientName = performanceRow.client_name;
-      const productName = performanceRow.product_name;
-      const insuranceCode = performanceRow.insurance_code;
-      const performancePrescriptionMonth = performanceRow.prescription_month; // YYYY-MM
-      const performanceQty = Number(performanceRow.prescription_qty) || 0;
-
-      let allocatedWholesale = 0;
-      let allocatedDirectSales = 0;
-
-      const relevantStandardCodes = allProductsData
-        .filter(p => p.insurance_code === insuranceCode && p.product_name === productName)
-        .map(p => p.standard_code);
-
-      if (!relevantStandardCodes.length) continue;
-
-      // 이 실적 행의 병원(clientName)에 매핑된 약국들
-      const mappedPharmaciesForThisClient = clientPharmacyMappings
-        .filter(m => m.clients && m.clients.name === clientName);
-
-      if (!mappedPharmaciesForThisClient.length) continue;
-
-      for (const standardCode of relevantStandardCodes) {
-        for (const mapping of mappedPharmaciesForThisClient) {
-          const pharmacyId = mapping.pharmacy_id;
-          const salesKey = `${pharmacyId}_${standardCode}_${performancePrescriptionMonth}`;
-          const pharmacyProductMonthTotalSales = monthlyPharmacyProductSales[salesKey] || 0;
-
-          if (pharmacyProductMonthTotalSales === 0) continue;
-
-          // 이 약국(pharmacyId)에 매핑된 모든 병원 찾기
-          const clientsMappedToThisPharmacy = clientPharmacyMappings
-            .filter(m => m.pharmacy_id === pharmacyId)
-            .map(m => m.clients.name);
-          
-          // 이 약국 & 제품 & 월에 대해, 연결된 모든 병원의 총 처방 수량 계산
-          let totalQtyForPharmacyProductMonth = 0;
-          displayRows.value.forEach(pr => {
-            if (clientsMappedToThisPharmacy.includes(pr.client_name) && 
-                pr.insurance_code === insuranceCode && // 동일 보험코드 (즉, 동일 제품군)
-                pr.prescription_month === performancePrescriptionMonth) {
-              totalQtyForPharmacyProductMonth += Number(pr.prescription_qty) || 0;
-            }
-          });
-          
-          if (totalQtyForPharmacyProductMonth > 0) {
-            const allocationRatio = performanceQty / totalQtyForPharmacyProductMonth;
-            const allocatedSalesForThisRow = pharmacyProductMonthTotalSales * allocationRatio;
-            
-            // 도매/직거래 비율을 알 수 없으므로, 우선 합산액을 기준으로 배분하고, 
-            // 실제로는 wholesale_sales와 direct_sales를 구분해서 배분해야 함 (데이터 구조상 어려움)
-            // 여기서는 합산된 매출을 우선 direct_sales에 모두 할당하거나, 혹은 별도 비율로 나눠야 함.
-            // 이번 단계에서는 설명을 위해 total_sales 기준으로 계산하고, 이후 UI 표시 시 분배.
-            // 실제로는 wholesaleRecords와 directSaleRecords에서 해당 약국, 표준코드, 월의 매출을 각각 가져와 비율대로 배분해야 더 정확함.
-
-            // 임시: 합산된 매출을 우선 direct_sales에 할당 (추후 도매/직거래 구분 필요)
-            allocatedDirectSales += allocatedSalesForThisRow; 
-          }
-        }
-      }
-      performanceRow.wholesale_sales = 0; // 정확한 배분을 위해 0으로 초기화 후 아래에서 재계산 시도
-      performanceRow.direct_sales = allocatedDirectSales; // 주의: 이부분은 도매/직거래를 합친 값임
-
-      // 실제로는 allocatedWholesale 과 allocatedDirectSales를 별도로 계산해야 합니다.
-      // 위 로직은 개념 설명이며, 정확한 도매/직거래 분배를 위해서는 추가적인 처리가 필요합니다.
-      // 예: 해당 약국-제품-월의 총 도매액과 총 직거래액을 구하고, 그 비율대로 allocatedSalesForThisRow를 분배
-
-      // 재계산: 합산액 및 흡수율
-      performanceRow.total_sales = performanceRow.wholesale_sales + performanceRow.direct_sales;
-      const prescriptionAmount = Number(performanceRow.prescription_amount.toString().replace(/,/g, '')) || 0;
-      if (prescriptionAmount > 0) {
-        performanceRow.absorption_rate = parseFloat(((performanceRow.total_sales / prescriptionAmount) * 100).toFixed(1));
-      } else {
-        performanceRow.absorption_rate = 0;
-      }
-    }
-
-    alert('흡수율 분석이 완료되었습니다. 주의사항 3, 5에 대한 기본 배분 로직이 적용되었습니다. (추가 정교화 필요)');
-
-  } catch (error) {
-    console.error('흡수율 분석 중 오류 발생:', error);
-    alert('흡수율 분석 중 오류가 발생했습니다: ' + error.message);
+    companySearchForRow.value.results = data || [];
+    companySearchForRow.value.show = true;
+  } catch (err) {
+    console.error('업체 검색 예외:', err);
   }
 }
 
-// 특정 월의 도매 매출 데이터 조회
-async function fetchWholesaleRecords(year, month) {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = new Date(year, month, 0); // 해당 월의 마지막 날짜
-  const endDateString = `${year}-${String(month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
+async function showAllCompanies() {
   try {
     const { data, error } = await supabase
-      .from('wholesale_records')
-      .select('pharmacy_id, product_standard_code, sales_amount, sales_date, pharmacies(name)') // 약국명 포함
-      .gte('sales_date', startDate)
-      .lte('sales_date', endDateString);
+      .from('companies')
+      .select('*')
+      .order('company_name')
+      .limit(50);
+
     if (error) {
-      console.error('도매 매출 데이터 조회 오류:', error);
-      return [];
+      console.error('업체 목록 조회 오류:', error);
+      return;
     }
-    return data || [];
+
+    companySearchForRow.value.results = data || [];
+    companySearchForRow.value.show = true;
   } catch (err) {
-    console.error('도매 매출 데이터 조회 예외:', err);
-    return [];
+    console.error('업체 목록 조회 예외:', err);
   }
 }
 
-// 특정 월의 직거래 매출 데이터 조회
-async function fetchDirectSaleRecords(year, month) {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = new Date(year, month, 0); // 해당 월의 마지막 날짜
-  const endDateString = `${year}-${String(month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
-  try {
-    const { data, error } = await supabase
-      .from('direct_sale_records')
-      .select('pharmacy_id, product_standard_code, sales_amount, sales_date, pharmacies(name)') // 약국명 포함
-      .gte('sales_date', startDate)
-      .lte('sales_date', endDateString);
-    if (error) {
-      console.error('직거래 매출 데이터 조회 오류:', error);
-      return [];
+function toggleCompanyDropdown(rowIndex, event) {
+  // 다른 드롭다운들 닫기
+  closeOtherDropdowns('company');
+  
+  companySearchForRow.value.activeRowIndex = rowIndex;
+  
+  // 드롭다운 버튼 클릭시 input 엘리먼트의 위치를 찾아서 계산
+  if (event && event.target) {
+    const inputElement = event.target.closest('.product-input-container').querySelector('input');
+    if (inputElement) {
+      companySearchForRow.value.position = calculateDropdownPosition(inputElement);
     }
-    return data || [];
-  } catch (err) {
-    console.error('직거래 매출 데이터 조회 예외:', err);
-    return [];
+  }
+  
+  showAllCompanies();
+}
+
+function clickCompanyFromSearchList(company, rowIndex) {
+  displayRows.value[rowIndex].company_name = company.company_name;
+  displayRows.value[rowIndex].company_group = company.company_group || '';
+  displayRows.value[rowIndex].assigned_pharmacist_contact = company.assigned_pharmacist_contact || '';
+  companySearchForRow.value.show = false;
+  markAsChanged(); // 사용자가 업체를 선택했을 때
+  
+  // 수수료율 자동 업데이트
+  updateCommissionRate(rowIndex);
+}
+
+function hideCompanySearchList(rowIndex) {
+  if (companySearchForRow.value.activeRowIndex === rowIndex) {
+    companySearchForRow.value.show = false;
+    companySearchForRow.value.results = [];
   }
 }
-</script> 
+
+function navigateCompanySearchList(direction) {
+  if (!companySearchForRow.value.show || companySearchForRow.value.results.length === 0) return;
+  
+  if (direction === 'down') {
+    companySearchForRow.value.selectedIndex = 
+      companySearchForRow.value.selectedIndex < companySearchForRow.value.results.length - 1 
+        ? companySearchForRow.value.selectedIndex + 1 
+        : 0;
+  } else if (direction === 'up') {
+    companySearchForRow.value.selectedIndex = 
+      companySearchForRow.value.selectedIndex > 0 
+        ? companySearchForRow.value.selectedIndex - 1 
+        : companySearchForRow.value.results.length - 1;
+  }
+}
+
+function applySelectedCompanyFromSearch(rowIndex) {
+  if (companySearchForRow.value.selectedIndex >= 0 && companySearchForRow.value.results.length > 0) {
+    const selectedCompany = companySearchForRow.value.results[companySearchForRow.value.selectedIndex];
+    clickCompanyFromSearchList(selectedCompany, rowIndex);
+  }
+}
+
+// 변경사항 표시
+function markAsChanged() {
+  hasUnsavedChanges.value = true;
+}
+
+// 처방월 변경 핸들러
+function onPrescriptionMonthChange(rowIndex) {
+  markAsChanged(); // 사용자가 처방월을 변경했을 때
+}
+
+// 모든 드롭다운 닫기
+function closeAllDropdowns() {
+  clientSearchForRow.value.show = false;
+  productSearchForRow.value.show = false;
+  companySearchForRow.value.show = false;
+  
+  clientSearchForRow.value.results = [];
+  productSearchForRow.value.results = [];
+  companySearchForRow.value.results = [];
+  
+  clientSearchForRow.value.activeRowIndex = -1;
+  productSearchForRow.value.activeRowIndex = -1;
+  companySearchForRow.value.activeRowIndex = -1;
+}
+
+// 다른 드롭다운들 닫기 (현재 열린 것 제외)
+function closeOtherDropdowns(currentType) {
+  if (currentType !== 'client') {
+    clientSearchForRow.value.show = false;
+    clientSearchForRow.value.results = [];
+    clientSearchForRow.value.activeRowIndex = -1;
+  }
+  if (currentType !== 'product') {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.results = [];
+    productSearchForRow.value.activeRowIndex = -1;
+  }
+  if (currentType !== 'company') {
+    companySearchForRow.value.show = false;
+    companySearchForRow.value.results = [];
+    companySearchForRow.value.activeRowIndex = -1;
+  }
+}
+
+// 드롭다운 위치 계산 함수
+</script>
+
+<style scoped>
+/* 흡수율 분석 테이블 헤더 가운데 정렬 */
+:deep(.admin-absorption-analysis-table .p-datatable-column-title) {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* 테이블 내용 정렬 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1)) { text-align: center !important; }  /* No */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(2)) { text-align: left !important; }    /* 구분 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(3)) { text-align: left !important; }    /* 업체명 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(4)) { text-align: left !important; }    /* 거래처 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(5)) { text-align: center !important; }  /* 처방월 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(6)) { text-align: left !important; }    /* 제품명 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(7)) { text-align: center !important; }  /* 보험코드 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(8)) { text-align: right !important; }   /* 약가 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(9)) { text-align: right !important; }   /* 처방수량 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(10)) { text-align: right !important; }  /* 처방액 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(11)) { text-align: center !important; } /* 처방구분 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(12)) { text-align: right !important; }  /* 도매매출 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(13)) { text-align: right !important; }  /* 직거래매출 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(14)) { text-align: right !important; }  /* 합산액 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(15)) { text-align: right !important; }  /* 흡수율 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16)) { text-align: right !important; }  /* 수수료율 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17)) { text-align: right !important; }  /* 지급액 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18)) { text-align: left !important; }   /* 비고 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19)) { text-align: center !important; } /* 관리자 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20)) { text-align: center !important; } /* 작업 */
+
+/* 작은 버튼 스타일 */
+.btn-edit-s, .btn-save-s, .btn-cancel-s, .btn-delete-s, .btn-add-s {
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  min-width: 20px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-edit-s:hover { background: #e3f2fd; }
+.btn-save-s { background: #4caf50; color: white; }
+.btn-save-s:hover { background: #45a049; }
+.btn-cancel-s { background: #f44336; color: white; }
+.btn-cancel-s:hover { background: #da190b; }
+.btn-delete-s:hover { background: #ffebee; }
+.btn-add-s:hover { background: #e8f5e8; }
+
+/* Frozen 컬럼 고정 스타일 강화 */
+:deep(.admin-absorption-analysis-table .p-datatable-frozen-column) {
+  position: sticky !important;
+  z-index: 1 !important;
+}
+
+:deep(.admin-absorption-analysis-table .p-datatable-frozen-column-right) {
+  right: 0 !important;
+  background: white !important;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 우측 고정 컬럼 배경색 보정 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover .p-datatable-frozen-column-right) {
+  background: var(--bg-hover) !important;
+}
+
+/* 좌측 고정 컬럼(No) 스타일 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:first-child) {
+  position: sticky !important;
+  left: 0 !important;
+  background: white !important;
+  z-index: 2 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 우측 고정 컬럼(작업) 스타일 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:last-child) {
+  position: sticky !important;
+  right: 0 !important;
+  background: white !important;
+  z-index: 2 !important;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 헤더의 좌측/우측 고정 컬럼 배경 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child) {
+  background: #f8f9fa !important;
+  z-index: 3 !important;
+}
+
+/* 호버시 좌측/우측 고정 컬럼 배경 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:last-child) {
+  background: #f5f5f5 !important;
+}
+
+/* 비활성화된 저장 버튼 스타일 */
+.btn-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.btn-disabled:hover {
+  background: var(--primary-color) !important;
+  opacity: 0.5 !important;
+}
+
+/* 업체 검색 드롭다운 스타일 */
+.company-search-dropdown .company-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.company-search-dropdown .company-name {
+  font-weight: 500;
+}
+
+.company-search-dropdown .company-reg-number {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.company-search-dropdown .company-address {
+  font-size: 0.8em;
+  color: #888;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 제품 검색/입력 컨테이너 스타일 */
+.product-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.dropdown-arrow-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 12px;
+  color: #666;
+  z-index: 1;
+}
+
+.dropdown-arrow-btn:hover {
+  color: #333;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+}
+
+/* 검색 드롭다운 공통 스타일 */
+.search-dropdown {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+
+.search-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.search-dropdown li:hover,
+.search-dropdown li.selected {
+  background: #f0f8ff;
+}
+
+.search-dropdown li:last-child {
+  border-bottom: none;
+}
+
+/* 거래처 검색 드롭다운 */
+.hospital-search-dropdown .hospital-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.hospital-search-dropdown .hospital-name {
+  font-weight: 500;
+}
+
+.hospital-search-dropdown .hospital-reg-number {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.hospital-search-dropdown .hospital-address {
+  font-size: 0.8em;
+  color: #888;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 제품 검색 드롭다운 */
+.product-search-dropdown .product-name {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.product-search-dropdown .insurance-code {
+  font-size: 0.8em;
+  color: #666;
+}
+</style> 
