@@ -15,7 +15,7 @@
       <div class="input-table-wrapper performance-edit-table">
         <div class="top-bar-row">
           <div class="left-group">
-            <label style="font-weight:500; margin-right:0.5rem;">처방월</label>
+            <label style="font-weight:400; margin-right:0.5rem;">처방월</label>
             <select v-model="prescriptionOffset" class="select_month">
               <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">
                 {{ opt.month }}

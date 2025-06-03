@@ -38,10 +38,10 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
-        class="custom-table"
+        class="admin-assign-pharmacies-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
@@ -144,14 +144,14 @@
           class="custom-table"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
-          <Column field="name" header="약국명" :headerStyle="{ width: '30%' }" :sortable="true" />
+          <Column field="name" header="약국명" :headerStyle="{ width: '28%' }" :sortable="true" />
           <Column
             field="business_registration_number"
             header="사업자등록번호"
             :headerStyle="{ width: '16%' }"
             :sortable="true"
           />
-          <Column field="address" header="주소" :headerStyle="{ width: '48%' }" :sortable="true" />
+          <Column field="address" header="주소" :headerStyle="{ width: '50%' }" :sortable="true" />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
@@ -194,8 +194,8 @@ const columnWidths = {
   name: '14%',
   business_registration_number: '10%',
   owner_name: '8%',
-  address: '20%',
-  pharmacy_name: '12%',
+  address: '18%',
+  pharmacy_name: '14%',
   pharmacy_brn: '10%',
   actions: '12%'
 };

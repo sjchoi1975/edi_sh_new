@@ -6,7 +6,7 @@
     <div class="filter-card">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-          <label style="font-weight: 500;">기간</label>
+          <label style="font-weight: 400;">기간</label>
           <select v-model="fromMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
@@ -53,7 +53,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="[
           'pharmacy_name',
@@ -61,7 +61,7 @@
           'standard_code',
           'product_name',
         ]"
-        class="custom-table"
+        class="admin-direct-revenue-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 매출이 없습니다.</template>

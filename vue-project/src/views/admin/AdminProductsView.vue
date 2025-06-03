@@ -7,7 +7,7 @@
     <div class="filter-card">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-          <label style="white-space: nowrap; font-weight: 500">기준월</label>
+          <label style="white-space: nowrap; font-weight: 400">기준월</label>
           <select
             v-model="selectedMonth"
             @change="filterByMonth"
@@ -54,15 +54,15 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
-        class="custom-table"
+        class="admin-products-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty> 등록된 제품이 없습니다. </template>
         <template #loading> 제품 목록을 불러오는 중입니다... </template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -70,8 +70,7 @@
         <Column
           field="product_name"
           header="제품명"
-          :headerStyle="{ width: columnWidths.product_name, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.product_name }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -93,8 +92,7 @@
         <Column
           field="insurance_code"
           header="보험코드"
-          :headerStyle="{ width: columnWidths.insurance_code, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.insurance_code }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -106,7 +104,7 @@
             <span v-else>{{ slotProps.data.insurance_code }}</span>
           </template>
         </Column>
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -117,7 +115,7 @@
             <span v-else>{{ slotProps.data.price?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column header="수수료A" :headerStyle="{ width: columnWidths.commission_rate_a, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column header="수수료율 A" :headerStyle="{ width: columnWidths.commission_rate_a }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -129,7 +127,7 @@
             <span v-else>{{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료B" :headerStyle="{ width: columnWidths.commission_rate_b, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" :sortable="true">
+        <Column header="수수료율 B" :headerStyle="{ width: columnWidths.commission_rate_b }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -144,8 +142,7 @@
         <Column
           field="standard_code"
           header="표준코드"
-          :headerStyle="{ width: columnWidths.standard_code, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.standard_code }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -160,8 +157,7 @@
         <Column
           field="unit_packaging_desc"
           header="단위/포장형태"
-          :headerStyle="{ width: columnWidths.unit_packaging_desc, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.unit_packaging_desc }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -176,8 +172,7 @@
         <Column
           field="unit_quantity"
           header="단위수량"
-          :headerStyle="{ width: columnWidths.unit_quantity, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'right' }"
+          :headerStyle="{ width: columnWidths.unit_quantity }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -193,15 +188,14 @@
         <Column
           field="created_at"
           header="등록일자"
-          :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.created_at }"
           :sortable="true"
         >
           <template #body="slotProps">
             <span>{{ slotProps.data.created_at ? new Date(slotProps.data.created_at).toISOString().split('T')[0] : '' }}</span>
           </template>
         </Column>
-        <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }" :sortable="true">
+        <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }" :sortable="true">
           <template #body="slotProps">
             <select
               v-if="slotProps.data.isEditing"
@@ -219,7 +213,7 @@
             </span>
           </template>
         </Column>
-        <Column header="작업" :headerStyle="{ width: columnWidths.actions, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }">
           <template #body="slotProps">
             <div style="display: flex; gap: 0.25rem; justify-content: center;">
               <template v-if="slotProps.data.isEditing">
@@ -250,7 +244,7 @@ import * as XLSX from 'xlsx'
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '6%',
-  product_name: '14%',
+  product_name: '12%',
   insurance_code: '8%',
   price: '6%',
   commission_rate_a: '8%',
@@ -260,7 +254,7 @@ const columnWidths = {
   unit_quantity: '8%',
   created_at: '8%',
   status: '6%',
-  actions: '9%'
+  actions: '12%'
 };
 
 const products = ref([])

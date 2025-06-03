@@ -1,0 +1,563 @@
+<template>
+  <div class="performance-register-view page-container">
+    <div class="page-header-title-area">
+      <div class="header-title">전체 등록 현황</div>
+    </div>
+
+    <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
+    <div class="filter-card">
+      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">정산월</label>
+          <select v-model="selectedSettlementMonth" class="select_month">
+            <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">처방월</label>
+          <select v-model="prescriptionOffset" class="select_month">
+            <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">업체</label>
+          <select v-model="selectedCompanyId" class="select_240px">
+            <option value="">- 전체 -</option>
+            <option v-for="company in companies" :key="company.id" :value="company.id">{{ company.company_name }}</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">거래처</label>
+          <select v-model="selectedHospitalId" class="select_240px">
+            <option value="">- 전체 -</option>
+            <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
+    <div class="data-card">
+      <div class="data-card-header">
+        <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
+        <div class="data-card-buttons">
+          <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">
+            엑셀 다운로드
+          </button>
+        </div>
+      </div>
+      <DataTable :value="displayRows" scrollable scrollHeight="calc(100vh - 290px)" class="admin-performance-whole-table">
+        <template #empty>등록된 실적이 없습니다.</template>
+        <template #loading>전체 실적을 불러오는 중입니다...</template>
+        
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
+          <template #body="slotProps">
+            {{ slotProps.index + 1 }}
+          </template>
+        </Column>
+        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.company_name }}</span>
+          </template>
+        </Column>
+        <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+          <template #body="slotProps">
+            <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
+          </template>
+        </Column>
+        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
+        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
+        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true"/>
+        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true"/>
+        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true"/>
+        <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true"/>
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
+        <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
+        <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true"/>
+      </DataTable>
+      <!-- 합계 행: 테이블 하단 고정 -->
+      <div class="table-footer-wrapper"
+        style="width:100%;
+        padding: 0 2rem 0 0;
+        background:#f8f9fa;
+        height: 38px;
+        border:1px solid #dee2e6;
+        border-bottom:2px solid #aaa;
+        position:sticky;
+        bottom:0;
+        z-index:2;">
+        <table style="width:100%; table-layout:fixed;">
+          <tr>
+            <td style="width:60%; text-align:center; font-weight:600;">합계</td>            
+            <td style="width:8%; text-align:right; font-weight:600;">{{ totalQty }}</td>
+            <td style="width:8%; text-align:right; font-weight:600;">{{ totalAmount }}</td>
+            <td style="width:24%;"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import { supabase } from '@/supabase';
+import * as XLSX from 'xlsx';
+
+const columnWidths = {
+  no: '6%',
+  company_name: '10%',
+  client_name: '10%',
+  prescription_month: '6%',
+  product_name_display: '11%',
+  insurance_code: '6%',
+  price: '5%',
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '6%',
+  remarks: '10%',
+  created_date: '10%',
+  created_by: '8%'
+};
+
+// 반응형 데이터
+const availableMonths = ref([]); // 선택 가능한 정산월 목록
+const selectedSettlementMonth = ref(''); // 선택된 정산월
+const selectedMonthInfo = ref(null); // 선택된 정산월 정보
+const prescriptionMonth = ref('');
+const prescriptionOffset = ref(0); // 0: 전체, 1: -1M, 2: -2M, 3: -3M
+const prescriptionOptions = ref([]);
+
+// 업체 관련
+const selectedCompanyId = ref(''); // 선택된 업체 ID
+const companies = ref([]); // 업체 목록
+
+// 거래처 관련
+const selectedHospitalId = ref(''); // 빈 문자열로 초기화 (전체)
+const hospitals = ref([]);
+
+// 실적 데이터
+const performanceRecords = ref([]); // DB에서 가져온 실적 데이터
+const displayRows = ref([]); // 화면에 표시할 행들
+
+// 유틸리티 함수들
+function getPrescriptionMonth(settlementMonth, offset) {
+  if (!settlementMonth) return '';
+  const [y, m] = settlementMonth.split('-');
+  let mm = parseInt(m, 10) - offset;
+  let yy = parseInt(y, 10);
+  while (mm <= 0) { mm += 12; yy -= 1; }
+  return `${yy}-${String(mm).padStart(2, '0')}`;
+}
+
+function updatePrescriptionOptions() {
+  if (!selectedMonthInfo.value) {
+    prescriptionOptions.value = [];
+    return;
+  }
+  
+  // "- 전체 -" 옵션을 첫 번째로 추가
+  prescriptionOptions.value = [
+    { value: 0, month: '- 전체 -' },
+    ...([1, 2, 3].map(offset => ({
+      value: offset,
+      month: getPrescriptionMonth(selectedMonthInfo.value.settlement_month, offset)
+    })))
+  ];
+}
+
+// 워치어
+watch(selectedSettlementMonth, () => {
+  const monthInfo = availableMonths.value.find(m => m.settlement_month === selectedSettlementMonth.value);
+  selectedMonthInfo.value = monthInfo || null;
+  updatePrescriptionOptions();
+  prescriptionOffset.value = 0; // 기본값을 "- 전체 -"로 설정
+  prescriptionMonth.value = ''; // 전체 선택 시 빈 값
+  
+  // 업체 선택 초기화
+  selectedCompanyId.value = '';
+  
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  
+  if (selectedSettlementMonth.value) {
+    fetchCompanies();
+    fetchHospitals();
+    fetchPerformanceRecords();
+  } else {
+    companies.value = [];
+    hospitals.value = [];
+    displayRows.value = [];
+    performanceRecords.value = [];
+  }
+});
+
+watch(prescriptionOffset, (val) => {
+  if (val === 0) {
+    prescriptionMonth.value = ''; // 전체 선택 시 빈 값
+  } else {
+    prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, val);
+  }
+  
+  // 업체 선택 초기화
+  selectedCompanyId.value = '';
+  
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  
+  if (selectedSettlementMonth.value) {
+    fetchCompanies();
+    fetchHospitals();
+    fetchPerformanceRecords();
+  }
+});
+
+watch(selectedCompanyId, () => {
+  // 거래처 선택 초기화
+  selectedHospitalId.value = '';
+  
+  if (selectedSettlementMonth.value) {
+    fetchHospitals();
+    fetchPerformanceRecords();
+  }
+});
+
+watch(selectedHospitalId, () => {
+  if (selectedSettlementMonth.value) {
+    fetchPerformanceRecords();
+  }
+});
+
+// 데이터 fetch 함수들
+async function fetchAvailableMonths() {
+  try {
+    const { data, error } = await supabase
+      .from('settlement_months')
+      .select('settlement_month, start_date, end_date')
+      .eq('status', 'active')
+      .order('settlement_month', { ascending: false });
+      
+    if (!error && data) {
+      availableMonths.value = data;
+      
+      // 첫 번째(최신) 정산월을 디폴트로 설정
+      if (data.length > 0 && !selectedSettlementMonth.value) {
+        selectedSettlementMonth.value = data[0].settlement_month;
+      }
+    }
+  } catch (err) {
+    console.error('정산월 조회 오류:', err);
+  }
+}
+
+async function fetchCompanies() {
+  if (!selectedSettlementMonth.value) {
+    companies.value = [];
+    return;
+  }
+  
+  try {
+    // 선택된 정산월에 실적을 제출한 업체들만 조회
+    let query = supabase
+      .from('performance_records')
+      .select(`
+        company_id,
+        companies!inner(*)
+      `)
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+      
+    const { data, error } = await query;
+      
+    if (error) {
+      console.error('업체 조회 오류:', error);
+      return;
+    }
+    
+    // 중복 제거하여 고유한 업체들만 추출
+    const uniqueCompanies = [];
+    const companyIds = new Set();
+    
+    data?.forEach(record => {
+      if (!companyIds.has(record.company_id)) {
+        companyIds.add(record.company_id);
+        uniqueCompanies.push({
+          id: record.companies.id,
+          company_name: record.companies.company_name
+        });
+      }
+    });
+    
+    // 업체명으로 정렬
+    companies.value = uniqueCompanies.sort((a, b) => a.company_name.localeCompare(b.company_name));
+  } catch (err) {
+    console.error('업체 조회 예외:', err);
+  }
+}
+
+async function fetchHospitals() {
+  if (!selectedSettlementMonth.value) {
+    hospitals.value = [];
+    return;
+  }
+  
+  try {
+    let query = supabase
+      .from('performance_records')
+      .select(`
+        client_id,
+        clients!inner(*)
+      `)
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+    
+    // 업체가 선택된 경우 해당 업체의 실적만 조회
+    if (selectedCompanyId.value) {
+      query = query.eq('company_id', selectedCompanyId.value);
+    }
+    
+    const { data, error } = await query;
+      
+    if (error) {
+      console.error('거래처 조회 오류:', error);
+      return;
+    }
+    
+    // 중복 제거 후 거래처 정보만 추출
+    const uniqueHospitals = [];
+    const seenIds = new Set();
+    
+    data?.forEach(record => {
+      if (record.clients && !seenIds.has(record.clients.id)) {
+        seenIds.add(record.clients.id);
+        uniqueHospitals.push({
+          id: record.clients.id,
+          name: record.clients.name
+        });
+      }
+    });
+
+    // 이름순으로 정렬
+    hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
+    
+  } catch (err) {
+    console.error('거래처 조회 예외:', err);
+    hospitals.value = [];
+  }
+}
+
+async function fetchPerformanceRecords() {
+  if (!selectedSettlementMonth.value) {
+    displayRows.value = [];
+    return;
+  }
+  
+  try {
+    let query = supabase
+      .from('performance_records')
+      .select(`
+        *,
+        companies!inner(company_name),
+        clients!inner(name),
+        products!inner(product_name, insurance_code, price)
+      `)
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    // 처방월 필터링 (0이 아닐 때만)
+    if (prescriptionOffset.value !== 0 && prescriptionMonth.value) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+    
+    // 업체가 선택된 경우
+    if (selectedCompanyId.value) {
+      query = query.eq('company_id', selectedCompanyId.value);
+    }
+    
+    // 거래처가 선택된 경우
+    if (selectedHospitalId.value) {
+      query = query.eq('client_id', selectedHospitalId.value);
+    }
+    
+    // 등록일자순으로 정렬
+    query = query.order('created_at', { ascending: false });
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('실적 데이터 조회 오류:', error);
+      displayRows.value = [];
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      displayRows.value = [];
+      return;
+    }
+    
+    // 데이터 변환
+    displayRows.value = data.map(record => {
+      const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
+      
+      return {
+        id: record.id,
+        company_name: record.companies?.company_name || '',
+        client_name: record.clients?.name || '',
+        prescription_month: record.prescription_month || '',
+        product_name_display: record.products?.product_name || '',
+        insurance_code: record.products?.insurance_code || '',
+        price: record.products?.price ? record.products.price.toLocaleString() : '0',
+        prescription_qty: record.prescription_qty || 0,
+        prescription_amount: prescriptionAmount.toLocaleString(),
+        prescription_type: record.prescription_type || '',
+        remarks: record.remarks || '',
+        created_date: record.created_at ? (() => {
+          const date = new Date(record.created_at)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          return `${year}-${month}-${day} ${hours}:${minutes}`
+        })() : '',
+        created_by: record.companies?.company_name || '' // 등록자는 업체명으로 표시
+      };
+    });
+    
+  } catch (err) {
+    console.error('실적 데이터 조회 예외:', err);
+    displayRows.value = [];
+  }
+}
+
+// 합계 계산
+const totalQty = computed(() => {
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0).toLocaleString();
+});
+
+const totalAmount = computed(() => {
+  return displayRows.value.reduce((sum, row) => {
+    const amount = Number(row.prescription_amount.replace(/,/g, '')) || 0;
+    return sum + amount;
+  }, 0).toLocaleString();
+});
+
+// 엑셀 다운로드
+const downloadExcel = () => {
+  if (displayRows.value.length === 0) {
+    alert('다운로드할 데이터가 없습니다.');
+    return;
+  }
+
+  // 엑셀용 데이터 준비
+  const excelData = displayRows.value.map((row, index) => ({
+    'No': index + 1,
+    '업체명': row.company_name || '',
+    '거래처명': row.client_name || '',
+    '처방월': row.prescription_month || '',
+    '제품명': row.product_name_display || '',
+    '보험코드': row.insurance_code || '',
+    '약가': row.price || '',
+    '처방수량': row.prescription_qty || 0,
+    '처방액': Number(row.prescription_amount.replace(/,/g, '')) || 0,
+    '처방구분': row.prescription_type || '',
+    '비고': row.remarks || '',
+    '등록일시': row.created_date || '',
+    '등록자': row.created_by || ''
+  }));
+
+  // 합계 행 추가
+  excelData.push({
+    'No': '',
+    '업체명': '',
+    '거래처명': '',
+    '처방월': '',
+    '제품명': '',
+    '보험코드': '',
+    '약가': '합계',
+    '처방수량': Number(totalQty.value.replace(/,/g, '')) || 0,
+    '처방액': Number(totalAmount.value.replace(/,/g, '')) || 0,
+    '처방구분': '',
+    '비고': '',
+    '등록일시': '',
+    '등록자': ''
+  });
+
+  // 워크북 생성
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // 컬럼 너비 설정
+  ws['!cols'] = [
+    { width: 6 },   // No
+    { width: 15 },  // 업체명
+    { width: 20 },  // 거래처명
+    { width: 10 },  // 처방월
+    { width: 20 },  // 제품명
+    { width: 12 },  // 보험코드
+    { width: 10 },  // 약가
+    { width: 12 },  // 처방수량
+    { width: 15 },  // 처방액
+    { width: 10 },  // 처방구분
+    { width: 15 },  // 비고
+    { width: 12 },  // 등록일시
+    { width: 10 }   // 등록자
+  ];
+
+  // 숫자 형식 지정 (천 단위 구분)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let row = 1; row <= range.e.r; row++) {
+    // 약가 컬럼 (G열)
+    const priceCell = XLSX.utils.encode_cell({ r: row, c: 6 });
+    if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
+      ws[priceCell].z = '#,##0';
+    }
+    // 처방수량 컬럼 (H열)
+    const qtyCell = XLSX.utils.encode_cell({ r: row, c: 7 });
+    if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
+      ws[qtyCell].z = '#,##0';
+    }
+    // 처방액 컬럼 (I열)
+    const amountCell = XLSX.utils.encode_cell({ r: row, c: 8 });
+    if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
+      ws[amountCell].z = '#,##0';
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, '전체 등록 현황');
+
+  // 파일명 생성
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+  const timeStr = today.toTimeString().slice(0, 8).replace(/:/g, '');
+  const fileName = `전체_등록현황_${selectedSettlementMonth.value || dateStr}_${timeStr}.xlsx`;
+
+  // 다운로드
+  XLSX.writeFile(wb, fileName);
+};
+
+// 마운트
+onMounted(() => {
+  fetchAvailableMonths();
+});
+</script>
+
+<style scoped>
+/* 전체 등록 현황 테이블 헤더 가운데 정렬 */
+:deep(.admin-performance-whole-table .p-datatable-column-title) {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+</style> 

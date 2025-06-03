@@ -32,35 +32,35 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
-        class="custom-table"
+        class="admin-notices-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 공지사항이 없습니다.</template>
         <template #loading>공지사항 목록을 불러오는 중입니다...</template>
         
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="is_pinned" header="필수" :headerStyle="{ width: columnWidths.is_pinned }">
           <template #body="slotProps">
             <span v-if="slotProps.data.is_pinned === true" class="required-badge">필수</span>
           </template>
         </Column>
-        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title, textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }">
+        <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.title }}</a>
           </template>
         </Column>
-        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }">
           <template #body="slotProps">
             <span>{{ slotProps.data.file_count > 0 ? slotProps.data.file_count : '-' }}</span>
           </template>
         </Column>
-        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count, textAlign: 'center' }" :bodyStyle="{ textAlign: 'right' }" />
-        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column field="view_count" header="조회수" :headerStyle="{ width: columnWidths.view_count }" />
+        <Column field="created_at" header="작성일시" :headerStyle="{ width: columnWidths.created_at }">
           <template #body="slotProps">{{ formatKST(slotProps.data.created_at) }}</template>
         </Column>
       </DataTable>
@@ -91,10 +91,10 @@ const filters = ref({
 const columnWidths = {
   no: '6%',
   is_pinned: '6%',
-  title: '48%',
-  file_count: '10%',
-  view_count: '10%',
-  created_at: '20%'
+  title: '56%',
+  file_count: '8%',
+  view_count: '8%',
+  created_at: '16%'
 };
 
 function goCreate() {
@@ -172,7 +172,3 @@ watch(filteredNotices, (val) => {
   console.log('filteredNotices:', val);
 });
 </script>
-
-<!-- <style scoped>
-// 모든 내용을 삭제하거나 style 태그 전체를 삭제
-</style> -->

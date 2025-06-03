@@ -28,7 +28,7 @@ const emit = defineEmits(['logout']);
   box-sizing: border-box;
   position: fixed;
   top: 0; /* 상단에 붙임 */
-  left: 220px; /* 사이드바 너비와 일치시킴 */
+  left: 210px; /* 사이드바 너비와 일치시킴 */
   right: 0; /* 오른쪽 끝까지 확장 */
   z-index: var(--z-index-topbar);
   border-bottom: 1px solid var(--border-secondary); /* 구분선 색상 변경 */

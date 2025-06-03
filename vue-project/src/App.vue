@@ -98,8 +98,8 @@ const adminMenuTree = [
   { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
   { label: '실적 관리', children: [ 
     { label: '정산월 관리', path: '/admin/settlement-months' }, 
-    // { label: '실적 입력', path: '/admin/performance-input' }, // 임시 숨김 처리
-    { label: '등록 현황', path: '/admin/performance-list' } 
+    { label: '업체별 등록 현황', path: '/admin/performance/companies' },
+    { label: '전체 등록 현황', path: '/admin/performance/whole' }
   ] },
   { label: '정산 관리', children: [ 
     { label: '흡수율 분석', path: '/admin/absorption-analysis' }, 

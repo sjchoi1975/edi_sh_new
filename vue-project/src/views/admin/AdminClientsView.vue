@@ -39,10 +39,10 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
-        class="custom-table"
+        class="admin-clients-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
@@ -129,7 +129,7 @@
             <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
-        <Column field="created_at" header="등록일" :headerStyle="{ width: columnWidths.created_at }" :sortable="true">
+        <Column field="created_at" header="등록일자" :headerStyle="{ width: columnWidths.created_at }" :sortable="true">
           <template #body="slotProps">
             <span>{{
               slotProps.data.created_at

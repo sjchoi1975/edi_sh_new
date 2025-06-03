@@ -36,7 +36,7 @@
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료 등급 A(%) <span class="required">*</span></label>
+          <label style="text-align: right;">수수료율 A등급(%) <span class="required">*</span></label>
         </div>
         <div class="form-col input-col">
           <input v-model="commissionA" type="number" step="0.1" required />
@@ -44,7 +44,7 @@
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료 등급 B(%) <span class="required">*</span></label>
+          <label style="text-align: right;">수수료율 B등급(%) <span class="required">*</span></label>
         </div>
         <div class="form-col input-col">
           <input v-model="commissionB" type="number" step="0.1" required />

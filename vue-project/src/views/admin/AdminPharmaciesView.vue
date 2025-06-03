@@ -39,15 +39,15 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['pharmacy_code', 'name', 'business_registration_number']"
-        class="custom-table"
+        class="admin-pharmacies-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 약국이 없습니다.</template>
         <template #loading>약국 목록을 불러오는 중입니다...</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
@@ -55,8 +55,7 @@
         <Column
           field="pharmacy_code"
           header="약국코드"
-          :headerStyle="{ width: columnWidths.pharmacy_code, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.pharmacy_code }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -71,8 +70,7 @@
         <Column
           field="name"
           header="약국명"
-          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.name }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -94,8 +92,7 @@
         <Column
           field="business_registration_number"
           header="사업자등록번호"
-          :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.business_registration_number }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -110,8 +107,7 @@
         <Column
           field="address"
           header="주소"
-          :headerStyle="{ width: columnWidths.address, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.address }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -126,8 +122,7 @@
         <Column
           field="remarks"
           header="비고"
-          :headerStyle="{ width: columnWidths.remarks, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'left' }"
+          :headerStyle="{ width: columnWidths.remarks }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -142,8 +137,7 @@
         <Column
           field="created_at"
           header="등록일자"
-          :headerStyle="{ width: columnWidths.created_at, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.created_at }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -157,8 +151,7 @@
         <Column
           field="status"
           header="상태"
-          :headerStyle="{ width: columnWidths.status, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.status }"
           :sortable="true"
         >
           <template #body="slotProps">
@@ -180,8 +173,7 @@
         </Column>
         <Column
           header="작업"
-          :headerStyle="{ width: columnWidths.actions, textAlign: 'center' }"
-          :bodyStyle="{ textAlign: 'center' }"
+          :headerStyle="{ width: columnWidths.actions }"
         >
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
@@ -224,8 +216,7 @@ const columnWidths = {
   pharmacy_code: '8%',
   name: '14%',
   business_registration_number: '10%',
-  owner_name: '8%',
-  address: '18%',
+  address: '26%',
   remarks: '10%',
   created_at: '8%',
   status: '6%',

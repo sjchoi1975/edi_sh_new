@@ -33,35 +33,35 @@
         :value="approvedCompanies"
         paginator :rows="20" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
-        scrollable scrollHeight="calc(100vh - 310px)" 
+        scrollable scrollHeight="calc(100vh - 290px)" 
         v-model:filters="filters"
         :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
-        class="custom-table"
+        class="admin-companies-approved-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty> 승인된 업체가 없습니다. </template>
         <template #loading> 승인된 업체 목록을 불러오는 중입니다... </template>
         
-        <Column header="No" :headerStyle="{ width: '5%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="company_group" header="구분" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" :editor="getTextEditor"></Column>
-        <Column field="company_name" header="업체명" :headerStyle="{ width: '15%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true">
+        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.company_name }}</a>
           </template>
         </Column>
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '10%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" :editor="getTextEditor"></Column>
-        <Column field="representative_name" header="대표자" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" :editor="getTextEditor"></Column>
-        <Column field="business_address" header="사업장소재지" :headerStyle="{ width: '24%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" :editor="getTextEditor"></Column>
-        <Column field="default_commission_grade" header="수수료 등급" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }" :sortable="true" :editor="getDropdownEditor">
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="business_address" header="사업장소재지" :headerStyle="{ width: columnWidths.business_address }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="default_commission_grade" header="수수료 등급" :headerStyle="{ width: columnWidths.default_commission_grade }" :sortable="true" :editor="getDropdownEditor">
           <template #editor="{ data, field }">
             <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" style="width: 100%" />
           </template>
         </Column>
-        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'left' }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true" :editor="getTextEditor"></Column>
         <!-- Remarks 컬럼은 너무 길어질 수 있으므로 일단 제외하거나 너비 조정 필요 -->
-        <Column field="approval_status" header="승인 처리" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }" :exportable="false">
+        <Column field="approval_status" header="승인 처리" :headerStyle="{ width: columnWidths.approval_status }" :exportable="false">
           <template #body="slotProps">
             <button class="btn-pending-m btn-sm" @click="confirmApprovalChange(slotProps.data, 'pending')">취소</button>
           </template>
@@ -83,6 +83,19 @@ import Password from 'primevue/password'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
+
+// 컬럼 너비 관리
+const columnWidths = {
+  no: '6%',
+  company_group: '8%',
+  company_name: '14%',
+  business_registration_number: '10%',
+  representative_name: '8%',
+  business_address: '30%',
+  default_commission_grade: '8%',
+  assigned_pharmacist_contact: '8%',
+  approval_status: '8%'
+}
 
 const approvedCompanies = ref([])
 const loading = ref(false)

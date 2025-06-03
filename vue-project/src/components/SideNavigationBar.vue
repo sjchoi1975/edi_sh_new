@@ -73,8 +73,8 @@ const adminMenuTree = [
   ]},
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '정산월 관리', path: '/admin/settlement-months' },
-    // { label: '실적 입력', path: '/admin/performance-input' }, // 임시 숨김 처리
-    { label: '등록 현황', path: '/admin/performance-list' }
+    { label: '업체별 등록 현황', path: '/admin/performance/companies' },
+    { label: '전체 등록 현황', path: '/admin/performance/whole' }
   ]},
   { label: '정산 관리', icon: 'pi pi-file', children: [
     { label: '흡수율 분석', path: '/admin/absorption-analysis' },
@@ -186,7 +186,7 @@ onMounted(async () => {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 220px;
+  width: 210px;
   background: var(--bg-sidebar);
   color: var(--text-primary);
   display: flex;
@@ -212,15 +212,15 @@ onMounted(async () => {
   flex: 1;
   list-style: none;
   margin: 0;
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   padding-bottom: 1rem;
   overflow-y: auto;
 }
 .side-nav-section {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 .side-nav-section-label {
-  padding: 0.4rem 0rem;
+  padding: 0.4rem 0;
   display: flex;
   align-items: center;
   font-size: 1.12rem;
@@ -239,7 +239,7 @@ onMounted(async () => {
   background-color: var(--primary-color-lightest);
   color: #333;
   border-radius: 6px;
-  margin-right: 1rem;
+  margin-right: 1.5rem;
 }
 .side-nav-section-label.open {
   color: var(--primary-color) !important;
@@ -277,12 +277,12 @@ onMounted(async () => {
   color: #fff;
   font-weight: 600;
   border-radius: 6px;
-  margin-right: 1rem;
+  margin-right: 1.5rem;
 }
 .side-nav-sub-item:not(.active):hover {
   background-color: var(--primary-color-lightest);
-  border-radius: 8px;
-  margin-right: 1rem;
+  border-radius: 6px;
+  margin-right: 1.5rem;
 }
 
 

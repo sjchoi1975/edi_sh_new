@@ -211,10 +211,23 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/performance/companies',
+      name: 'AdminPerformanceCompanies',
+      component: () => import('@/views/admin/AdminPerformanceCompaniesView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/performance/whole',
+      name: 'AdminPerformanceWhole',
+      component: () => import('@/views/admin/AdminPerformanceWholeView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
       path: '/admin/performance-list',
       name: 'AdminPerformanceRegisterList',
       component: () => import('@/views/admin/AdminPerformanceRegisterList.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { requiresAuth: true, role: 'admin' },
+      redirect: '/admin/performance/whole'
     },
     {
       path: '/admin/absorption-analysis',

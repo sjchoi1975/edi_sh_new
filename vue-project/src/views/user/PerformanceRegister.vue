@@ -8,7 +8,7 @@
     <div class="filter-card">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">정산월</label>
+          <label style="font-weight:400;">정산월</label>
           <select v-model="selectedSettlementMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month" :value="month">{{ month }}</option>
           </select>
@@ -101,12 +101,12 @@
             >등록</button>
           </template>
         </Column>
-        <Column header="증빙파일" :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }">
+        <Column header="증빙 파일" :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }">
           <template #body="slotProps">
             {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
           </template>
         </Column>
-        <Column header="보기" :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }">
+        <Column header="파일 보기" :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }">
           <template #body="slotProps">
             <button 
               class="btn-view" 

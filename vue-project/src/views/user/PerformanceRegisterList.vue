@@ -8,19 +8,19 @@
     <div class="filter-card">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">정산월</label>
+          <label style="font-weight:400;">정산월</label>
           <select v-model="selectedSettlementMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">처방월</label>
+          <label style="font-weight:400;">처방월</label>
           <select v-model="prescriptionOffset" class="select_month">
             <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:500;">거래처</label>
+          <label style="font-weight:400;">거래처</label>
           <select v-model="selectedHospitalId" class="select_240px">
             <option value="">- 전체 -</option>
             <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>

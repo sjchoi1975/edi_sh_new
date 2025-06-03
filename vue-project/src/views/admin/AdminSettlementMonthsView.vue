@@ -25,12 +25,9 @@
       </div>
       <DataTable
         :value="filteredSettlementMonths"
-        paginator
-        :rows="20"
-        :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="680px"
-        class="custom-table"
+        scrollHeight="calc(100vh - 290px)"
+        class="admin-settlement-months-table"
         v-model:first="currentPageFirstIndex"
         v-model:filters="filters"
         :globalFilterFields="['settlement_month', 'notice']"
@@ -83,7 +80,7 @@ const columnWidths = {
   settlement_month: '8%',
   start_date: '10%',
   end_date: '10%',
-  notice: '38%',
+  notice: '36%',
   remarks: '20%',
   status: '10%'
 };

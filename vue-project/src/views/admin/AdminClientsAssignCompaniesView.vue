@@ -38,10 +38,10 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 310px)"
+        scrollHeight="calc(100vh - 290px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
-        class="custom-table"
+        class="admin-assign-companies-table"
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
@@ -195,8 +195,8 @@ const columnWidths = {
   name: '14%',
   business_registration_number: '10%',
   owner_name: '8%',
-  address: '20%',
-  company_name: '12%',
+  address: '18%',
+  company_name: '14%',
   company_brn: '10%',
   actions: '12%'
 };

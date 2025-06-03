@@ -36,7 +36,7 @@
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료 등급 A(%)</label>
+          <label style="text-align: right;">수수료율 A등급(%)</label>
         </div>
         <div class="form-col input-col">
           <input class="input-readonly-detail" :value="product.commission_rate_a ? (product.commission_rate_a * 100).toFixed(1) : '-'" readonly disabled />
@@ -44,7 +44,7 @@
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료 등급 B(%)</label>
+          <label style="text-align: right;">수수료율 B등급(%)</label>
         </div>
         <div class="form-col input-col">
           <input class="input-readonly-detail" :value="product.commission_rate_b ? (product.commission_rate_b * 100).toFixed(1) : '-'" readonly disabled />
