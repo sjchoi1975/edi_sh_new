@@ -91,6 +91,7 @@ const handleSignup = async () => {
       }
     });
     if (authError) throw authError;
+
     if (authData && authData.user) {
       const companyDataToInsert = {
         user_id: authData.user.id,
@@ -105,12 +106,16 @@ const handleSignup = async () => {
         approval_status: 'pending',
         created_by: authData.user.id,
       };
-      
+
+      // 1. companies 테이블에 먼저 insert
       const { error: companyInsertError } = await supabase
         .from('companies')
         .insert([companyDataToInsert]);
       if (companyInsertError) throw companyInsertError;
-      alert('가입 요청이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다.');
+
+      // 2. 안내 후 로그아웃
+      alert('가입 요청이 완료되었습니다. 관리자 승인 후 로그인 가능합니다.');
+      await supabase.auth.signOut();
       router.push('/login');
     } else {
       throw new Error('사용자 정보가 생성되지 않았습니다.');

@@ -88,10 +88,10 @@ const filters = ref({
 const columnWidths = {
   no: '6%',
   is_pinned: '6%',
-  title: '48%',
-  file_count: '10%',
-  view_count: '10%',
-  created_at: '20%'
+  title: '60%',
+  file_count: '8%',
+  view_count: '8%',
+  created_at: '12%'
 };
 
 function goToDetail(id) {
