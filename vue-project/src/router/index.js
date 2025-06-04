@@ -359,6 +359,18 @@ const router = createRouter({
       name: 'my-info-change-password',
       component: () => import('@/views/user/ChangePasswordView.vue'),
       meta: { requiresAuth: true, role: 'user' }
+    },
+    {
+      path: '/admin/settlement-share',
+      name: 'AdminSettlementShare',
+      component: () => import('@/views/admin/AdminSettlementShareView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/settlement-share/detail',
+      name: 'AdminSettlementShareDetail',
+      component: () => import('@/views/admin/AdminSettlementShareDetailView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
     }
   ]
 })

@@ -23,6 +23,7 @@
           <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
           <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
           <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-danger" @click="deleteAllClients">모두 삭제</button>
           <input
             ref="fileInput"
             type="file"
@@ -493,6 +494,22 @@ const downloadExcel = () => {
   const fileName = `거래처목록_${today}.xlsx`
 
   XLSX.writeFile(wb, fileName)
+}
+
+async function deleteAllClients() {
+  if (!confirm('정말 모든 거래처를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  // 거래처 전체 삭제
+  const { error: clientError } = await supabase.from('clients').delete().neq('id', 0);
+  // 담당업체 지정 전체 삭제
+  await supabase.from('client_company_assignments').delete().neq('id', 0);
+  // 문전약국 지정 전체 삭제
+  await supabase.from('client_pharmacy_assignments').delete().neq('id', 0);
+  if (clientError) {
+    alert('삭제 중 오류가 발생했습니다: ' + clientError.message);
+    return;
+  }
+  clients.value = [];
+  alert('모든 거래처 및 관련 지정 데이터가 삭제되었습니다.');
 }
 
 onMounted(() => {

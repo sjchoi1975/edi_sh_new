@@ -164,7 +164,6 @@
           header="최종 등록일시"
           :headerStyle="{ width: columnWidths.last_registered_at, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'center' }"
-          :sortable="true"
         >
           <template #body="slotProps">
             {{ slotProps.data.last_registered_at || '-' }}

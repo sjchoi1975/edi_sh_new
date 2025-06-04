@@ -45,6 +45,7 @@
           />
           <button class="btn-secondary btn-sm" @click="downloadExcel">엑셀 다운로드</button>
           <button class="btn-primary btn-sm" @click="goCreate">등록</button>
+          <button class="btn-danger btn-sm" @click="deleteAllProducts">모두 삭제</button>
         </div>
       </div>
 
@@ -632,5 +633,16 @@ const deleteProduct = async (row) => {
     console.error('삭제 오류:', error)
     alert('삭제 중 오류가 발생했습니다.')
   }
+}
+
+async function deleteAllProducts() {
+  if (!confirm('정말 모든 제품을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  const { error } = await supabase.from('products').delete().neq('id', 0); // 전체 삭제
+  if (error) {
+    alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  products.value = [];
+  alert('모든 제품이 삭제되었습니다.');
 }
 </script>

@@ -23,6 +23,7 @@
           <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
           <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
           <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-danger" @click="deleteAllAssignments">모두 삭제</button>
           <input
             ref="fileInput"
             type="file"
@@ -417,6 +418,17 @@ const downloadExcel = () => {
   XLSX.utils.book_append_sheet(wb, ws, '문전약국지정현황')
   const today = new Date().toISOString().split('T')[0]
   XLSX.writeFile(wb, `문전약국지정현황_${today}.xlsx`)
+}
+
+async function deleteAllAssignments() {
+  if (!confirm('정말 모든 문전약국 지정 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  const { error } = await supabase.from('client_pharmacy_assignments').delete().neq('id', 0);
+  if (error) {
+    alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  clients.value.forEach(c => c.pharmacies = []);
+  alert('모든 문전약국 지정 데이터가 삭제되었습니다.');
 }
 
 onMounted(() => {

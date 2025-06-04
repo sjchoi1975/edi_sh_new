@@ -78,7 +78,7 @@ const adminMenuTree = [
   ]},
   { label: '정산 관리', icon: 'pi pi-file', children: [
     { label: '흡수율 분석', path: '/admin/absorption-analysis' },
-    { label: '정산내역서 공유', path: '/admin/settlement-statements' }
+    { label: '정산내역서 공유', path: '/admin/settlement-share' }
   ]}
 ];
 const userMenuTree = [

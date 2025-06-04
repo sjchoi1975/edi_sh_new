@@ -1465,6 +1465,50 @@ button:disabled {
 .admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(21) { text-align: center !important; } /* 관리자 */
 .admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(22) { text-align: center !important; } /* 작업 */
 
+/* 관리자 정산내역서 공유 테이블 헤더 가운데 정렬 */
+.admin-settlement-share-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+/* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 구분 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: left !important; }    /* 업체명 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: center !important; }  /* 사업자등록번호 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 대표자 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: center !important; }  /* 관리자 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: center !important; }  /* 거래처수 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: center !important; }  /* 처방건수 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: right !important; }   /* 처방액 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: right !important; }  /* 지급액 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: center !important; } /* 상세 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(12) { text-align: center !important; } /* 엑셀 */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(13) { text-align: center !important; } /* 공유 */
+
+
+/* 관리자 정산내역서 상세 (AdminSettlementShareDetailView.vue) */
+.admin-settlement-share-detail-table .p-datatable-column-title {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  width: 100% !important;
+}
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(1) { text-align: center !important; }  /* No */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(2) { text-align: left !important; }    /* 거래처명 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(3) { text-align: center !important; }  /* 처방월 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(4) { text-align: left !important; }    /* 제품명 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(5) { text-align: center !important; }  /* 보험코드 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(6) { text-align: right !important; }   /* 약가 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(7) { text-align: right !important; }   /* 처방수량 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(8) { text-align: right !important; }   /* 처방액 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(9) { text-align: center !important; }  /* 수수료율 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(10) { text-align: right !important; }  /* 지급액 */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(11) { text-align: left !important; }   /* 비고 */
+
+
+
 
 
 

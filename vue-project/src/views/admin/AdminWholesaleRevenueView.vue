@@ -37,6 +37,7 @@
           <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
           <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
           <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-danger" @click="deleteAllWholesaleRevenue">모두 삭제</button>
           <input
             ref="fileInput"
             type="file"
@@ -552,6 +553,17 @@ const downloadExcel = () => {
   const fileName = `도매매출목록_${today}.xlsx`
 
   XLSX.writeFile(wb, fileName)
+}
+
+async function deleteAllWholesaleRevenue() {
+  if (!confirm('정말 모든 도매매출 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  const { error } = await supabase.from('wholesale_sales').delete().neq('id', 0);
+  if (error) {
+    alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    return;
+  }
+  revenues.value = [];
+  alert('모든 도매매출 데이터가 삭제되었습니다.');
 }
 
 onMounted(() => {
