@@ -974,6 +974,7 @@ async function loadPerformanceData() {
       const row = {
         id: `temp_${Date.now()}_${Math.random()}`,
         original_id: record.id,
+        company_id: record.company_id || record.companies.id, // company_id 추가 (없으면 companies.id)
         company_group: record.companies.company_group,
         company_name: record.companies.company_name,
         client_name: record.clients.name,
@@ -1568,6 +1569,21 @@ async function saveAnalysisData() {
     return;
   }
   
+  // 저장 전 company_id 없는 row 처리
+  for (const row of displayRows.value) {
+    if (!row.company_id && row.company_name) {
+      // company_name으로 company_id 찾기
+      const { data: company, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('company_name', row.company_name.trim())
+        .single();
+      if (company && company.id) {
+        row.company_id = company.id;
+      }
+    }
+  }
+  
   const validRows = displayRows.value.filter(row => 
     row.company_name && row.client_name && row.product_name
   );
@@ -1590,6 +1606,7 @@ async function saveAnalysisData() {
     const saveData = validRows.map(row => ({
         settlement_month: selectedSettlementMonth.value,
         prescription_month: row.prescription_month,
+        company_id: row.company_id, // company_id 저장
       company_group: row.company_group,
         company_name: row.company_name,
         client_name: row.client_name,
@@ -1905,6 +1922,7 @@ function toggleCompanyDropdown(rowIndex, event) {
 }
 
 function clickCompanyFromSearchList(company, rowIndex) {
+  displayRows.value[rowIndex].company_id = company.id; // company_id 추가
   displayRows.value[rowIndex].company_name = company.company_name;
   displayRows.value[rowIndex].company_group = company.company_group || '';
   displayRows.value[rowIndex].assigned_pharmacist_contact = company.assigned_pharmacist_contact || '';
@@ -2333,6 +2351,7 @@ async function parseExcelData(dataRows) {
       const analysisRow = {
         id: `excel_${Date.now()}_${i}`,
         original_id: null,
+        company_id: company.id, // company_id 추가
         company_group: company.company_group || '',
         company_name: company.company_name,
         client_name: client.name,

@@ -371,6 +371,12 @@ const router = createRouter({
       name: 'AdminSettlementShareDetail',
       component: () => import('@/views/admin/AdminSettlementShareDetailView.vue'),
       meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/settlements',
+      name: 'user-settlements',
+      component: () => import('@/views/user/SettlementShareDetailView.vue'),
+      meta: { requiresAuth: true, role: 'user' }
     }
   ]
 })
