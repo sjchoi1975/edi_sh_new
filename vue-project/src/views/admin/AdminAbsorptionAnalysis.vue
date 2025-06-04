@@ -1,7 +1,7 @@
 <template>
   <div class="performance-register-view page-container absorption-analysis">
     <div class="page-header-title-area">
-      <div class="header-title">흡수율 분석</div>
+    <div class="header-title">흡수율 분석</div>
     </div>
 
     <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
@@ -38,9 +38,9 @@
             <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
+        </div>
       </div>
-    </div>
-
+      
     <!-- 데이터 카드: 전체 n건 + 버튼들 + 테이블 + 합계 행 -->
     <div class="data-card">
       <div class="data-card-header">
@@ -53,9 +53,31 @@
           >실적 정보 불러오기</button>
           <button 
             class="btn-secondary" 
+            @click="downloadExcelTemplate" 
+            :disabled="!selectedSettlementMonth"
+          >템플릿 다운로드</button>
+          <button 
+            class="btn-secondary" 
+            @click="triggerExcelUpload" 
+            :disabled="!selectedSettlementMonth"
+          >엑셀 일괄등록</button>
+          <input 
+            ref="excelFileInput"
+            type="file" 
+            accept=".xlsx,.xls" 
+            @change="handleExcelUpload"
+            style="display: none;"
+          />
+          <button 
+            class="btn-secondary" 
             @click="runAbsorptionAnalysis" 
             :disabled="displayRows.length === 0"
           >흡수율 분석</button>
+          <button 
+            class="btn-danger" 
+            @click="confirmDeleteAllData" 
+            :disabled="displayRows.length === 0"
+          >전체 삭제</button>
           <button 
             class="btn-secondary" 
             @click="downloadExcel" 
@@ -85,17 +107,17 @@
       >
         <template #empty>
           <div style="text-align:center;padding:2rem;color:#666;">
-            <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
-              정산월을 선택하세요.
-            </div>
-            <div v-else style="margin-bottom:1rem;">
-              흡수율 분석 데이터가 없습니다.<br>
-              실적 정보를 불러와서 분석을 시작하세요.
-            </div>
-            <button 
-              v-if="selectedSettlementMonth" 
-              class="btn-primary" 
-              @click="loadPerformanceData"
+                <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
+                  정산월을 선택하세요.
+                </div>
+                <div v-else style="margin-bottom:1rem;">
+                  흡수율 분석 데이터가 없습니다.<br>
+                  실적 정보를 불러와서 분석을 시작하세요.
+                </div>
+                <button 
+                  v-if="selectedSettlementMonth" 
+                  class="btn-primary" 
+                  @click="loadPerformanceData"
             >실적 정보 불러오기</button>
           </div>
         </template>
@@ -151,7 +173,7 @@
                       <div class="company-info-row">
                         <span class="company-name">{{ company.company_name }}</span>
                         <span class="company-reg-number">{{ company.business_registration_number }}</span>
-                      </div>
+                </div>
                       <div class="company-address">{{ company.representative_name }} / {{ truncateText(company.business_address, 25) }}</div>
                     </li>
                   </ul>
@@ -165,47 +187,47 @@
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.client_name }}</div>
             <div v-else class="product-input-container">
-              <input 
+                  <input 
                 v-model="slotProps.data.client_name"
                 @input="handleClientNameInput(slotProps.index, $event)"
                 @keydown.enter.prevent="applySelectedClientFromSearch(slotProps.index)"
-                @keydown.down.prevent="navigateClientSearchList('down')"
-                @keydown.up.prevent="navigateClientSearchList('up')"
+                    @keydown.down.prevent="navigateClientSearchList('down')"
+                    @keydown.up.prevent="navigateClientSearchList('up')"
                 @focus="handleClientNameFocus(slotProps.index, $event)"
                 @blur="setTimeout(() => hideClientSearchList(slotProps.index), 200)"
-                autocomplete="off"
+                    autocomplete="off"
                 style="width: 100%;"
-              />
-              <button 
-                type="button"
+                  />
+                  <button 
+                    type="button"
                 @click="toggleClientDropdown(slotProps.index, $event)"
-                @mousedown.prevent
-                class="dropdown-arrow-btn"
-                tabindex="-1"
-              >
-                <span class="dropdown-arrow">▼</span>
-              </button>
+                    @mousedown.prevent
+                    class="dropdown-arrow-btn"
+                    tabindex="-1"
+                  >
+                    <span class="dropdown-arrow">▼</span>
+                  </button>
               <teleport to="body">
                 <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === slotProps.index && clientSearchForRow.results.length > 0" 
                      class="search-dropdown hospital-search-dropdown"
                      :style="getDropdownStyle(slotProps.index, 'client')">
-                  <ul>
-                    <li
-                      v-for="(client, index) in clientSearchForRow.results"
-                      :key="client.id"
+                    <ul>
+                      <li
+                        v-for="(client, index) in clientSearchForRow.results"
+                        :key="client.id"
                       @click="clickClientFromSearchList(client, slotProps.index)"
-                      :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
-                    >
-                      <div class="hospital-info-row">
-                        <span class="hospital-name">{{ client.name }}</span>
-                        <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
-                      </div>
-                      <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
-                    </li>
-                  </ul>
-                </div>
+                        :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
+                      >
+                        <div class="hospital-info-row">
+                          <span class="hospital-name">{{ client.name }}</span>
+                          <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
+                        </div>
+                        <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
+                      </li>
+                    </ul>
+                  </div>
               </teleport>
-            </div>
+                </div>
           </template>
         </Column>
         
@@ -229,44 +251,44 @@
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.product_name_display }}</div>
             <div v-else class="product-input-container">
-              <input
+                  <input
                 v-model="slotProps.data.product_name_display"
                 @input="handleProductNameInput(slotProps.index, $event)"
                 @keydown.enter.prevent="applySelectedProductFromSearch(slotProps.index)"
-                @keydown.down.prevent="navigateProductSearchList('down')"
-                @keydown.up.prevent="navigateProductSearchList('up')"
+                    @keydown.down.prevent="navigateProductSearchList('down')"
+                    @keydown.up.prevent="navigateProductSearchList('up')"
                 @focus="handleProductNameFocus(slotProps.index, $event)"
                 @blur="setTimeout(() => hideProductSearchList(slotProps.index), 200)" 
-                autocomplete="off"
+                    autocomplete="off"
                 style="width: 100%;"
-              />
-              <button 
-                type="button"
+                  />
+                  <button 
+                    type="button"
                 @click="toggleProductDropdown(slotProps.index, $event)"
-                @mousedown.prevent
-                class="dropdown-arrow-btn"
-                tabindex="-1"
-              >
-                <span class="dropdown-arrow">▼</span>
-              </button>
+                    @mousedown.prevent
+                    class="dropdown-arrow-btn"
+                    tabindex="-1"
+                  >
+                    <span class="dropdown-arrow">▼</span>
+                  </button>
               <teleport to="body">
                 <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === slotProps.index && productSearchForRow.results.length > 0" 
                      class="search-dropdown product-search-dropdown"
                      :style="getDropdownStyle(slotProps.index, 'product')">
-                  <ul>
-                    <li
-                      v-for="(product, index) in productSearchForRow.results"
-                      :key="product.id"
+                    <ul>
+                      <li
+                        v-for="(product, index) in productSearchForRow.results"
+                        :key="product.id"
                       @click="clickProductFromSearchList(product, slotProps.index)"
-                      :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                    >
-                      <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                      <span class="insurance-code">{{ product.insurance_code }}</span>
-                    </li>
-                  </ul>
-                </div>
+                        :class="{ 'selected': productSearchForRow.selectedIndex === index }"
+                      >
+                        <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
+                        <span class="insurance-code">{{ product.insurance_code }}</span>
+                      </li>
+                    </ul>
+                  </div>
               </teleport>
-            </div>
+                </div>
           </template>
         </Column>
         
@@ -285,10 +307,10 @@
         <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_qty }}</div>
-            <input
+                <input
               v-else
               v-model="slotProps.data.prescription_qty"
-              type="number"
+                  type="number"
               @input="onQtyInput(slotProps.index)"
               style="width: 100%; text-align: right;"
             />
@@ -304,37 +326,37 @@
         <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_type }}</div>
-            <select
+                <select
               v-else
               v-model="slotProps.data.prescription_type"
               @change="onPrescriptionTypeInput(slotProps.index)"
               style="width: 100%;"
-            >
-              <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-            </select>
+                >
+                  <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
+                </select>
           </template>
         </Column>
-        
+              
         <Column field="wholesale_sales" header="도매매출" :headerStyle="{ width: columnWidths.wholesale_sales }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.wholesale_sales || 0).toLocaleString() }}</div>
-            <input 
+                <input 
               v-else
               v-model="slotProps.data.wholesale_sales"
-              type="number"
+                  type="number"
               @input="onSalesInput(slotProps.index)"
               style="width: 100%; text-align: right;"
-            />
+                />
           </template>
         </Column>
-        
+              
         <Column field="direct_sales" header="직거래매출" :headerStyle="{ width: columnWidths.direct_sales }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.direct_sales || 0).toLocaleString() }}</div>
-            <input 
+                <input 
               v-else
               v-model="slotProps.data.direct_sales"
-              type="number"
+                  type="number"
               @input="onSalesInput(slotProps.index)"
               style="width: 100%; text-align: right;"
             />
@@ -356,11 +378,11 @@
         <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.commission_rate ? (slotProps.data.commission_rate + '%') : '' }}</div>
-            <input 
+                <input 
               v-else
               v-model="slotProps.data.commission_rate"
-              type="number"
-              step="0.1"
+                  type="number"
+                  step="0.1"
               @input="onCommissionInput(slotProps.index)"
               style="width: 100%; text-align: right;"
             />
@@ -376,7 +398,7 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
           <template #body="slotProps">
             <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.remarks }}</div>
-            <input 
+                <input 
               v-else
               v-model="slotProps.data.remarks"
               @input="markAsChanged"
@@ -414,7 +436,7 @@
         <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right">
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center;">
-              <button 
+                <button 
                 v-if="!isRowEditing(slotProps.data)"
                 class="btn-edit-s" 
                 @click="onRowEditInit(slotProps.data)"
@@ -436,15 +458,15 @@
                 v-if="!isRowEditing(slotProps.data)"
                 class="btn-delete-s" 
                 @click="confirmDeleteRow(slotProps.index)" 
-                :disabled="displayRows.length === 1" 
+                  :disabled="displayRows.length === 1" 
                 title="삭제"
-              >－</button>
-              <button 
+                >－</button>
+                <button 
                 v-if="!isRowEditing(slotProps.data)"
                 class="btn-add-s" 
                 @click="confirmAddRowBelow(slotProps.index)" 
                 title="추가"
-              >＋</button>
+                >＋</button>
             </div>
           </template>
         </Column>
@@ -465,8 +487,8 @@
         <table style="width:100%; table-layout:fixed; min-width: 3000px;">
           <tr>
             <td style="width:60px; position: sticky; left: 0; background: #f8f9fa; z-index: 3;"></td>
-            <td style="width:100px;"></td>
-            <td style="width:100px;"></td>
+              <td style="width:100px;"></td>
+              <td style="width:100px;"></td>
             <td style="width:120px;"></td>
             <td style="width:80px;"></td>
             <td style="width:120px;"></td>
@@ -485,7 +507,7 @@
             <td style="width:100px;"></td>
             <td style="width:100px;"></td>
             <td style="width:120px; position: sticky; right: 0; background: #f8f9fa; z-index: 3; box-shadow: -2px 0 4px rgba(0,0,0,0.1);"></td>
-          </tr>
+            </tr>
         </table>
       </div>
     </div>
@@ -880,7 +902,7 @@ async function loadAbsorptionAnalysisData() {
       payment_amount: record.payment_amount,
       remarks: record.remarks || '',
       orig_created_at: record.orig_created_at,
-      orig_registered_by: record.orig_registered_by,
+      orig_registered_by: record.orig_registered_by || '알 수 없음', // 원본 registered_by 값 사용
       assigned_pharmacist_contact: record.assigned_pharmacist_contact
     }));
     
@@ -993,28 +1015,28 @@ async function loadPerformanceData() {
         } else if (!company || !company.commission_grade) {
           console.warn(`업체 수수료 등급 정보 없음: ${record.companies.company_name}`);
         } else {
-          // 제품 정보 조회
+        // 제품 정보 조회
           const { data: product, error: productError } = await supabase
-            .from('products')
-            .select('commission_rate_A, commission_rate_B, commission_rate_C')
-            .eq('product_name', record.products.product_name.trim())
-            .single();
+          .from('products')
+          .select('commission_rate_A, commission_rate_B, commission_rate_C')
+          .eq('product_name', record.products.product_name.trim())
+          .single();
 
           if (productError) {
             console.warn(`제품 정보 조회 실패 (${record.products.product_name}):`, productError.message);
           } else if (!product) {
             console.warn(`제품 수수료율 정보 없음: ${record.products.product_name}`);
           } else {
-            const commissionField = `commission_rate_${company.commission_grade}`;
-            const commissionRate = product[commissionField];
-            
+          const commissionField = `commission_rate_${company.commission_grade}`;
+          const commissionRate = product[commissionField];
+          
             if (commissionRate !== null && commissionRate !== undefined && !isNaN(commissionRate)) {
-              const percentageRate = Number(commissionRate) * 100;
-              row.commission_rate = percentageRate;
-              
-              const prescriptionAmount = record.prescription_qty * record.products.price;
-              row.payment_amount = Math.round(prescriptionAmount * commissionRate);
-              
+            const percentageRate = Number(commissionRate) * 100;
+            row.commission_rate = percentageRate;
+            
+            const prescriptionAmount = record.prescription_qty * record.products.price;
+            row.payment_amount = Math.round(prescriptionAmount * commissionRate);
+            
               console.log(`수수료율 계산 성공: ${record.products.product_name} - ${percentageRate}%`);
             } else {
               console.warn(`수수료율 값이 유효하지 않음: ${record.products.product_name}, ${commissionField}=${commissionRate}`);
@@ -1215,7 +1237,7 @@ function toggleClientDropdown(rowIndex, event) {
   // 다른 드롭다운들 닫기
   closeOtherDropdowns('client');
   
-  clientSearchForRow.value.activeRowIndex = rowIndex;
+    clientSearchForRow.value.activeRowIndex = rowIndex;
   
   // 드롭다운 버튼 클릭시 input 엘리먼트의 위치를 찾아서 계산
   if (event && event.target) {
@@ -1356,7 +1378,7 @@ function toggleProductDropdown(rowIndex, event) {
   // 다른 드롭다운들 닫기
   closeOtherDropdowns('product');
   
-  productSearchForRow.value.activeRowIndex = rowIndex;
+    productSearchForRow.value.activeRowIndex = rowIndex;
   
   // 드롭다운 버튼 클릭시 input 엘리먼트의 위치를 찾아서 계산
   if (event && event.target) {
@@ -1566,23 +1588,23 @@ async function saveAnalysisData() {
     }
     
     const saveData = validRows.map(row => ({
-      settlement_month: selectedSettlementMonth.value,
-      prescription_month: row.prescription_month,
+        settlement_month: selectedSettlementMonth.value,
+        prescription_month: row.prescription_month,
       company_group: row.company_group,
-      company_name: row.company_name,
-      client_name: row.client_name,
-      product_name: row.product_name,
-      insurance_code: row.insurance_code,
-      price: Number(row.price.toString().replace(/,/g, '')) || 0,
-      prescription_qty: Number(row.prescription_qty) || 0,
-      prescription_amount: Number(row.prescription_amount.toString().replace(/,/g, '')) || 0,
-      prescription_type: row.prescription_type,
-      wholesale_sales: Number(row.wholesale_sales) || 0,
-      direct_sales: Number(row.direct_sales) || 0,
-      total_sales: Number(row.total_sales) || 0,
-      absorption_rate: Number(row.absorption_rate) || 0,
-      commission_rate: Number(row.commission_rate) || 0,
-      payment_amount: Number(row.payment_amount) || 0,
+        company_name: row.company_name,
+        client_name: row.client_name,
+        product_name: row.product_name,
+        insurance_code: row.insurance_code,
+        price: Number(row.price.toString().replace(/,/g, '')) || 0,
+        prescription_qty: Number(row.prescription_qty) || 0,
+        prescription_amount: Number(row.prescription_amount.toString().replace(/,/g, '')) || 0,
+        prescription_type: row.prescription_type,
+        wholesale_sales: Number(row.wholesale_sales) || 0,
+        direct_sales: Number(row.direct_sales) || 0,
+        total_sales: Number(row.total_sales) || 0,
+        absorption_rate: Number(row.absorption_rate) || 0,
+        commission_rate: Number(row.commission_rate) || 0,
+        payment_amount: Number(row.payment_amount) || 0,
       remarks: row.remarks || '',
       orig_created_at: row.orig_created_at,
       orig_registered_by: row.orig_registered_by,
@@ -1832,12 +1854,12 @@ async function searchCompanies(query) {
       .or(`company_name.ilike.%${query.trim()}%,representative_name.ilike.%${query.trim()}%`)
       .order('company_name')
       .limit(20);
-
+      
     if (error) {
       console.error('업체 검색 오류:', error);
       return;
     }
-
+    
     companySearchForRow.value.results = data || [];
     companySearchForRow.value.show = true;
   } catch (err) {
@@ -1852,12 +1874,12 @@ async function showAllCompanies() {
       .select('*')
       .order('company_name')
       .limit(50);
-
+      
     if (error) {
       console.error('업체 목록 조회 오류:', error);
       return;
     }
-
+    
     companySearchForRow.value.results = data || [];
     companySearchForRow.value.show = true;
   } catch (err) {
@@ -1956,9 +1978,9 @@ function closeOtherDropdowns(currentType) {
     clientSearchForRow.value.activeRowIndex = -1;
   }
   if (currentType !== 'product') {
-    productSearchForRow.value.show = false;
+  productSearchForRow.value.show = false;
     productSearchForRow.value.results = [];
-    productSearchForRow.value.activeRowIndex = -1;
+  productSearchForRow.value.activeRowIndex = -1;
   }
   if (currentType !== 'company') {
     companySearchForRow.value.show = false;
@@ -1968,6 +1990,496 @@ function closeOtherDropdowns(currentType) {
 }
 
 // 드롭다운 위치 계산 함수
+
+// 엑셀 템플릿 다운로드
+function downloadExcelTemplate() {
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 먼저 선택하세요.');
+    return;
+  }
+
+  try {
+    // 템플릿 헤더
+    const headers = [
+      '업체_사업자등록번호',
+      '정산월', 
+      '처방월',
+      '거래처_사업자등록번호',
+      '제품보험코드',
+      '처방수량',
+      '처방구분',
+      '비고'
+    ];
+
+    // 처방월 옵션 생성 (선택된 정산월 기준으로)
+    const prescriptionMonthSamples = [1, 2, 3].map(offset => 
+      getPrescriptionMonth(selectedSettlementMonth.value, offset)
+    );
+
+    // 샘플 데이터 (사용자 참고용)
+    const sampleData = [
+      [
+        '123-45-67890',  // 업체_사업자등록번호
+        selectedSettlementMonth.value,  // 정산월
+        prescriptionMonthSamples[0],    // 처방월 (1개월 전)
+        '987-65-43210',  // 거래처_사업자등록번호
+        '654321098',     // 제품보험코드
+        100,             // 처방수량
+        'EDI',           // 처방구분
+        '샘플 데이터'     // 비고
+      ],
+      [
+        '111-22-33444',
+        selectedSettlementMonth.value,
+        prescriptionMonthSamples[1],    // 처방월 (2개월 전)
+        '555-66-77888',
+        '123456789',
+        50,
+        '대한조제',
+        ''
+      ],
+      [
+        '',  // 빈 행들은 사용자가 입력할 수 있도록
+        selectedSettlementMonth.value,
+        '',
+        '',
+        '',
+        '',
+        'EDI',
+        ''
+      ]
+    ];
+
+    // 설명 및 가이드 추가
+    const guideData = [
+      ['※ 엑셀 일괄등록 가이드'],
+      [''],
+      ['1. 업체_사업자등록번호: 등록된 업체의 사업자등록번호를 정확히 입력하세요.'],
+      ['2. 정산월: 선택한 정산월과 동일해야 합니다.'],
+      [`3. 처방월: ${prescriptionMonthSamples.join(', ')} 중 선택하세요.`],
+      ['4. 거래처_사업자등록번호: 등록된 거래처의 사업자등록번호를 정확히 입력하세요.'],
+      ['5. 제품보험코드: 등록된 제품의 보험코드를 정확히 입력하세요.'],
+      ['6. 처방수량: 숫자로 입력하세요.'],
+      [`7. 처방구분: ${prescriptionTypeOptions.value.join(', ')} 중 선택하세요.`],
+      ['8. 비고: 필요시 추가 정보를 입력하세요.'],
+      [''],
+      ['※ 아래 샘플 데이터를 참고하여 데이터를 입력하세요.'],
+      ['※ 샘플 데이터는 삭제하고 실제 데이터만 남겨두세요.'],
+      ['']
+    ];
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    
+    // 가이드 시트 생성
+    const guideWs = XLSX.utils.aoa_to_sheet(guideData);
+    XLSX.utils.book_append_sheet(wb, guideWs, '가이드');
+
+    // 템플릿 시트 생성
+    const templateData = [headers, ...sampleData];
+    const templateWs = XLSX.utils.aoa_to_sheet(templateData);
+    
+    // 컬럼 너비 설정
+    const colWidths = [
+      { wch: 18 },  // 업체_사업자등록번호
+      { wch: 12 },  // 정산월
+      { wch: 12 },  // 처방월
+      { wch: 18 },  // 거래처_사업자등록번호
+      { wch: 15 },  // 제품보험코드
+      { wch: 12 },  // 처방수량
+      { wch: 12 },  // 처방구분
+      { wch: 15 }   // 비고
+    ];
+    templateWs['!cols'] = colWidths;
+
+    // 헤더 스타일 설정 (첫 번째 행)
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "4472C4" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    for (let col = 0; col < headers.length; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!templateWs[cellRef]) templateWs[cellRef] = {};
+      templateWs[cellRef].s = headerStyle;
+    }
+
+    XLSX.utils.book_append_sheet(wb, templateWs, '일괄등록_템플릿');
+
+    // 파일 다운로드
+    const fileName = `흡수율분석_일괄등록_템플릿_${selectedSettlementMonth.value}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    alert('엑셀 템플릿이 다운로드되었습니다.\n\n가이드 시트를 참고하여 데이터를 입력한 후 일괄등록을 진행하세요.');
+
+  } catch (err) {
+    console.error('템플릿 다운로드 오류:', err);
+    alert('템플릿 다운로드 중 오류가 발생했습니다: ' + err.message);
+  }
+}
+
+// 엑셀 일괄등록 트리거
+function triggerExcelUpload() {
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 먼저 선택하세요.');
+    return;
+  }
+  excelFileInput.value.click();
+}
+
+// 엑셀 업로드 핸들러
+async function handleExcelUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    console.log('=== 엑셀 일괄등록 시작 ===');
+    console.log('파일명:', file.name);
+    console.log('파일 크기:', file.size);
+
+    // 파일 읽기
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    
+    // 첫 번째 시트 선택
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // 데이터 파싱 (header 1 사용)
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    console.log('엑셀 데이터 행 수:', jsonData.length);
+    
+    if (jsonData.length < 2) {
+      alert('엑셀 파일에 데이터가 없습니다.');
+      return;
+    }
+    
+    // 헤더 확인 (첫 번째 행)
+    const headers = jsonData[0];
+    console.log('엑셀 헤더:', headers);
+
+    // 데이터 행들 (두 번째 행부터)
+    const dataRows = jsonData.slice(1).filter(row => row && row.length > 0 && row[0]);
+    
+    console.log('유효한 데이터 행 수:', dataRows.length);
+    
+    if (dataRows.length === 0) {
+      alert('처리할 유효한 데이터가 없습니다.');
+      return;
+    }
+    
+    // 엑셀 데이터 파싱 및 변환
+    const parsedData = await parseExcelData(dataRows);
+    
+    console.log('파싱된 데이터:', parsedData.length, '건');
+    
+    if (parsedData.length === 0) {
+      alert('변환할 수 있는 유효한 데이터가 없습니다.');
+      return;
+    }
+    
+    // 기존 데이터에 추가 (또는 교체)
+    if (displayRows.value.length > 0) {
+      const answer = confirm(`기존 ${displayRows.value.length}건의 데이터가 있습니다.\n\n[확인]: 기존 데이터에 추가\n[취소]: 기존 데이터 교체`);
+      if (!answer) {
+        // 기존 데이터 교체
+        displayRows.value = parsedData;
+      } else {
+        // 기존 데이터에 추가
+        displayRows.value.push(...parsedData);
+      }
+    } else {
+      displayRows.value = parsedData;
+    }
+
+    // 변경사항 표시
+    hasUnsavedChanges.value = true;
+    hasExistingData.value = false; // 엑셀로 새로 불러온 데이터는 기존 DB 데이터가 아님
+
+    alert(`엑셀 일괄등록 완료!\n\n총 ${parsedData.length}건의 데이터를 불러왔습니다.`);
+    
+  } catch (err) {
+    console.error('엑셀 업로드 오류:', err);
+    alert('엑셀 파일 처리 중 오류가 발생했습니다:\n' + err.message);
+  } finally {
+    // 파일 입력 초기화
+    event.target.value = '';
+  }
+}
+
+// 전체 삭제 기능
+async function confirmDeleteAllData() {
+  if (displayRows.value.length === 0) {
+    alert('삭제할 데이터가 없습니다.');
+    return;
+  }
+  
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 선택하세요.');
+    return;
+  }
+
+  const deleteMessage = hasExistingData.value 
+    ? `${selectedSettlementMonth.value} 정산월의 모든 흡수율 분석 데이터를 DB에서 완전히 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다!`
+    : '현재 화면의 모든 데이터를 삭제하시겠습니까?';
+
+  if (!confirm(deleteMessage)) {
+    return;
+  }
+
+  try {
+    // DB에 저장된 데이터가 있는 경우 DB에서도 삭제
+    if (hasExistingData.value) {
+      console.log('DB에서 흡수율 분석 데이터 삭제 중...', selectedSettlementMonth.value);
+      
+      const { error } = await supabase
+        .from('absorption_analysis')
+        .delete()
+        .eq('settlement_month', selectedSettlementMonth.value);
+
+    if (error) {
+        throw new Error('DB 삭제 실패: ' + error.message);
+      }
+      
+      console.log('DB 삭제 완료');
+      hasExistingData.value = false; // 기존 데이터 없음으로 변경
+    }
+    
+    // 화면 데이터 삭제
+    displayRows.value = [];
+    hasUnsavedChanges.value = false; // 삭제 후에는 저장할 변경사항이 없음
+    
+    alert('전체 데이터가 삭제되었습니다.');
+    
+  } catch (err) {
+    console.error('전체 삭제 오류:', err);
+    alert('삭제 중 오류가 발생했습니다: ' + err.message);
+  }
+}
+
+// 엑셀 업로드 관련
+const excelFileInput = ref(null);
+
+// 엑셀 데이터 파싱 함수
+async function parseExcelData(dataRows) {
+  const parsedData = [];
+  const errors = [];
+
+  for (let i = 0; i < dataRows.length; i++) {
+    const row = dataRows[i];
+    const rowNum = i + 2; // 엑셀 행 번호 (헤더 포함)
+
+    try {
+      // 엑셀 데이터 구조: 업체_사업자등록번호 / 정산월 / 처방월 / 거래처_사업자등록번호 / 제품보험코드 / 처방수량 / 처방구분 / 비고
+      const companyBusinessNumber = row[0]?.toString().trim();
+      const settlementMonth = row[1]?.toString().trim();
+      const prescriptionMonth = row[2]?.toString().trim();
+      const clientBusinessNumber = row[3]?.toString().trim();
+      const insuranceCode = row[4]?.toString().trim();
+      const prescriptionQty = Number(row[5]) || 0;
+      const prescriptionType = row[6]?.toString().trim() || 'EDI';
+      const remarks = row[7]?.toString().trim() || '';
+
+      // 필수 데이터 검증
+      if (!companyBusinessNumber || !settlementMonth || !prescriptionMonth || !clientBusinessNumber || !insuranceCode) {
+        errors.push(`${rowNum}행: 필수 데이터가 누락되었습니다.`);
+        continue;
+      }
+
+      // 정산월 검증
+      if (settlementMonth !== selectedSettlementMonth.value) {
+        errors.push(`${rowNum}행: 정산월이 선택된 정산월(${selectedSettlementMonth.value})과 다릅니다.`);
+        continue;
+      }
+
+      // 업체 정보 매칭
+      const company = await matchCompanyByBusinessNumber(companyBusinessNumber);
+      if (!company) {
+        errors.push(`${rowNum}행: 업체를 찾을 수 없습니다. (사업자번호: ${companyBusinessNumber})`);
+        continue;
+      }
+
+      // 거래처 정보 매칭
+      const client = await matchClientByBusinessNumber(clientBusinessNumber);
+      if (!client) {
+        errors.push(`${rowNum}행: 거래처를 찾을 수 없습니다. (사업자번호: ${clientBusinessNumber})`);
+        continue;
+      }
+
+      // 제품 정보 매칭
+      const product = await matchProductByInsuranceCode(insuranceCode);
+      if (!product) {
+        errors.push(`${rowNum}행: 제품을 찾을 수 없습니다. (보험코드: ${insuranceCode})`);
+        continue;
+      }
+
+      // 수수료율 계산
+      let commissionRate = 0;
+      let paymentAmount = 0;
+      
+      try {
+        if (company.commission_grade && product[`commission_rate_${company.commission_grade}`] !== null) {
+          const rate = Number(product[`commission_rate_${company.commission_grade}`]);
+          commissionRate = rate * 100;
+          paymentAmount = Math.round(prescriptionQty * product.price * rate);
+        }
+      } catch (err) {
+        console.warn(`${rowNum}행: 수수료율 계산 실패`, err);
+      }
+
+      // 데이터 객체 생성
+      const analysisRow = {
+        id: `excel_${Date.now()}_${i}`,
+        original_id: null,
+        company_group: company.company_group || '',
+        company_name: company.company_name,
+        client_name: client.name,
+        prescription_month: prescriptionMonth,
+        product_name: product.product_name,
+        product_name_display: product.product_name,
+        insurance_code: product.insurance_code,
+        price: Number(product.price).toLocaleString(),
+        prescription_qty: prescriptionQty,
+        prescription_amount: (prescriptionQty * product.price).toLocaleString(),
+        prescription_type: prescriptionType,
+        wholesale_sales: 0,
+        direct_sales: 0,
+        total_sales: 0,
+        absorption_rate: 0,
+        commission_rate: commissionRate,
+        payment_amount: paymentAmount,
+        remarks: remarks,
+        orig_created_at: new Date().toISOString(),
+        orig_registered_by: '관리자', // 엑셀 일괄등록은 관리자가 등록자
+        assigned_pharmacist_contact: company.assigned_pharmacist_contact || ''
+      };
+
+      parsedData.push(analysisRow);
+
+    } catch (err) {
+      console.error(`${rowNum}행 처리 오류:`, err);
+      errors.push(`${rowNum}행: 데이터 처리 중 오류 발생`);
+    }
+  }
+
+  // 오류 메시지 표시
+  if (errors.length > 0) {
+    const errorMessage = `다음 오류가 발생했습니다:\n\n${errors.slice(0, 10).join('\n')}${errors.length > 10 ? `\n... 외 ${errors.length - 10}건` : ''}`;
+    console.warn('엑셀 파싱 오류:', errors);
+    
+    if (parsedData.length === 0) {
+      alert(errorMessage);
+    } else {
+      alert(`${errorMessage}\n\n성공적으로 처리된 데이터: ${parsedData.length}건`);
+    }
+  }
+
+  return parsedData;
+}
+
+// 업체 매칭 함수
+async function matchCompanyByBusinessNumber(businessNumber) {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('business_registration_number', businessNumber.trim());
+
+    if (error || !data || data.length === 0) {
+      console.warn(`업체 매칭 실패: ${businessNumber}`);
+      return null;
+    }
+
+    console.log(`업체 매칭 성공: ${businessNumber} -> ${data[0].company_name} (총 ${data.length}개 중 첫 번째)`);
+    return data[0]; // 여러 개가 있어도 첫 번째 결과 반환
+  } catch (err) {
+    console.error('업체 매칭 오류:', err);
+    return null;
+  }
+}
+
+// 거래처 매칭 함수
+async function matchClientByBusinessNumber(businessNumber) {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('business_registration_number', businessNumber.trim());
+
+    if (error || !data || data.length === 0) {
+      console.warn(`거래처 매칭 실패: ${businessNumber}`);
+      return null;
+    }
+
+    console.log(`거래처 매칭 성공: ${businessNumber} -> ${data[0].name} (총 ${data.length}개 중 첫 번째)`);
+    return data[0]; // 여러 개가 있어도 첫 번째 결과 반환
+  } catch (err) {
+    console.error('거래처 매칭 오류:', err);
+    return null;
+  }
+}
+
+// 제품 매칭 함수
+async function matchProductByInsuranceCode(insuranceCode) {
+  try {
+    // 보험코드 형식 정규화
+    let normalizedCode = insuranceCode.toString().trim();
+    
+    console.log('원본 보험코드:', insuranceCode, '타입:', typeof insuranceCode);
+    console.log('정규화된 보험코드:', normalizedCode);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('insurance_code', normalizedCode);
+
+    if (error || !data || data.length === 0) {
+      console.warn(`제품 매칭 실패: ${normalizedCode}`);
+      
+      // 매칭 실패시 앞에 0을 붙여서 다시 시도 (9자리 -> 10자리)
+      if (normalizedCode.length === 9) {
+        const paddedCode = '0' + normalizedCode;
+        console.log('0 추가하여 재시도:', paddedCode);
+        
+        const { data: retryData, error: retryError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('insurance_code', paddedCode);
+          
+        if (!retryError && retryData && retryData.length > 0) {
+          console.log('0 추가 매칭 성공:', paddedCode, '->', retryData[0].product_name);
+          return retryData[0]; // 첫 번째 결과 반환
+        }
+      }
+      
+      // 매칭 실패시 10자리에서 앞의 0을 제거하여 다시 시도
+      if (normalizedCode.length === 10 && normalizedCode.startsWith('0')) {
+        const trimmedCode = normalizedCode.substring(1);
+        console.log('0 제거하여 재시도:', trimmedCode);
+        
+        const { data: retryData, error: retryError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('insurance_code', trimmedCode);
+          
+        if (!retryError && retryData && retryData.length > 0) {
+          console.log('0 제거 매칭 성공:', trimmedCode, '->', retryData[0].product_name);
+          return retryData[0]; // 첫 번째 결과 반환
+        }
+      }
+      
+      return null;
+    }
+
+    console.log(`제품 매칭 성공: ${normalizedCode} -> ${data[0].product_name} (총 ${data.length}개 중 첫 번째)`);
+    return data[0]; // 여러 개가 있어도 첫 번째 결과 반환
+  } catch (err) {
+    console.error('제품 매칭 오류:', err);
+    return null;
+  }
+}
 </script>
 
 <style scoped>
@@ -1977,6 +2489,54 @@ function closeOtherDropdowns(currentType) {
   justify-content: center !important;
   display: flex !important;
   width: 100% !important;
+}
+
+/* 테이블 헤더 고정 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead) {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background: #f8f9fa !important;
+}
+
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th) {
+  background: #f8f9fa !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+/* 좌측 고정 컬럼(No) 스타일 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:first-child) {
+  position: sticky !important;
+  left: 0 !important;
+  background: white !important;
+  z-index: 12 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 우측 고정 컬럼(작업) 스타일 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:last-child) {
+  position: sticky !important;
+  right: 0 !important;
+  background: white !important;
+  z-index: 12 !important;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 헤더의 좌측/우측 고정 컬럼 배경 및 z-index 강화 */
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child) {
+  background: #f8f9fa !important;
+  z-index: 13 !important;
+}
+
+/* 호버시 좌측/우측 고정 컬럼 배경 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:first-child),
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:last-child) {
+  background: #f5f5f5 !important;
 }
 
 /* 테이블 내용 정렬 */
@@ -1998,8 +2558,10 @@ function closeOtherDropdowns(currentType) {
 :deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16)) { text-align: right !important; }  /* 수수료율 */
 :deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17)) { text-align: right !important; }  /* 지급액 */
 :deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18)) { text-align: left !important; }   /* 비고 */
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19)) { text-align: center !important; } /* 관리자 */
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20)) { text-align: center !important; } /* 작업 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19)) { text-align: center !important; } /* 등록일시 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20)) { text-align: center !important; } /* 등록자 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(21)) { text-align: center !important; } /* 관리자 */
+:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(22)) { text-align: center !important; } /* 작업 */
 
 /* 작은 버튼 스타일 */
 .btn-edit-s, .btn-save-s, .btn-cancel-s, .btn-delete-s, .btn-add-s {
@@ -2023,56 +2585,6 @@ function closeOtherDropdowns(currentType) {
 .btn-cancel-s:hover { background: #da190b; }
 .btn-delete-s:hover { background: #ffebee; }
 .btn-add-s:hover { background: #e8f5e8; }
-
-/* Frozen 컬럼 고정 스타일 강화 */
-:deep(.admin-absorption-analysis-table .p-datatable-frozen-column) {
-  position: sticky !important;
-  z-index: 1 !important;
-}
-
-:deep(.admin-absorption-analysis-table .p-datatable-frozen-column-right) {
-  right: 0 !important;
-  background: white !important;
-  box-shadow: -2px 0 4px rgba(0,0,0,0.1) !important;
-}
-
-/* 우측 고정 컬럼 배경색 보정 */
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover .p-datatable-frozen-column-right) {
-  background: var(--bg-hover) !important;
-}
-
-/* 좌측 고정 컬럼(No) 스타일 */
-:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:first-child) {
-  position: sticky !important;
-  left: 0 !important;
-  background: white !important;
-  z-index: 2 !important;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
-}
-
-/* 우측 고정 컬럼(작업) 스타일 */
-:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child),
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr > td:last-child) {
-  position: sticky !important;
-  right: 0 !important;
-  background: white !important;
-  z-index: 2 !important;
-  box-shadow: -2px 0 4px rgba(0,0,0,0.1) !important;
-}
-
-/* 헤더의 좌측/우측 고정 컬럼 배경 */
-:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:first-child),
-:deep(.admin-absorption-analysis-table .p-datatable-thead > tr > th:last-child) {
-  background: #f8f9fa !important;
-  z-index: 3 !important;
-}
-
-/* 호버시 좌측/우측 고정 컬럼 배경 */
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:first-child),
-:deep(.admin-absorption-analysis-table .p-datatable-tbody > tr:hover > td:last-child) {
-  background: #f5f5f5 !important;
-}
 
 /* 비활성화된 저장 버튼 스타일 */
 .btn-disabled {
@@ -2204,5 +2716,29 @@ function closeOtherDropdowns(currentType) {
 .product-search-dropdown .insurance-code {
   font-size: 0.8em;
   color: #666;
+}
+
+/* 전체 삭제 버튼 스타일 */
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-danger:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 </style> 
