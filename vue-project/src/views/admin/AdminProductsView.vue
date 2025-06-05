@@ -244,12 +244,12 @@ import * as XLSX from 'xlsx'
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   product_name: '12%',
   insurance_code: '8%',
   price: '6%',
-  commission_rate_a: '8%',
-  commission_rate_b: '8%',
+  commission_rate_a: '9%',
+  commission_rate_b: '9%',
   standard_code: '8%',
   unit_packaging_desc: '10%',
   unit_quantity: '8%',
@@ -303,17 +303,6 @@ const koLocale = {
   clear: '초기화',
 }
 
-// 기준월 목록 생성 (최신순)
-const generateAvailableMonths = () => {
-  const monthSet = new Set()
-  products.value.forEach((product) => {
-    if (product.base_month) {
-      monthSet.add(product.base_month)
-    }
-  })
-  availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a))
-}
-
 const filteredProducts = computed(() => {
   if (!selectedMonth.value) return products.value
   return products.value.filter((p) => p.base_month === selectedMonth.value)
@@ -334,18 +323,18 @@ const fetchProducts = async () => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .order('base_month', { ascending: false })
-    .order('product_name', { ascending: true })
+    .order('base_month', { ascending: false });
   if (!error && data) {
-    products.value = data.map((item) => ({
-      ...item,
-      isEditing: false,
-      originalData: { ...item },
-    }))
-    generateAvailableMonths()
+    products.value = data;
+    // 중복 없이 기준월만 추출
+    const monthSet = new Set();
+    data.forEach((item) => {
+      if (item.base_month) monthSet.add(item.base_month);
+    });
+    availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
     // 최신 연월을 기본값으로
     if (availableMonths.value.length > 0) {
-      selectedMonth.value = availableMonths.value[0]
+      selectedMonth.value = availableMonths.value[0];
     }
   }
 }

@@ -39,7 +39,7 @@
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="settlement_month" header="정산월" :headerStyle="{ width: columnWidths.settlement_month }" :sortable="true">
+        <Column field="settlement_month" header="정산월" :headerStyle="{ width: columnWidths.settlement_month }">
           <template #body="slotProps">
             <a
               href="#"
@@ -76,11 +76,11 @@ import { supabase } from '@/supabase';
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   settlement_month: '8%',
   start_date: '10%',
   end_date: '10%',
-  notice: '36%',
+  notice: '38%',
   remarks: '20%',
   status: '10%'
 };

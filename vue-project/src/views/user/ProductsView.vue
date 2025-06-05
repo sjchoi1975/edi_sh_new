@@ -28,7 +28,7 @@
           전체 {{ filteredProducts.length }} 건
         </div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="filteredProducts.length === 0">
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="filteredProducts.length === 0">
             엑셀 다운로드
           </button>
         </div>
@@ -39,7 +39,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 280px)"
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="custom-table products-table"
@@ -87,8 +87,8 @@ const currentPageFirstIndex = ref(0);
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '8%',
-  product_name: '24%',
+  no: '4%',
+  product_name: '28%',
   insurance_code: '20%',
   price: '12%',
   commission_rate: '12%',
@@ -138,11 +138,16 @@ const fetchProducts = async () => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .order('base_month', { ascending: false })
-    .order('product_name', { ascending: true });
+    .eq('status', 'active')
+    .order('base_month', { ascending: false });
   if (!error && data) {
     products.value = data;
-    generateAvailableMonths();
+    // 중복 없이 기준월만 추출
+    const monthSet = new Set();
+    data.forEach((item) => {
+      if (item.base_month) monthSet.add(item.base_month);
+    });
+    availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
     // 최신 연월을 기본값으로
     if (availableMonths.value.length > 0) {
       selectedMonth.value = availableMonths.value[0];
@@ -232,13 +237,3 @@ onMounted(async () => {
   await fetchProducts();
 });
 </script>
-
-<style scoped>
-/* 제품 목록 테이블 헤더 가운데 정렬 */
-:deep(.products-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 

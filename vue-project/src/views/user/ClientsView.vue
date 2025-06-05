@@ -20,7 +20,7 @@
           전체 {{ clients.length }} 건
         </div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="clients.length === 0">
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="clients.length === 0">
             엑셀 다운로드
           </button>
         </div>
@@ -31,7 +31,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 280px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
         class="custom-table clients-table"
@@ -73,13 +73,13 @@ const currentPageFirstIndex = ref(0);
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
-  client_code: '10%',
-  name: '18%',
+  no: '4%',
+  client_code: '8%',
+  name: '20%',
   business_registration_number: '10%',
-  owner_name: '10%',
-  address: '34%',
-  remarks: '12%'
+  owner_name: '8%',
+  address: '36%',
+  remarks: '14%'
 };
 
 function goToDetail(id) {
@@ -179,13 +179,3 @@ onMounted(() => {
   fetchClients();
 });
 </script>
-
-<style scoped>
-/* 거래처 목록 테이블 헤더 가운데 정렬 */
-:deep(.clients-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 

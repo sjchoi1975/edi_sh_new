@@ -27,7 +27,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 280px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
         class="custom-table notices-table"
@@ -86,9 +86,9 @@ const filters = ref({
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   is_pinned: '6%',
-  title: '60%',
+  title: '62%',
   file_count: '8%',
   view_count: '8%',
   created_at: '12%'
@@ -163,13 +163,3 @@ watch(filteredNotices, (val) => {
   console.log('filteredNotices:', val);
 });
 </script>
-
-<style scoped>
-/* 공지사항 테이블 헤더 가운데 정렬 */
-:deep(.notices-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style>

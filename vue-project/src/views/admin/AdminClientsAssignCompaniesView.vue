@@ -191,12 +191,12 @@ const fileInput = ref(null)
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   client_code: '8%',
   name: '14%',
   business_registration_number: '10%',
   owner_name: '8%',
-  address: '18%',
+  address: '20%',
   company_name: '14%',
   company_brn: '10%',
   actions: '12%'

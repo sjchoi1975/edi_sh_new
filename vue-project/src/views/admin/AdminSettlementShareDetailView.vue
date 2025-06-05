@@ -53,17 +53,17 @@ const companyInfo = ref({ company_name: '', business_registration_number: '', re
 const detailRows = ref([]);
 
 const columnWidths = {
-  no: '6%',
-  client_name: '14%',
-  prescription_month: '8%',
-  product_name: '12%',
-  insurance_code: '10%',
-  price: '8%',
-  prescription_qty: '8%',
-  prescription_amount: '8%',
-  commission_rate: '8%',
-  payment_amount: '8%',
-  remarks: '10%'
+  no: '4%',
+  client_name: '16%',
+  prescription_month: '6%',
+  product_name: '16%',
+  insurance_code: '7%',
+  price: '7%',
+  prescription_qty: '7%',
+  prescription_amount: '7%',
+  commission_rate: '7%',
+  payment_amount: '7%',
+  remarks: '16%'
 };
 
 async function fetchCompanyInfo() {
@@ -138,10 +138,3 @@ function downloadExcel() {
   XLSX.writeFile(wb, fileName);
 }
 </script>
-
-<style scoped>
-.settlement-detail-header {
-  margin-bottom: 1rem;
-  padding: 0.5rem 1rem;
-}
-</style>

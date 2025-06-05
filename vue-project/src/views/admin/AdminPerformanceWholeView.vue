@@ -53,8 +53,8 @@
         scrollDirection="both"
         class="admin-performance-whole-table"
         :pt="{
-          wrapper: { style: 'min-width: 2200px;' },
-          table: { style: 'min-width: 2200px;' }
+          wrapper: { style: 'min-width: 2000px;' },
+          table: { style: 'min-width: 2000px;' }
         }"
       >
         <template #empty>등록된 실적이 없습니다.</template>
@@ -101,7 +101,7 @@
         class="table-footer-wrapper"
         style="
           width: 100%;
-          min-width: 2200px;
+          min-width: 2000px;
           padding: 0 2rem 0 0;
           background: #f8f9fa;
           height: 38px;
@@ -112,7 +112,7 @@
           z-index: 2;
         "
       >
-        <table style="width: 100%; table-layout: fixed; min-width: 2200px">
+        <table style="width: 100%; table-layout: fixed; min-width: 2000px">
           <tr>
             <td style="width: 47%; text-align: center; font-weight: 600">합계</td>
             <td style="width: 4%; text-align: right; font-weight: 600">{{ totalQty }}</td>
@@ -264,12 +264,9 @@ async function fetchAvailableMonths() {
     const { data, error } = await supabase
       .from('settlement_months')
       .select('settlement_month, start_date, end_date')
-      .eq('status', 'active')
       .order('settlement_month', { ascending: false });
-      
     if (!error && data) {
       availableMonths.value = data;
-      
       // 첫 번째(최신) 정산월을 디폴트로 설정
       if (data.length > 0 && !selectedSettlementMonth.value) {
         selectedSettlementMonth.value = data[0].settlement_month;
@@ -588,13 +585,3 @@ onMounted(() => {
   fetchAvailableMonths();
 });
 </script>
-
-<style scoped>
-/* 전체 등록 현황 테이블 헤더 가운데 정렬 */
-:deep(.admin-performance-whole-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 

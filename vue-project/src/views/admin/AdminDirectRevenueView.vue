@@ -197,11 +197,11 @@ import * as XLSX from 'xlsx'
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   pharmacy_code: '8%',
   pharmacy_name: '12%',
   business_registration_number: '10%',
-  address: '14%',
+  address: '16%',
   standard_code: '10%',
   product_name: '12%',
   sales_amount: '8%',

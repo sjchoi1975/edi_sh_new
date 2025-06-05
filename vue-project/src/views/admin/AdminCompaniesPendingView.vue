@@ -84,9 +84,9 @@ import TopNavigationBar from '@/components/TopNavigationBar.vue'
 
 // 컬럼 너비 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   company_group: '8%',
-  company_name: '14%',
+  company_name: '16%',
   business_registration_number: '10%',
   representative_name: '8%',
   business_address: '30%',

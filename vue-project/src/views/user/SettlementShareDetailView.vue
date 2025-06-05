@@ -33,7 +33,7 @@
           <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
         </div>
       </div>
-      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 290px)" class="admin-settlement-share-detail-table">
+      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 280px)" class="admin-settlement-share-detail-table">
         <template #empty>조회된 데이터가 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
@@ -70,17 +70,17 @@ const selectedClient = ref('');
 const detailRows = ref([]);
 
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   client_name: '14%',
   prescription_month: '8%',
-  product_name: '12%',
-  insurance_code: '10%',
+  product_name: '14%',
+  insurance_code: '8%',
   price: '8%',
   prescription_qty: '8%',
   prescription_amount: '8%',
   commission_rate: '8%',
   payment_amount: '8%',
-  remarks: '10%'
+  remarks: '12%'
 };
 
 // 1. 내 company_id 조회
@@ -210,10 +210,3 @@ function downloadExcel() {
   XLSX.writeFile(wb, fileName);
 }
 </script>
-
-<style scoped>
-.settlement-detail-header {
-  margin-bottom: 1rem;
-  padding: 0.5rem 1rem;
-}
-</style>

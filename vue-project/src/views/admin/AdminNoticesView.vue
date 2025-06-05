@@ -89,9 +89,9 @@ const filters = ref({
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '6%',
+  no: '4%',
   is_pinned: '6%',
-  title: '60%',
+  title: '62%',
   file_count: '8%',
   view_count: '8%',
   created_at: '12%'

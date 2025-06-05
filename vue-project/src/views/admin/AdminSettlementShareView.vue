@@ -63,18 +63,18 @@ import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
-  no: '5%',
+  no: '4%',
   company_group: '8%',
-  company_name: '12%',
-  business_registration_number: '8%',
+  company_name: '14%',
+  business_registration_number: '10%',
   representative_name: '8%',
   assigned_pharmacist_contact: '8%',
-  client_count: '7%',
-  prescription_count: '7%',
+  client_count: '8%',
+  prescription_count: '8%',
   prescription_amount: '8%',
   payment_amount: '8%',
-  detail: '7%',
-  share: '7%'
+  detail: '8%',
+  share: '8%'
 };
 
 const selectedMonth = ref('');
@@ -289,52 +289,3 @@ async function setAllShare(flag) {
   // DB 일괄 업데이트는 저장 버튼에서만 처리
 }
 </script>
-
-<style scoped>
-.page-breadcrumb {
-  font-size: 0.95rem;
-  color: #888;
-  margin-bottom: 2px;
-}
-.btn-detail, .btn-excel {
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-  font-size: 12px;
-}
-.btn-detail:hover { background: #e3f2fd; }
-.btn-excel:hover { background: #e8f5e8; }
-
-.btn-outline {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  padding: 2px 10px;
-  border-radius: 4px;
-  margin-right: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.btn-outline:hover {
-  background: #f2f2f2;
-}
-.btn-primary {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  padding: 2px 10px;
-  border-radius: 4px;
-  margin-right: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.btn-primary:hover {
-  background: #f2f2f2;
-}
-.share-checkbox {
-  transform: scale(0.8);
-  margin: 0;
-}
-</style>

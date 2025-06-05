@@ -6,11 +6,13 @@
 
     <!-- 필터 카드: 정산월 드롭다운 -->
     <div class="filter-card">
-      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">정산월</label>
+      <div class="filter-row" style="justify-content: flex-start; align-items: flex-end">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <label style="font-weight: 400">정산월</label>
           <select v-model="selectedSettlementMonth" class="select_month">
-            <option v-for="month in availableMonths" :key="month" :value="month">{{ month }}</option>
+            <option v-for="month in availableMonths" :key="month" :value="month">
+              {{ month }}
+            </option>
           </select>
         </div>
       </div>
@@ -19,17 +21,47 @@
     <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">전체 {{ clientList.length }}건</div>
+        <div class="total-count-display">전체 {{ clientList.length }} 건</div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="clientList.length === 0">
+          <button class="btn-excell-template" @click="downloadExcelTemplate" style="margin-right: 8px">
+            템플릿 다운로드
+          </button>
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="clientList.length === 0">
             엑셀 다운로드
           </button>
         </div>
       </div>
+
+      <!-- 엑셀 업로드 영역 -->
+      <div class="excel-upload-area" style="padding: 1rem; border-bottom: 1px solid #dee2e6">
+        <div style="display: flex; align-items: center; gap: 1rem">
+          <input
+            type="file"
+            ref="excelFileInput"
+            accept=".xlsx,.xls"
+            @change="handleExcelUpload"
+            style="display: none"
+          />
+          <button class="btn-excell-upload" @click="triggerExcelUpload">엑셀 파일 선택</button>
+          <span v-if="selectedExcelFile" style="color: #666">
+            {{ selectedExcelFile.name }}
+          </span>
+        </div>
+        <div
+          v-if="uploadErrors.length > 0"
+          class="upload-errors"
+          style="margin-top: 1rem; color: #dc3545"
+        >
+          <div v-for="(error, index) in uploadErrors" :key="index">
+            {{ error }}
+          </div>
+        </div>
+      </div>
+
       <DataTable
         :value="clientList"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 280px)"
         class="custom-table performance-register-table"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
@@ -42,28 +74,46 @@
           </template>
         </Column>
         <!-- 거래처 정보 -->
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }" />
-        <Column 
-          header="병의원명" 
-          :headerStyle="{ width: columnWidths.name, textAlign: 'center' }"
-        >
+        <Column
+          field="client_code"
+          header="거래처코드"
+          :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }"
+        />
+        <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
           <template #body="slotProps">
-            <span 
+            <span
               :title="slotProps.data.name"
-              style="display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400;"
+              style="
+                display: block;
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-weight: 500;
+              "
             >
               {{ slotProps.data.name }}
             </span>
           </template>
         </Column>
-        <Column 
-          header="주소" 
-          :headerStyle="{ width: columnWidths.address, textAlign: 'center' }" 
-        >
+        <Column
+          field="business_registration_number"
+          header="사업자등록번호"
+          :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
+        />
+        <Column header="주소" :headerStyle="{ width: columnWidths.address, textAlign: 'center' }">
           <template #body="slotProps">
-            <span 
+            <span
               :title="slotProps.data.address"
-              style="display: block; max-width: 100%; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box;"
+              style="
+                display: block;
+                max-width: 100%;
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                box-sizing: border-box;
+              "
             >
               {{ slotProps.data.address }}
             </span>
@@ -71,79 +121,122 @@
         </Column>
 
         <!-- 실적 정보 -->
-        <Column header="처방건수" :headerStyle="{ width: columnWidths.performance_count, textAlign: 'center' }">
+        <Column
+          header="처방건수"
+          :headerStyle="{ width: columnWidths.performance_count, textAlign: 'center' }"
+        >
           <template #body="slotProps">
             {{ slotProps.data.performance_count ? slotProps.data.performance_count : '-' }}
           </template>
         </Column>
-        <Column header="처방액" :headerStyle="{ width: columnWidths.total_prescription_amount, textAlign: 'center' }">
+        <Column
+          header="처방액"
+          :headerStyle="{ width: columnWidths.total_prescription_amount, textAlign: 'center' }"
+        >
           <template #body="slotProps">
-            {{ slotProps.data.total_prescription_amount ? formatNumber(slotProps.data.total_prescription_amount) : '-' }}
+            {{
+              slotProps.data.total_prescription_amount
+                ? formatNumber(slotProps.data.total_prescription_amount)
+                : '-'
+            }}
           </template>
         </Column>
 
         <!-- 버튼 영역 -->
-        <Column header="조회" :headerStyle="{ width: columnWidths.view_button, textAlign: 'center' }">
+        <Column
+          header="조회"
+          :headerStyle="{ width: columnWidths.view_button, textAlign: 'center' }"
+        >
           <template #body="slotProps">
-            <button 
-              class="btn-view" 
+            <button
+              class="btn-view-s"
               @click="viewDetails(slotProps.data)"
               :disabled="!isInputPeriod || !(slotProps.data.performance_count > 0)"
-            >조회</button>
+            >
+              조회
+            </button>
           </template>
         </Column>
-        <Column header="등록" :headerStyle="{ width: columnWidths.input_button, textAlign: 'center' }">
+        <Column
+          header="등록"
+          :headerStyle="{ width: columnWidths.input_button, textAlign: 'center' }"
+        >
           <template #body="slotProps">
-            <button 
-              class="btn-input" 
+            <button
+              class="btn-input-s"
               @click="registerPerformance(slotProps.data)"
               :disabled="!isInputPeriod"
-            >등록</button>
+            >
+              등록
+            </button>
           </template>
         </Column>
-        <Column header="증빙 파일" :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }">
+        <Column
+          header="증빙 파일"
+          :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }"
+        >
           <template #body="slotProps">
             {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
           </template>
         </Column>
-        <Column header="파일 보기" :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }">
+        <Column
+          header="파일 보기"
+          :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }"
+        >
           <template #body="slotProps">
-            <button 
-              class="btn-view" 
+            <button
+              class="btn-view-s"
               @click="openDetailModal(slotProps.data)"
               :disabled="!isInputPeriod || !(slotProps.data.evidence_files_count > 0)"
-            >보기</button>
+            >
+              보기
+            </button>
           </template>
         </Column>
-        <Column header="업로드" :headerStyle="{ width: columnWidths.upload_button, textAlign: 'center' }">
+        <Column
+          header="업로드"
+          :headerStyle="{ width: columnWidths.upload_button, textAlign: 'center' }"
+        >
           <template #body="slotProps">
-            <button 
-              class="btn-upload" 
+            <button
+              class="btn-upload-s"
               @click="openUploadModal(slotProps.data)"
               :disabled="!isInputPeriod"
-            >업로드</button>
+            >
+              업로드
+            </button>
           </template>
         </Column>
       </DataTable>
       <!-- 합계 행: 테이블 하단 고정 -->
-      <div class="table-footer-wrapper"
-        style="width:100%;
-        padding: 0 2rem 0 0;
-        background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
-        position:sticky;
-        bottom:0;
-        z-index:2;">
-        <table style="width:100%; table-layout:fixed;">
+      <div
+        class="table-footer-wrapper"
+        style="
+          width: 100%;
+          padding: 0 2rem 0 0;
+          background: #f8f9fa;
+          height: 38px;
+          border: 1px solid #dee2e6;
+          border-bottom: 2px solid #aaa;
+          position: sticky;
+          bottom: 0;
+          z-index: 2;
+        "
+      >
+        <table style="width: 100%; table-layout: fixed">
           <tr>
-            <td style="width:52%; text-align:center; font-weight:600;">합계</td>
-            <td style="width:7%; text-align:center; font-weight:600;">{{ totalPerformanceCount }}</td>
-            <td style="width:7%; text-align:right; font-weight:600;">{{ formatNumber(totalPrescriptionAmount) }}</td>
-            <td style="width:15%;"></td>
-            <td style="width:6%; text-align:center; font-weight:600;">{{ totalEvidenceFilesCount }}</td>
-            <td style="width:13%;"></td>
+            <td style="width: 52%; text-align: center; font-weight: 600">합계</td>
+            <td style="width: 7%; text-align: center; font-weight: 600">
+              {{ totalPerformanceCount }}
+            </td>
+            <td style="width: 7%; text-align: right; font-weight: 600">
+              {{ formatNumber(totalPrescriptionAmount) }}
+            </td>
+            <td style="width: 15%"></td>
+            <td style="width: 6%; text-align: center; font-weight: 600">
+              {{ totalEvidenceFilesCount }}
+            </td>
+            <td style="width: 13%"></td>
           </tr>
         </table>
       </div>
@@ -158,26 +251,51 @@
             <button @click="closeDetailModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
-            <div v-if="clientFiles.length === 0" style="text-align: center; color: #666; padding: 2rem;">
+            <div
+              v-if="clientFiles.length === 0"
+              style="text-align: center; color: #666; padding: 2rem"
+            >
               등록된 파일이 없습니다.
             </div>
             <div v-else>
               <!-- 테이블 헤더 -->
-              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 1px solid #bbb; margin-bottom: 0.5rem;">
-                <div style="flex: 1; text-align: center;">파일명</div>
-                <div style="width: 80px; text-align: center;">삭제</div>
+              <div
+                style="
+                  display: flex;
+                  font-weight: bold;
+                  padding: 0.75rem 0;
+                  border-bottom: 1px solid #bbb;
+                  margin-bottom: 0.5rem;
+                "
+              >
+                <div style="flex: 1; text-align: center">파일명</div>
+                <div style="width: 80px; text-align: center">삭제</div>
               </div>
               <!-- 테이블 데이터 -->
-              <div v-for="(file, index) in clientFiles" :key="file.id" style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
-                <div style="flex: 1; text-align: left; padding-left: 1rem;">
-                  <a @click="downloadFile(file)" style="color: #1976d2; cursor: pointer; text-decoration: underline;">
+              <div
+                v-for="(file, index) in clientFiles"
+                :key="file.id"
+                style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee"
+              >
+                <div style="flex: 1; text-align: left; padding-left: 1rem">
+                  <a
+                    @click="downloadFile(file)"
+                    style="color: #1976d2; cursor: pointer; text-decoration: underline"
+                  >
                     {{ file.file_name }}
                   </a>
                 </div>
-                <div style="width: 80px; text-align: center;">
-                  <button 
-                    @click="deleteFile(file, index)" 
-                    style="color: red; border: none; background: none; cursor: pointer; font-size: 1.2rem; font-weight: 400;"
+                <div style="width: 80px; text-align: center">
+                  <button
+                    @click="deleteFile(file, index)"
+                    style="
+                      color: red;
+                      border: none;
+                      background: none;
+                      cursor: pointer;
+                      font-size: 1.2rem;
+                      font-weight: 400;
+                    "
                     title="파일 삭제"
                     :disabled="!isInputPeriod"
                   >
@@ -188,7 +306,11 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="downloadAllFiles" :disabled="clientFiles.length === 0">
+            <button
+              class="btn-secondary"
+              @click="downloadAllFiles"
+              :disabled="clientFiles.length === 0"
+            >
               전체 다운로드
             </button>
             <button class="btn-cancel" @click="closeDetailModal">닫기</button>
@@ -206,31 +328,51 @@
             <button @click="closeUploadModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
-            <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">파일 선택 (최대 10개)</label>
-              <input 
+            <div style="margin-bottom: 1rem">
+              <label style="display: block; margin-bottom: 0.5rem">파일 선택 (최대 10개)</label>
+              <input
                 ref="fileInput"
-                type="file" 
-                multiple 
+                type="file"
+                multiple
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                 @change="handleFileSelect"
-                style="width: 100%;"
+                style="width: 100%"
               />
-              <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
+              <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem">
                 등록 가능 파일: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX
               </div>
             </div>
-            <div v-if="selectedFiles.length > 0" style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem;">선택된 파일</label>
-              <div v-for="(file, index) in selectedFiles" :key="index" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #ddd; margin-bottom: 0.25rem;">
+            <div v-if="selectedFiles.length > 0" style="margin-bottom: 1rem">
+              <label style="display: block; margin-bottom: 0.5rem">선택된 파일</label>
+              <div
+                v-for="(file, index) in selectedFiles"
+                :key="index"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 0.5rem;
+                  border: 1px solid #ddd;
+                  margin-bottom: 0.25rem;
+                "
+              >
                 <span>{{ file.name }}</span>
-                <button @click="removeFile(index)" style="color: red; border: none; background: none; cursor: pointer;">×</button>
+                <button
+                  @click="removeFile(index)"
+                  style="color: red; border: none; background: none; cursor: pointer"
+                >
+                  ×
+                </button>
               </div>
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn-cancel" @click="closeUploadModal">취소</button>
-            <button class="btn-primary" @click="uploadFiles" :disabled="selectedFiles.length === 0 || uploading">
+            <button
+              class="btn-primary"
+              @click="uploadFiles"
+              :disabled="selectedFiles.length === 0 || uploading"
+            >
               {{ uploading ? '업로드 중...' : '업로드' }}
             </button>
           </div>
@@ -247,21 +389,36 @@
             <button @click="closeViewModal" class="modal-close">×</button>
           </div>
           <div class="modal-body">
-            <div v-if="viewModalData.length === 0" style="text-align: center; color: #666; padding: 2rem;">
+            <div
+              v-if="viewModalData.length === 0"
+              style="text-align: center; color: #666; padding: 2rem"
+            >
               등록된 실적이 없습니다.
             </div>
             <div v-else>
               <!-- 테이블 헤더 -->
-              <div style="display: flex; font-weight: bold; padding: 0.75rem 0; border-bottom: 1px solid #bbb; margin-bottom: 0.5rem;">
-                <div style="flex: 1; text-align: center;">제품명</div>
-                <div style="width: 100px; text-align: center;">수량</div>
+              <div
+                style="
+                  display: flex;
+                  font-weight: bold;
+                  padding: 0.75rem 0;
+                  border-bottom: 1px solid #bbb;
+                  margin-bottom: 0.5rem;
+                "
+              >
+                <div style="flex: 1; text-align: center">제품명</div>
+                <div style="width: 100px; text-align: center">수량</div>
               </div>
               <!-- 테이블 데이터 -->
-              <div v-for="(record, index) in viewModalData" :key="index" style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
-                <div style="flex: 1; text-align: left; padding-left: 1rem;">
+              <div
+                v-for="(record, index) in viewModalData"
+                :key="index"
+                style="display: flex; padding: 0.5rem 0; border-bottom: 1px solid #eee"
+              >
+                <div style="flex: 1; text-align: left; padding-left: 1rem">
                   {{ record.product_name }}
                 </div>
-                <div style="width: 100px; text-align: right; padding-right: 2rem;">
+                <div style="width: 100px; text-align: right; padding-right: 2rem">
                   {{ formatNumber(record.prescription_qty) }}
                 </div>
               </div>
@@ -285,17 +442,18 @@ import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 
 const columnWidths = {
-  no: '6%',
-  client_code: '8%',
+  no: '4%',
+  client_code: '6%',
   name: '16%',
-  address: '21%',
-  performance_count: '7%',
-  total_prescription_amount: '7%',
-  view_button: '7%',
-  input_button: '7%',
-  evidence_files_count: '7%',
-  view_files_button: '7%',
-  upload_button: '7%'
+  business_registration_number: '8%',
+  address: '24%',
+  performance_count: '6%',
+  total_prescription_amount: '6%',
+  view_button: '6%',
+  input_button: '6%',
+  evidence_files_count: '6%',
+  view_files_button: '6%',
+  upload_button: '6%',
 }
 
 const availableMonths = ref([])
@@ -318,6 +476,10 @@ const viewModalVisible = ref(false)
 const viewModalData = ref([])
 const viewModalClient = ref(null)
 
+const excelFileInput = ref(null)
+const selectedExcelFile = ref(null)
+const uploadErrors = ref([])
+
 const formatNumber = (value) => {
   if (!value) return '0'
   return new Intl.NumberFormat('ko-KR').format(value)
@@ -331,7 +493,7 @@ const fetchAvailableMonths = async () => {
     .eq('status', 'active')
     .order('settlement_month', { ascending: false })
   if (!error && data) {
-    availableMonths.value = data.map(m => m.settlement_month)
+    availableMonths.value = data.map((m) => m.settlement_month)
     if (availableMonths.value.length > 0) {
       selectedSettlementMonth.value = availableMonths.value[0]
     }
@@ -340,7 +502,9 @@ const fetchAvailableMonths = async () => {
 
 // 내 회사ID fetch
 const fetchCurrentCompanyId = async () => {
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   if (!session?.user) return
   const { data: company } = await supabase
     .from('companies')
@@ -358,7 +522,7 @@ const fetchMyClientIds = async () => {
     .select('client_id')
     .eq('company_id', currentCompanyId.value)
   if (!error && data) {
-    return data.map(a => a.client_id)
+    return data.map((a) => a.client_id)
   }
   return []
 }
@@ -407,18 +571,25 @@ const fetchClientList = async () => {
   }
 
   // 집계
-  clientList.value = clients.map(client => {
-    const perfRows = perfData?.filter(p => p.client_id === client.id) || []
+  let unsortedList = clients.map((client) => {
+    const perfRows = perfData?.filter((p) => p.client_id === client.id) || []
     const performance_count = perfRows.length
-    const total_prescription_amount = perfRows.reduce((sum, p) => sum + ((p.prescription_qty || 0) * (p.products?.price || 0)), 0)
+    const total_prescription_amount = perfRows.reduce(
+      (sum, p) => sum + (p.prescription_qty || 0) * (p.products?.price || 0),
+      0,
+    )
     const evidence_files_count = evidenceCounts[client.id] || 0
     return {
       ...client,
       performance_count,
       total_prescription_amount,
-      evidence_files_count
+      evidence_files_count,
     }
   })
+  // 정렬: 처방건수 0건 → 1건 이상, 각 그룹 내 가나다순
+  const noData = unsortedList.filter(c => !c.performance_count || Number(c.performance_count) === 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  const hasData = unsortedList.filter(c => Number(c.performance_count) > 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  clientList.value = [...noData, ...hasData]
   loading.value = false
 }
 
@@ -431,79 +602,87 @@ const checkInputPeriod = async () => {
     .eq('settlement_month', selectedSettlementMonth.value)
     .single()
   if (!error && data) {
-    const now = new Date();
-    const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // 한국시간 보정
-    const startDate = new Date(data.start_date);
-    const endDate = new Date(data.end_date);
-    isInputPeriod.value = koreaNow >= startDate && koreaNow <= endDate;
+    const now = new Date()
+    const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000) // 한국시간 보정
+    const startDate = new Date(data.start_date)
+    const endDate = new Date(data.end_date)
+    isInputPeriod.value = koreaNow >= startDate && koreaNow <= endDate
   } else {
     isInputPeriod.value = false
   }
 }
 
 // 합계 계산
-const totalPerformanceCount = computed(() => clientList.value.reduce((sum, c) => sum + (c.performance_count || 0), 0))
-const totalPrescriptionAmount = computed(() => clientList.value.reduce((sum, c) => sum + (c.total_prescription_amount || 0), 0))
-const totalEvidenceFilesCount = computed(() => clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0))
+const totalPerformanceCount = computed(() =>
+  clientList.value.reduce((sum, c) => sum + (c.performance_count || 0), 0),
+)
+const totalPrescriptionAmount = computed(() =>
+  clientList.value.reduce((sum, c) => sum + (c.total_prescription_amount || 0), 0),
+)
+const totalEvidenceFilesCount = computed(() =>
+  clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0),
+)
 
 const viewDetails = (client) => {
   if (!selectedSettlementMonth.value) {
-    alert('정산월을 선택해주세요.');
-    return;
+    alert('정산월을 선택해주세요.')
+    return
   }
-  
-  openViewModal(client);
+
+  openViewModal(client)
 }
 
 // 조회 모달 열기
 async function openViewModal(client) {
-  viewModalClient.value = client;
-  viewModalData.value = [];
-  viewModalVisible.value = true;
-  await fetchViewModalData(client.id);
+  viewModalClient.value = client
+  viewModalData.value = []
+  viewModalVisible.value = true
+  await fetchViewModalData(client.id)
 }
 
 // 조회 모달 닫기
 function closeViewModal() {
-  viewModalVisible.value = false;
-  viewModalClient.value = null;
-  viewModalData.value = [];
+  viewModalVisible.value = false
+  viewModalClient.value = null
+  viewModalData.value = []
 }
 
 // 조회 모달용 실적 데이터 조회
 async function fetchViewModalData(clientId) {
-  if (!currentCompanyId.value || !selectedSettlementMonth.value) return;
-  
+  if (!currentCompanyId.value || !selectedSettlementMonth.value) return
+
   try {
     const { data, error } = await supabase
       .from('performance_records')
-      .select(`
+      .select(
+        `
         prescription_qty,
         products (
           product_name
         )
-      `)
+      `,
+      )
       .eq('company_id', currentCompanyId.value)
       .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('client_id', clientId);
+      .eq('client_id', clientId)
 
     if (!error && data) {
-      viewModalData.value = data.map(record => ({
+      viewModalData.value = data.map((record) => ({
         product_name: record.products?.product_name || '',
-        prescription_qty: record.prescription_qty || 0
-      }));
+        prescription_qty: record.prescription_qty || 0,
+      }))
     }
   } catch (err) {
-    console.error('조회 데이터 로드 오류:', err);
+    console.error('조회 데이터 로드 오류:', err)
   }
 }
 
 const registerPerformance = (client) => {
   if (!selectedSettlementMonth.value) {
-    alert('정산월을 선택해주세요.');
-    return;
+    alert('정산월을 선택해주세요.')
+    return
   }
-  
+
   router.push({
     name: 'PerformanceRegisterEdit',
     query: {
@@ -511,33 +690,33 @@ const registerPerformance = (client) => {
       clientName: client.name,
       businessRegistrationNumber: client.business_registration_number,
       address: client.address,
-      settlementMonth: selectedSettlementMonth.value
-    }
+      settlementMonth: selectedSettlementMonth.value,
+    },
   })
 }
 const viewFiles = (client) => {}
 
 function truncateText(text, maxLength) {
-  if (!text) return '';
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  if (!text) return ''
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 function formatDate(dateString) {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('ko-KR');
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('ko-KR')
 }
 
 async function openDetailModal(client) {
-  console.log('모달 오픈', client); // 디버깅용
-  selectedClient.value = client;
-  detailModalVisible.value = false; // 강제 반응성 트리거
-  await nextTick();
-  detailModalVisible.value = true;
-  await fetchClientFiles(client.id);
+  console.log('모달 오픈', client) // 디버깅용
+  selectedClient.value = client
+  detailModalVisible.value = false // 강제 반응성 트리거
+  await nextTick()
+  detailModalVisible.value = true
+  await fetchClientFiles(client.id)
 }
 function closeDetailModal() {
-  detailModalVisible.value = false;
-  selectedClient.value = null;
-  clientFiles.value = [];
+  detailModalVisible.value = false
+  selectedClient.value = null
+  clientFiles.value = []
 }
 async function fetchClientFiles(clientId) {
   const { data, error } = await supabase
@@ -546,65 +725,68 @@ async function fetchClientFiles(clientId) {
     .eq('company_id', currentCompanyId.value)
     .eq('client_id', clientId)
     .eq('settlement_month', selectedSettlementMonth.value)
-    .order('uploaded_at', { ascending: false });
+    .order('uploaded_at', { ascending: false })
   if (!error && data) {
-    clientFiles.value = data;
+    clientFiles.value = data
   } else {
-    clientFiles.value = [];
+    clientFiles.value = []
   }
 }
 async function downloadFile(file) {
   const { data, error } = await supabase.storage
     .from('performance-evidence')
-    .download(file.file_path);
+    .download(file.file_path)
   if (error) {
-    alert('파일 다운로드에 실패했습니다.');
-    return;
+    alert('파일 다운로드에 실패했습니다.')
+    return
   }
-  const url = URL.createObjectURL(data);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = file.file_name;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const url = URL.createObjectURL(data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = file.file_name
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 async function deleteFile(file, index) {
-  if (!confirm('이 파일을 삭제하시겠습니까?')) return;
-  await supabase.storage.from('performance-evidence').remove([file.file_path]);
-  await supabase.from('performance_evidence_files').delete().eq('id', file.id);
-  clientFiles.value.splice(index, 1);
-  await fetchClientFiles(selectedClient.value.id);
-  await fetchClientList(); // 테이블 새로고침
+  if (!confirm('이 파일을 삭제하시겠습니까?')) return
+  await supabase.storage.from('performance-evidence').remove([file.file_path])
+  await supabase.from('performance_evidence_files').delete().eq('id', file.id)
+  clientFiles.value.splice(index, 1)
+  await fetchClientFiles(selectedClient.value.id)
+  await fetchClientList() // 테이블 새로고침
 }
 async function downloadAllFiles() {
   if (clientFiles.value.length === 0) {
-    alert('다운로드할 파일이 없습니다.');
-    return;
+    alert('다운로드할 파일이 없습니다.')
+    return
   }
-  const zip = new window.JSZip();
-  const today = new Date().toISOString().slice(0, 10);
-  const folderNameInZip = `${selectedClient.value.name}_${selectedSettlementMonth.value}`;
-  const folder = zip.folder(folderNameInZip);
+  const zip = new window.JSZip()
+  const today = new Date().toISOString().slice(0, 10)
+  const folderNameInZip = `${selectedClient.value.name}_${selectedSettlementMonth.value}`
+  const folder = zip.folder(folderNameInZip)
   const filePromises = clientFiles.value.map(async (file) => {
-    const { data, error } = await supabase.storage.from('performance-evidence').download(file.file_path);
-    if (!error) folder.file(file.file_name, data, { binary: true });
-  });
-  await Promise.all(filePromises);
-  zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } })
+    const { data, error } = await supabase.storage
+      .from('performance-evidence')
+      .download(file.file_path)
+    if (!error) folder.file(file.file_name, data, { binary: true })
+  })
+  await Promise.all(filePromises)
+  zip
+    .generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } })
     .then(function (content) {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(content);
-      link.download = `${folderNameInZip}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(content)
+      link.download = `${folderNameInZip}.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(link.href)
     })
-    .catch(err => {
-      alert('ZIP 파일 생성에 실패했습니다.');
-    });
+    .catch((err) => {
+      alert('ZIP 파일 생성에 실패했습니다.')
+    })
 }
 
 function openUploadModal(client) {
@@ -624,14 +806,14 @@ function closeUploadModal() {
 function handleFileSelect(event) {
   const newFiles = Array.from(event.target.files)
   const totalFiles = selectedFiles.value.length + newFiles.length
-  
+
   if (totalFiles > 10) {
     alert('최대 10개의 파일만 선택할 수 있습니다.')
     return
   }
-  
+
   selectedFiles.value = [...selectedFiles.value, ...newFiles]
-  
+
   // 파일 input 초기화 (같은 파일 다시 선택 가능하도록)
   if (fileInput.value) {
     fileInput.value.value = ''
@@ -658,17 +840,15 @@ async function uploadFiles() {
         alert(`파일 업로드 실패: ${file.name}`)
         continue
       }
-      await supabase
-        .from('performance_evidence_files')
-        .insert({
-          company_id: currentCompanyId.value,
-          client_id: selectedClient.value.id,
-          settlement_month: selectedSettlementMonth.value,
-          file_name: file.name,
-          file_path: uploadData.path,
-          file_size: file.size,
-          uploaded_by: null // 필요시 사용자 ID로 변경
-        })
+      await supabase.from('performance_evidence_files').insert({
+        company_id: currentCompanyId.value,
+        client_id: selectedClient.value.id,
+        settlement_month: selectedSettlementMonth.value,
+        file_name: file.name,
+        file_path: uploadData.path,
+        file_size: file.size,
+        uploaded_by: null, // 필요시 사용자 ID로 변경
+      })
     }
     alert('파일 업로드가 완료되었습니다.')
     closeUploadModal()
@@ -696,109 +876,247 @@ onMounted(async () => {
 // 엑셀 다운로드 함수
 function downloadExcel() {
   if (!clientList.value || clientList.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.');
-    return;
+    alert('다운로드할 데이터가 없습니다.')
+    return
   }
 
   // 엑셀 데이터 준비
   const excelData = clientList.value.map((client, index) => ({
-    'No': index + 1,
-    '거래처코드': client.client_code || '',
-    '병의원명': client.name || '',
-    '주소': client.address || '',
-    '처방건수': client.performance_count || 0,
-    '처방액': client.total_prescription_amount || 0,
-    '증빙파일': client.evidence_files_count || 0
-  }));
+    No: index + 1,
+    거래처코드: client.client_code || '',
+    병의원명: client.name || '',
+    사업자등록번호: client.business_registration_number || '',
+    주소: client.address || '',
+    처방건수: client.performance_count || 0,
+    처방액: client.total_prescription_amount || 0,
+    증빙파일: client.evidence_files_count || 0,
+  }))
 
   // 합계 행 추가
-  const totalCount = totalPerformanceCount.value;
-  const totalAmount = totalPrescriptionAmount.value;
-  const totalFiles = totalEvidenceFilesCount.value;
-  
+  const totalCount = totalPerformanceCount.value
+  const totalAmount = totalPrescriptionAmount.value
+  const totalFiles = totalEvidenceFilesCount.value
+
   excelData.push({
-    'No': '',
-    '거래처코드': '',
-    '병의원명': '',
-    '주소': '합계',
-    '처방건수': totalCount,
-    '처방액': totalAmount,
-    '증빙파일': totalFiles
-  });
+    No: '',
+    거래처코드: '',
+    병의원명: '',
+    사업자등록번호: '',
+    주소: '합계',
+    처방건수: totalCount,
+    처방액: totalAmount,
+    증빙파일: totalFiles,
+  })
 
   // 워크북 생성
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.json_to_sheet(excelData)
 
   // 컬럼 너비 설정
   ws['!cols'] = [
-    { wpx: 50 },  // No
+    { wpx: 50 }, // No
     { wpx: 100 }, // 거래처코드
     { wpx: 200 }, // 병의원명
+    { wpx: 150 }, // 사업자등록번호
     { wpx: 300 }, // 주소
     { wpx: 100 }, // 처방건수
     { wpx: 120 }, // 처방액
-    { wpx: 100 }  // 증빙파일
-  ];
+    { wpx: 100 }, // 증빙파일
+  ]
 
   // 숫자 형식 설정
-  const range = XLSX.utils.decode_range(ws['!ref']);
+  const range = XLSX.utils.decode_range(ws['!ref'])
   for (let R = range.s.r + 1; R <= range.e.r; R++) {
     // 처방건수 컬럼 (E열, 인덱스 4)
-    const countCell = XLSX.utils.encode_cell({ r: R, c: 4 });
+    const countCell = XLSX.utils.encode_cell({ r: R, c: 4 })
     if (ws[countCell] && typeof ws[countCell].v === 'number') {
-      ws[countCell].z = '#,##0';
+      ws[countCell].z = '#,##0'
     }
     // 처방액 컬럼 (F열, 인덱스 5)
-    const amountCell = XLSX.utils.encode_cell({ r: R, c: 5 });
+    const amountCell = XLSX.utils.encode_cell({ r: R, c: 5 })
     if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
-      ws[amountCell].z = '#,##0';
+      ws[amountCell].z = '#,##0'
     }
     // 증빙파일 컬럼 (G열, 인덱스 6)
-    const filesCell = XLSX.utils.encode_cell({ r: R, c: 6 });
+    const filesCell = XLSX.utils.encode_cell({ r: R, c: 6 })
     if (ws[filesCell] && typeof ws[filesCell].v === 'number') {
-      ws[filesCell].z = '#,##0';
+      ws[filesCell].z = '#,##0'
     }
   }
 
   // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '실적 등록 현황');
+  XLSX.utils.book_append_sheet(wb, ws, '실적 등록 현황')
 
   // 파일명 생성
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  let fileName = '실적등록현황';
+  const today = new Date()
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
+  let fileName = '실적등록현황'
   if (selectedSettlementMonth.value) {
-    fileName += `_${selectedSettlementMonth.value}`;
+    fileName += `_${selectedSettlementMonth.value}`
   }
-  fileName += `_${dateStr}.xlsx`;
+  fileName += `_${dateStr}.xlsx`
 
   // 파일 다운로드
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(wb, fileName)
+}
+
+// 템플릿 다운로드 (6개 항목)
+function downloadExcelTemplate() {
+  const wb = XLSX.utils.book_new()
+  const headers = ['거래처_사업자등록번호', '처방월', '보험코드', '수량', '처방구분', '비고']
+  const ws = XLSX.utils.aoa_to_sheet([headers])
+  ws['!cols'] = [
+    { wpx: 150 }, // 거래처_사업자등록번호
+    { wpx: 100 }, // 처방월
+    { wpx: 120 }, // 보험코드
+    { wpx: 80 }, // 수량
+    { wpx: 100 }, // 처방구분
+    { wpx: 200 }, // 비고
+  ]
+  XLSX.utils.book_append_sheet(wb, ws, '실적등록')
+  const today = new Date()
+  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
+  XLSX.writeFile(wb, `실적등록_템플릿_${dateStr}.xlsx`)
+}
+
+function triggerExcelUpload() {
+  excelFileInput.value.click()
+}
+
+async function handleExcelUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  selectedExcelFile.value = file
+  uploadErrors.value = []
+  try {
+    const data = await readExcelFile(file)
+    const errors = await validateExcelData(data)
+    if (errors.length > 0) {
+      uploadErrors.value = errors
+      return
+    }
+    await saveExcelData(data)
+    alert('엑셀 데이터가 성공적으로 등록되었습니다.')
+    await fetchClientList()
+  } catch (err) {
+    alert('엑셀 파일 처리 중 오류가 발생했습니다.')
+  }
+}
+
+function readExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
+        resolve(jsonData)
+      } catch (err) {
+        reject(err)
+      }
+    }
+    reader.onerror = reject
+    reader.readAsArrayBuffer(file)
+  })
+}
+
+// 검증 함수
+async function validateExcelData(data) {
+  const errors = []
+  const myClients = await fetchMyClients()
+  const validMonths = await getValidSettlementMonths()
+  const validProducts = await fetchValidProducts(validMonths)
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i]
+    const rowNum = i + 2
+    // 1. 거래처 체크
+    if (!row['거래처_사업자등록번호'] || !myClients.includes(row['거래처_사업자등록번호'])) {
+      errors.push(`${rowNum}행: 내 거래처가 아니거나 미등록 거래처입니다.`)
+    }
+    // 2. 처방월 체크
+    if (!row['처방월'] || !validMonths.includes(row['처방월'])) {
+      errors.push(`${rowNum}행: 입력 가능한 처방월이 아닙니다.`)
+    }
+    // 3. 제품 체크
+    if (!row['보험코드'] || !validProducts[row['처방월']]?.includes(row['보험코드'])) {
+      errors.push(`${rowNum}행: 해당 처방월에 등록/활성화된 제품이 아닙니다.`)
+    }
+    // 4. 보험코드 형식 체크 (9자리 숫자, TEXT)
+    if (row['보험코드'] && !/^\d{9}$/.test(row['보험코드'])) {
+      errors.push(`${rowNum}행: 보험코드는 9자리 숫자여야 합니다.`)
+    }
+  }
+  return errors
+}
+
+// 내 거래처 사업자등록번호 목록
+async function fetchMyClients() {
+  const { data } = await supabase
+    .from('client_company_assignments')
+    .select('clients(business_registration_number)')
+    .eq('company_id', currentCompanyId.value)
+  return data?.map((item) => item.clients.business_registration_number) || []
+}
+
+// 유효한 처방월 목록
+async function getValidSettlementMonths() {
+  const { data: settings } = await supabase
+    .from('system_settings')
+    .select('settlement_month_range')
+    .single()
+  const range = settings?.settlement_month_range || 3
+  const currentMonth = selectedSettlementMonth.value
+  const validMonths = []
+  for (let i = range; i > 0; i--) {
+    const date = new Date(currentMonth)
+    date.setMonth(date.getMonth() - i)
+    validMonths.push(date.toISOString().slice(0, 7))
+  }
+  return validMonths
+}
+
+// 처방월별 활성화 제품(보험코드) 목록
+async function fetchValidProducts(validMonths) {
+  const { data } = await supabase
+    .from('product_settlement_months')
+    .select('settlement_month, products(insurance_code)')
+    .in('settlement_month', validMonths)
+    .eq('status', 'active')
+  const products = {}
+  data?.forEach((item) => {
+    if (!products[item.settlement_month]) products[item.settlement_month] = []
+    products[item.settlement_month].push(item.products.insurance_code)
+  })
+  return products
+}
+
+// 엑셀 데이터 저장
+async function saveExcelData(data) {
+  const records = []
+  for (const row of data) {
+    const clientId = await getClientIdByBusinessNumber(row['거래처_사업자등록번호'])
+    records.push({
+      company_id: currentCompanyId.value,
+      client_id: clientId,
+      settlement_month: row['처방월'],
+      insurance_code: row['보험코드'],
+      prescription_qty: parseInt(row['수량']) || 0,
+      prescription_type: row['처방구분'],
+      note: row['비고'],
+    })
+  }
+  const { error } = await supabase.from('performance_records').insert(records)
+  if (error) throw error
+}
+
+async function getClientIdByBusinessNumber(businessNumber) {
+  const { data } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('business_registration_number', businessNumber)
+    .single()
+  return data?.id
 }
 </script>
-
-<style scoped>
-/* 실적 등록 테이블 헤더 가운데 정렬 */
-:deep(.performance-register-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-
-/* 테이블 레이아웃 고정 */
-:deep(.performance-register-table .p-datatable-table) {
-  table-layout: fixed !important;
-  width: 100% !important;
-}
-
-/* 주소 컬럼 강제 너비 제한 */
-:deep(.performance-register-table .p-datatable-tbody > tr > td:nth-child(4)) {
-  max-width: 21% !important;
-  width: 21% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-</style> 

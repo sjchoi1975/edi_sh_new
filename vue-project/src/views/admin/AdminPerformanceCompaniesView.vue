@@ -287,11 +287,11 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 
 const columnWidths = {
-  no: '5%',
-  company_group: '6%',
-  company_name: '12%',
+  no: '4%',
+  company_group: '8%',
+  company_name: '14%',
   business_registration_number: '8%',
-  representative_name: '8%',
+  representative_name: '7%',
   assigned_pharmacist_contact: '7%',
   total_clients: '7%',
   submitted_clients: '7%',
@@ -299,7 +299,7 @@ const columnWidths = {
   prescription_amount: '7%',
   evidence_files: '7%',
   file_view: '7%',
-  last_registered_at: '12%',
+  last_registered_at: '10%',
 }
 
 // 반응형 데이터
@@ -1103,126 +1103,3 @@ onMounted(() => {
   fetchAvailableMonths()
 })
 </script>
-
-<style scoped>
-/* 실적 등록 테이블 헤더 가운데 정렬 */
-:deep(.performance-register-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-
-/* 테이블 레이아웃 고정 */
-:deep(.performance-register-table .p-datatable-table) {
-  table-layout: fixed !important;
-  width: 100% !important;
-}
-
-/* 주소 컬럼 강제 너비 제한 */
-:deep(.performance-register-table .p-datatable-tbody > tr > td:nth-child(4)) {
-  max-width: 21% !important;
-  width: 21% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.file-link {
-  color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.file-link:hover {
-  color: #0056b3;
-  text-decoration: none;
-}
-
-.loading-message,
-.empty-message {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 16px;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #dee2e6;
-  background: #f8f9fa;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.modal-close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px;
-  border-top: 1px solid #dee2e6;
-  background: #f8f9fa;
-}
-
-.file-list-table {
-  font-size: 14px;
-}
-
-.file-list-table th {
-  font-weight: 600;
-  color: #333;
-}
-
-.file-list-table td {
-  color: #555;
-}
-</style>

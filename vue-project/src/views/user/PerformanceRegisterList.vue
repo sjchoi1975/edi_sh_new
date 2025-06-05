@@ -32,14 +32,14 @@
     <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">전체 {{ sortedDisplayRows.length }}건</div>
+        <div class="total-count-display">전체 {{ sortedDisplayRows.length }} 건</div>
         <div class="data-card-buttons">
           <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">
             엑셀 다운로드
           </button>
         </div>
       </div>
-      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 290px)" class="custom-table performance-list-table">
+      <DataTable :value="sortedDisplayRows" scrollable scrollHeight="calc(100vh - 280px)" class="custom-table performance-list-table" style="table-layout:fixed; width:100%;">
         <template #empty>등록된 실적이 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -49,6 +49,17 @@
         <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
           <template #body="slotProps">
             <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
+          </template>
+        </Column>
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true" />
+        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true">
+          <template #body="slotProps">
+            <span
+              :title="slotProps.data.address"
+              style="display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%;"
+            >
+              {{ slotProps.data.address }}
+            </span>
           </template>
         </Column>
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
@@ -96,16 +107,18 @@ import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
-  no: '6%',
-  client_name: '16%',
-  prescription_month: '8%',
-  product_name_display: '16%',
-  insurance_code: '10%',
+  no: '4%',
+  client_name: '13%',
+  business_registration_number: '8%',
+  address: '14%',
+  prescription_month: '6%',
+  product_name_display: '14%',
+  insurance_code: '6%',
   price: '6%',
-  prescription_qty: '8%',
-  prescription_amount: '8%',
-  prescription_type: '8%',
-  remarks: '14%'
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '7%',
+  remarks: '10%'
 };
 
 // 반응형 데이터
@@ -454,8 +467,16 @@ async function fetchHospitals() {
       }
     });
 
-    // 이름순으로 정렬
-    hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
+    // 거래처 목록 정렬: 처방 건수 없는 것 먼저, 각 그룹 내에서는 가나다순
+    const sortedClientList = computed(() => {
+      if (!uniqueHospitals.length) return [];
+      // 1. 처방 건수 없는 것(0건) 그룹, 2. 1건 이상 그룹
+      const noData = uniqueHospitals.filter(c => !c.performance_count || Number(c.performance_count) === 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      const hasData = uniqueHospitals.filter(c => Number(c.performance_count) > 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      return [...noData, ...hasData];
+    });
+
+    hospitals.value = sortedClientList.value;
     
   } catch (err) {
     console.error('거래처 조회 예외:', err);
@@ -465,38 +486,29 @@ async function fetchHospitals() {
 
 async function fetchProducts() {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('products')
-      .select('id, product_name, insurance_code, price')
-      .eq('status', 'active')
-      .order('product_name', { ascending: true });
-      
-    if (error) {
-      console.error('제품 조회 오류:', error);
-      products.value = [];
-      return;
+      .select('base_month')
+      .order('base_month', { ascending: true });
+    
+    // 이용자일 경우 status='active'인 제품만 가져오기
+    if (userType.value === 'user') {
+      query = query.eq('status', 'active');
     }
     
-    if (!data || data.length === 0) {
-      products.value = [];
-      return;
-    }
-    
-    // 보험코드별로 중복 제거 (보험코드가 있는 것 우선)
-    const uniqByInsurance = {};
-    const noInsurance = [];
-    
-    data.forEach(p => {
-      if (p.insurance_code) {
-        if (!uniqByInsurance[p.insurance_code]) {
-          uniqByInsurance[p.insurance_code] = p;
-        }
-      } else {
-        noInsurance.push(p);
+    const { data, error } = await query;
+    if (!error && data) {
+      // 중복 없이 기준월만 추출
+      const monthSet = new Set();
+      data.forEach((item) => {
+        if (item.base_month) monthSet.add(item.base_month);
+      });
+      availableMonths.value = Array.from(monthSet).sort((a, b) => a.localeCompare(b));
+      // 최신 연월을 기본값으로
+      if (availableMonths.value.length > 0) {
+        selectedMonth.value = availableMonths.value[availableMonths.value.length - 1];
       }
-    });
-    
-    products.value = [...Object.values(uniqByInsurance), ...noInsurance];
+    }
   } catch (err) {
     console.error('제품 조회 예외:', err);
     products.value = [];
@@ -1235,20 +1247,26 @@ function onHospitalChange() {
 // 데이터 fetch 함수들
 async function fetchAvailableMonths() {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('settlement_months')
-      .select('*')
-      .eq('status', 'active')
+      .select('settlement_month, start_date, end_date')
       .order('settlement_month', { ascending: false });
-      
-    if (error) {
-      console.error('정산월 조회 오류:', error);
-      return;
+    
+    // 이용자일 경우 status='active'인 정산월만 가져오기
+    if (userType.value === 'user') {
+      query = query.eq('status', 'active');
     }
     
-    availableMonths.value = data || [];
+    const { data, error } = await query;
+    if (!error && data) {
+      availableMonths.value = data;
+      // 첫 번째(최신) 정산월을 디폴트로 설정
+      if (data.length > 0 && !selectedSettlementMonth.value) {
+        selectedSettlementMonth.value = data[0].settlement_month;
+      }
+    }
   } catch (err) {
-    console.error('정산월 조회 예외:', err);
+    console.error('정산월 조회 오류:', err);
   }
 }
 
@@ -1341,6 +1359,8 @@ async function fetchPerformanceRecords() {
         prescription_amount: record.products?.price ? (record.prescription_qty * record.products.price).toLocaleString() : '',
         prescription_type: record.prescription_type,
         client_name: record.clients?.name || '',
+        business_registration_number: record.clients?.business_registration_number || '',
+        address: record.clients?.address || '',
         prescription_month: record.prescription_month,
         remarks: record.remarks || ''
       }));
@@ -1388,6 +1408,8 @@ function downloadExcel() {
   const excelData = dataToExport.map((row, index) => ({
     'No': index + 1,
     '거래처': row.client_name || '',
+    '사업자등록번호': row.business_registration_number || '',
+    '주소': row.address || '',
     '처방월': row.prescription_month || '',
     '제품명': row.product_name_display || '',
     '보험코드': row.insurance_code || '',
@@ -1410,6 +1432,8 @@ function downloadExcel() {
   excelData.push({
     'No': '',
     '거래처': '',
+    '사업자등록번호': '',
+    '주소': '',
     '처방월': '',
     '제품명': '',
     '보험코드': '',
@@ -1428,6 +1452,8 @@ function downloadExcel() {
   ws['!cols'] = [
     { wpx: 50 },  // No
     { wpx: 130 }, // 거래처
+    { wpx: 130 }, // 사업자등록번호
+    { wpx: 180 }, // 주소
     { wpx: 80 },  // 처방월
     { wpx: 200 }, // 제품명
     { wpx: 100 }, // 보험코드
@@ -1507,13 +1533,3 @@ function addNewRow() {
   });
 }
 </script>
-
-<style scoped>
-/* 실적 등록 현황 테이블 헤더 가운데 정렬 */
-:deep(.performance-list-table .p-datatable-column-title) {
-  text-align: center !important;
-  justify-content: center !important;
-  display: flex !important;
-  width: 100% !important;
-}
-</style> 
