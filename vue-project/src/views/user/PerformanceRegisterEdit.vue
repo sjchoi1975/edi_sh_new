@@ -16,12 +16,12 @@
         <div class="total-count-display">전체 {{ totalCount }} 건</div>
         <div class="data-card-buttons">
           <button 
-            class="btn-secondary" 
+            class="btn-excell-template"
             @click="downloadExcelTemplate" 
             :disabled="!selectedSettlementMonth"
           >템플릿 다운로드</button>
           <button 
-            class="btn-secondary" 
+            class="btn-excell-download" 
             @click="triggerExcelUpload" 
             :disabled="!selectedSettlementMonth"
           >엑셀 일괄등록</button>
@@ -33,7 +33,7 @@
             style="display: none;"
           />
           <button 
-            class="btn-primary" 
+            class="btn-save" 
             @click="onSave" 
             :disabled="!canSave"
           >저장</button>
@@ -187,7 +187,7 @@
                 </td>
                 <td class="action-cell" style="width:6%;">
                   <button 
-                    class="btn-delete-m" 
+                    class="btn-delete-sm" 
                     @click="confirmDeleteRow(rowIdx)" 
                     :disabled="inputRows.length === 1 || !isInputEnabled" 
                     title="삭제"
@@ -196,7 +196,7 @@
                 </td>
                 <td class="action-cell" style="width:6%;">
                   <button 
-                    class="btn-add-m" 
+                    class="btn-add-sm" 
                     @click="confirmAddRowBelow(rowIdx)" 
                     title="추가"
                     :disabled="!isInputEnabled"

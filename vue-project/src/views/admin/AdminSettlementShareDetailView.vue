@@ -15,10 +15,10 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
       </div>
-      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 290px)" class="admin-settlement-share-detail-table">
+      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 250px)" class="admin-settlement-share-detail-table">
         <template #empty>조회된 데이터가 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>

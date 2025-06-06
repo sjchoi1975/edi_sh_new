@@ -34,7 +34,7 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ sortedDisplayRows.length }} 건</div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
             엑셀 다운로드
           </button>
         </div>

@@ -151,7 +151,7 @@
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <Button class="btn-cancel" type="button" @click="goList" label="취소" />
-        <Button class="btn-primary" type="submit" label="등록" />
+        <Button class="btn-save" type="submit" label="등록" />
       </div>
     </form>
   </div>

@@ -34,8 +34,8 @@
           전체 {{ filteredProducts.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-secondary btn-sm" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-secondary btn-sm" @click="triggerFileUpload">엑셀 업로드</button>
+          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 업로드</button>
           <input
             ref="fileInput"
             type="file"
@@ -43,9 +43,9 @@
             @change="handleFileUpload"
             style="display: none"
           />
-          <button class="btn-secondary btn-sm" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-primary btn-sm" @click="goCreate">등록</button>
-          <button class="btn-danger btn-sm" @click="deleteAllProducts">모두 삭제</button>
+          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-save" @click="goCreate">등록</button>
+          <button class="btn-delete" @click="deleteAllProducts">모두 삭제</button>
         </div>
       </div>
 
@@ -55,7 +55,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="admin-products-table"
@@ -218,12 +218,12 @@
           <template #body="slotProps">
             <div style="display: flex; gap: 0.25rem; justify-content: center;">
               <template v-if="slotProps.data.isEditing">
-                <button @click="saveEdit(slotProps.data)" class="btn-save-m btn-sm" title="저장">저장</button>
-                <button @click="cancelEdit(slotProps.data)" class="btn-cancel-m btn-sm" title="취소">취소</button>
+                <button @click="saveEdit(slotProps.data)" class="btn-save-sm" title="저장">저장</button>
+                <button @click="cancelEdit(slotProps.data)" class="btn-cancel-sm" title="취소">취소</button>
               </template>
               <template v-else>
-                <button @click="startEdit(slotProps.data)" class="btn-edit-m btn-sm" title="수정">수정</button>
-                <button @click="deleteProduct(slotProps.data)" class="btn-delete-m btn-sm" title="삭제">삭제</button>
+                <button @click="startEdit(slotProps.data)" class="btn-edit-sm" title="수정">수정</button>
+                <button @click="deleteProduct(slotProps.data)" class="btn-delete-sm" title="삭제">삭제</button>
               </template>
             </div>
           </template>
@@ -245,17 +245,17 @@ import * as XLSX from 'xlsx'
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  product_name: '12%',
+  product_name: '18%',
   insurance_code: '8%',
   price: '6%',
-  commission_rate_a: '9%',
-  commission_rate_b: '9%',
+  commission_rate_a: '8%',
+  commission_rate_b: '8%',
   standard_code: '8%',
   unit_packaging_desc: '10%',
   unit_quantity: '8%',
   created_at: '8%',
   status: '6%',
-  actions: '12%'
+  actions: '8%'
 };
 
 const products = ref([])

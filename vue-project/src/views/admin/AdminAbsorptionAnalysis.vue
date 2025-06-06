@@ -47,17 +47,17 @@
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons" style="display: flex; gap: 0.5rem;">
           <button 
-            class="btn-secondary" 
+            class="btn-upload" 
             @click="loadPerformanceData" 
             :disabled="!selectedSettlementMonth"
           >실적 정보 불러오기</button>
           <button 
-            class="btn-secondary" 
+            class="btn-excell-template" 
             @click="downloadExcelTemplate" 
             :disabled="!selectedSettlementMonth"
           >템플릿 다운로드</button>
           <button 
-            class="btn-secondary" 
+            class="btn-excell-upload" 
             @click="triggerExcelUpload" 
             :disabled="!selectedSettlementMonth"
           >엑셀 일괄등록</button>
@@ -69,22 +69,22 @@
             style="display: none;"
           />
           <button 
-            class="btn-secondary" 
+            class="btn-primary" 
             @click="runAbsorptionAnalysis" 
             :disabled="displayRows.length === 0"
           >흡수율 분석</button>
           <button 
-            class="btn-danger" 
+            class="btn-delete" 
             @click="confirmDeleteAllData" 
             :disabled="displayRows.length === 0"
           >전체 삭제</button>
           <button 
-            class="btn-secondary" 
+            class="btn-excell-download" 
             @click="downloadExcel" 
             :disabled="displayRows.length === 0"
           >엑셀 다운로드</button>
           <button 
-            class="btn-primary" 
+            class="btn-save" 
             @click="saveAnalysisData" 
             :disabled="displayRows.length === 0 || (hasExistingData && !hasUnsavedChanges)"
             :class="{ 'btn-disabled': displayRows.length === 0 || (hasExistingData && !hasUnsavedChanges) }"
@@ -95,7 +95,7 @@
       <DataTable 
         :value="displayRows" 
         scrollable 
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         scrollDirection="both"
         class="admin-absorption-analysis-table"
         dataKey="id"
@@ -438,32 +438,32 @@
             <div style="display: flex; gap: 4px; justify-content: center;">
                 <button 
                 v-if="!isRowEditing(slotProps.data)"
-                class="btn-edit-s" 
+                class="btn-edit-sm" 
                 @click="onRowEditInit(slotProps.data)"
                 title="수정"
               >✎</button>
               <button 
                 v-if="isRowEditing(slotProps.data)"
-                class="btn-save-s" 
+                class="btn-save-sm" 
                 @click="onRowEditSave(slotProps.data)"
                 title="저장"
               >✓</button>
               <button 
                 v-if="isRowEditing(slotProps.data)"
-                class="btn-cancel-s" 
+                class="btn-cancel-sm" 
                 @click="onRowEditCancel(slotProps.data)"
                 title="취소"
               >✕</button>
               <button 
                 v-if="!isRowEditing(slotProps.data)"
-                class="btn-delete-s" 
+                class="btn-delete-sm" 
                 @click="confirmDeleteRow(slotProps.index)" 
                   :disabled="displayRows.length === 1" 
                 title="삭제"
                 >－</button>
                 <button 
                 v-if="!isRowEditing(slotProps.data)"
-                class="btn-add-s" 
+                class="btn-add-sm" 
                 @click="confirmAddRowBelow(slotProps.index)" 
                 title="추가"
                 >＋</button>

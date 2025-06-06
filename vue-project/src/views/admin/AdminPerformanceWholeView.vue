@@ -41,7 +41,7 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="displayRows.length === 0">
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
             엑셀 다운로드
           </button>
         </div>
@@ -49,12 +49,12 @@
       <DataTable 
         :value="displayRows" 
         scrollable 
-        scrollHeight="calc(100vh - 290px)" 
+        scrollHeight="calc(100vh - 250px)" 
         scrollDirection="both"
         class="admin-performance-whole-table"
         :pt="{
-          wrapper: { style: 'min-width: 2000px;' },
-          table: { style: 'min-width: 2000px;' }
+          wrapper: { style: 'min-width: 2200px;' },
+          table: { style: 'min-width: 2200px;' }
         }"
       >
         <template #empty>등록된 실적이 없습니다.</template>
@@ -101,7 +101,7 @@
         class="table-footer-wrapper"
         style="
           width: 100%;
-          min-width: 2000px;
+          min-width: 2200px;
           padding: 0 2rem 0 0;
           background: #f8f9fa;
           height: 38px;
@@ -112,7 +112,7 @@
           z-index: 2;
         "
       >
-        <table style="width: 100%; table-layout: fixed; min-width: 2000px">
+        <table style="width: 100%; table-layout: fixed; min-width: 2200px">
           <tr>
             <td style="width: 47%; text-align: center; font-weight: 600">합계</td>
             <td style="width: 4%; text-align: right; font-weight: 600">{{ totalQty }}</td>
@@ -134,20 +134,20 @@ import * as XLSX from 'xlsx';
 
 const columnWidths = {
   no: '4%',
-  company_group: '6%',
-  company_name: '10%',
-  client_name: '10%',
-  prescription_month: '5%',
-  product_name_display: '10%',
-  insurance_code: '6%',
-  price: '5%',
-  prescription_qty: '5%',
-  prescription_amount: '6%',
-  prescription_type: '5%',
-  remarks: '8%',
-  created_date: '8%',
-  created_by: '7%',
-  assigned_pharmacist_contact: '5%'
+  company_group: '8%',
+  company_name: '12%',
+  client_name: '18%',
+  prescription_month: '7%',
+  product_name_display: '16%',
+  insurance_code: '7%',
+  price: '6%',
+  prescription_qty: '8%',
+  prescription_amount: '8%',
+  prescription_type: '8%',
+  remarks: '16%',
+  created_date: '10%',
+  created_by: '12%',
+  assigned_pharmacist_contact: '6%'
 };
 
 // 반응형 데이터

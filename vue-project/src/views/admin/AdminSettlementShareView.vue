@@ -20,12 +20,12 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ filteredCompanies.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-outline" @click="setAllShare(true)">전체 공유</button>
-          <button class="btn-outline" @click="setAllShare(false)">전체 해제</button>
-          <button class="btn-primary" :disabled="!hasShareChanges" @click="saveShareChanges">저장</button>
+          <button class="btn-select-all" @click="setAllShare(true)">전체 공유</button>
+          <button class="btn-select-none" @click="setAllShare(false)">전체 해제</button>
+          <button class="btn-save" :disabled="!hasShareChanges" @click="saveShareChanges">저장</button>
         </div>
       </div>
-      <DataTable :value="filteredCompanies" scrollable scrollHeight="calc(100vh - 290px)" class="admin-settlement-share-table">
+      <DataTable :value="filteredCompanies" scrollable scrollHeight="calc(100vh - 250px)" class="admin-settlement-share-table">
         <template #empty>조회된 데이터가 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>

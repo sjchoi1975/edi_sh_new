@@ -34,10 +34,13 @@
           전체 {{ filteredRevenues.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
-          <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
-          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-danger" @click="deleteAllDirectRevenue">모두 삭제</button>
+          <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+            <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
+            <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 업로드</button>
+            <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
+            <button class="btn-delete" @click="deleteAllRevenues">모두 삭제</button>
+            <button class="btn-save" @click="goCreate">등록</button>
+          </div>
           <input
             ref="fileInput"
             type="file"
@@ -45,7 +48,6 @@
             @change="handleFileUpload"
             style="display: none"
           />
-          <button class="btn-primary" @click="goCreate">등록</button>
         </div>
       </div>
       <DataTable
@@ -54,7 +56,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="[
           'pharmacy_name',
@@ -163,18 +165,18 @@
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
-                <button @click="saveEdit(slotProps.data)" class="btn-save-m" title="저장">
+                <button @click="saveEdit(slotProps.data)" class="btn-save-sm" title="저장">
                   저장
                 </button>
-                <button @click="cancelEdit(slotProps.data)" class="btn-cancel-m" title="취소">
+                <button @click="cancelEdit(slotProps.data)" class="btn-cancel-sm" title="취소">
                   취소
                 </button>
               </template>
               <template v-else>
-                <button @click="startEdit(slotProps.data)" class="btn-edit-m" title="수정">
+                <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정">
                   수정
                 </button>
-                <button @click="deleteRevenue(slotProps.data)" class="btn-delete-m" title="삭제">
+                <button class="btn-delete-sm" @click="deleteRevenue(slotProps.data)" title="삭제">
                   삭제
                 </button>
               </template>
@@ -198,15 +200,15 @@ import * as XLSX from 'xlsx'
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  pharmacy_code: '8%',
-  pharmacy_name: '12%',
-  business_registration_number: '10%',
-  address: '16%',
-  standard_code: '10%',
-  product_name: '12%',
-  sales_amount: '8%',
-  sales_date: '8%',
-  actions: '12%'
+  pharmacy_code: '7%',
+  pharmacy_name: '16%',
+  business_registration_number: '8%',
+  address: '21%',
+  standard_code: '8%',
+  product_name: '16%',
+  sales_amount: '6%',
+  sales_date: '6%',
+  actions: '8%'
 };
 
 const revenues = ref([])
@@ -555,7 +557,7 @@ const downloadExcel = () => {
   XLSX.writeFile(wb, fileName)
 }
 
-async function deleteAllDirectRevenue() {
+async function deleteAllRevenues() {
   if (!confirm('정말 모든 직거래매출 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   const { error } = await supabase.from('direct_sales').delete().neq('id', 0);
   if (error) {

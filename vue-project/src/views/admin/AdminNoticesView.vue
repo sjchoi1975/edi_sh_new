@@ -22,7 +22,7 @@
           전체 {{ filteredNotices.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-primary btn" @click="goCreate">등록</button>
+          <button class="btn-save" @click="goCreate">등록</button>
         </div>
       </div>
 
@@ -32,7 +32,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
         class="admin-notices-table"

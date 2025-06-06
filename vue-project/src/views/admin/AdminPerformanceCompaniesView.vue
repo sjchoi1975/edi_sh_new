@@ -27,7 +27,7 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ companyList.length }} 건</div>
         <div class="data-card-buttons">
-          <button class="btn-secondary" @click="downloadExcel" :disabled="companyList.length === 0">
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="companyList.length === 0">
             엑셀 다운로드
           </button>
         </div>
@@ -35,7 +35,7 @@
       <DataTable
         :value="companyList"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         class="admin-performance-companies-table"
       >
         <template #empty>{{
@@ -151,7 +151,7 @@
         >
           <template #body="slotProps">
             <button
-              class="btn-secondary btn-sm"
+              class="btn-view-sm"
               @click="openFileModal(slotProps.data)"
               :disabled="!slotProps.data.evidence_files || slotProps.data.evidence_files === 0"
             >
@@ -267,13 +267,13 @@
 
       <div class="modal-footer">
         <button
-          class="btn-secondary"
+          class="btn-download"
           @click="downloadAllFiles"
           :disabled="companyFiles.length === 0"
         >
           전체 다운로드
         </button>
-        <button class="btn-primary" @click="closeFileModal">닫기</button>
+        <button class="btn-close" @click="closeFileModal">닫기</button>
       </div>
     </div>
   </div>
@@ -288,8 +288,8 @@ import * as XLSX from 'xlsx'
 
 const columnWidths = {
   no: '4%',
-  company_group: '8%',
-  company_name: '14%',
+  company_group: '7%',
+  company_name: '16%',
   business_registration_number: '8%',
   representative_name: '7%',
   assigned_pharmacist_contact: '7%',
@@ -299,7 +299,7 @@ const columnWidths = {
   prescription_amount: '7%',
   evidence_files: '7%',
   file_view: '7%',
-  last_registered_at: '10%',
+  last_registered_at: '9%',
 }
 
 // 반응형 데이터

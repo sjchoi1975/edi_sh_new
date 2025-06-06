@@ -30,7 +30,7 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
       </div>
       <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 280px)" class="admin-settlement-share-detail-table">

@@ -7,17 +7,34 @@
 /* ========================================== */
 :root {
   /* 기본 색상 */
-  --primary-blue: #1976d2;
-  --primary-blue-dark: #1565c0;
-  --primary-blue-light: rgba(25, 118, 210, 0.1);
-  
+  --primary-color: #5fa56b;           /* 로그인 버튼 녹색 */
+  --primary-color-light: #8fc89e;     /* 밝은 녹색 */
+  --primary-color-lightest: #e3f3e8;  /* 아주 밝은 녹색 */
+  --primary-color-dark: #488a54;      /* 어두운 녹색 */
+  --primary-color-hover: #4e9e5c;     /* 호버 시 녹색 */
+
+  --primary-blue: #1976D2;            /* 포인트 파랑 */
+  --primary-blue-light: #E3F2FD;      /* 아주 밝은 파랑 */
+  --primary-blue-lightest: #F1F8FF;   /* 거의 흰색에 가까운 파랑 */
+  --primary-blue-dark: #1565C0;       /* 어두운 파랑 */
+  --primary-blue-hover: #1565C0;      /* 호버 시 파랑 */
+    
   /* 상태 색상 */
   --success: #28a745;
+  --success-light: #6fdc8c;
+  --success-lightest: #e6f9ed;
   --success-dark: #218838;
+  --success-hover: #24963f;
   --danger: #dc3545;
+  --danger-light: #ff6f7d;
+  --danger-lightest: #ffeaea;
   --danger-dark: #c82333;
+  --danger-hover: #c82333;
   --warning: #ffc107;
+  --warning-light: #ffe066;
+  --warning-lightest: #fffbe6;
   --warning-dark: #b8860b;
+  --warning-hover: #e0b200;
   
   /* 중립 색상 */
   --gray-100: #f8f9fa;
@@ -37,8 +54,8 @@
   /* 레이아웃 */
   --border-radius: 4px;
   --border-radius-s: 2px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 /* ========================================== */
@@ -65,8 +82,12 @@
 .btn-excell-upload,
 .btn-excell-download,
 .btn-excell-template,
+.btn-upload,
+.btn-download,
+.btn-close,
 .btn-reset-password,
-.file-label,
+.btn-select-all,
+.btn-select-none,
 .file-label {
   padding: 0.25rem 1rem !important;
   margin: 0.5rem 1rem 0rem 0rem!important;
@@ -82,9 +103,9 @@
 }
 
 /* 기본 버튼 색상 정의 */
-.btn-primary         { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
+.btn-primary         { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
 .btn-secondary       { background: var(--gray-600) !important; border-color: var(--gray-600) !important; color: var(--text-white) !important; }
-.btn-list            { background: var(--gray-600) !important; border-color: var(--gray-600) !important; color: var(--text-white) !important; }
+.btn-list            { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
 .btn-cancel          { background: var(--gray-300) !important; border-color: var(--gray-300) !important; color: var(--text-dark) !important; }
 .btn-success         { background: var(--success) !important; border-color: var(--success) !important; color: var(--text-white) !important; }
 .btn-add             { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
@@ -93,42 +114,72 @@
 .btn-delete          { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--text-white) !important; }
 .btn-danger          { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--text-white) !important; }
 .btn-excell-upload   { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
-.btn-excell-download { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
-.btn-excell-template { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
+.btn-excell-download { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
+.btn-excell-template { background: var(--gray-600) !important; border-color: var(--gray-600) !important; color: var(--text-white) !important; }
 .btn-reset-password  { background: var(--gray-800) !important; border-color: var(--gray-800) !important; color: var(--text-white) !important; }
+.btn-upload          { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
+.btn-download        { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
+.btn-close           { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
+.btn-select-all      { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
+.btn-select-none     { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
 .file-label          { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
 
 
 /* 기본 버튼 호버 효과 */
+button:hover:not(:disabled),
 .btn-primary:hover:not(:disabled),
 .btn-secondary:hover:not(:disabled),
-.btn-list:hover:not(:disabled) { background: var(--gray-700) !important; border-color: var(--gray-700) !important; box-shadow: var(--shadow) !important; }
-.btn-cancel:hover:not(:disabled) { background: var(--gray-400) !important; border-color: var(--gray-400) !important; box-shadow: var(--shadow) !important; }
-.btn-success:hover:not(:disabled) { background: var(--success-dark) !important; border-color: var(--success-dark) !important; box-shadow: var(--shadow) !important; }
+.btn-list:hover:not(:disabled),
+.btn-cancel:hover:not(:disabled),
+.btn-success:hover:not(:disabled),
 .btn-add:hover:not(:disabled),
-.btn-save:hover:not(:disabled) { background: var(--primary-blue-dark) !important; border-color: var(--primary-blue-dark) !important; box-shadow: var(--shadow) !important; }
-.btn-edit:hover:not(:disabled) { background: var(--warning-dark) !important; border-color: var(--warning-dark) !important; box-shadow: var(--shadow) !important; }
+.btn-save:hover:not(:disabled),
+.btn-edit:hover:not(:disabled),
 .btn-delete:hover:not(:disabled),
-.btn-danger:hover:not(:disabled) { background: var(--danger-dark) !important; border-color: var(--danger-dark) !important; box-shadow: var(--shadow) !important; }
-.btn-excell-upload:hover:not(:disabled) { background: var(--primary-blue-dark) !important; border-color: var(--primary-blue-dark) !important; box-shadow: var(--shadow) !important; }
-.btn-excell-download:hover:not(:disabled) { background: var(--primary-blue-dark) !important; border-color: var(--primary-blue-dark) !important; box-shadow: var(--shadow) !important; }
-.btn-excell-template:hover:not(:disabled) { background: var(--primary-blue-dark) !important; border-color: var(--primary-blue-dark) !important; box-shadow: var(--shadow) !important; }
-.btn-reset-password:hover:not(:disabled) { background: var(--gray-900) !important; border-color: var(--gray-900) !important; box-shadow: var(--shadow) !important; }
-.file-label:hover:not([disabled]) { background: var(--gray-300) !important; border-color: var(--gray-500) !important; }
-
+.btn-danger:hover:not(:disabled),
+.btn-excell-upload:hover:not(:disabled),
+.btn-excell-download:hover:not(:disabled),
+.btn-excell-template:hover:not(:disabled),
+.btn-reset-password:hover:not(:disabled),
+.btn-upload:hover:not(:disabled),
+.btn-download:hover:not(:disabled),
+.btn-close:hover:not(:disabled),
+.btn-select-all:hover:not(:disabled),
+.btn-select-none:hover:not(:disabled),
+.file-label:hover:not([disabled]) {
+  opacity: 0.9 !important;
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease-in-out !important;
+}
 
 
 /* 기본 버튼 포커스 효과 */
+button:focus,
 .btn-primary:focus,
-.btn-add:focus     { box-shadow: 0 0 0 0.2rem var(--primary-blue-light) !important; }
 .btn-secondary:focus,
-.btn-list:focus    { box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important; }
-.btn-success:focus { box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important; }
+.btn-list:focus,
+.btn-cancel:focus,
+.btn-success:focus,
+.btn-add:focus,
+.btn-save:focus,
+.btn-edit:focus,
+.btn-delete:focus,
 .btn-danger:focus,
-.btn-delete:focus  { box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important; }
-.btn-edit:focus    { box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important; }
-.btn-cancel:focus  { box-shadow: 0 0 0 0.2rem rgba(222, 226, 230, 0.5) !important; }
-
+.btn-excell-upload:focus,
+.btn-excell-download:focus,
+.btn-excell-template:focus,
+.btn-reset-password:focus,
+.btn-upload:focus,
+.btn-download:focus,
+.btn-close:focus,
+.btn-select-all:focus,
+.btn-select-none:focus,
+.file-label:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25) !important;
+  transition: all 0.2s ease-in-out !important;
+}
 
 
 /* 버튼 크기 변형 */
@@ -147,22 +198,18 @@
 - 테이블 행의 간단한 액션들
 */
 
-.btn-primary-m,
-.btn-add-m,
-.btn-approve-m,
-.btn-pending-m,
-.btn-save-m,
-.btn-save-s,
-.btn-edit-m,
-.btn-edit-s,
-.btn-delete-m,
-.btn-delete-s,
-.btn-cancel-m,
-.btn-cancel-s,
-.btn-view-s,
-.btn-input-s,
-.btn-upload-s {  
-  padding: 0.1rem 0.5rem !important;
+.btn-primary-sm,
+.btn-add-sm,
+.btn-approve-sm,
+.btn-pending-sm,
+.btn-save-sm,
+.btn-edit-sm,
+.btn-delete-sm,
+.btn-cancel-sm,
+.btn-view-sm,
+.btn-input-sm,
+.btn-upload-sm {  
+  padding: 0.2rem 0.5rem !important;
   margin: 0 0.25rem !important;
   font-size: var(--font-size-sm) !important;
   font-weight: 400 !important;
@@ -171,72 +218,138 @@
   cursor: pointer !important;
   transition: all 0.2s ease-in-out !important;
   background: transparent !important;
-  line-height: 1.4 !important;
+  line-height: 1.25 !important;
   box-shadow: none !important;
 }
 
 
+:root {
+  /* 기본 색상 */
+  --primary-color: #5fa56b;           /* 로그인 버튼 녹색 */
+  --primary-color-light: #8fc89e;     /* 밝은 녹색 */
+  --primary-color-lightest: #e3f3e8;  /* 아주 밝은 녹색 */
+  --primary-color-dark: #488a54;      /* 어두운 녹색 */
+  --primary-color-hover: #4e9e5c;     /* 호버 시 녹색 */
 
-.btn-view:hover {
-  background: #f8f9fa;
+  --primary-blue: #1976D2;            /* 포인트 파랑 */
+  --primary-blue-light: #E3F2FD;      /* 아주 밝은 파랑 */
+  --primary-blue-lightest: #F1F8FF;   /* 거의 흰색에 가까운 파랑 */
+  --primary-blue-dark: #1565C0;       /* 어두운 파랑 */
+  --primary-blue-hover: #1565C0;      /* 호버 시 파랑 */
+    
+  /* 상태 색상 */
+  --success: #28a745;
+  --success-light: #6fdc8c;
+  --success-lightest: #e6f9ed;
+  --success-dark: #218838;
+  --success-hover: #24963f;
+  --danger: #dc3545;
+  --danger-light: #ff6f7d;
+  --danger-lightest: #ffeaea;
+  --danger-dark: #c82333;
+  --danger-hover: #c82333;
+  --warning: #ffc107;
+  --warning-light: #ffe066;
+  --warning-lightest: #fffbe6;
+  --warning-dark: #b8860b;
+  --warning-hover: #e0b200;
+
+  --text-white: #ffffff;
+  --text-dark: #333333;
+
 }
 
-.btn-input:hover,
-.btn-upload:hover {
-  background: #e9ecef;
-}
-
-button:disabled {
-  opacity: 0.9;
-  cursor: not-allowed;
-}
 
 
+/* 테이블 버튼 기본 색상 + 외곽선 (텍스트 버튼 스타일) */
+.btn-approve-sm  {background: var(--white) !important; color: var(--primary-blue) !important; border: 1px solid var(--primary-blue) !important;}
+.btn-approve-sm:hover:not(:disabled)
+                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
+.btn-pending-sm  {background: var(--white) !important; color: var(--danger) !important; border: 1px solid var(--danger) !important;}
+.btn-pending-sm:hover:not(:disabled)
+                 {background: var(--danger-hover) !important; color: var(--text-white) !important; border: 1px solid var(--danger-hover) !important;}
+.btn-add-sm      {background: var(--white) !important; color: var(--primary-blue) !important; border: 1px solid var(--primary-blue) !important;}
+.btn-add-sm:hover:not(:disabled)
+                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
+.btn-edit-sm     {background: var(--white) !important; color: var(--warning-dark) !important; border: 1px solid var(--warning-dark) !important;}
+.btn-edit-sm:hover:not(:disabled)
+                 {background: var(--warning-hover) !important; color: var(--text-white) !important; border: 1px solid var(--warning-hover) !important;}
+.btn-delete-sm   {background: var(--white) !important; color: var(--danger) !important; border: 1px solid var(--danger) !important;}
+.btn-delete-sm:hover:not(:disabled)
+                 {background: var(--danger-hover) !important; color: var(--text-white) !important; border: 1px solid var(--danger-hover) !important;}
 
-/* 테이블 버튼 기본 색상 (텍스트 버튼 스타일) */
-.btn-primary-m  { color: var(--primary-blue) !important; }
-.btn-add-m      { color: var(--primary-blue) !important; }
-.btn-approve-m  { color: var(--primary-blue) !important; }
-.btn-pending-m  { color: var(--danger) !important; }
-.btn-save-m     { color: var(--primary-blue) !important; }
-.btn-save-s     { color: var(--success) !important; }
-.btn-edit-m     { color: var(--warning) !important; }
-.btn-edit-s     { color: var(--warning) !important; }
-.btn-delete-m   { color: var(--danger) !important; }
-.btn-delete-s   { color: var(--danger) !important; }
-.btn-cancel-m   { color: var(--gray-600) !important; }
-.btn-cancel-s   { color: var(--gray-600) !important; }
-.btn-view-s     { background: var(--gray-100) !important; color: var(--text-dark) !important; }  
-.btn-input-s    { background: var(--gray-100) !important; color: var(--text-dark) !important; }
-.btn-upload-s   { background: var(--gray-100) !important; color: var(--text-dark) !important; }
+.btn-save-sm     {background: var(--primary-blue) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue) !important;}
+.btn-save-sm:hover:not(:disabled)
+                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
 
+.btn-cancel-sm   {background: var(--gray-300) !important; color: var(--datk) !important; border: 1px solid var(--gray-500) !important;}
 
-/* 테이블 버튼 외곽선 (텍스트 버튼 스타일) */
-.btn-view-s,
-.btn-input-s,
-.btn-upload-s   {
-  border: 1px solid transparent !important;
-  border-color: var(--gray-500) !important;
-}
+.btn-view-sm     {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-view-sm:hover:not(:disabled)
+                 {background: var(--gray-200) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-input-sm    {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-input-sm:hover:not(:disabled)
+                 {background: var(--gray-200) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-upload-sm   {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-upload-sm:hover:not(:disabled)
 
 
 /* 테이블 버튼 호버 효과 */
-.btn-primary-m:hover:not(:disabled) { background: var(--primary-blue-light) !important; color: var(--primary-blue-dark) !important; }
-.btn-add-m:hover:not(:disabled)     { background: var(--primary-blue-light) !important; color: var(--primary-blue-dark) !important; }
-.btn-approve-m:hover:not(:disabled) { background: var(--primary-blue-light) !important; color: var(--primary-blue-dark) !important; }
-.btn-pending-m:hover:not(:disabled) { background: rgba(220, 53, 69, 0.1) !important; color: var(--danger-dark) !important; }
-.btn-save-m:hover:not(:disabled)    { background: var(--primary-blue-light) !important; color: var(--primary-blue-dark) !important; }
-.btn-save-s:hover:not(:disabled)    { background: rgba(40, 167, 69, 0.1) !important; color: var(--success-dark) !important; }
-.btn-edit-m:hover:not(:disabled)    { background: rgba(255, 193, 7, 0.1) !important; color: var(--warning-dark) !important; }
-.btn-edit-s:hover:not(:disabled)    { background: rgba(255, 193, 7, 0.1) !important; color: var(--warning-dark) !important; }
-.btn-delete-m:hover:not(:disabled)  { background: rgba(220, 53, 69, 0.1) !important; color: var(--danger-dark) !important; }
-.btn-delete-s:hover:not(:disabled)  { background: rgba(220, 53, 69, 0.1) !important; color: var(--danger-dark) !important; }
-.btn-cancel-m:hover:not(:disabled)  { background: rgba(108, 117, 125, 0.1) !important; color: var(--gray-700) !important; }
-.btn-cancel-s:hover:not(:disabled)  { background: rgba(108, 117, 125, 0.1) !important; color: var(--gray-700) !important; }
+.btn-primary-sm:hover:not(:disabled)
+.btn-add-sm:hover:not(:disabled)
+.btn-approve-sm:hover:not(:disabled)
+.btn-pending-sm:hover:not(:disabled)
+.btn-edit-sm:hover:not(:disabled)
+.btn-delete-sm:hover:not(:disabled)
+.btn-save-sm:hover:not(:disabled)
+.btn-cancel-sm:hover:not(:disabled)
+.btn-view-sm:hover:not(:disabled)
+.btn-input-sm:hover:not(:disabled)
+.btn-upload-sm:hover:not(:disabled) {
+  opacity: 0.9 !important;
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease-in-out !important;
+}
 
 
 
 
+
+
+
+
+
+
+/* 기본 버튼 포커스 효과 */
+button:focus,
+.btn-primary-sm:focus,
+.btn-add-sm:focus,
+.btn-approve-sm:focus,
+.btn-pending-sm:focus,
+.btn-edit-sm:focus,
+.btn-delete-sm:focus,
+
+.btn-save-sm:focus,
+.btn-cancel-sm:focus,
+
+.btn-view-sm:focus,
+.btn-input-sm:focus,
+.btn-upload-sm:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-view-sm:hover { background: #f8f9fa; }
+.btn-input-sm:hover,
+.btn-upload-sm:hover { background: #000000;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ========================================== */
 /* 5. 액션 셀 스타일                          */
@@ -275,10 +388,10 @@ button:disabled {
 .required-badge,
 .active-badge,
 .inactive-badge {
-  padding: 0.25em 0.6em !important;
+  padding: 0.25em 0.8em !important;
   font-size: var(--font-size-sm) !important;
   font-weight: 300 !important;
-  border-radius: 24px !important;
+  border-radius: 40px !important;
   display: inline-block !important;
   line-height: 1.2 !important;
   text-align: center !important;
@@ -288,7 +401,7 @@ button:disabled {
 
 .required-badge { background: var(--danger) !important;       color: var(--text-white) !important; }
 .active-badge   { background: var(--primary-blue) !important; color: var(--text-white) !important; }
-.inactive-badge { background: var(--gray-200) !important;     color: var(--gray-700) !important;
+.inactive-badge { background: var(--gray-600) !important;     color: var(--text-white) !important;
   border: 1px solid transparent !important; border-color: var(--gray-400) !important; }
 
 /* ========================================== */
@@ -306,17 +419,17 @@ button:disabled {
 .btn-danger:disabled,
 .btn-reset-password:disabled,
 .file-label[disabled],
-.btn-primary-m:disabled,
-.btn-add-m:disabled,
-.btn-edit-m:disabled,
-.btn-delete-m:disabled,
-.btn-approve-m:disabled,
-.btn-pending-m:disabled,
-.btn-save-m:disabled,
-.btn-cancel-m:disabled,
-.btn-view-s:disabled,
-.btn-input-s:disabled,
-.btn-upload-s:disabled {
+.btn-primary-sm:disabled,
+.btn-add-sm:disabled,
+.btn-edit-sm:disabled,
+.btn-delete-sm:disabled,
+.btn-approve-sm:disabled,
+.btn-pending-sm:disabled,
+.btn-save-sm:disabled,
+.btn-cancel-sm:disabled,
+.btn-view-sm:disabled,
+.btn-input-sm:disabled,
+.btn-upload-sm:disabled {
   background: var(--gray-300) !important;
   border-color: var(--gray-500) !important;
   color: var(--gray-700) !important;

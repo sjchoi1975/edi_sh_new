@@ -38,15 +38,15 @@
           </label>
           <div v-if="files.length" style="margin-top:6px;">
             <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:2px;">
-              <button type="button" class="btn delete-m" @click="removeFile(idx)">삭제</button>
+              <button type="button" class="btn-delete-sm" @click="removeFile(idx)">삭제</button>
               <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
             </div>
           </div>
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-cancel btn" type="button" @click="goList">취소</button>
-        <button class="btn-primary btn" type="submit">등록</button>
+        <button class="btn-cancel" type="button" @click="goList">취소</button>
+        <button class="btn-save" type="submit">등록</button>
       </div>
     </form>
   </div>

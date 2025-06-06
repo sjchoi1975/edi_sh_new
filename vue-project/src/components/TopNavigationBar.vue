@@ -18,7 +18,7 @@ const emit = defineEmits(['logout']);
 
 <style scoped>
 .top-nav {
-  height: 54px; /* 사이드바 로고 높이와 동기화 */
+  height: 48px; /* 사이드바 로고 높이와 동기화 */
   background: var(--bg-topbar); /* CSS 변수 사용 (흰색) */
   color: var(--text-primary);
   display: flex;

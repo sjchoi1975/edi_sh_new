@@ -126,7 +126,7 @@
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
         <button class="btn-reset-password" @click="handleResetPassword">비밀번호 초기화</button>
         <button class="btn-edit" @click="goEdit">수정</button>
-        <button class="btn-primary" @click="goList">목록</button>
+        <button class="btn-list" @click="goList">목록</button>
       </div>
     </div>
   </div>

@@ -20,13 +20,13 @@
           전체 {{ filteredSettlementMonths.length }} 건
         </div>
         <div>
-          <button class="btn-primary" @click="goCreate">등록</button>
+          <button class="btn-save" @click="goCreate">등록</button>
         </div>
       </div>
       <DataTable
         :value="filteredSettlementMonths"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         class="admin-settlement-months-table"
         v-model:first="currentPageFirstIndex"
         v-model:filters="filters"
@@ -77,12 +77,12 @@ import { supabase } from '@/supabase';
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  settlement_month: '8%',
-  start_date: '10%',
-  end_date: '10%',
-  notice: '38%',
+  settlement_month: '6%',
+  start_date: '8%',
+  end_date: '8%',
+  notice: '48%',
   remarks: '20%',
-  status: '10%'
+  status: '6%'
 };
 
 const settlementMonths = ref([]);

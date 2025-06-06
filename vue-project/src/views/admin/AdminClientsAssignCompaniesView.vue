@@ -20,10 +20,10 @@
           전체 {{ filteredClients.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-secondary" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
-          <button class="btn-secondary" @click="triggerFileUpload">엑셀 업로드</button>
-          <button class="btn-secondary" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-danger" @click="deleteAllAssignments">모두 삭제</button>
+          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿 다운로드</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 업로드</button>
+          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-delete" @click="deleteAllAssignments">모두 삭제</button>
           <input
             ref="fileInput"
             type="file"
@@ -39,7 +39,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 290px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
         class="admin-assign-companies-table"
@@ -108,20 +108,20 @@
                 :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center; gap: 4px"
               >
-                <button class="btn-delete-m" @click="deleteAssignment(slotProps.data, company)">
-                  - 삭제
+                <button class="btn-delete-sm" @click="deleteAssignment(slotProps.data, company)">
+                  삭제
                 </button>
                 <button
                   v-if="idx === slotProps.data.companies.length - 1"
-                  class="btn-add-m"
+                  class="btn-add-sm"
                   @click="openAssignModal(slotProps.data)"
                 >
-                  + 추가
+                  추가
                 </button>
               </div>
             </div>
             <div v-else style="min-height: 32px; display: flex; align-items: center">
-              <button class="btn-add-m" @click="openAssignModal(slotProps.data)">+ 추가</button>
+              <button class="btn-add-sm" @click="openAssignModal(slotProps.data)">추가</button>
             </div>
           </template>
         </Column>
@@ -158,7 +158,7 @@
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
           <button
-            class="btn-add"
+            class="btn-save"
             :disabled="selectedCompanies.length === 0"
             @click="assignCompanies"
           >
@@ -192,14 +192,14 @@ const fileInput = ref(null)
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  client_code: '8%',
-  name: '14%',
-  business_registration_number: '10%',
-  owner_name: '8%',
-  address: '20%',
-  company_name: '14%',
-  company_brn: '10%',
-  actions: '12%'
+  client_code: '7%',
+  name: '18%',
+  business_registration_number: '8%',
+  owner_name: '7%',
+  address: '24%',
+  company_name: '16%',
+  company_brn: '8%',
+  actions: '8%'
 };
 
 const fetchClients = async () => {

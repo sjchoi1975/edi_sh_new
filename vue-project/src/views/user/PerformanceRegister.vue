@@ -149,7 +149,7 @@
         >
           <template #body="slotProps">
             <button
-              class="btn-view-s"
+              class="btn-view-sm"
               @click="viewDetails(slotProps.data)"
               :disabled="!isInputPeriod || !(slotProps.data.performance_count > 0)"
             >
@@ -163,7 +163,7 @@
         >
           <template #body="slotProps">
             <button
-              class="btn-input-s"
+              class="btn-input-sm"
               @click="registerPerformance(slotProps.data)"
               :disabled="!isInputPeriod"
             >
@@ -185,7 +185,7 @@
         >
           <template #body="slotProps">
             <button
-              class="btn-view-s"
+              class="btn-view-sm"
               @click="openDetailModal(slotProps.data)"
               :disabled="!isInputPeriod || !(slotProps.data.evidence_files_count > 0)"
             >
@@ -199,7 +199,7 @@
         >
           <template #body="slotProps">
             <button
-              class="btn-upload-s"
+              class="btn-upload-sm"
               @click="openUploadModal(slotProps.data)"
               :disabled="!isInputPeriod"
             >
@@ -248,7 +248,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ truncateText(selectedClient?.name || '', 20) }}</h2>
-            <button @click="closeDetailModal" class="modal-close">×</button>
+            <button @click="closeDetailModal" class="btn-close">×</button>
           </div>
           <div class="modal-body">
             <div
@@ -307,13 +307,13 @@
           </div>
           <div class="modal-footer">
             <button
-              class="btn-secondary"
+              class="btn-download"
               @click="downloadAllFiles"
               :disabled="clientFiles.length === 0"
             >
               전체 다운로드
             </button>
-            <button class="btn-cancel" @click="closeDetailModal">닫기</button>
+            <button class="btn-close" @click="closeDetailModal">닫기</button>
           </div>
         </div>
       </div>
@@ -325,7 +325,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ selectedClient?.name }}</h2>
-            <button @click="closeUploadModal" class="modal-close">×</button>
+            <button @click="closeUploadModal" class="btn-close">×</button>
           </div>
           <div class="modal-body">
             <div style="margin-bottom: 1rem">
@@ -369,7 +369,7 @@
           <div class="modal-footer">
             <button class="btn-cancel" @click="closeUploadModal">취소</button>
             <button
-              class="btn-primary"
+              class="btn-excell-upload"
               @click="uploadFiles"
               :disabled="selectedFiles.length === 0 || uploading"
             >
@@ -386,7 +386,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ truncateText(viewModalClient?.name || '', 20) }}</h2>
-            <button @click="closeViewModal" class="modal-close">×</button>
+            <button @click="closeViewModal" class="btn-close">×</button>
           </div>
           <div class="modal-body">
             <div
@@ -425,7 +425,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-cancel" @click="closeViewModal">닫기</button>
+            <button class="btn-close" @click="closeViewModal">닫기</button>
           </div>
         </div>
       </div>

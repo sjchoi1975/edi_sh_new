@@ -23,8 +23,8 @@
           전체 {{ pendingCompanies.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-secondary btn-sm" @click="downloadExcel" :disabled="pendingCompanies.length === 0">엑셀 다운로드</button>
-          <button class="btn-primary btn-sm" @click="goCreate">등록</button>
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="pendingCompanies.length === 0">엑셀 다운로드</button>
+          <button class="btn-save" @click="goCreate">등록</button>
         </div>
       </div>
 
@@ -32,7 +32,7 @@
         :value="pendingCompanies"
         paginator :rows="20" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
-        scrollable scrollHeight="calc(100vh - 290px)" 
+        scrollable scrollHeight="calc(100vh - 250px)" 
         v-model:filters="filters"
         :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="admin-companies-pending-table"
@@ -59,9 +59,14 @@
           </template>
         </Column>
         <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }">
+          <template #body="slotProps">
+            {{ slotProps.data.remarks || '-' }}
+          </template>
+        </Column>
         <Column field="approval_status" header="승인 처리" :headerStyle="{ width: columnWidths.approval_status }" :exportable="false">
           <template #body="slotProps">
-            <button class="btn-primary btn-sm" @click="confirmApprovalChange(slotProps.data, 'approved')">승인</button>
+            <button class="btn-approve-sm" @click="confirmApprovalChange(slotProps.data, 'approved')">승인</button>
           </template>
         </Column>
       </DataTable>
@@ -85,14 +90,15 @@ import TopNavigationBar from '@/components/TopNavigationBar.vue'
 // 컬럼 너비 관리
 const columnWidths = {
   no: '4%',
-  company_group: '8%',
+  company_group: '7%',
   company_name: '16%',
-  business_registration_number: '10%',
-  representative_name: '8%',
-  business_address: '30%',
-  default_commission_grade: '8%',
-  assigned_pharmacist_contact: '8%',
-  approval_status: '8%'
+  business_registration_number: '9%',
+  representative_name: '7%',
+  business_address: '25%',
+  default_commission_grade: '7%',
+  assigned_pharmacist_contact: '7%',
+  remarks: '12%',
+  approval_status: '6%',
 }
 
 const pendingCompanies = ref([])

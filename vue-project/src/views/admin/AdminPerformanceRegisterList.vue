@@ -68,7 +68,7 @@
       </div>        
         <!-- 엑셀 다운로드 버튼을 오른쪽 끝에 -->
       <div class="top-btns">
-        <button class="btn-primary" @click="downloadExcel" :disabled="displayRows.length === 0">
+        <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
           엑셀 다운로드
         </button>
       </div>
