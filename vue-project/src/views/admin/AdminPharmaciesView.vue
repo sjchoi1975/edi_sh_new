@@ -68,24 +68,14 @@
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column
-          field="name"
-          header="약국명"
-          :headerStyle="{ width: columnWidths.name }"
-          :sortable="true"
-        >
+        <Column field="name" header="약국명" :headerStyle="{ width: columnWidths.name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.name"
               class="inline-edit-input"
             />
-            <a
-              v-else
-              href="#"
-              style="color: #1976d2; text-decoration: underline; cursor: pointer"
-              @click.prevent="goToDetail(slotProps.data.id)"
-            >
+            <a v-else href="#" style="color: #1976d2; text-decoration: underline; cursor: pointer" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.name }}
             </a>
           </template>
@@ -366,14 +356,14 @@ const downloadTemplate = () => {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 12 }, // 약국코드
-    { width: 20 }, // 약국명
+    { width: 25 }, // 약국명
     { width: 15 }, // 사업자등록번호
-    { width: 30 }, // 주소
+    { width: 40 }, // 주소
     { width: 20 }, // 비고
     { width: 10 }, // 상태
   ]
 
-  XLSX.writeFile(wb, '문전약국_업로드_템플릿.xlsx')
+  XLSX.writeFile(wb, '문전약국_엑셀등록_템플릿.xlsx')
 }
 
 // 파일 업로드 트리거

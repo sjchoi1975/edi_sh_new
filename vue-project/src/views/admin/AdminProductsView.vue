@@ -69,23 +69,14 @@
           </template>
         </Column>
         <Column
-          field="product_name"
-          header="제품명"
-          :headerStyle="{ width: columnWidths.product_name }"
-          :sortable="true"
-        >
+          field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.product_name"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
-            <a
-              v-else
-              href="#"
-              class="text-link"
-              @click.prevent="goToDetail(slotProps.data.id)"
-            >
+            <a v-else href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.product_name }}
             </a>
           </template>
@@ -347,15 +338,15 @@ const downloadTemplate = () => {
   const templateData = [
     {
       기준월: '2025-01',
-      제품명: '예시제품',
-      보험코드: 'INS001',
+      제품명: '팜플정',
+      보험코드: '601234567',
       약가: 1000,
-      수수료A: 0.1,
-      수수료B: 0.15,
-      표준코드: 'STD001',
+      수수료A: 0.45,
+      수수료B: 0.44,
+      표준코드: '8800123456789',
       단위포장형태: '정 10개',
       단위수량: 10,
-      비고: '예시 비고',
+      비고: '',
       상태: '활성',
     },
   ]
@@ -371,14 +362,14 @@ const downloadTemplate = () => {
     { width: 10 },
     { width: 10 },
     { width: 10 },
-    { width: 12 },
-    { width: 15 },
+    { width: 16 },
+    { width: 16 },
     { width: 10 },
     { width: 20 },
     { width: 10 },
   ]
 
-  XLSX.writeFile(wb, '제품_업로드_템플릿.xlsx')
+  XLSX.writeFile(wb, '제품_엑셀등록_템플릿.xlsx')
 }
 
 const triggerFileUpload = () => {

@@ -5,11 +5,11 @@
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">아이디(이메일)</label>
-          <input id="email" type="email" v-model="email" />
+          <InputText id="email" type="email" v-model="email" placeholder="이메일" />
         </div>
         <div class="form-group">
           <label for="password">비밀번호</label>
-          <input id="password" type="password" v-model="password" />
+          <InputText id="password" type="password" v-model="password" placeholder="비밀번호" />
         </div>
         <Button :label="'로그인'" class="login-btn" :disabled="!canLogin" :style="loginBtnStyle" @click="handleLogin" />
         <Button label="회원가입" class="signup-btn" @click="$router.push('/signup')" />
@@ -21,6 +21,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
@@ -89,4 +90,83 @@ onMounted(() => {
 onUnmounted(() => {
   document.body.classList.remove('no-main-padding');
 });
-</script> 
+</script>
+
+<style scoped>
+html, body, #app, .login-root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw;
+  height: 100vh;
+}
+.login-root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f7f7f9;
+  font-size: 1rem;
+}
+.login-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  min-width: 400px;
+  box-shadow: 0 0 16px 0 rgba(0,0,0,0.04);
+  padding: 40px 32px 32px 32px;
+  border-radius: 4px;
+}
+.login-logo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #5fa56b;
+  margin-bottom: 3rem;
+  letter-spacing: 0px;
+}
+.login-form {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.form-group label {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  color: #222;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.login-btn {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+.signup-btn {
+  width: 100%;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 1rem;
+}
+.copyright {
+  margin-top: 3rem;
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .login-root {
+    flex-direction: column;
+  }
+  .login-right {
+    min-width: unset;
+    width: 100vw;
+  }
+}
+</style> 

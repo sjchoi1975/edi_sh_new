@@ -158,18 +158,17 @@ label {
 
 /* 필수 입력 표시 */
 .required {
-  color: var(--primary-blue);
+  color: #1976d2;
 }
 
 /* 기본 입력창 */
 input,
-.p-inputtext,
 textarea,
 select {
   background: var(--bg-content);
   border: 1px solid var(--border-input);
   border-radius: var(--border-radius);
-  padding: 0.5rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   font-size: var(--font-size-base);
   font-weight: 400;
   color: var(--text-primary);
@@ -188,7 +187,7 @@ textarea:focus,
 select:focus {
   border-color: var(--primary-color-light);
   outline: 0;
-  box-shadow: 0 0 0 0.1rem var(--primary-color-light);
+  box-shadow: 0 0 0 0.2rem var(--primary-color-light);
 }
 
 /* 인라인 편집 */
@@ -2198,236 +2197,3 @@ select.input-editable {
 .admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(11) {
   text-align: left !important;
 } /* 비고 */
-
-/* ===================================================== */
-/* 로그인/회원가입 화면 전용 스타일 (LoginView.vue, SignupView.vue) */
-/* ===================================================== */
-
-/*
-  [LoginView.vue] 로그인 전체 컨테이너
-  - 로그인 화면의 배경, 정렬, 전체 레이아웃을 담당
-*/
-.login-root {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  min-height: 100vh !important;
-  background: var(--gray-100) !important;
-  font-size: var(--font-size-base) !important;
-  width: 100vw !important;
-  height: 100vh !important;
-}
-
-/* [LoginView.vue] 로그인 박스 - 로그인 폼, 로고, 저작권 표시 등 포함 */
-.login-right {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: var(--bg-page) !important;
-  min-width: 400px !important;
-  box-shadow: 0 0 4px 0 rgba(0,0,0,0.2) !important;
-  padding: 2.4rem 2rem 2rem 2rem !important;
-  border-radius: var(--border-radius) !important;
-}
-
-/* [LoginView.vue] 로그인 로고 텍스트 - 상단 타이틀 역할 */
-.login-logo {
-  font-size: 1.8rem !important;
-  font-weight: bold !important;
-  color: var(--primary-color) !important;
-  margin-bottom: 3rem !important;
-  letter-spacing: 0px !important;
-}
-
-/* [LoginView.vue] 로그인 폼 - 입력 필드, 버튼 정렬 */
-.login-form {
-  width: 100% !important;
-  max-width: 340px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 1.2rem !important;
-}
-
-/* [LoginView.vue] 폼 그룹(라벨+입력) */
-.form-group label {
-  font-size: var(--font-size-base) !important;
-  font-weight: var(--font-weight-medium) !important;
-  color: var(--text-primary) !important;
-  margin-bottom: 0.3rem !important;
-}
-.form-group {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.3rem !important;
-}
-
-/* [LoginView.vue] 로그인 버튼 */
-.login-btn {
-  width: 100% !important;
-  color: var(--text-white) !important;
-  font-size: var(--font-size-base) !important;
-  margin-bottom: 0.5rem !important;
-}
-
-/* [LoginView.vue] 회원가입 버튼 */
-.signup-btn {
-  width: 100% !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-  font-size: var(--font-size-base) !important;
-}
-
-/* [LoginView.vue] 저작권 표시 */
-.copyright {
-  margin-top: 3rem !important;
-  color: var(--text-secondary) !important;
-  font-size: var(--font-size-sm) !important;
-  text-align: center !important;
-}
-
-/* [LoginView.vue, SignupView.vue] 반응형(모바일) 대응 */
-@media (max-width: 900px) {
-  .login-root {
-    flex-direction: column !important;
-  }
-  .login-right {
-    min-width: unset !important;
-    width: 100vw !important;
-  }
-}
-
-
-/* [SignupView.vue] 회원가입 전체 컨테이너
-  - 회원가입 화면의 배경, 정렬, 전체 레이아웃을 담당 */
-.signup-root {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  min-height: 100vh !important;
-  width: 100vw !important;
-  background: var(--gray-100) !important;
-  font-size: var(--font-size-base) !important;
-}
-
-/* [SignupView.vue] 회원가입 박스
-  - 회원가입 폼, 로고, 저작권 표시 등 포함 */
-.signup-right {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: var(--bg-page) !important;
-  min-width: 400px !important;
-  width: 100% !important;
-  max-width: 480px !important;
-  padding: 2.4rem 2rem 2rem 2rem !important;
-  box-shadow: 0 0 4px 0 rgba(0,0,0,0.2) !important;
-  border-radius: var(--border-radius) !important;
-  position: relative !important;
-}
-
-/* [SignupView.vue] 회원가입 로고 텍스트 - 상단 타이틀 역할 */
-.signup-logo {
-  font-size: 1.8rem !important;
-  font-weight: bold !important;
-  color: var(--primary-color) !important;
-  margin-bottom: 3rem !important;
-  letter-spacing: 0px;
-}
-
-/* [SignupView.vue] 회원가입 폼 - 입력 필드, 버튼 정렬 */
-.signup-form {
-  width: 100% !important;
-  max-width: 720px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 1.2rem !important;
-}
-
-/* [SignupView.vue] 회원가입 폼의 각 입력 행 */
-.signup-form .form-row {
-  font-size: var(--font-size-base) !important;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  margin-bottom: 0rem !important;
-  gap: 0.5rem !important;
-}
-
-/* [SignupView.vue] 회원가입 폼 라벨 */
-.signup-form .form-row label {
-  width: 180px !important;
-  min-width: 140px !important;
-  text-align: right !important;
-  margin-right: 1rem !important;
-}
-
-/* [SignupView.vue] 회원가입 폼 입력창 */
-.signup-form .form-row input,
-.signup-form .form-row .p-inputtext {
-  flex: 1 1 0 !important;
-  min-width: 260px !important;
-  max-width: 340px !important;
-  height: 32px !important;
-  font-size: var(--font-size-base) !important;
-  padding: 0.5rem 1rem !important;
-  box-sizing: border-box !important;
-}
-
-/* [SignupView.vue] 회원가입 버튼/취소 버튼 행 */
-.button-row {
-  display: flex !important;
-  gap: 1rem !important;
-  margin-top: 2rem !important;
-}
-
-/* [SignupView.vue] 회원가입 버튼 */
-.signup-btn {
-  flex: 1 !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-  border: none !important;
-  font-size: var(--font-size-base) !important;
-}
-
-/* [SignupView.vue] 취소 버튼 */
-.cancel-btn {
-  flex: 1 !important;
-  background: #e0e0e0 !important;
-  color: var(--text-dark) !important;
-  border: none !important;
-  font-size: var(--font-size-base) !important;
-}
-
-/* [SignupView.vue] 로그인 링크(회원가입 하단)*/
-.login-link {
-  text-align: center !important;
-  color: var(--primary-color) !important;
-  font-size: var(--font-size-sm) !important;
-  margin-top: 1.5rem !important;
-  margin-bottom: 3rem !important;
-  text-decoration: underline !important;
-  cursor: pointer !important;
-}
-
-/* [SignupView.vue] 저작권 표시 (회원가입) - 회원가입 박스 하단 고정 */
-.signup-right .copyright {
-  position: absolute !important;
-  bottom: 1.5rem !important;
-  width: 100% !important;
-  color: var(--text-secondary) !important;
-  font-size: var(--font-size-sm) !important;
-  text-align: center !important;
-}
-
-/* [SignupView.vue] 반응형(모바일) 대응 */
-@media (max-width: 900px) {
-  .signup-right {
-    min-width: unset !important;
-    width: 100vw !important;
-  }
-  .signup-form {
-    max-width: 98vw !important;
-  }
-}

@@ -75,12 +75,7 @@
               v-model="slotProps.data.name"
               class="inline-edit-input"
             />
-            <a
-              v-else
-              href="#"
-              style="color: #1976d2; text-decoration: underline; cursor: pointer"
-              @click.prevent="goToDetail(slotProps.data.id)"
-            >
+            <a v-else href="#" style="color: #1976d2; text-decoration: underline; cursor: pointer" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.name }}
             </a>
           </template>
@@ -334,12 +329,12 @@ const deleteClient = async (row) => {
 const downloadTemplate = () => {
   const templateData = [
     {
-      거래처코드: 'CL001',
-      병의원명: '예시병원',
+      거래처코드: '10001',
+      병의원명: '강남사랑병원',
       사업자등록번호: '123-45-67890',
       원장명: '홍길동',
       주소: '서울시 강남구 테헤란로 123',
-      비고: '예시 비고',
+      비고: '',
       상태: '활성',
     },
   ]
@@ -351,15 +346,15 @@ const downloadTemplate = () => {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 12 }, // 거래처코드
-    { width: 20 }, // 병의원명
+    { width: 25 }, // 병의원명
     { width: 15 }, // 사업자등록번호
     { width: 12 }, // 원장명
-    { width: 30 }, // 주소
+    { width: 40 }, // 주소
     { width: 20 }, // 비고
     { width: 10 }, // 상태
   ]
 
-  XLSX.writeFile(wb, '거래처_업로드_템플릿.xlsx')
+  XLSX.writeFile(wb, '거래처_엑셀등록_템플릿.xlsx')
 }
 
 // 파일 업로드 트리거

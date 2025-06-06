@@ -286,7 +286,7 @@ const downloadTemplate = () => {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '담당업체지정템플릿')
   ws['!cols'] = [{ width: 20 }, { width: 20 }] // 컬럼 너비 조정
-  XLSX.writeFile(wb, '담당업체지정_업로드_템플릿_사업자번호.xlsx') // 파일명 변경
+  XLSX.writeFile(wb, '거래처-업체매핑_엑셀등록_템플릿.xlsx') // 파일명 변경
 }
 
 const triggerFileUpload = () => {

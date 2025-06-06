@@ -5,23 +5,26 @@
       <form class="signup-form" @submit.prevent="handleSignup">
         <div class="form-row" v-for="field in fields" :key="field.key">
           <label :for="field.key">{{ field.label }}</label>
-          <input
+          <InputText
             v-if="field.type !== 'password' && field.type !== 'password2'"
             :id="field.key"
             :type="field.inputType"
             v-model="formData[field.key]"
+            :placeholder="field.label"
           />
-          <input
+          <InputText
             v-else-if="field.type === 'password'"
             :id="field.key"
             type="password"
             v-model="formData.password"
+            placeholder="비밀번호"
           />
-          <input
+          <InputText
             v-else-if="field.type === 'password2'"
             :id="field.key"
             type="password"
             v-model="formData.confirmPassword"
+            placeholder="비밀번호 확인"
           />
         </div>
         <div class="button-row">
@@ -39,6 +42,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
@@ -132,4 +136,117 @@ onMounted(() => {
 onUnmounted(() => {
   document.body.classList.remove('no-main-padding');
 });
-</script> 
+</script>
+
+<style scoped>
+.signup-root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100vw;
+  background: #f7f7f9;
+  font-size: 1rem;
+}
+.signup-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  min-width: 400px;
+  box-shadow: 0 0 16px 0 rgba(0,0,0,0.04);
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 32px 32px 32px;
+  border-radius: 1rem;
+  position: relative;
+}
+.signup-logo {
+  font-size: 2em;
+  font-weight: bold;
+  color: #5fa56b;
+  margin-bottom: 2rem;
+  letter-spacing: 0px;
+}
+.signup-form {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.signup-form .form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 0rem;
+  gap: 0.5rem;
+}
+.signup-form .form-row label {
+  width: 180px;
+  min-width: 140px;
+  text-align: right;
+  margin-right: 1rem;
+  font-weight: 600;
+}
+.signup-form .form-row input,
+.signup-form .form-row .p-inputtext {
+  flex: 1 1 0;
+  min-width: 260px;
+  max-width: 340px;
+  height: 32px;
+  font-size: 1rem;
+  padding: 6px 12px;
+  box-sizing: border-box;
+}
+.button-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.signup-btn {
+  flex: 1;
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border: none !important;
+  font-size: 1rem;
+}
+.cancel-btn {
+  flex: 1;
+  background: #e0e0e0 !important;
+  color: #222 !important;
+  border: none !important;
+  font-size: 1rem;
+}
+.login-link {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: #1976d2;
+  font-size: 0.9rem;
+  margin-bottom: 4rem;
+}
+.login-link {
+  color: #1976d2;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.copyright {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  width: 100%;
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .signup-right {
+    min-width: unset;
+    width: 100vw;
+  }
+  .signup-form {
+    max-width: 98vw;
+  }
+}
+</style> 

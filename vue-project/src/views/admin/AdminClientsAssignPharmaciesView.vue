@@ -277,7 +277,7 @@ const downloadTemplate = () => {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '문전약국지정템플릿')
   ws['!cols'] = [{ width: 20 }, { width: 20 }]
-  XLSX.writeFile(wb, '문전약국지정_업로드_템플릿_사업자번호.xlsx')
+  XLSX.writeFile(wb, '거래처-약국매핑_엑셀등록_템플릿.xlsx')
 }
 
 const triggerFileUpload = () => {
