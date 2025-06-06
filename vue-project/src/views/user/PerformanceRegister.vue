@@ -23,45 +23,40 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ clientList.length }} 건</div>
         <div class="data-card-buttons">
-          <button class="btn-excell-template" @click="downloadExcelTemplate" style="margin-right: 8px">
-            템플릿 다운로드
+          <button
+            class="btn-excell-template"
+            @click="downloadExcelTemplate"
+            :disabled="!selectedSettlementMonth"
+          >
+            엑셀 템플릿 다운로드
           </button>
-          <button class="btn-excell-download" @click="downloadExcel" :disabled="clientList.length === 0">
-            엑셀 다운로드
+          <button
+            class="btn-excell-download"
+            @click="triggerExcelUpload"
+            :disabled="!selectedSettlementMonth"
+          >
+            엑셀 일괄 등록
           </button>
-        </div>
-      </div>
-
-      <!-- 엑셀 업로드 영역 -->
-      <div class="excel-upload-area" style="padding: 1rem; border-bottom: 1px solid #dee2e6">
-        <div style="display: flex; align-items: center; gap: 1rem">
           <input
-            type="file"
             ref="excelFileInput"
+            type="file"
             accept=".xlsx,.xls"
             @change="handleExcelUpload"
             style="display: none"
           />
-          <button class="btn-excell-upload" @click="triggerExcelUpload">엑셀 파일 선택</button>
-          <span v-if="selectedExcelFile" style="color: #666">
-            {{ selectedExcelFile.name }}
-          </span>
-        </div>
-        <div
-          v-if="uploadErrors.length > 0"
-          class="upload-errors"
-          style="margin-top: 1rem; color: #dc3545"
-        >
-          <div v-for="(error, index) in uploadErrors" :key="index">
-            {{ error }}
-          </div>
+          <button
+            class="btn-excell-download"
+            @click="downloadExcel"
+            :disabled="clientList.length === 0"
+          >
+            엑셀 다운로드
+          </button>
         </div>
       </div>
-
       <DataTable
         :value="clientList"
         scrollable
-        scrollHeight="calc(100vh - 280px)"
+        scrollHeight="calc(100vh - 250px)"
         class="custom-table performance-register-table"
       >
         <template #empty>등록된 거래처가 없습니다.</template>
@@ -248,7 +243,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ truncateText(selectedClient?.name || '', 20) }}</h2>
-            <button @click="closeDetailModal" class="btn-close">×</button>
+            <button @click="closeDetailModal" class="btn-close-nobg">X</button>
           </div>
           <div class="modal-body">
             <div
@@ -325,7 +320,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ selectedClient?.name }}</h2>
-            <button @click="closeUploadModal" class="btn-close">×</button>
+            <button @click="closeUploadModal" class="btn-close-nobg">X</button>
           </div>
           <div class="modal-body">
             <div style="margin-bottom: 1rem">
@@ -386,7 +381,7 @@
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
             <h2>{{ truncateText(viewModalClient?.name || '', 20) }}</h2>
-            <button @click="closeViewModal" class="btn-close">×</button>
+            <button @click="closeViewModal" class="btn-close-nobg">X</button>
           </div>
           <div class="modal-body">
             <div
@@ -407,7 +402,7 @@
                 "
               >
                 <div style="flex: 1; text-align: center">제품명</div>
-                <div style="width: 100px; text-align: center">수량</div>
+                <div style="width: 100px; text-align: center">처방수량</div>
               </div>
               <!-- 테이블 데이터 -->
               <div
@@ -443,10 +438,10 @@ import * as XLSX from 'xlsx'
 
 const columnWidths = {
   no: '4%',
-  client_code: '6%',
+  client_code: '7%',
   name: '16%',
   business_registration_number: '8%',
-  address: '24%',
+  address: '23%',
   performance_count: '6%',
   total_prescription_amount: '6%',
   view_button: '6%',
@@ -587,8 +582,12 @@ const fetchClientList = async () => {
     }
   })
   // 정렬: 처방건수 0건 → 1건 이상, 각 그룹 내 가나다순
-  const noData = unsortedList.filter(c => !c.performance_count || Number(c.performance_count) === 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-  const hasData = unsortedList.filter(c => Number(c.performance_count) > 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  const noData = unsortedList
+    .filter((c) => !c.performance_count || Number(c.performance_count) === 0)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  const hasData = unsortedList
+    .filter((c) => Number(c.performance_count) > 0)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
   clientList.value = [...noData, ...hasData]
   loading.value = false
 }
@@ -1031,9 +1030,21 @@ async function validateExcelData(data) {
   for (let i = 0; i < data.length; i++) {
     const row = data[i]
     const rowNum = i + 2
-    // 1. 거래처 체크
-    if (!row['거래처_사업자등록번호'] || !myClients.includes(row['거래처_사업자등록번호'])) {
-      errors.push(`${rowNum}행: 내 거래처가 아니거나 미등록 거래처입니다.`)
+    // 1. 거래처 체크 (clients.status = 'active'도 포함)
+    const businessNumber = row['거래처_사업자등록번호']
+    let clientActive = false
+    if (businessNumber) {
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('id, status')
+        .eq('business_registration_number', businessNumber)
+        .single()
+      if (clientData && clientData.status === 'active') {
+        clientActive = true
+      }
+    }
+    if (!businessNumber || !myClients.includes(businessNumber) || !clientActive) {
+      errors.push(`${rowNum}행: 내 거래처가 아니거나 비활성 거래처입니다.`)
     }
     // 2. 처방월 체크
     if (!row['처방월'] || !validMonths.includes(row['처방월'])) {
@@ -1044,32 +1055,36 @@ async function validateExcelData(data) {
       errors.push(`${rowNum}행: 해당 처방월에 등록/활성화된 제품이 아닙니다.`)
     }
     // 4. 보험코드 형식 체크 (9자리 숫자, TEXT)
-    if (row['보험코드'] && !/^\d{9}$/.test(row['보험코드'])) {
-      errors.push(`${rowNum}행: 보험코드는 9자리 숫자여야 합니다.`)
+    if (row['보험코드'] && !/^[0-9]{9,10}$/.test(row['보험코드'])) {
+      errors.push(`${rowNum}행: 보험코드는 9~10자리 숫자여야 합니다.`)
     }
   }
   return errors
 }
 
-// 내 거래처 사업자등록번호 목록
+// 내 거래처 사업자등록번호 목록 (status = 'active'인 거래처만)
 async function fetchMyClients() {
-  const { data } = await supabase
+  // 1. 내 회사의 client_company_assignments에서 client_id 목록 조회
+  const { data: assignments } = await supabase
     .from('client_company_assignments')
-    .select('clients(business_registration_number)')
+    .select('client_id')
     .eq('company_id', currentCompanyId.value)
-  return data?.map((item) => item.clients.business_registration_number) || []
+  const clientIds = assignments?.map((a) => a.client_id) || []
+  if (clientIds.length === 0) return []
+  // 2. clients 테이블에서 status = 'active'인 거래처만 필터링
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('business_registration_number')
+    .in('id', clientIds)
+    .eq('status', 'active')
+  return clients?.map((c) => c.business_registration_number) || []
 }
 
-// 유효한 처방월 목록
-async function getValidSettlementMonths() {
-  const { data: settings } = await supabase
-    .from('system_settings')
-    .select('settlement_month_range')
-    .single()
-  const range = settings?.settlement_month_range || 3
-  const currentMonth = selectedSettlementMonth.value
+// 유효한 처방월 목록 (예: 최근 3개월)
+function getValidSettlementMonths() {
   const validMonths = []
-  for (let i = range; i > 0; i--) {
+  const currentMonth = selectedSettlementMonth.value
+  for (let i = 1; i <= 3; i++) {
     const date = new Date(currentMonth)
     date.setMonth(date.getMonth() - i)
     validMonths.push(date.toISOString().slice(0, 7))
@@ -1077,17 +1092,17 @@ async function getValidSettlementMonths() {
   return validMonths
 }
 
-// 처방월별 활성화 제품(보험코드) 목록
+// 유효한 제품 체크
 async function fetchValidProducts(validMonths) {
   const { data } = await supabase
-    .from('product_settlement_months')
-    .select('settlement_month, products(insurance_code)')
-    .in('settlement_month', validMonths)
+    .from('products')
+    .select('base_month, insurance_code')
+    .in('base_month', validMonths)
     .eq('status', 'active')
   const products = {}
   data?.forEach((item) => {
-    if (!products[item.settlement_month]) products[item.settlement_month] = []
-    products[item.settlement_month].push(item.products.insurance_code)
+    if (!products[item.base_month]) products[item.base_month] = []
+    products[item.base_month].push(item.insurance_code)
   })
   return products
 }

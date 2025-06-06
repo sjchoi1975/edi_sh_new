@@ -35,7 +35,7 @@
         </div>
         <div class="action-buttons-group">
           <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 업로드</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
           <input
             ref="fileInput"
             type="file"
@@ -44,8 +44,8 @@
             style="display: none"
           />
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-save" @click="goCreate">등록</button>
           <button class="btn-delete" @click="deleteAllProducts">모두 삭제</button>
+          <button class="btn-save" @click="goCreate">개별 등록</button>
         </div>
       </div>
 

@@ -39,7 +39,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 280px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="custom-table products-table"
@@ -57,7 +57,7 @@
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
         <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
-        <Column header="수수료율(%)" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="false">
+        <Column header="수수료율(%)" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
           <template #body="slotProps">
             {{ getCommissionRate(slotProps.data) }}
           </template>

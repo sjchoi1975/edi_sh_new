@@ -31,7 +31,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 280px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['client_code', 'name', 'business_registration_number']"
         class="custom-table clients-table"
@@ -74,12 +74,12 @@ const currentPageFirstIndex = ref(0);
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  client_code: '8%',
-  name: '20%',
-  business_registration_number: '10%',
-  owner_name: '8%',
-  address: '36%',
-  remarks: '14%'
+  client_code: '7%',
+  name: '18%',
+  business_registration_number: '9%',
+  owner_name: '7%',
+  address: '39%',
+  remarks: '16%'
 };
 
 function goToDetail(id) {

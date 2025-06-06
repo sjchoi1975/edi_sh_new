@@ -93,6 +93,7 @@ const userMenuTree = [
   ]},
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '실적 등록', path: '/performance/register' },
+    { label: '엑셀 등록', path: '/performance/excell' },
     { label: '등록 현황', path: '/performance/list' }
   ]},
   { label: '정산내역서 조회', icon: 'pi pi-file', children: [

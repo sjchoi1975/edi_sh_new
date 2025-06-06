@@ -55,12 +55,12 @@
             class="btn-excell-template" 
             @click="downloadExcelTemplate" 
             :disabled="!selectedSettlementMonth"
-          >템플릿 다운로드</button>
+          >엑셀 템플릿</button>
           <button 
             class="btn-excell-upload" 
             @click="triggerExcelUpload" 
             :disabled="!selectedSettlementMonth"
-          >엑셀 일괄등록</button>
+          >엑셀 등록</button>
           <input 
             ref="excelFileInput"
             type="file" 

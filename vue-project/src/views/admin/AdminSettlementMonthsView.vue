@@ -20,7 +20,7 @@
           전체 {{ filteredSettlementMonths.length }} 건
         </div>
         <div>
-          <button class="btn-save" @click="goCreate">등록</button>
+          <button class="btn-save" @click="goCreate">신규 등록</button>
         </div>
       </div>
       <DataTable

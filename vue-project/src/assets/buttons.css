@@ -7,18 +7,18 @@
 /* ========================================== */
 :root {
   /* 기본 색상 */
-  --primary-color: #5fa56b;           /* 로그인 버튼 녹색 */
-  --primary-color-light: #8fc89e;     /* 밝은 녹색 */
-  --primary-color-lightest: #e3f3e8;  /* 아주 밝은 녹색 */
-  --primary-color-dark: #488a54;      /* 어두운 녹색 */
-  --primary-color-hover: #4e9e5c;     /* 호버 시 녹색 */
+  --primary-color: #5fa56b; /* 로그인 버튼 녹색 */
+  --primary-color-light: #8fc89e; /* 밝은 녹색 */
+  --primary-color-lightest: #e3f3e8; /* 아주 밝은 녹색 */
+  --primary-color-dark: #488a54; /* 어두운 녹색 */
+  --primary-color-hover: #4e9e5c; /* 호버 시 녹색 */
 
-  --primary-blue: #1976D2;            /* 포인트 파랑 */
-  --primary-blue-light: #E3F2FD;      /* 아주 밝은 파랑 */
-  --primary-blue-lightest: #F1F8FF;   /* 거의 흰색에 가까운 파랑 */
-  --primary-blue-dark: #1565C0;       /* 어두운 파랑 */
-  --primary-blue-hover: #1565C0;      /* 호버 시 파랑 */
-    
+  --primary-blue: #1976d2; /* 포인트 파랑 */
+  --primary-blue-light: #e3f2fd; /* 아주 밝은 파랑 */
+  --primary-blue-lightest: #f1f8ff; /* 거의 흰색에 가까운 파랑 */
+  --primary-blue-dark: #1565c0; /* 어두운 파랑 */
+  --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
+
   /* 상태 색상 */
   --success: #28a745;
   --success-light: #6fdc8c;
@@ -35,7 +35,7 @@
   --warning-lightest: #fffbe6;
   --warning-dark: #b8860b;
   --warning-hover: #e0b200;
-  
+
   /* 중립 색상 */
   --gray-100: #f8f9fa;
   --gray-200: #e9ecef;
@@ -46,16 +46,16 @@
   --gray-700: #495057;
   --gray-800: #343a40;
   --gray-900: #212529;
-  
+
   /* 텍스트 색상 */
   --text-white: #ffffff;
   --text-dark: #333333;
-  
+
   /* 레이아웃 */
   --border-radius: 4px;
   --border-radius-s: 2px;
-  --shadow: 0 2px 4px rgba(0,0,0,0.1);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* ========================================== */
@@ -90,7 +90,7 @@
 .btn-select-none,
 .file-label {
   padding: 0.25rem 1rem !important;
-  margin: 0.5rem 1rem 0rem 0rem!important;
+  margin: 0.5rem 1rem 0rem 0rem !important;
   font-size: var(--font-size-md) !important;
   font-weight: 400 !important;
   border: 1px solid transparent !important;
@@ -103,27 +103,106 @@
 }
 
 /* 기본 버튼 색상 정의 */
-.btn-primary         { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
-.btn-secondary       { background: var(--gray-600) !important; border-color: var(--gray-600) !important; color: var(--text-white) !important; }
-.btn-list            { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
-.btn-cancel          { background: var(--gray-300) !important; border-color: var(--gray-300) !important; color: var(--text-dark) !important; }
-.btn-success         { background: var(--success) !important; border-color: var(--success) !important; color: var(--text-white) !important; }
-.btn-add             { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
-.btn-save            { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
-.btn-edit            { background: var(--warning) !important; border-color: var(--warning) !important; color: var(--text-dark) !important; }
-.btn-delete          { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--text-white) !important; }
-.btn-danger          { background: var(--danger) !important; border-color: var(--danger) !important; color: var(--text-white) !important; }
-.btn-excell-upload   { background: var(--primary-blue) !important; border-color: var(--primary-blue) !important; color: var(--text-white) !important; }
-.btn-excell-download { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: var(--text-white) !important; }
-.btn-excell-template { background: var(--gray-600) !important; border-color: var(--gray-600) !important; color: var(--text-white) !important; }
-.btn-reset-password  { background: var(--gray-800) !important; border-color: var(--gray-800) !important; color: var(--text-white) !important; }
-.btn-upload          { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-.btn-download        { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-.btn-close           { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-.btn-select-all      { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-.btn-select-none     { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-.file-label          { background: var(--gray-200) !important; border-color: var(--gray-400) !important; color: var(--text-dark) !important; }
-
+.btn-primary {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-white) !important;
+}
+.btn-secondary {
+  background: var(--gray-600) !important;
+  border-color: var(--gray-600) !important;
+  color: var(--text-white) !important;
+}
+.btn-list {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-white) !important;
+}
+.btn-cancel {
+  background: var(--gray-300) !important;
+  border-color: var(--gray-300) !important;
+  color: var(--text-dark) !important;
+}
+.btn-success {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+  color: var(--text-white) !important;
+}
+.btn-add {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+.btn-save {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+.btn-edit {
+  background: var(--warning) !important;
+  border-color: var(--warning) !important;
+  color: var(--text-dark) !important;
+}
+.btn-delete {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: var(--text-white) !important;
+}
+.btn-danger {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: var(--text-white) !important;
+}
+.btn-excell-upload {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+.btn-excell-download {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-white) !important;
+}
+.btn-excell-template {
+  background: var(--gray-600) !important;
+  border-color: var(--gray-600) !important;
+  color: var(--text-white) !important;
+}
+.btn-reset-password {
+  background: var(--gray-800) !important;
+  border-color: var(--gray-800) !important;
+  color: var(--text-white) !important;
+}
+.btn-upload {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+.btn-download {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+.btn-close {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+.btn-select-all {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+.btn-select-none {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+.file-label {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
 
 /* 기본 버튼 호버 효과 */
 button:hover:not(:disabled),
@@ -153,7 +232,6 @@ button:hover:not(:disabled),
   transition: all 0.2s ease-in-out !important;
 }
 
-
 /* 기본 버튼 포커스 효과 */
 button:focus,
 .btn-primary:focus,
@@ -173,6 +251,7 @@ button:focus,
 .btn-upload:focus,
 .btn-download:focus,
 .btn-close:focus,
+.btn-close-nobg:focus,
 .btn-select-all:focus,
 .btn-select-none:focus,
 .file-label:focus {
@@ -181,11 +260,30 @@ button:focus,
   transition: all 0.2s ease-in-out !important;
 }
 
+.btn-close-nobg {
+  font-size: 1rem;
+  background: none !important;
+  border: none !important;
+  border-color: none !important;
+  color: var(--text-dark) !important;
+}
+
+.btn-close-nobg:hover:not([disabled]) {
+  opacity: 1 !important;
+  transform: translateY(0px) !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease-in-out !important;
+}
 
 /* 버튼 크기 변형 */
-.btn-sm { padding: 0.35rem 0.8rem !important; font-size: 0.875rem !important; }
-.btn-lg { padding: 0.8rem 1.5rem !important; font-size: 1.125rem !important; }
-
+.btn-sm {
+  padding: 0.35rem 0.8rem !important;
+  font-size: 0.875rem !important;
+}
+.btn-lg {
+  padding: 0.8rem 1.5rem !important;
+  font-size: 1.125rem !important;
+}
 
 /* ========================================== */
 /* 3. 테이블 내 작은 버튼 스타일 (-m 접미사)   */
@@ -208,7 +306,7 @@ button:focus,
 .btn-cancel-sm,
 .btn-view-sm,
 .btn-input-sm,
-.btn-upload-sm {  
+.btn-upload-sm {
   padding: 0.2rem 0.5rem !important;
   margin: 0 0.25rem !important;
   font-size: var(--font-size-sm) !important;
@@ -222,21 +320,20 @@ button:focus,
   box-shadow: none !important;
 }
 
-
 :root {
   /* 기본 색상 */
-  --primary-color: #5fa56b;           /* 로그인 버튼 녹색 */
-  --primary-color-light: #8fc89e;     /* 밝은 녹색 */
-  --primary-color-lightest: #e3f3e8;  /* 아주 밝은 녹색 */
-  --primary-color-dark: #488a54;      /* 어두운 녹색 */
-  --primary-color-hover: #4e9e5c;     /* 호버 시 녹색 */
+  --primary-color: #5fa56b; /* 로그인 버튼 녹색 */
+  --primary-color-light: #8fc89e; /* 밝은 녹색 */
+  --primary-color-lightest: #e3f3e8; /* 아주 밝은 녹색 */
+  --primary-color-dark: #488a54; /* 어두운 녹색 */
+  --primary-color-hover: #4e9e5c; /* 호버 시 녹색 */
 
-  --primary-blue: #1976D2;            /* 포인트 파랑 */
-  --primary-blue-light: #E3F2FD;      /* 아주 밝은 파랑 */
-  --primary-blue-lightest: #F1F8FF;   /* 거의 흰색에 가까운 파랑 */
-  --primary-blue-dark: #1565C0;       /* 어두운 파랑 */
-  --primary-blue-hover: #1565C0;      /* 호버 시 파랑 */
-    
+  --primary-blue: #1976d2; /* 포인트 파랑 */
+  --primary-blue-light: #e3f2fd; /* 아주 밝은 파랑 */
+  --primary-blue-lightest: #f1f8ff; /* 거의 흰색에 가까운 파랑 */
+  --primary-blue-dark: #1565c0; /* 어두운 파랑 */
+  --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
+
   /* 상태 색상 */
   --success: #28a745;
   --success-light: #6fdc8c;
@@ -256,41 +353,102 @@ button:focus,
 
   --text-white: #ffffff;
   --text-dark: #333333;
-
 }
 
-
-
 /* 테이블 버튼 기본 색상 + 외곽선 (텍스트 버튼 스타일) */
-.btn-approve-sm  {background: var(--white) !important; color: var(--primary-blue) !important; border: 1px solid var(--primary-blue) !important;}
-.btn-approve-sm:hover:not(:disabled)
-                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
-.btn-pending-sm  {background: var(--white) !important; color: var(--danger) !important; border: 1px solid var(--danger) !important;}
-.btn-pending-sm:hover:not(:disabled)
-                 {background: var(--danger-hover) !important; color: var(--text-white) !important; border: 1px solid var(--danger-hover) !important;}
-.btn-add-sm      {background: var(--white) !important; color: var(--primary-blue) !important; border: 1px solid var(--primary-blue) !important;}
-.btn-add-sm:hover:not(:disabled)
-                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
-.btn-edit-sm     {background: var(--white) !important; color: var(--warning-dark) !important; border: 1px solid var(--warning-dark) !important;}
-.btn-edit-sm:hover:not(:disabled)
-                 {background: var(--warning-hover) !important; color: var(--text-white) !important; border: 1px solid var(--warning-hover) !important;}
-.btn-delete-sm   {background: var(--white) !important; color: var(--danger) !important; border: 1px solid var(--danger) !important;}
-.btn-delete-sm:hover:not(:disabled)
-                 {background: var(--danger-hover) !important; color: var(--text-white) !important; border: 1px solid var(--danger-hover) !important;}
+.btn-approve-sm {
+  background: var(--white) !important;
+  color: var(--primary-blue) !important;
+  border: 1px solid var(--primary-blue) !important;
+}
+.btn-approve-sm:hover:not(:disabled) {
+  background: var(--primary-blue-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--primary-blue-hover) !important;
+}
+.btn-pending-sm {
+  background: var(--white) !important;
+  color: var(--danger) !important;
+  border: 1px solid var(--danger) !important;
+}
+.btn-pending-sm:hover:not(:disabled) {
+  background: var(--danger-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--danger-hover) !important;
+}
+.btn-add-sm {
+  background: var(--white) !important;
+  color: var(--primary-blue) !important;
+  border: 1px solid var(--primary-blue) !important;
+}
+.btn-add-sm:hover:not(:disabled) {
+  background: var(--primary-blue-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--primary-blue-hover) !important;
+}
+.btn-edit-sm {
+  background: var(--white) !important;
+  color: var(--warning-dark) !important;
+  border: 1px solid var(--warning-dark) !important;
+}
+.btn-edit-sm:hover:not(:disabled) {
+  background: var(--warning-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--warning-hover) !important;
+}
+.btn-delete-sm {
+  background: var(--white) !important;
+  color: var(--danger) !important;
+  border: 1px solid var(--danger) !important;
+}
+.btn-delete-sm:hover:not(:disabled) {
+  background: var(--danger-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--danger-hover) !important;
+}
 
-.btn-save-sm     {background: var(--primary-blue) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue) !important;}
-.btn-save-sm:hover:not(:disabled)
-                 {background: var(--primary-blue-hover) !important; color: var(--text-white) !important; border: 1px solid var(--primary-blue-hover) !important;}
+.btn-save-sm {
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--primary-blue) !important;
+}
+.btn-save-sm:hover:not(:disabled) {
+  background: var(--primary-blue-hover) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--primary-blue-hover) !important;
+}
 
-.btn-cancel-sm   {background: var(--gray-300) !important; color: var(--datk) !important; border: 1px solid var(--gray-500) !important;}
+.btn-cancel-sm {
+  background: var(--gray-300) !important;
+  color: var(--datk) !important;
+  border: 1px solid var(--gray-500) !important;
+}
 
-.btn-view-sm     {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
-.btn-view-sm:hover:not(:disabled)
-                 {background: var(--gray-200) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
-.btn-input-sm    {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
-.btn-input-sm:hover:not(:disabled)
-                 {background: var(--gray-200) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
-.btn-upload-sm   {background: var(--gray-100) !important; color: var(--text-dark) !important; border: 1px solid var(--gray-500) !important;}
+.btn-view-sm {
+  background: var(--gray-100) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--gray-500) !important;
+}
+.btn-view-sm:hover:not(:disabled) {
+  background: var(--gray-200) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--gray-500) !important;
+}
+.btn-input-sm {
+  background: var(--gray-100) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--gray-500) !important;
+}
+.btn-input-sm:hover:not(:disabled) {
+  background: var(--gray-200) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--gray-500) !important;
+}
+.btn-upload-sm {
+  background: var(--gray-100) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--gray-500) !important;
+}
 .btn-upload-sm:hover:not(:disabled)
 
 
@@ -312,15 +470,6 @@ button:focus,
   transition: all 0.2s ease-in-out !important;
 }
 
-
-
-
-
-
-
-
-
-
 /* 기본 버튼 포커스 효과 */
 button:focus,
 .btn-primary-sm:focus,
@@ -329,10 +478,8 @@ button:focus,
 .btn-pending-sm:focus,
 .btn-edit-sm:focus,
 .btn-delete-sm:focus,
-
 .btn-save-sm:focus,
 .btn-cancel-sm:focus,
-
 .btn-view-sm:focus,
 .btn-input-sm:focus,
 .btn-upload-sm:focus {
@@ -341,9 +488,12 @@ button:focus,
   transition: all 0.2s ease-in-out !important;
 }
 
-.btn-view-sm:hover { background: #f8f9fa; }
+.btn-view-sm:hover {
+  background: #f8f9fa;
+}
 .btn-input-sm:hover,
-.btn-upload-sm:hover { background: #000000;
+.btn-upload-sm:hover {
+  background: #000000;
 }
 
 button:disabled {
@@ -375,7 +525,6 @@ button:disabled {
   opacity: 0.5 !important;
 }
 
-
 /* ========================================== */
 /* 6. 뱃지 스타일                             */
 /* ========================================== */
@@ -399,10 +548,20 @@ button:disabled {
   vertical-align: baseline !important;
 }
 
-.required-badge { background: var(--danger) !important;       color: var(--text-white) !important; }
-.active-badge   { background: var(--primary-blue) !important; color: var(--text-white) !important; }
-.inactive-badge { background: var(--gray-600) !important;     color: var(--text-white) !important;
-  border: 1px solid transparent !important; border-color: var(--gray-400) !important; }
+.required-badge {
+  background: var(--danger) !important;
+  color: var(--text-white) !important;
+}
+.active-badge {
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+.inactive-badge {
+  background: var(--gray-600) !important;
+  color: var(--text-white) !important;
+  border: 1px solid transparent !important;
+  border-color: var(--gray-400) !important;
+}
 
 /* ========================================== */
 /* 7. 비활성화 상태 스타일                     */
@@ -436,4 +595,4 @@ button:disabled {
   cursor: not-allowed !important;
   opacity: 0.65 !important;
   box-shadow: none !important;
-} 
+}

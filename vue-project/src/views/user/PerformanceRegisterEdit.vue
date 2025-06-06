@@ -1,6 +1,16 @@
 <template>
   <div class="performance-register-view">
     <div class="header-title">실적 등록</div>
+    <div class="filter-card" style="display:flex; align-items:center; margin-bottom:1rem; padding:0.5rem 1rem;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-weight: 400">정산월</label>
+        <select v-model="selectedSettlementMonth" class="select_month">
+          <option v-for="month in availableMonths" :key="month" :value="month">
+            {{ month }}
+          </option>
+        </select>
+      </div>
+    </div>
     <!-- 선택된 정산월 병원 정보를 상단에 고정 표시 -->
     <div class="filter-card" style="display:flex; align-items:center; margin-bottom:1rem; padding:0.5rem 1rem;">
       <div>
@@ -15,16 +25,10 @@
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ totalCount }} 건</div>
         <div class="data-card-buttons">
-          <button 
-            class="btn-excell-template"
-            @click="downloadExcelTemplate" 
-            :disabled="!selectedSettlementMonth"
-          >템플릿 다운로드</button>
-          <button 
-            class="btn-excell-download" 
-            @click="triggerExcelUpload" 
-            :disabled="!selectedSettlementMonth"
-          >엑셀 일괄등록</button>
+          <button class="btn-excell-template" @click="downloadExcelTemplate" :disabled="!selectedSettlementMonth">
+            엑셀 템플릿 다운로드</button>
+          <button class="btn-excell-download" @click="triggerExcelUpload" :disabled="!selectedSettlementMonth">
+            엑셀 일괄 등록</button>
           <input 
             ref="excelFileInput"
             type="file" 
@@ -32,11 +36,7 @@
             @change="handleExcelUpload"
             style="display: none;"
           />
-          <button 
-            class="btn-save" 
-            @click="onSave" 
-            :disabled="!canSave"
-          >저장</button>
+          <button class="btn-save" @click="onSave" :disabled="!canSave">저장</button>
         </div>
       </div>
       <div class="input-table-wrapper performance-edit-table">
@@ -192,7 +192,7 @@
                     :disabled="inputRows.length === 1 || !isInputEnabled" 
                     title="삭제"
                     :class="{ 'disabled-area': !isInputEnabled }"
-                  >✕</button>
+                  >삭제</button>
                 </td>
                 <td class="action-cell" style="width:6%;">
                   <button 
@@ -201,7 +201,7 @@
                     title="추가"
                     :disabled="!isInputEnabled"
                     :class="{ 'disabled-area': !isInputEnabled }"
-                  >＋</button>
+                  >추가</button>
                 </td>
               </tr>
             </tbody>
@@ -246,8 +246,24 @@ import * as XLSX from 'xlsx';
 const route = useRoute();
 const router = useRouter();
 
-// 정산월 정보를 이전 화면에서 전달받음
-const selectedSettlementMonth = ref(route.params.settlementMonth || route.query.settlementMonth || '');
+// [추가] 정산월 목록 및 선택값 상태
+const availableMonths = ref([]);
+const selectedSettlementMonth = ref('');
+
+// [추가] 정산월 목록 fetch 함수
+const fetchAvailableMonths = async () => {
+  const { data, error } = await supabase
+    .from('settlement_months')
+    .select('settlement_month')
+    .eq('status', 'active')
+    .order('settlement_month', { ascending: false });
+  if (!error && data) {
+    availableMonths.value = data.map((m) => m.settlement_month);
+    if (availableMonths.value.length > 0) {
+      selectedSettlementMonth.value = availableMonths.value[0];
+    }
+  }
+};
 
 // 처방월 옵션을 설정
 const prescriptionOffset = ref(1); // 1: -1M, 2: -2M, 3: -3M
@@ -1035,6 +1051,7 @@ function handleGlobalClick(e) {
 
 // 라이프사이클
 onMounted(async () => {
+  await fetchAvailableMonths();
   if (selectedSettlementMonth.value) {
     updatePrescriptionOptions();
     prescriptionOffset.value = 1;
@@ -1224,6 +1241,11 @@ async function handleExcelUpload(event) {
       return;
     }
     
+    // 마지막 행이 빈 행이면 제거
+    if (inputRows.value.length > 0 && !inputRows.value[inputRows.value.length-1].product_name_display && !inputRows.value[inputRows.value.length-1].prescription_qty) {
+      inputRows.value.pop();
+    }
+
     // 기존 데이터에 추가 (또는 교체)
     if (inputRows.value.filter(row => row.product_name_display && row.prescription_qty && !isNaN(Number(row.prescription_qty)) && Number(row.prescription_qty) > 0).length > 0) {
       const answer = confirm(`기존 ${totalCount.value}건의 데이터가 있습니다.\n\n[확인]: 기존 데이터에 추가\n[취소]: 기존 데이터 교체`);
@@ -1239,7 +1261,7 @@ async function handleExcelUpload(event) {
     }
     // 마지막에 빈 행 추가
     inputRows.value.push(createEmptyRow());
-    alert(`엑셀 일괄등록 완료!\n\n총 ${parsedData.length-1}건의 데이터를 불러왔습니다.`);
+    alert(`엑셀 일괄등록 완료!\n\n총 ${parsedData.length}건의 데이터를 불러왔습니다.`);
     // 마지막 빈 행의 제품명에 포커스
     nextTick(() => {
       focusField(inputRows.value.length - 1, 'product_name');
@@ -1522,4 +1544,15 @@ function calculateDropdownPosition() {
 function recalculateRow() {
   // TODO: 실제 로직 필요시 구현
 }
+
+// [수정] selectedSettlementMonth가 바뀌면 처방월 옵션/데이터 갱신
+watch(selectedSettlementMonth, (val) => {
+  if (val) {
+    updatePrescriptionOptions();
+    prescriptionOffset.value = 1;
+    prescriptionMonth.value = getPrescriptionMonth(val, 1);
+    fetchProducts();
+    loadExistingData();
+  }
+});
 </script> 

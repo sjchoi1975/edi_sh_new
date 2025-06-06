@@ -27,7 +27,7 @@
         :rows="20"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
-        scrollHeight="calc(100vh - 280px)"
+        scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
         :globalFilterFields="['title']"
         class="custom-table notices-table"
@@ -48,6 +48,11 @@
             <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.title }}
             </a>
+          </template>
+        </Column>
+        <Column field="content" header="내용" :headerStyle="{ width: columnWidths.content }">
+          <template #body="slotProps">
+            <span class="content-preview">{{ slotProps.data.content }}</span>
           </template>
         </Column>
         <Column field="file_count" header="첨부파일" :headerStyle="{ width: columnWidths.file_count }">
@@ -88,10 +93,11 @@ const filters = ref({
 const columnWidths = {
   no: '4%',
   is_pinned: '6%',
-  title: '62%',
-  file_count: '8%',
-  view_count: '8%',
-  created_at: '12%'
+  title: '32%',
+  content: '40%',
+  file_count: '6%',
+  view_count: '6%',
+  created_at: '10%'
 };
 
 function goToDetail(id) {
@@ -138,7 +144,7 @@ onMounted(async () => {
   loading.value = true;
   const { data, error } = await supabase
     .from('notices')
-    .select('id, title, created_at, is_pinned, view_count, file_url')
+    .select('id, title, content, created_at, is_pinned, view_count, file_url')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false });
   console.log('공지사항 데이터:', data); // ← 이 줄만 추가!  

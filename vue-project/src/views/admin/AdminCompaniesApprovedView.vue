@@ -25,7 +25,7 @@
         </div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel" :disabled="approvedCompanies.length === 0">엑셀 다운로드</button>
-          <button class="btn-save" @click="goCreate">등록</button>
+          <button class="btn-save" @click="goCreate">업체 등록</button>
         </div>
       </div>
 
