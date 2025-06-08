@@ -192,7 +192,7 @@ const columnWidths = {
   orig_created_at: '6%',
   orig_registered_by: '8%',
   assigned_pharmacist_contact: '4%',
-  actions: '160px'  // 픽셀 단위로 고정
+  actions: '8%'  // 픽셀 단위로 고정
 };
 
 // 반응형 데이터

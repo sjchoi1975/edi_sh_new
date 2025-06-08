@@ -165,45 +165,68 @@ async function fetchCompanyIdAndShare() {
 async function fetchCompanies() {
   if (!selectedMonth.value) return;
   await fetchCompanyIdAndShare();
-  const { data, error } = await supabase
+  
+  // 1. absorption_analysis에서 해당 월의 모든 데이터 가져오기
+  const { data: analysisData, error: analysisError } = await supabase
     .from('absorption_analysis')
     .select('*')
     .eq('settlement_month', selectedMonth.value);
-  if (!error && data) {
-    // 업체별 집계(처방건수, 처방액, 지급액 등)
-    const grouped = {};
-    data.forEach(row => {
-      if (!grouped[row.company_name]) {
-        const cid = companyNameToId.value[row.company_name] || null;
-        const shareKey = `${selectedMonth.value}_${cid}`;
-        grouped[row.company_name] = {
-          company_group: row.company_group,
-          company_name: row.company_name,
-          business_registration_number: row.business_registration_number || '',
-          representative_name: row.representative_name || '',
-          assigned_pharmacist_contact: row.assigned_pharmacist_contact,
-          client_names: new Set(),
-          prescription_count: 0,
-          prescription_amount: 0,
-          payment_amount: 0,
-          share_enabled: shareMap.value[shareKey] || false,
-          company_id: cid,
-        };
-      }
-      grouped[row.company_name].business_registration_number = row.business_registration_number || grouped[row.company_name].business_registration_number;
-      grouped[row.company_name].representative_name = row.representative_name || grouped[row.company_name].representative_name;
-      grouped[row.company_name].client_names.add(row.client_name);
-      grouped[row.company_name].prescription_count += 1;
-      grouped[row.company_name].prescription_amount += Number(row.prescription_amount || 0);
-      grouped[row.company_name].payment_amount += Number(row.payment_amount || 0);
-    });
-    companies.value = Object.values(grouped).map(c => ({
-      ...c,
-      client_count: c.client_names.size,
-      prescription_amount: c.prescription_amount.toLocaleString(),
-      payment_amount: c.payment_amount.toLocaleString(),
-    }));
+
+  if (analysisError) {
+    console.error('흡수율 분석 데이터 조회 오류:', analysisError);
+    companies.value = [];
+    return;
   }
+  if (!analysisData || analysisData.length === 0) {
+    companies.value = [];
+    return;
+  }
+
+  // 2. companies 테이블에서 모든 업체 정보 가져오기
+  const { data: allCompanies, error: companiesError } = await supabase
+    .from('companies')
+    .select('id, company_name, business_registration_number, representative_name');
+  
+  if (companiesError) {
+    console.error('업체 정보 조회 오류:', companiesError);
+    // 계속 진행하되, 업체 정보는 비어있을 수 있음
+  }
+  const companiesMap = new Map((allCompanies || []).map(c => [c.id, c]));
+
+  // 3. 업체별로 데이터 집계
+  const grouped = {};
+  analysisData.forEach(row => {
+    if (!grouped[row.company_name]) {
+      const companyId = companyNameToId.value[row.company_name] || null;
+      const companyInfo = companiesMap.get(companyId) || {};
+      const shareKey = `${selectedMonth.value}_${companyId}`;
+      
+      grouped[row.company_name] = {
+        company_group: row.company_group,
+        company_name: row.company_name,
+        business_registration_number: companyInfo.business_registration_number || '',
+        representative_name: companyInfo.representative_name || '',
+        assigned_pharmacist_contact: row.assigned_pharmacist_contact,
+        client_names: new Set(),
+        prescription_count: 0,
+        prescription_amount: 0,
+        payment_amount: 0,
+        share_enabled: shareMap.value[shareKey] || false,
+        company_id: companyId,
+      };
+    }
+    grouped[row.company_name].client_names.add(row.client_name);
+    grouped[row.company_name].prescription_count += 1;
+    grouped[row.company_name].prescription_amount += Number(row.prescription_amount || 0);
+    grouped[row.company_name].payment_amount += Number(row.payment_amount || 0);
+  });
+  
+  companies.value = Object.values(grouped).map(c => ({
+    ...c,
+    client_count: c.client_names.size,
+    prescription_amount: c.prescription_amount.toLocaleString(),
+    payment_amount: c.payment_amount.toLocaleString(),
+  }));
 }
 
 onMounted(async () => {

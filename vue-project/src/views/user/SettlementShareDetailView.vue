@@ -48,16 +48,16 @@
           <Column header="No" :headerStyle="{ width: columnWidths.no }">
             <template #body="slotProps">{{ slotProps.index + 1 }}</template>
           </Column>
-          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" />
-          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" />
-          <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" />
-          <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" />
-          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" />
-          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" />
-          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" />
-          <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" />
-          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" />
-          <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
+          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
+          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
+          <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true" />
+          <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
+          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
+          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
+          <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
+          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" />
+          <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
           <ColumnGroup type="footer">
             <Row>
               <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
