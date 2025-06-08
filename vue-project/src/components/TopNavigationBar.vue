@@ -1,17 +1,19 @@
 <template>
   <header class="top-nav">
     <div class="top-nav-breadcrumb">
-      <span class="breadcrumb-menu">{{ breadcrumbMenu }}</span>
-      <span class="breadcrumb-sep">&gt;</span>
-      <span class="breadcrumb-submenu">{{ breadcrumbSubMenu }}</span>
+      <span class="breadcrumb-menu">{{ menu }}</span>
+      <span class="breadcrumb-sep" v-if="submenu">&gt;</span>
+      <span class="breadcrumb-submenu">{{ submenu }}</span>
     </div>
   </header>
 </template>
 
 <script setup>
-const props = defineProps({
-  breadcrumbMenu: { type: String, default: '' },
-  breadcrumbSubMenu: { type: String, default: '' }
-});
-const emit = defineEmits(['logout']);
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+const menu = computed(() => route.meta.menu || '');
+const submenu = computed(() => route.meta.submenu || '');
 </script>

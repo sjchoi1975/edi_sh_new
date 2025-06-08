@@ -171,11 +171,11 @@
         </Column>
         <ColumnGroup type="footer">
           <Row>
-            <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center;" />
-            <Column :footer="totalClients.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
-            <Column :footer="totalSubmittedClients.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
-            <Column :footer="totalPrescriptionCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
-            <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right;" />
+            <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalSubmittedClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalPrescriptionCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>
         </ColumnGroup>

@@ -236,7 +236,7 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
 <template>
   <div id="app-container">
     <SideNavigationBar v-if="user" :userRole="userType" :userEmail="userEmail" @logout="handleLogout" />
-    <TopNavigationBar v-if="user" :breadcrumbMenu="breadcrumbMenu" :breadcrumbSubMenu="breadcrumbSubMenu" @logout="handleLogout" />
+    <TopNavigationBar v-if="user" @logout="handleLogout" />
     <div class="main-content">
       <RouterView />
     </div>
