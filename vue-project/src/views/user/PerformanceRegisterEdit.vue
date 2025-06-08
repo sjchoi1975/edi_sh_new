@@ -118,9 +118,9 @@
         </Column>
         <ColumnGroup type="footer">
           <Row>
-            <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align: right;" />
-            <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align: right;" />
-            <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align: right;" />
+            <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align: center !important;"/>
+            <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align: right !important;" />
+            <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align: right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>
         </ColumnGroup>

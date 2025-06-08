@@ -169,40 +169,17 @@
             {{ slotProps.data.last_registered_at || '-' }}
           </template>
         </Column>
+        <ColumnGroup type="footer">
+          <Row>
+            <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center;" />
+            <Column :footer="totalClients.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+            <Column :footer="totalSubmittedClients.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+            <Column :footer="totalPrescriptionCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+            <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right;" />
+            <Column :colspan="3" footerClass="footer-cell" />
+          </Row>
+        </ColumnGroup>
       </DataTable>
-
-      <!-- 합계 행: 테이블 하단 고정 -->
-      <div
-        class="table-footer-wrapper"
-        style="
-          width: 100%;
-          padding: 0 2rem 0 0;
-          background: #f8f9fa;
-          height: 38px;
-          border: 1px solid #dee2e6;
-          border-bottom: 2px solid #aaa;
-          position: sticky;
-          bottom: 0;
-          z-index: 2;
-        "
-      >
-        <table style="width: 100%; table-layout: fixed">
-          <tr>
-            <td style="width: 42%; text-align: center; font-weight: 600">합계</td>
-            <td style="width: 7%; text-align: center; font-weight: 600">{{ totalClients }}</td>
-            <td style="width: 7%; text-align: center; font-weight: 600">
-              {{ totalSubmittedClients }}
-            </td>
-            <td style="width: 7%; text-align: center; font-weight: 600">
-              {{ totalPrescriptionCount }}
-            </td>
-            <td style="width: 8%; text-align: right; font-weight: 600">
-              {{ formatNumber(totalPrescriptionAmount) }}
-            </td>
-            <td style="width: 29%; text-align: center; font-weight: 600"></td>
-          </tr>
-        </table>
-      </div>
     </div>
   </div>
 
@@ -283,6 +260,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 

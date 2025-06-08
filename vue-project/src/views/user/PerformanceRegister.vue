@@ -184,11 +184,11 @@
           </Column>
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center;" />
-              <Column :footer="totalPerformanceCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
-              <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalPerformanceCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :colspan="2" footerClass="footer-cell" />
-              <Column :footer="totalEvidenceFilesCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="totalEvidenceFilesCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :colspan="2" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>

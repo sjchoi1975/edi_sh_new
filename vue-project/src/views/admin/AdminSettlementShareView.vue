@@ -1,11 +1,11 @@
 <template>
-  <div class="admin-settlement-share-view page-container">
+  <div class="admin-settlement-share-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
     <!-- <div class="page-breadcrumb">정산 관리 &gt; 정산내역서 공유</div> -->
-    <div class="page-header-title-area">
+    <div class="page-header-title-area" style="flex-shrink: 0;">
       <div class="header-title">정산내역서 공유</div>
     </div>
     <!-- 필터 카드 -->
-    <div class="filter-card">
+    <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-weight:400;">정산월</label>
@@ -16,8 +16,8 @@
       </div>
     </div>
     <!-- 데이터 카드 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ filteredCompanies.length }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-select-all" @click="setAllShare(true)">전체 공유</button>
@@ -25,7 +25,13 @@
           <button class="btn-save" :disabled="!hasShareChanges" @click="saveShareChanges">저장</button>
         </div>
       </div>
-      <DataTable :value="filteredCompanies" scrollable scrollHeight="calc(100vh - 250px)" class="admin-settlement-share-table">
+      <div style="flex-grow: 1; overflow: auto;">
+      <DataTable 
+        :value="filteredCompanies" 
+        scrollable 
+        scrollHeight="calc(100vh - 220px)"
+        class="admin-settlement-share-table"
+      >
         <template #empty>조회된 데이터가 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
@@ -49,7 +55,18 @@
             <input type="checkbox" v-model="slotProps.data.share_enabled" @change="onShareChange(slotProps.data)" class="share-checkbox" />
           </template>
         </Column>
+        <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalClientCount" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalPrescriptionCount" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :colspan="2" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
       </DataTable>
+      </div>
     </div>
   </div>
 </template>
@@ -58,6 +75,8 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
@@ -81,6 +100,22 @@ const selectedMonth = ref('');
 const availableMonths = ref([]);
 const companies = ref([]);
 const router = useRouter();
+
+// 합계 계산
+const totalClientCount = computed(() => {
+  return companies.value.reduce((sum, company) => sum + (company.client_count || 0), 0);
+});
+const totalPrescriptionCount = computed(() => {
+  return companies.value.reduce((sum, company) => sum + (company.prescription_count || 0), 0);
+});
+const totalPrescriptionAmount = computed(() => {
+  const total = companies.value.reduce((sum, company) => sum + (Number(company.prescription_amount?.toString().replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
+const totalPaymentAmount = computed(() => {
+  const total = companies.value.reduce((sum, company) => sum + (Number(company.payment_amount?.toString().replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
 
 // 업체명 → company_id(uuid) 매핑용
 const companyNameToId = ref({});

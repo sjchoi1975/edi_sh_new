@@ -89,7 +89,7 @@
 .btn-select-all,
 .btn-select-none,
 .file-label {
-  padding: 0.5rem 1rem !important;
+  padding: 0.4rem 1rem !important;
   margin: 0.5rem 1rem 0rem 0rem !important;
   font-size: var(--font-size-md) !important;
   font-weight: 400 !important;
@@ -284,6 +284,47 @@ button:focus,
   padding: 0.8rem 1.5rem !important;
   font-size: 1.125rem !important;
 }
+
+
+
+/* [LoginView.vue] 로그인 버튼 */
+.login-btn {
+  width: 100% !important;
+  color: var(--text-white) !important;
+}
+
+/* [LoginView.vue] 회원가입 버튼 */
+.signup-btn {
+  width: 100% !important;
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+
+/* [SignupView.vue] 회원가입 버튼 */
+.signup-btn {
+  flex: 1 !important;
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+
+/* [SignupView.vue] 취소 버튼 */
+.cancel-btn {
+  flex: 1 !important;
+  background: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
+
+.login-btn,
+.signup-btn,
+.cancel-btn {
+  flex: 1 !important;
+  border: none !important;
+  font-size: var(--font-size-base) !important;
+  border-radius: 4px !important;
+  padding: 0.4rem 1rem !important;
+}
+
+
 
 /* ========================================== */
 /* 3. 테이블 내 작은 버튼 스타일 (-m 접미사)   */

@@ -1,7 +1,7 @@
 <template>
-  <div class="admin-settlement-share-detail-view page-container">
+  <div class="admin-settlement-share-detail-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
     <!-- 상단 필터카드: 실적 등록 입력 화면과 동일하게 -->
-    <div class="filter-card settlement-detail-header" style="display:flex; align-items:center; margin-bottom:1rem; padding:0.5rem 1rem;">
+    <div class="filter-card settlement-detail-header" style="flex-shrink: 0; display:flex; align-items:center; margin-bottom:1rem; padding:0.5rem 1rem;">
       <div>
         <div style="font-size:1.0rem; color:#555; font-weight:500; margin-bottom:-0.1rem;">정산월 : {{ month }}</div>
         <div style="font-size:1.2rem; font-weight:700;">{{ companyInfo.company_name }}</div>
@@ -11,14 +11,19 @@
       </div>
     </div>
     <!-- 데이터 카드 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
       </div>
-      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 250px)" class="admin-settlement-share-detail-table">
+      <div style="flex-grow: 1; overflow: auto;">
+      <DataTable 
+        :value="detailRows" 
+        scrollable 
+        scrollHeight="calc(100vh - 220px)"
+        class="admin-settlement-share-detail-table">
         <template #empty>조회된 데이터가 없습니다.</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
@@ -33,15 +38,28 @@
         <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" />
         <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" />
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
+        <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
       </DataTable>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
@@ -51,6 +69,17 @@ const month = route.query.month;
 const companyName = route.query.company;
 const companyInfo = ref({ company_name: '', business_registration_number: '', representative_name: '', business_address: '' });
 const detailRows = ref([]);
+
+// 합계 계산
+const totalQty = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
+const totalPrescriptionAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
+const totalPaymentAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
 
 const columnWidths = {
   no: '4%',

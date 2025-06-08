@@ -1,11 +1,11 @@
 <template>
-  <div class="performance-register-view page-container">
-    <div class="page-header-title-area">
+  <div class="performance-register-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
+    <div class="page-header-title-area" style="flex-shrink: 0;">
       <div class="header-title">전체 등록 현황</div>
     </div>
 
     <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
-    <div class="filter-card">
+    <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-weight:400;">정산월</label>
@@ -37,8 +37,8 @@
     </div>
 
     <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons">
           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
@@ -46,80 +46,65 @@
           </button>
         </div>
       </div>
-      <DataTable 
-        :value="displayRows" 
-        scrollable 
-        scrollHeight="calc(100vh - 250px)" 
-        scrollDirection="both"
-        class="admin-performance-whole-table"
-        :pt="{
-          wrapper: { style: 'min-width: 2200px;' },
-          table: { style: 'min-width: 2200px;' }
-        }"
-      >
-        <template #empty>등록된 실적이 없습니다.</template>
-        <template #loading>전체 실적을 불러오는 중입니다...</template>
-        
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
-          <template #body="slotProps">
-            {{ slotProps.index + 1 }}
-          </template>
-        </Column>
-        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.company_group }}</span>
-          </template>
-        </Column>
-        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.company_name }}</span>
-          </template>
-        </Column>
-        <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
-          </template>
-        </Column>
-        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
-        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
-        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true"/>
-        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true"/>
-        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true"/>
-        <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true"/>
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
-        <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
-        <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true"/>
-        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact }}</span>
-          </template>
-        </Column>
-      </DataTable>
-      <!-- 합계 행: 테이블 하단 고정 -->
-      <div
-        class="table-footer-wrapper"
-        style="
-          width: 100%;
-          min-width: 2200px;
-          padding: 0 2rem 0 0;
-          background: #f8f9fa;
-          height: 38px;
-          border: 1px solid #dee2e6;
-          border-bottom: 2px solid #aaa;
-          position: sticky;
-          bottom: 0;
-          z-index: 2;
-        "
-      >
-        <table style="width: 100%; table-layout: fixed; min-width: 2200px">
-          <tr>
-            <td style="width: 47%; text-align: center; font-weight: 600">합계</td>
-            <td style="width: 4%; text-align: right; font-weight: 600">{{ totalQty }}</td>
-            <td style="width: 5%; text-align: right; font-weight: 600">{{ totalAmount }}</td>
-            <td style="width: 44%;"></td>
-          </tr>
-        </table>
+      <div style="flex-grow: 1; overflow: hidden;">
+        <DataTable 
+          :value="displayRows" 
+          scrollable 
+          scrollHeight="calc(100vh - 220px)"
+          scrollDirection="both"
+          class="admin-performance-whole-table"
+          :pt="{
+            wrapper: { style: 'min-width: 2200px;' },
+            table: { style: 'min-width: 2200px;' }
+          }"
+        >
+          <template #empty>등록된 실적이 없습니다.</template>
+          <template #loading>전체 실적을 불러오는 중입니다...</template>
+          
+          <Column header="No" :headerStyle="{ width: columnWidths.no }">
+            <template #body="slotProps">
+              {{ slotProps.index + 1 }}
+            </template>
+          </Column>
+          <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
+            <template #body="slotProps">
+              <span style="font-weight: 400;">{{ slotProps.data.company_group }}</span>
+            </template>
+          </Column>
+          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
+            <template #body="slotProps">
+              <span style="font-weight: 400;">{{ slotProps.data.company_name }}</span>
+            </template>
+          </Column>
+          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+            <template #body="slotProps">
+              <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
+            </template>
+          </Column>
+          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
+          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
+          <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
+          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true"/>
+          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true"/>
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true"/>
+          <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true"/>
+          <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
+          <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
+          <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true"/>
+          <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
+            <template #body="slotProps">
+              <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact }}</span>
+            </template>
+          </Column>
+          <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column :colspan="5" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
+        </DataTable>
       </div>
     </div>
   </div>
@@ -129,6 +114,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 

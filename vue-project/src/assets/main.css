@@ -492,6 +492,8 @@ select.input-editable {
   color: white !important;
 }
 
+
+
 /* ========================================== */
 /* 9. 모달/다이얼로그 스타일                   */
 /* ========================================== */
@@ -1117,8 +1119,39 @@ select.input-editable {
   background: #f2f2f2;
 }
 .share-checkbox {
-  transform: scale(0.8);
+  /* 1. 기본 체크박스 숨기기 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+  /* 2. 새로운 박스 모양 만들기 */
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1.5px solid var(--border-input);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-content);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
   margin: 0;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* 3. 체크됐을 때 스타일 변경 */
+.share-checkbox:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color-dark);
+  /* 4. 체크 표시(V) - SVG 이미지 사용 (색상: 흰색) */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 포커스 스타일 (웹 접근성을 위해) */
+.share-checkbox:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
 }
 
 /* 업체별 실적/흡수율 분석/모달/버튼/로딩/파일리스트 등 공통 스타일 */
@@ -2278,23 +2311,6 @@ select.input-editable {
   gap: 0.3rem !important;
 }
 
-/* [LoginView.vue] 로그인 버튼 */
-.login-btn {
-  width: 100% !important;
-  color: var(--text-white) !important;
-  font-size: var(--font-size-base) !important;
-  border-radius: 4px !important;
-  margin-bottom: 0.5rem !important;
-}
-
-/* [LoginView.vue] 회원가입 버튼 */
-.signup-btn {
-  width: 100% !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-  font-size: var(--font-size-base) !important;
-  border-radius: 4px !important;
-}
 
 /* [LoginView.vue] 저작권 표시 */
 .copyright {
@@ -2399,25 +2415,6 @@ select.input-editable {
   margin-top: 2rem !important;
 }
 
-/* [SignupView.vue] 회원가입 버튼 */
-.signup-btn {
-  flex: 1 !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-  border: none !important;
-  font-size: var(--font-size-base) !important;
-  border-radius: 4px !important;
-}
-
-/* [SignupView.vue] 취소 버튼 */
-.cancel-btn {
-  flex: 1 !important;
-  background: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-  border: none !important;
-  font-size: var(--font-size-base) !important;
-  border-radius: 4px !important;
-}
 
 /* [SignupView.vue] 로그인 링크(회원가입 하단)*/
 .login-link {
@@ -2677,6 +2674,7 @@ select.input-editable {
 .p-datatable .p-datatable-tfoot > tr > td.footer-cell {
   background-color: #f8f9fa !important; /* 합계 행 배경색 */
   font-weight: bold !important; /* 글자 굵게 */
+  padding: 0.5rem 0.5rem !important;
   border-top: 1px solid #dee2e6 !important; 
   border-right: 1px solid #dee2e6 !important; 
 }
@@ -2720,4 +2718,3 @@ select.input-editable {
   text-align: right;
   color: #888;
 }
-

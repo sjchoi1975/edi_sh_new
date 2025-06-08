@@ -60,11 +60,11 @@
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center;" />
-              <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right;" />
-              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column footerClass="footer-cell" />
-              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column footerClass="footer-cell" />
             </Row>
           </ColumnGroup>

@@ -1,11 +1,11 @@
 <template>
-  <div class="performance-register-view page-container absorption-analysis">
-    <div class="page-header-title-area">
+  <div class="performance-register-view page-container absorption-analysis" style="display: flex; flex-direction: column; height: 100vh;">
+    <div class="page-header-title-area" style="flex-shrink: 0;">
     <div class="header-title">흡수율 분석</div>
     </div>
 
     <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
-    <div class="filter-card">
+    <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-weight:400;">정산월</label>
@@ -42,8 +42,8 @@
       </div>
       
     <!-- 데이터 카드: 전체 n건 + 버튼들 + 테이블 + 합계 행 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons" style="display: flex; gap: 0.5rem;">
           <button 
@@ -51,23 +51,6 @@
             @click="loadPerformanceData" 
             :disabled="!selectedSettlementMonth"
           >실적 정보 불러오기</button>
-          <button 
-            class="btn-excell-template" 
-            @click="downloadExcelTemplate" 
-            :disabled="!selectedSettlementMonth"
-          >엑셀 템플릿</button>
-          <button 
-            class="btn-excell-upload" 
-            @click="triggerExcelUpload" 
-            :disabled="!selectedSettlementMonth"
-          >엑셀 등록</button>
-          <input 
-            ref="excelFileInput"
-            type="file" 
-            accept=".xlsx,.xls" 
-            @change="handleExcelUpload"
-            style="display: none;"
-          />
           <button 
             class="btn-primary" 
             @click="runAbsorptionAnalysis" 
@@ -92,423 +75,86 @@
         </div>
       </div>
       
-      <DataTable 
-        :value="displayRows" 
-        scrollable 
-        scrollHeight="calc(100vh - 250px)"
-        scrollDirection="both"
-        class="admin-absorption-analysis-table"
-        dataKey="id"
-        :frozenValue="[]"
-        :pt="{
-          wrapper: { style: 'min-width: 3000px;' },
-          table: { style: 'min-width: 3000px;' }
-        }"
-      >
-        <template #empty>
-          <div style="text-align:center;padding:2rem;color:#666;">
-                <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
-                  정산월을 선택하세요.
-                </div>
-                <div v-else style="margin-bottom:1rem;">
-                  흡수율 분석 데이터가 없습니다.<br>
-                  실적 정보를 불러와서 분석을 시작하세요.
-                </div>
-                <button 
-                  v-if="selectedSettlementMonth" 
-                  class="btn-primary" 
-                  @click="loadPerformanceData"
-            >실적 정보 불러오기</button>
-          </div>
-        </template>
-        <template #loading>흡수율 분석 데이터를 불러오는 중입니다...</template>
-        
-        <Column header="No" :headerStyle="{ width: columnWidths.no }" frozen>
-          <template #body="slotProps">
-            {{ slotProps.index + 1 }}
-          </template>
-        </Column>
-        
-        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.company_group || '-' }}</span>
-          </template>
-        </Column>
-        
-        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.company_name }}</div>
-            <div v-else class="product-input-container">
-              <input 
-                v-model="slotProps.data.company_name"
-                @input="handleCompanyNameInput(slotProps.index, $event)"
-                @keydown.enter.prevent="applySelectedCompanyFromSearch(slotProps.index)"
-                @keydown.down.prevent="navigateCompanySearchList('down')"
-                @keydown.up.prevent="navigateCompanySearchList('up')"
-                @focus="handleCompanyNameFocus(slotProps.index, $event)"
-                @blur="setTimeout(() => hideCompanySearchList(slotProps.index), 200)"
-                autocomplete="off"
-                style="width: 100%;"
-              />
-              <button 
-                type="button"
-                @click="toggleCompanyDropdown(slotProps.index, $event)"
-                @mousedown.prevent
-                class="dropdown-arrow-btn"
-                tabindex="-1"
-              >
-                <span class="dropdown-arrow">▼</span>
-              </button>
-              <teleport to="body">
-                <div v-if="companySearchForRow.show && companySearchForRow.activeRowIndex === slotProps.index && companySearchForRow.results.length > 0" 
-                     class="search-dropdown company-search-dropdown"
-                     :style="getDropdownStyle(slotProps.index, 'company')">
-                  <ul>
-                    <li
-                      v-for="(company, index) in companySearchForRow.results"
-                      :key="company.id"
-                      @click="clickCompanyFromSearchList(company, slotProps.index)"
-                      :class="{ 'selected': companySearchForRow.selectedIndex === index }"
-                    >
-                      <div class="company-info-row">
-                        <span class="company-name">{{ company.company_name }}</span>
-                        <span class="company-reg-number">{{ company.business_registration_number }}</span>
-                </div>
-                      <div class="company-address">{{ company.representative_name }} / {{ truncateText(company.business_address, 25) }}</div>
-                    </li>
-                  </ul>
-                </div>
-              </teleport>
+      <div style="flex-grow: 1; overflow: auto;">
+        <DataTable 
+          :value="displayRows" 
+          scrollable 
+          scrollHeight="calc(100vh - 220px)"
+          scrollDirection="both"
+          class="admin-absorption-analysis-table"
+          dataKey="id"
+          :pt="{
+            wrapper: { style: 'min-width: 3000px;' },
+            table: { style: 'min-width: 3000px;' }
+          }"
+        >
+          <template #empty>
+            <div style="text-align:center;padding:2rem;color:#666;">
+                  <div v-if="!selectedSettlementMonth" style="margin-bottom:1rem;">
+                    정산월을 선택하세요.
+                  </div>
+                  <div v-else style="margin-bottom:1rem;">
+                    흡수율 분석 데이터가 없습니다.<br>
+                    실적 정보를 불러와서 분석을 시작하세요.
+                  </div>
+                  <button 
+                    v-if="selectedSettlementMonth" 
+                    class="btn-primary" 
+                    @click="loadPerformanceData"
+              >실적 정보 불러오기</button>
             </div>
           </template>
-        </Column>
-        
-        <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.client_name }}</div>
-            <div v-else class="product-input-container">
-                  <input 
-                v-model="slotProps.data.client_name"
-                @input="handleClientNameInput(slotProps.index, $event)"
-                @keydown.enter.prevent="applySelectedClientFromSearch(slotProps.index)"
-                    @keydown.down.prevent="navigateClientSearchList('down')"
-                    @keydown.up.prevent="navigateClientSearchList('up')"
-                @focus="handleClientNameFocus(slotProps.index, $event)"
-                @blur="setTimeout(() => hideClientSearchList(slotProps.index), 200)"
-                    autocomplete="off"
-                style="width: 100%;"
-                  />
-                  <button 
-                    type="button"
-                @click="toggleClientDropdown(slotProps.index, $event)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-              <teleport to="body">
-                <div v-if="clientSearchForRow.show && clientSearchForRow.activeRowIndex === slotProps.index && clientSearchForRow.results.length > 0" 
-                     class="search-dropdown hospital-search-dropdown"
-                     :style="getDropdownStyle(slotProps.index, 'client')">
-                    <ul>
-                      <li
-                        v-for="(client, index) in clientSearchForRow.results"
-                        :key="client.id"
-                      @click="clickClientFromSearchList(client, slotProps.index)"
-                        :class="{ 'selected': clientSearchForRow.selectedIndex === index }"
-                      >
-                        <div class="hospital-info-row">
-                          <span class="hospital-name">{{ client.name }}</span>
-                          <span class="hospital-reg-number">{{ client.business_registration_number }}</span>
-                        </div>
-                        <div class="hospital-address">{{ truncateText(client.address, 20) }}</div>
-                      </li>
-                    </ul>
-                  </div>
-              </teleport>
-                </div>
-          </template>
-        </Column>
-        
-        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_month }}</div>
-            <select
-              v-else
-              v-model="slotProps.data.prescription_month"
-              @change="onPrescriptionMonthChange(slotProps.index)"
-              style="width: 100%;"
-            >
-              <option v-for="opt in prescriptionMonthOptions" :key="opt.value" :value="opt.value">
-                {{ opt.month }}
-              </option>
-            </select>
-          </template>
-        </Column>
-        
-        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)" style="font-weight: 400;">{{ slotProps.data.product_name_display }}</div>
-            <div v-else class="product-input-container">
-                  <input
-                v-model="slotProps.data.product_name_display"
-                @input="handleProductNameInput(slotProps.index, $event)"
-                @keydown.enter.prevent="applySelectedProductFromSearch(slotProps.index)"
-                    @keydown.down.prevent="navigateProductSearchList('down')"
-                    @keydown.up.prevent="navigateProductSearchList('up')"
-                @focus="handleProductNameFocus(slotProps.index, $event)"
-                @blur="setTimeout(() => hideProductSearchList(slotProps.index), 200)" 
-                    autocomplete="off"
-                style="width: 100%;"
-                  />
-                  <button 
-                    type="button"
-                @click="toggleProductDropdown(slotProps.index, $event)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
-              <teleport to="body">
-                <div v-if="productSearchForRow.show && productSearchForRow.activeRowIndex === slotProps.index && productSearchForRow.results.length > 0" 
-                     class="search-dropdown product-search-dropdown"
-                     :style="getDropdownStyle(slotProps.index, 'product')">
-                    <ul>
-                      <li
-                        v-for="(product, index) in productSearchForRow.results"
-                        :key="product.id"
-                      @click="clickProductFromSearchList(product, slotProps.index)"
-                        :class="{ 'selected': productSearchForRow.selectedIndex === index }"
-                      >
-                        <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                        <span class="insurance-code">{{ product.insurance_code }}</span>
-                      </li>
-                    </ul>
-                  </div>
-              </teleport>
-                </div>
-          </template>
-        </Column>
-        
-        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.insurance_code }}
-          </template>
-        </Column>
-        
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.price }}
-          </template>
-        </Column>
-        
-        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_qty }}</div>
-                <input
-              v-else
-              v-model="slotProps.data.prescription_qty"
-                  type="number"
-              @input="onQtyInput(slotProps.index)"
-              style="width: 100%; text-align: right;"
-            />
-          </template>
-        </Column>
-        
-        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.prescription_amount }}
-          </template>
-        </Column>
-        
-        <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.prescription_type }}</div>
-                <select
-              v-else
-              v-model="slotProps.data.prescription_type"
-              @change="onPrescriptionTypeInput(slotProps.index)"
-              style="width: 100%;"
-                >
-                  <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
-                </select>
-          </template>
-        </Column>
-              
-        <Column field="wholesale_sales" header="도매매출" :headerStyle="{ width: columnWidths.wholesale_sales }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.wholesale_sales || 0).toLocaleString() }}</div>
-                <input 
-              v-else
-              v-model="slotProps.data.wholesale_sales"
-                  type="number"
-              @input="onSalesInput(slotProps.index)"
-              style="width: 100%; text-align: right;"
-                />
-          </template>
-        </Column>
-              
-        <Column field="direct_sales" header="직거래매출" :headerStyle="{ width: columnWidths.direct_sales }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ Number(slotProps.data.direct_sales || 0).toLocaleString() }}</div>
-                <input 
-              v-else
-              v-model="slotProps.data.direct_sales"
-                  type="number"
-              @input="onSalesInput(slotProps.index)"
-              style="width: 100%; text-align: right;"
-            />
-          </template>
-        </Column>
-        
-        <Column field="total_sales" header="합산액" :headerStyle="{ width: columnWidths.total_sales }" :sortable="true">
-          <template #body="slotProps">
-            {{ Number(slotProps.data.total_sales || 0).toLocaleString() }}
-          </template>
-        </Column>
-        
-        <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: columnWidths.absorption_rate }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.absorption_rate ? (slotProps.data.absorption_rate + '%') : '' }}
-          </template>
-        </Column>
-        
-        <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.commission_rate ? (slotProps.data.commission_rate + '%') : '' }}</div>
-                <input 
-              v-else
-              v-model="slotProps.data.commission_rate"
-                  type="number"
-                  step="0.1"
-              @input="onCommissionInput(slotProps.index)"
-              style="width: 100%; text-align: right;"
-            />
-          </template>
-        </Column>
-        
-        <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
-          <template #body="slotProps">
-            {{ Number(slotProps.data.payment_amount || 0).toLocaleString() }}
-          </template>
-        </Column>
-        
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
-          <template #body="slotProps">
-            <div v-if="!isRowEditing(slotProps.data)">{{ slotProps.data.remarks }}</div>
-                <input 
-              v-else
-              v-model="slotProps.data.remarks"
-              @input="markAsChanged"
-              style="width: 100%;"
-            />
-          </template>
-        </Column>
-        
-        <Column field="orig_created_at" header="등록일시" :headerStyle="{ width: columnWidths.orig_created_at }" :sortable="true">
-          <template #body="slotProps">
-            {{ slotProps.data.orig_created_at ? (() => {
-              const date = new Date(slotProps.data.orig_created_at)
-              const year = date.getFullYear()
-              const month = String(date.getMonth() + 1).padStart(2, '0')
-              const day = String(date.getDate()).padStart(2, '0')
-              const hours = String(date.getHours()).padStart(2, '0')
-              const minutes = String(date.getMinutes()).padStart(2, '0')
-              return `${year}-${month}-${day} ${hours}:${minutes}`
-            })() : '' }}
-          </template>
-        </Column>
-        
-        <Column field="orig_registered_by" header="등록자" :headerStyle="{ width: columnWidths.orig_registered_by }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.orig_registered_by || '-' }}</span>
-          </template>
-        </Column>
-        
-        <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
-          <template #body="slotProps">
-            <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact || '-' }}</span>
-          </template>
-        </Column>
-        
-        <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right">
-          <template #body="slotProps">
-            <div style="display: flex; gap: 4px; justify-content: center;">
-                <button 
-                v-if="!isRowEditing(slotProps.data)"
-                class="btn-edit-sm" 
-                @click="onRowEditInit(slotProps.data)"
-                title="수정"
-              >✎</button>
-              <button 
-                v-if="isRowEditing(slotProps.data)"
-                class="btn-save-sm" 
-                @click="onRowEditSave(slotProps.data)"
-                title="저장"
-              >✓</button>
-              <button 
-                v-if="isRowEditing(slotProps.data)"
-                class="btn-cancel-sm" 
-                @click="onRowEditCancel(slotProps.data)"
-                title="취소"
-              >✕</button>
-              <button 
-                v-if="!isRowEditing(slotProps.data)"
-                class="btn-delete-sm" 
-                @click="confirmDeleteRow(slotProps.index)" 
-                  :disabled="displayRows.length === 1" 
-                title="삭제"
-                >－</button>
-                <button 
-                v-if="!isRowEditing(slotProps.data)"
-                class="btn-add-sm" 
-                @click="confirmAddRowBelow(slotProps.index)" 
-                title="추가"
-                >＋</button>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-      
-      <!-- 합계 행: 테이블 하단 고정 -->
-      <div class="table-footer-wrapper"
-        style="width:100%;
-        min-width: 3000px;
-        padding: 0;
-        background:#f8f9fa;
-        height: 38px;
-        border:1px solid #dee2e6;
-        border-bottom:2px solid #aaa;
-        position:sticky;
-        bottom:0;
-        z-index:2;">
-        <table style="width:100%; table-layout:fixed; min-width: 3000px;">
-          <tr>
-            <td style="width:60px; position: sticky; left: 0; background: #f8f9fa; z-index: 3;"></td>
-              <td style="width:100px;"></td>
-              <td style="width:100px;"></td>
-            <td style="width:120px;"></td>
-            <td style="width:80px;"></td>
-            <td style="width:120px;"></td>
-            <td style="width:90px;"></td>
-            <td style="width:80px;"></td>
-            <td style="width:80px;"></td>
-            <td style="width:80px; text-align:center; font-weight: bold;">합계</td>
-            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalPrescriptionAmount }}</td>
-            <td style="width:80px;"></td>
-            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalWholesaleSales }}</td>
-            <td style="width:90px; text-align:right; font-weight: bold;">{{ totalDirectSales }}</td>
-            <td style="width:80px; text-align:right; font-weight: bold;">{{ totalSales }}</td>
-            <td style="width:80px;"></td>
-            <td style="width:80px;"></td>
-            <td style="width:80px; text-align:right; font-weight: bold;">{{ totalPaymentAmount }}</td>
-            <td style="width:100px;"></td>
-            <td style="width:100px;"></td>
-            <td style="width:120px; position: sticky; right: 0; background: #f8f9fa; z-index: 3; box-shadow: -2px 0 4px rgba(0,0,0,0.1);"></td>
-            </tr>
-        </table>
+          <template #loading>흡수율 분석 데이터를 불러오는 중입니다...</template>
+          
+          <Column header="No" :headerStyle="{ width: columnWidths.no }" >
+            <template #body="slotProps">
+              {{ slotProps.index + 1 }}
+            </template>
+          </Column>
+          
+          <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true" />
+          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" />
+          <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
+          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
+          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" />
+          <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
+          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
+          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
+          <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true" />
+          <Column field="wholesale_sales" header="도매매출" :headerStyle="{ width: columnWidths.wholesale_sales }" :sortable="true" />
+          <Column field="direct_sales" header="직거래매출" :headerStyle="{ width: columnWidths.direct_sales }" :sortable="true" />
+          <Column field="total_sales" header="합산액" :headerStyle="{ width: columnWidths.total_sales }" :sortable="true" />
+          <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: columnWidths.absorption_rate }" :sortable="true" />
+          <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
+          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" />
+          <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
+          <Column field="orig_created_at" header="등록일시" :headerStyle="{ width: columnWidths.orig_created_at }" :sortable="true">
+            <template #body="slotProps">
+              {{ formatDateTime(slotProps.data.orig_created_at) }}
+            </template>
+          </Column>
+          <Column field="orig_registered_by" header="등록자" :headerStyle="{ width: columnWidths.orig_registered_by }" :sortable="true" />
+          <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true" />
+          <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right" />
+
+            <ColumnGroup type="footer">
+                <Row>
+                    <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+                    <Column :footer="totalPrescriptionQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column footer="" footerClass="footer-cell" />
+                    <Column :footer="totalWholesaleSales" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column :footer="totalDirectSales" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column :footer="totalSales" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column footer="" footerClass="footer-cell" />
+                    <Column footer="" footerClass="footer-cell" />
+                    <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                    <Column :colspan="4" footerClass="footer-cell" />
+                    <Column footer="" footerClass="footer-cell" frozen />
+                </Row>
+            </ColumnGroup>
+        </DataTable>
       </div>
     </div>
   </div>
@@ -519,6 +165,8 @@ import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
@@ -1490,29 +1138,23 @@ function confirmAddRowBelow(rowIndex) {
 }
 
 // 합계 계산
+const totalPrescriptionQty = computed(() => {
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0).toLocaleString();
+});
 const totalPrescriptionAmount = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0);
-  return total.toLocaleString();
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
 });
-
 const totalWholesaleSales = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.wholesale_sales) || 0), 0);
-  return total.toLocaleString();
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.wholesale_sales) || 0), 0).toLocaleString();
 });
-
 const totalDirectSales = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.direct_sales) || 0), 0);
-  return total.toLocaleString();
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.direct_sales) || 0), 0).toLocaleString();
 });
-
 const totalSales = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.total_sales) || 0), 0);
-  return total.toLocaleString();
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.total_sales) || 0), 0).toLocaleString();
 });
-
 const totalPaymentAmount = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.payment_amount) || 0), 0);
-  return total.toLocaleString();
+  return displayRows.value.reduce((sum, row) => sum + (Number(row.payment_amount) || 0), 0).toLocaleString();
 });
 
 // 엑셀 다운로드
@@ -1522,43 +1164,50 @@ function downloadExcel() {
     return;
   }
 
-  const excelData = displayRows.value.map((row, index) => ({
-    'No': index + 1,
-    '구분': row.company_group || '',
-    '업체명': row.company_name || '',
-    '거래처': row.client_name || '',
-    '처방월': row.prescription_month || '',
-    '제품명': row.product_name || '',
-    '보험코드': row.insurance_code || '',
-    '약가': Number(row.price?.toString().replace(/,/g, '')) || 0,
-    '처방수량': Number(row.prescription_qty) || 0,
-    '처방액': Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0,
-    '처방구분': row.prescription_type || '',
-    '도매매출': Number(row.wholesale_sales) || 0,
-    '직거래매출': Number(row.direct_sales) || 0,
-    '합산액': Number(row.total_sales) || 0,
-    '흡수율': row.absorption_rate || 0,
-    '지급수수료율': row.commission_rate || 0,
-    '지급액': Number(row.payment_amount) || 0,
-    '비고': row.remarks || '',
-    '등록일시': row.orig_created_at ? (() => {
-      const date = new Date(row.orig_created_at)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const hours = String(date.getHours()).padStart(2, '0')
-      const minutes = String(date.getMinutes()).padStart(2, '0')
-      return `${year}-${month}-${day} ${hours}:${minutes}`
-    })() : '',
-    '등록자': row.orig_registered_by || '',
-    '관리자': row.assigned_pharmacist_contact || ''
+  const excelData = displayRows.value.map(row => ({
+    '구분': row.company_group,
+    '업체명': row.company_name,
+    '거래처': row.client_name,
+    '처방월': row.prescription_month,
+    '제품명': row.product_name,
+    '보험코드': row.insurance_code,
+    '약가': Number(row.price?.toString().replace(/,/g, '')),
+    '처방수량': Number(row.prescription_qty),
+    '처방액': Number(row.prescription_amount?.toString().replace(/,/g, '')),
+    '처방구분': row.prescription_type,
+    '도매매출': Number(row.wholesale_sales),
+    '직거래매출': Number(row.direct_sales),
+    '합산액': Number(row.total_sales),
+    '흡수율(%)': Number(row.absorption_rate),
+    '수수료율(%)': Number(row.commission_rate),
+    '지급액': Number(row.payment_amount),
+    '비고': row.remarks,
+    '원본등록일시': formatDateTime(row.orig_created_at),
+    '원본등록자': row.orig_registered_by,
+    '관리자': row.assigned_pharmacist_contact,
   }));
-
+  
   const ws = XLSX.utils.json_to_sheet(excelData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '흡수율분석');
+  ws['!cols'] = [
+    { width: 10 }, { width: 15 }, { width: 20 }, { width: 10 }, { width: 20 },
+    { width: 12 }, { width: 10 }, { width: 10 }, { width: 12 }, { width: 10 },
+    { width: 12 }, { width: 12 }, { width: 12 }, { width: 10 }, { width: 10 },
+    { width: 12 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }
+  ];
 
-  const fileName = `흡수율분석_${selectedSettlementMonth.value}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const numCols = [6,7,8,10,11,12,14,15]; // G~J, L~M, O, P
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let row = 1; row <= range.e.r; row++) {
+    numCols.forEach(col => {
+      const cell = ws[XLSX.utils.encode_cell({ r: row, c: col })];
+      if (cell) cell.z = '#,##0';
+    });
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const fileName = `흡수율분석_${selectedSettlementMonth.value || ''}_${today}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
@@ -2498,6 +2147,25 @@ async function matchProductByInsuranceCode(insuranceCode) {
     console.error('제품 매칭 오류:', err);
     return null;
   }
+}
+
+// 날짜 포맷 함수
+function formatDateTime(dateTimeString) {
+  if (!dateTimeString) return '-';
+  const date = new Date(dateTimeString);
+  if (isNaN(date.getTime())) return '-';
+  
+  // 한국 시간(UTC+9)으로 변환
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstDate = new Date(date.getTime() + kstOffset);
+  
+  const year = kstDate.getUTCFullYear();
+  const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(kstDate.getUTCDate()).padStart(2, '0');
+  const hours = String(kstDate.getUTCHours()).padStart(2, '0');
+  const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 </script>
 
