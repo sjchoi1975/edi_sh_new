@@ -1,7 +1,8 @@
 <template>
-  <div class="admin-settlement-share-detail-view page-container">
+  <div class="admin-settlement-share-detail-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
     <!-- 상단 필터카드: 실적 등록 현황과 동일하게 -->
-    <div class="filter-card performance-list-filter-row">
+    <div class="filter-card performance-list-filter-row" style="flex-shrink: 0;">
+
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
           <label style="white-space: nowrap; font-weight: 400">정산월</label>
@@ -9,6 +10,7 @@
             <option v-for="month in availableMonths" :key="month" :value="month">{{ month }}</option>
           </select>
         </div>
+
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
           <label style="white-space: nowrap; font-weight: 400">처방월</label>
           <select v-model="selectedPrescriptionMonth" @change="onFilterChange" class="select_month">
@@ -16,47 +18,68 @@
             <option v-for="m in availablePrescriptionMonths" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
+
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="white-space: nowrap; font-weight: 400">거래처</label>
-          <select v-model="selectedClient" @change="onFilterChange" class="select_month">
+          <select v-model="selectedClient" @change="onFilterChange" class="select_240">
             <option value="">- 전체 -</option>
             <option v-for="c in availableClients" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
       </div>
     </div>
+
     <!-- 데이터 카드 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
       </div>
-      <DataTable :value="detailRows" scrollable scrollHeight="calc(100vh - 250px)" class="admin-settlement-share-detail-table">
-        <template #empty>조회된 데이터가 없습니다.</template>
-        <Column header="No" :headerStyle="{ width: columnWidths.no }">
-          <template #body="slotProps">{{ slotProps.index + 1 }}</template>
-        </Column>
-        <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" />
-        <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" />
-        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" />
-        <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" />
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" />
-        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" />
-        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" />
-        <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" />
-        <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" />
-        <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
-      </DataTable>
+      <div style="flex-grow: 1; overflow: hidden;">
+        <DataTable
+          :value="detailRows" 
+          scrollable 
+          scrollHeight="calc(100vh - 220px)"
+          class="admin-settlement-share-detail-table"
+          >
+          <template #empty>조회된 데이터가 없습니다.</template>
+          <Column header="No" :headerStyle="{ width: columnWidths.no }">
+            <template #body="slotProps">{{ slotProps.index + 1 }}</template>
+          </Column>
+          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" />
+          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" />
+          <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" />
+          <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" />
+          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" />
+          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" />
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" />
+          <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" />
+          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" />
+          <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
+          <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column footerClass="footer-cell" />
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
+        </DataTable>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
@@ -68,6 +91,17 @@ const selectedPrescriptionMonth = ref('');
 const availableClients = ref([]);
 const selectedClient = ref('');
 const detailRows = ref([]);
+
+// 합계 계산
+const totalQty = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
+const totalPrescriptionAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
+const totalPaymentAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+});
 
 const columnWidths = {
   no: '4%',

@@ -16,9 +16,7 @@
     </div>
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">
-          전체 {{ filteredClients.length }} 건
-        </div>
+        <div class="total-count-display">전체 {{ filteredClients.length }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
           <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
@@ -33,6 +31,7 @@
           />
         </div>
       </div>
+
       <DataTable
         :value="filteredClients"
         paginator
@@ -47,6 +46,7 @@
       >
         <template #empty>등록된 거래처가 없습니다.</template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
+
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
@@ -58,7 +58,12 @@
           :headerStyle="{ width: columnWidths.client_code }"
           :sortable="true"
         />
-        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true" />
+        <Column
+          field="name"
+          header="병의원명"
+          :headerStyle="{ width: columnWidths.name }"
+          :sortable="true"
+        />
         <Column
           field="business_registration_number"
           header="사업자등록번호"
@@ -71,7 +76,12 @@
           :headerStyle="{ width: columnWidths.owner_name }"
           :sortable="true"
         />
-        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true" />
+        <Column
+          field="address"
+          header="주소"
+          :headerStyle="{ width: columnWidths.address }"
+          :sortable="true"
+        />
         <Column header="업체명" :headerStyle="{ width: columnWidths.company_name }">
           <template #body="slotProps">
             <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
@@ -145,15 +155,30 @@
           class="custom-table"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
-          <Column field="company_name" header="업체명" :headerStyle="{ width: '20%' }" :sortable="true" />
+          <Column
+            field="company_name"
+            header="업체명"
+            :headerStyle="{ width: '20%' }"
+            :sortable="true"
+          />
           <Column
             field="business_registration_number"
             header="사업자등록번호"
             :headerStyle="{ width: '16%' }"
             :sortable="true"
           />
-          <Column field="representative_name" header="대표자명" :headerStyle="{ width: '12%' }" :sortable="true" />
-          <Column field="business_address" header="사업장 소재지" :headerStyle="{ width: '46%' }" :sortable="true" />
+          <Column
+            field="representative_name"
+            header="대표자명"
+            :headerStyle="{ width: '12%' }"
+            :sortable="true"
+          />
+          <Column
+            field="business_address"
+            header="사업장 소재지"
+            :headerStyle="{ width: '46%' }"
+            :sortable="true"
+          />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
@@ -199,8 +224,8 @@ const columnWidths = {
   address: '24%',
   company_name: '16%',
   company_brn: '8%',
-  actions: '8%'
-};
+  actions: '8%',
+}
 
 const fetchClients = async () => {
   const { data: clientsData, error } = await supabase
@@ -429,14 +454,15 @@ const downloadExcel = () => {
 }
 
 async function deleteAllAssignments() {
-  if (!confirm('정말 모든 담당업체 지정 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  const { error } = await supabase.from('client_company_assignments').delete().neq('id', 0);
+  if (!confirm('정말 모든 담당업체 지정 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))
+    return
+  const { error } = await supabase.from('client_company_assignments').delete().neq('id', 0)
   if (error) {
-    alert('삭제 중 오류가 발생했습니다: ' + error.message);
-    return;
+    alert('삭제 중 오류가 발생했습니다: ' + error.message)
+    return
   }
-  clients.value.forEach(c => c.companies = []);
-  alert('모든 담당업체 지정 데이터가 삭제되었습니다.');
+  clients.value.forEach((c) => (c.companies = []))
+  alert('모든 담당업체 지정 데이터가 삭제되었습니다.')
 }
 
 onMounted(() => {

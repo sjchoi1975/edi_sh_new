@@ -45,7 +45,7 @@
         </Column>
         <Column field="title" header="제목" :headerStyle="{ width: columnWidths.title }">
           <template #body="slotProps">
-            <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">
+            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.title }}
             </a>
           </template>

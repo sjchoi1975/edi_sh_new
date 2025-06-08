@@ -1,11 +1,11 @@
 <template>
-  <div class="performance-register-view page-container">
-    <div class="page-header-title-area">
+  <div class="performance-register-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
+    <div class="page-header-title-area" style="flex-shrink: 0;">
       <div class="header-title">실적 등록</div>
     </div>
 
     <!-- 필터 카드: 정산월 드롭다운 -->
-    <div class="filter-card">
+    <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end">
         <div style="display: flex; align-items: center; gap: 8px">
           <label style="font-weight: 400">정산월</label>
@@ -19,31 +19,10 @@
     </div>
 
     <!-- 데이터 카드: 전체 n건 + 테이블 + 합계 행 -->
-    <div class="data-card">
-      <div class="data-card-header">
+    <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ clientList.length }} 건</div>
         <div class="data-card-buttons">
-          <button
-            class="btn-excell-template"
-            @click="downloadExcelTemplate"
-            :disabled="!selectedSettlementMonth"
-          >
-            엑셀 템플릿 다운로드
-          </button>
-          <button
-            class="btn-excell-download"
-            @click="triggerExcelUpload"
-            :disabled="!selectedSettlementMonth"
-          >
-            엑셀 일괄 등록
-          </button>
-          <input
-            ref="excelFileInput"
-            type="file"
-            accept=".xlsx,.xls"
-            @change="handleExcelUpload"
-            style="display: none"
-          />
           <button
             class="btn-excell-download"
             @click="downloadExcel"
@@ -53,187 +32,167 @@
           </button>
         </div>
       </div>
-      <DataTable
-        :value="clientList"
-        scrollable
-        scrollHeight="calc(100vh - 250px)"
-        class="custom-table performance-register-table"
-      >
-        <template #empty>등록된 거래처가 없습니다.</template>
-        <template #loading>거래처 목록을 불러오는 중입니다...</template>
+      <div style="flex-grow: 1; overflow: auto;">
+        <DataTable
+          :value="clientList"
+          scrollable
+          scrollHeight="calc(100vh - 220px)"
+          class="custom-table performance-register-table"
+        >
+          <template #empty>등록된 거래처가 없습니다.</template>
+          <template #loading>거래처 목록을 불러오는 중입니다...</template>
 
-        <!-- No 컬럼 -->
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
-          <template #body="slotProps">
-            {{ slotProps.index + 1 }}
-          </template>
-        </Column>
-        <!-- 거래처 정보 -->
-        <Column
-          field="client_code"
-          header="거래처코드"
-          :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }"
-        />
-        <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
-          <template #body="slotProps">
-            <span
-              :title="slotProps.data.name"
-              style="
-                display: block;
-                width: 100%;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                font-weight: 500;
-              "
-            >
-              {{ slotProps.data.name }}
-            </span>
-          </template>
-        </Column>
-        <Column
-          field="business_registration_number"
-          header="사업자등록번호"
-          :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
-        />
-        <Column header="주소" :headerStyle="{ width: columnWidths.address, textAlign: 'center' }">
-          <template #body="slotProps">
-            <span
-              :title="slotProps.data.address"
-              style="
-                display: block;
-                max-width: 100%;
-                width: 100%;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                box-sizing: border-box;
-              "
-            >
-              {{ slotProps.data.address }}
-            </span>
-          </template>
-        </Column>
+          <!-- No 컬럼 -->
+          <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
+            <template #body="slotProps">
+              {{ slotProps.index + 1 }}
+            </template>
+          </Column>
+          <!-- 거래처 정보 -->
+          <Column
+            field="client_code"
+            header="거래처코드"
+            :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }"
+          />
+          <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
+            <template #body="slotProps">
+              <span
+                :title="slotProps.data.name"
+                style="
+                  display: block;
+                  width: 100%;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  font-weight: 500;
+                "
+              >
+                {{ slotProps.data.name }}
+              </span>
+            </template>
+          </Column>
+          <Column
+            field="business_registration_number"
+            header="사업자등록번호"
+            :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
+          />
+          <Column header="주소" :headerStyle="{ width: columnWidths.address, textAlign: 'center' }">
+            <template #body="slotProps">
+              <span
+                :title="slotProps.data.address"
+                style="
+                  display: block;
+                  max-width: 100%;
+                  width: 100%;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  box-sizing: border-box;
+                "
+              >
+                {{ slotProps.data.address }}
+              </span>
+            </template>
+          </Column>
 
-        <!-- 실적 정보 -->
-        <Column
-          header="처방건수"
-          :headerStyle="{ width: columnWidths.performance_count, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            {{ slotProps.data.performance_count ? slotProps.data.performance_count : '-' }}
-          </template>
-        </Column>
-        <Column
-          header="처방액"
-          :headerStyle="{ width: columnWidths.total_prescription_amount, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            {{
-              slotProps.data.total_prescription_amount
-                ? formatNumber(slotProps.data.total_prescription_amount)
-                : '-'
-            }}
-          </template>
-        </Column>
+          <!-- 실적 정보 -->
+          <Column
+            header="처방건수"
+            :headerStyle="{ width: columnWidths.performance_count, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              {{ slotProps.data.performance_count ? slotProps.data.performance_count : '-' }}
+            </template>
+          </Column>
+          <Column
+            header="처방액"
+            :headerStyle="{ width: columnWidths.total_prescription_amount, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              {{
+                slotProps.data.total_prescription_amount
+                  ? formatNumber(slotProps.data.total_prescription_amount)
+                  : '-'
+              }}
+            </template>
+          </Column>
 
-        <!-- 버튼 영역 -->
-        <Column
-          header="조회"
-          :headerStyle="{ width: columnWidths.view_button, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            <button
-              class="btn-view-sm"
-              @click="viewDetails(slotProps.data)"
-              :disabled="!isInputPeriod || !(slotProps.data.performance_count > 0)"
-            >
-              조회
-            </button>
-          </template>
-        </Column>
-        <Column
-          header="등록"
-          :headerStyle="{ width: columnWidths.input_button, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            <button
-              class="btn-input-sm"
-              @click="registerPerformance(slotProps.data)"
-              :disabled="!isInputPeriod"
-            >
-              등록
-            </button>
-          </template>
-        </Column>
-        <Column
-          header="증빙 파일"
-          :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
-          </template>
-        </Column>
-        <Column
-          header="파일 보기"
-          :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            <button
-              class="btn-view-sm"
-              @click="openDetailModal(slotProps.data)"
-              :disabled="!isInputPeriod || !(slotProps.data.evidence_files_count > 0)"
-            >
-              보기
-            </button>
-          </template>
-        </Column>
-        <Column
-          header="업로드"
-          :headerStyle="{ width: columnWidths.upload_button, textAlign: 'center' }"
-        >
-          <template #body="slotProps">
-            <button
-              class="btn-upload-sm"
-              @click="openUploadModal(slotProps.data)"
-              :disabled="!isInputPeriod"
-            >
-              업로드
-            </button>
-          </template>
-        </Column>
-      </DataTable>
-      <!-- 합계 행: 테이블 하단 고정 -->
-      <div
-        class="table-footer-wrapper"
-        style="
-          width: 100%;
-          padding: 0 2rem 0 0;
-          background: #f8f9fa;
-          height: 38px;
-          border: 1px solid #dee2e6;
-          border-bottom: 2px solid #aaa;
-          position: sticky;
-          bottom: 0;
-          z-index: 2;
-        "
-      >
-        <table style="width: 100%; table-layout: fixed">
-          <tr>
-            <td style="width: 52%; text-align: center; font-weight: 600">합계</td>
-            <td style="width: 7%; text-align: center; font-weight: 600">
-              {{ totalPerformanceCount }}
-            </td>
-            <td style="width: 7%; text-align: right; font-weight: 600">
-              {{ formatNumber(totalPrescriptionAmount) }}
-            </td>
-            <td style="width: 15%"></td>
-            <td style="width: 6%; text-align: center; font-weight: 600">
-              {{ totalEvidenceFilesCount }}
-            </td>
-            <td style="width: 13%"></td>
-          </tr>
-        </table>
+          <!-- 버튼 영역 -->
+          <Column
+            header="조회"
+            :headerStyle="{ width: columnWidths.view_button, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              <button
+                class="btn-view-sm"
+                @click="viewDetails(slotProps.data)"
+                :disabled="!isInputPeriod || !(slotProps.data.performance_count > 0)"
+              >
+                조회
+              </button>
+            </template>
+          </Column>
+          <Column
+            header="등록"
+            :headerStyle="{ width: columnWidths.input_button, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              <button
+                class="btn-input-sm"
+                @click="registerPerformance(slotProps.data)"
+                :disabled="!isInputPeriod"
+              >
+                등록
+              </button>
+            </template>
+          </Column>
+          <Column
+            header="증빙 파일"
+            :headerStyle="{ width: columnWidths.evidence_files_count, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              {{ slotProps.data.evidence_files_count ? slotProps.data.evidence_files_count : '-' }}
+            </template>
+          </Column>
+          <Column
+            header="파일 보기"
+            :headerStyle="{ width: columnWidths.view_files_button, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              <button
+                class="btn-view-sm"
+                @click="openDetailModal(slotProps.data)"
+                :disabled="!isInputPeriod || !(slotProps.data.evidence_files_count > 0)"
+              >
+                보기
+              </button>
+            </template>
+          </Column>
+          <Column
+            header="업로드"
+            :headerStyle="{ width: columnWidths.upload_button, textAlign: 'center' }"
+          >
+            <template #body="slotProps">
+              <button
+                class="btn-upload-sm"
+                @click="openUploadModal(slotProps.data)"
+                :disabled="!isInputPeriod"
+              >
+                업로드
+              </button>
+            </template>
+          </Column>
+          <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="totalPerformanceCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right;" />
+              <Column :colspan="2" footerClass="footer-cell" />
+              <Column :footer="totalEvidenceFilesCount.toString()" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :colspan="2" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
+        </DataTable>
       </div>
     </div>
 
@@ -432,6 +391,8 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import { supabase } from '@/supabase'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
@@ -957,181 +918,5 @@ function downloadExcel() {
 
   // 파일 다운로드
   XLSX.writeFile(wb, fileName)
-}
-
-// 템플릿 다운로드 (6개 항목)
-function downloadExcelTemplate() {
-  const wb = XLSX.utils.book_new()
-  const headers = ['거래처_사업자등록번호', '처방월', '보험코드', '수량', '처방구분', '비고']
-  const ws = XLSX.utils.aoa_to_sheet([headers])
-  ws['!cols'] = [
-    { wpx: 150 }, // 거래처_사업자등록번호
-    { wpx: 100 }, // 처방월
-    { wpx: 120 }, // 보험코드
-    { wpx: 80 }, // 수량
-    { wpx: 100 }, // 처방구분
-    { wpx: 200 }, // 비고
-  ]
-  XLSX.utils.book_append_sheet(wb, ws, '실적등록')
-  const today = new Date()
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
-  XLSX.writeFile(wb, `실적등록_템플릿_${dateStr}.xlsx`)
-}
-
-function triggerExcelUpload() {
-  excelFileInput.value.click()
-}
-
-async function handleExcelUpload(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  selectedExcelFile.value = file
-  uploadErrors.value = []
-  try {
-    const data = await readExcelFile(file)
-    const errors = await validateExcelData(data)
-    if (errors.length > 0) {
-      uploadErrors.value = errors
-      return
-    }
-    await saveExcelData(data)
-    alert('엑셀 데이터가 성공적으로 등록되었습니다.')
-    await fetchClientList()
-  } catch (err) {
-    alert('엑셀 파일 처리 중 오류가 발생했습니다.')
-  }
-}
-
-function readExcelFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result)
-        const workbook = XLSX.read(data, { type: 'array' })
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
-        resolve(jsonData)
-      } catch (err) {
-        reject(err)
-      }
-    }
-    reader.onerror = reject
-    reader.readAsArrayBuffer(file)
-  })
-}
-
-// 검증 함수
-async function validateExcelData(data) {
-  const errors = []
-  const myClients = await fetchMyClients()
-  const validMonths = await getValidSettlementMonths()
-  const validProducts = await fetchValidProducts(validMonths)
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i]
-    const rowNum = i + 2
-    // 1. 거래처 체크 (clients.status = 'active'도 포함)
-    const businessNumber = row['거래처_사업자등록번호']
-    let clientActive = false
-    if (businessNumber) {
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('id, status')
-        .eq('business_registration_number', businessNumber)
-        .single()
-      if (clientData && clientData.status === 'active') {
-        clientActive = true
-      }
-    }
-    if (!businessNumber || !myClients.includes(businessNumber) || !clientActive) {
-      errors.push(`${rowNum}행: 내 거래처가 아니거나 비활성 거래처입니다.`)
-    }
-    // 2. 처방월 체크
-    if (!row['처방월'] || !validMonths.includes(row['처방월'])) {
-      errors.push(`${rowNum}행: 입력 가능한 처방월이 아닙니다.`)
-    }
-    // 3. 제품 체크
-    if (!row['보험코드'] || !validProducts[row['처방월']]?.includes(row['보험코드'])) {
-      errors.push(`${rowNum}행: 해당 처방월에 등록/활성화된 제품이 아닙니다.`)
-    }
-    // 4. 보험코드 형식 체크 (9자리 숫자, TEXT)
-    if (row['보험코드'] && !/^[0-9]{9,10}$/.test(row['보험코드'])) {
-      errors.push(`${rowNum}행: 보험코드는 9~10자리 숫자여야 합니다.`)
-    }
-  }
-  return errors
-}
-
-// 내 거래처 사업자등록번호 목록 (status = 'active'인 거래처만)
-async function fetchMyClients() {
-  // 1. 내 회사의 client_company_assignments에서 client_id 목록 조회
-  const { data: assignments } = await supabase
-    .from('client_company_assignments')
-    .select('client_id')
-    .eq('company_id', currentCompanyId.value)
-  const clientIds = assignments?.map((a) => a.client_id) || []
-  if (clientIds.length === 0) return []
-  // 2. clients 테이블에서 status = 'active'인 거래처만 필터링
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('business_registration_number')
-    .in('id', clientIds)
-    .eq('status', 'active')
-  return clients?.map((c) => c.business_registration_number) || []
-}
-
-// 유효한 처방월 목록 (예: 최근 3개월)
-function getValidSettlementMonths() {
-  const validMonths = []
-  const currentMonth = selectedSettlementMonth.value
-  for (let i = 1; i <= 3; i++) {
-    const date = new Date(currentMonth)
-    date.setMonth(date.getMonth() - i)
-    validMonths.push(date.toISOString().slice(0, 7))
-  }
-  return validMonths
-}
-
-// 유효한 제품 체크
-async function fetchValidProducts(validMonths) {
-  const { data } = await supabase
-    .from('products')
-    .select('base_month, insurance_code')
-    .in('base_month', validMonths)
-    .eq('status', 'active')
-  const products = {}
-  data?.forEach((item) => {
-    if (!products[item.base_month]) products[item.base_month] = []
-    products[item.base_month].push(item.insurance_code)
-  })
-  return products
-}
-
-// 엑셀 데이터 저장
-async function saveExcelData(data) {
-  const records = []
-  for (const row of data) {
-    const clientId = await getClientIdByBusinessNumber(row['거래처_사업자등록번호'])
-    records.push({
-      company_id: currentCompanyId.value,
-      client_id: clientId,
-      settlement_month: row['처방월'],
-      insurance_code: row['보험코드'],
-      prescription_qty: parseInt(row['수량']) || 0,
-      prescription_type: row['처방구분'],
-      note: row['비고'],
-    })
-  }
-  const { error } = await supabase.from('performance_records').insert(records)
-  if (error) throw error
-}
-
-async function getClientIdByBusinessNumber(businessNumber) {
-  const { data } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('business_registration_number', businessNumber)
-    .single()
-  return data?.id
 }
 </script>

@@ -41,11 +41,7 @@
         </Column>
         <Column field="settlement_month" header="정산월" :headerStyle="{ width: columnWidths.settlement_month }">
           <template #body="slotProps">
-            <a
-              href="#"
-              style="color:#1976d2;text-decoration:underline;cursor:pointer;"
-              @click.prevent="goToDetail(slotProps.data.id)"
-            >
+            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.settlement_month }}
             </a>
           </template>

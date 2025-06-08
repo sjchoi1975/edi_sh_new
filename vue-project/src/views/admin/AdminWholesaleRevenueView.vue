@@ -5,8 +5,8 @@
     </div>
     <div class="filter-card">
       <div class="filter-row">
-        <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-          <label style="font-weight: 400;">기간</label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px">
+          <label style="font-weight: 400">기간</label>
           <select v-model="fromMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
@@ -30,9 +30,7 @@
     </div>
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">
-          전체 {{ filteredRevenues.length }} 건
-        </div>
+        <div class="total-count-display">전체 {{ filteredRevenues.length }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
           <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
@@ -72,23 +70,25 @@
             {{ slotProps.index + currentPageFirstIndex + 1 }}
           </template>
         </Column>
-        <Column field="pharmacy_code" header="약국코드" :headerStyle="{ width: columnWidths.pharmacy_code }" :sortable="true">
+        <Column
+          field="pharmacy_code"
+          header="약국코드"
+          :headerStyle="{ width: columnWidths.pharmacy_code }"
+          :sortable="true"
+        >
           <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.pharmacy_code"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
-            />
+            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_code" />
             <span v-else>{{ slotProps.data.pharmacy_code }}</span>
           </template>
         </Column>
-        <Column field="pharmacy_name" header="약국명" :headerStyle="{ width: columnWidths.pharmacy_name }" :sortable="true">
+        <Column
+          field="pharmacy_name"
+          header="약국명"
+          :headerStyle="{ width: columnWidths.pharmacy_name }"
+          :sortable="true"
+        >
           <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.pharmacy_name"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
-            />
+            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_name" />
             <span v-else>{{ slotProps.data.pharmacy_name }}</span>
           </template>
         </Column>
@@ -102,12 +102,16 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
-              style="width: 100%; border: 1px solid #ddd; padding: 4px"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
         </Column>
-        <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true">
+        <Column
+          field="address"
+          header="주소"
+          :headerStyle="{ width: columnWidths.address }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -117,7 +121,12 @@
             <span v-else>{{ slotProps.data.address }}</span>
           </template>
         </Column>
-        <Column field="standard_code" header="표준코드" :headerStyle="{ width: columnWidths.standard_code }" :sortable="true">
+        <Column
+          field="standard_code"
+          header="표준코드"
+          :headerStyle="{ width: columnWidths.standard_code }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -127,7 +136,12 @@
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
         </Column>
-        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
+        <Column
+          field="product_name"
+          header="제품명"
+          :headerStyle="{ width: columnWidths.product_name }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -137,7 +151,12 @@
             <span v-else>{{ slotProps.data.product_name }}</span>
           </template>
         </Column>
-        <Column field="sales_amount" header="매출액" :headerStyle="{ width: columnWidths.sales_amount }" :sortable="true">
+        <Column
+          field="sales_amount"
+          header="매출액"
+          :headerStyle="{ width: columnWidths.sales_amount }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -148,7 +167,12 @@
             <span v-else>{{ slotProps.data.sales_amount?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column field="sales_date" header="매출일자" :headerStyle="{ width: columnWidths.sales_date }" :sortable="true">
+        <Column
+          field="sales_date"
+          header="매출일자"
+          :headerStyle="{ width: columnWidths.sales_date }"
+          :sortable="true"
+        >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -206,8 +230,8 @@ const columnWidths = {
   product_name: '16%',
   sales_amount: '6%',
   sales_date: '6%',
-  actions: '8%'
-};
+  actions: '8%',
+}
 
 const revenues = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
@@ -245,7 +269,7 @@ const fetchAvailableMonths = async () => {
     .order('sales_date', { ascending: false })
   if (!error && data) {
     const monthSet = new Set()
-    data.forEach(item => {
+    data.forEach((item) => {
       if (item.sales_date) {
         monthSet.add(item.sales_date.substring(0, 7))
       }
@@ -556,14 +580,15 @@ const downloadExcel = () => {
 }
 
 async function deleteAllRevenues() {
-  if (!confirm('정말 모든 도매매출 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  const { error } = await supabase.from('wholesale_sales').delete().neq('id', 0);
+  if (!confirm('정말 모든 도매매출 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))
+    return
+  const { error } = await supabase.from('wholesale_sales').delete().neq('id', 0)
   if (error) {
-    alert('삭제 중 오류가 발생했습니다: ' + error.message);
-    return;
+    alert('삭제 중 오류가 발생했습니다: ' + error.message)
+    return
   }
-  revenues.value = [];
-  alert('모든 도매매출 데이터가 삭제되었습니다.');
+  revenues.value = []
+  alert('모든 도매매출 데이터가 삭제되었습니다.')
 }
 
 onMounted(() => {

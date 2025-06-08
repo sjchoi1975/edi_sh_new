@@ -53,7 +53,7 @@
   --border-primary: #dee2e6; /* 주요 구분선 */
   --border-secondary: #d1dbe6; /* 연한 구분선 */
   --border-input: #ced4da; /* 입력 필드 */
-  --border-focus: var(--primary-color-light); /* 포커스 */
+  --border-focus: var(--primary-color); /* 포커스 */
 
   /* 크기 */
   --border-radius: 4px; /* 모서리 둥글기 */
@@ -148,58 +148,55 @@ a:hover {
 /* ========================================== */
 /* 5. 폼 요소 스타일                          */
 /* ========================================== */
-/* 라벨 */
-label {
-  font-size: var(--font-size-base);
-  font-weight: 400;
-  color: var(--text-primary);
-  letter-spacing: 0em;
-}
-
-/* 필수 입력 표시 */
-.required {
-  color: var(--primary-blue);
-}
-
-/* 기본 입력창 */
+/*
+  [공통] 모든 입력창(input, textarea, select, PrimeVue InputText)
+  - 로그인/회원가입, 각종 폼, 테이블 인라인 편집 등 전역에서 사용
+  - PrimeVue InputText(.p-inputtext)도 동일하게 적용하여 스타일 일관성 유지
+  - 배경, 테두리, 폰트, 패딩, 크기, 전환효과 등
+*/
 input,
 .p-inputtext,
 textarea,
 select {
-  background: var(--bg-content);
-  border: 1px solid var(--border-input);
-  border-radius: var(--border-radius);
-  padding: 0.5rem 0.5rem;
-  font-size: var(--font-size-base);
-  font-weight: 400;
-  color: var(--text-primary);
-  width: 100%;
-  box-sizing: border-box;
-  height: var(--input-height);
-  margin-bottom: 0.3rem;
+  background: var(--bg-content); /* 입력창 배경색 (흰색) */
+  border: 1px solid var(--border-input); /* 연한 회색 테두리 */
+  border-radius: var(--border-radius); /* 둥근 모서리 */
+  padding: 0.5rem 0.5rem; /* 내부 여백 */
+  font-size: var(--font-size-base); /* 기본 폰트 크기 */
+  font-weight: 400; /* 보통 굵기 */
+  color: var(--text-primary); /* 진한 텍스트 */
+  width: 100%; /* 전체 너비 */
+  box-sizing: border-box; /* 패딩 포함 크기 계산 */
+  height: var(--input-height); /* 고정 높이 */
+  margin-bottom: 0.3rem; /* 아래 여백 */
   transition:
     border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+    box-shadow 0.15s ease-in-out; /* 포커스 효과 부드럽게 */
 }
 
-/* 입력창 포커스 */
+/*
+  [공통] 입력창 포커스(선택 시 외곽선 강조)
+  - 로그인/회원가입, 각종 폼, 테이블 인라인 편집 등 전역에서 사용
+  - border-color와 box-shadow로 포커스 효과를 명확하게 보여줌
+*/
 input:focus,
+.p-inputtext:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--primary-color-light);
-  outline: 0;
-  box-shadow: 0 0 0 0.1rem var(--primary-color-light);
+  border-color: var(--primary-color); /* 포커스 시 연녹색 테두리 */
+  outline: 0; /* 브라우저 기본 아웃라인 제거 */
+  box-shadow: 0 0 0 0.1rem var(--primary-color); /* 부드러운 외곽선 효과 */
 }
 
 /* 인라인 편집 */
 .inline-edit-input {
-  border: 1.5px solid #d1e7dd !important;
-  border-radius: 4px;
-  transition: border-color 0.2s;
-  box-shadow: none;
+  border: 1.5px solid var(--border-secondary) !important;
+  border-radius: 4px !important;
+  transition: border-color 0.2s !important;
+  box-shadow: none !important;
 }
 .inline-edit-input:focus {
-  border: 2.5px solid #5fa56b !important; /* 녹색 계열 두꺼운 아웃라인 */
+  border: 2px solid var(--primary-color) !important; /* 녹색 계열 아웃라인 */
   outline: none !important;
   border-radius: 4px !important;
   background-color: #fff !important;
@@ -240,15 +237,15 @@ select.input-editable {
 }
 
 .search-input:focus {
-  border-color: var(--primary-color-light) !important;
-  box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.1rem var(--primary-color) !important;
 }
 
 /* 플레이스홀더 */
 .p-inputtext::placeholder {
-  color: var(--text-light);
-  font-size: var(--font-size-base);
-  font-weight: 400;
+  color: var(--text-light) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 400 !important;
 }
 
 /* 연월 선택창 */
@@ -264,7 +261,7 @@ select.input-editable {
 }
 
 .select_240px {
-  width: 240px;
+  width: 240px !important;
 }
 
 /* ========================================== */
@@ -272,91 +269,91 @@ select.input-editable {
 /* ========================================== */
 /* 필터 카드 */
 .filter-card {
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 0.6rem;
-  margin-bottom: 0.6rem;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--box-shadow-sm) !important;
+  padding: 0.6rem 1.2rem !important;
+  margin-bottom: 0.6rem !important;
 }
 
 /* 데이터 카드 */
 .data-card {
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 0.6rem;
-  margin-bottom: 0rem;
-  height: calc(100vh - 134px);
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--box-shadow-sm) !important;
+  padding: 0.6rem !important;
+  margin-bottom: 0rem !important;
+  height: calc(100vh - 134px) !important;
 }
 
 /* 카드 헤더 */
 .data-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 1rem !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
 }
 
 /* 필터 행 */
 .filter-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  flex-wrap: wrap !important;
 }
 
 /* 필터 아이템 */
 .filter-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
 }
 
 /* 총 개수 표시 */
 .total-count-display {
-  margin-top: 1rem;
-  margin-left: 0.5rem;
-  font-size: var(--font-size-md);
-  color: var(--text-secondary);
-  font-weight: 500;
+  margin-top: 1rem !important;
+  margin-left: 0.5rem !important;
+  font-size: var(--font-size-md) !important;
+  color: var(--text-primary) !important;
+  font-weight: 400 !important;
 }
 
 .board_640 {
-  max-width: 640px;
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 2rem 2rem 2rem 2rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 640px !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--box-shadow-sm) !important;
+  padding: 2rem 2rem 2rem 2rem !important;
+  margin-top: 2rem !important;
+  margin-bottom: 1rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 /* .board_960: (예시) 일부 구형 레이아웃에서 사용, 현재는 거의 사용하지 않음 */
 .board_960 {
-  max-width: 960px;
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: 2rem 2rem 2rem 2rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 960px !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-secondary) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--box-shadow-sm) !important;
+  padding: 2rem 2rem 2rem 2rem !important;
+  margin-top: 2rem !important;
+  margin-bottom: 1rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .form-title {
-  font-size: var(--font-size-title);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
+  font-size: var(--font-size-title) !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  margin-bottom: 1.5rem !important;
 }
 
 /* ========================================== */
@@ -364,10 +361,10 @@ select.input-editable {
 /* ========================================== */
 /* PrimeVue DataTable 기본 스타일 */
 .p-datatable {
-  font-size: var(--font-size-base);
-  background: var(--bg-content);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--border-radius);
+  font-size: var(--font-size-base) !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-secondary) !important;
+  border-radius: var(--border-radius) !important;
   padding: 0 !important;
 }
 
@@ -457,15 +454,15 @@ select.input-editable {
 
 /* 행 개수 드롭다운 상세 스타일 */
 :deep(.p-paginator .p-dropdown) {
-  font-size: var(--paginator-dropdown-font-size);
-  height: var(--paginator-dropdown-height);
-  min-width: 60px;
-  border-radius: var(--border-radius);
+  font-size: var(--paginator-dropdown-font-size) !important;
+  height: var(--paginator-dropdown-height) !important;
+  min-width: 60px !important;
+  border-radius: var(--border-radius) !important;
 }
 
 :deep(.p-paginator .p-dropdown-label) {
-  font-size: var(--paginator-dropdown-font-size);
-  padding: var(--paginator-dropdown-padding);
+  font-size: var(--paginator-dropdown-font-size) !important;
+  padding: var(--paginator-dropdown-padding) !important;
 }
 
 /* 페이지 이동 버튼 간격 조정 */
@@ -643,9 +640,10 @@ select.input-editable {
 /* 10. 유틸리티 클래스                        */
 /* ========================================== */
 .text-link {
-  color: var(--text-link) !important;
-  text-decoration: none;
-  cursor: pointer;
+  color: var(--text-primary) !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
 }
 
 .text-link:hover {
@@ -1364,6 +1362,8 @@ select.input-editable {
 .clients-table .p-datatable-column-title,
 /* 이용자 실적 등록 테이블 헤더 */
 .performance-register-table .p-datatable-column-title,
+/* 이용자 실적 등록 - 입력 테이블 헤더 */
+.performance-edit-table .p-datatable-column-title,
 /* 이용자 실적 등록 현황 테이블 헤더 */
 .performance-list-table .p-datatable-column-title,
 /* 관리자 공지사항 목록 테이블 헤더 */
@@ -1527,37 +1527,51 @@ select.input-editable {
   text-align: center !important;
 } /* 업로드 */
 
+
+
 /* ------ 실적 입력 테이블 (PerformanceRegisterEdit.vue) ------ */
-.performance-edit-table .input-table td:nth-child(1) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(1) {
   text-align: center !important;
 } /* No */
-.performance-edit-table .input-table td:nth-child(2) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(2) {
+  text-align: center !important;
+} /* 처방월 */
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(3) {
   text-align: left !important;
 } /* 제품명 */
-.performance-edit-table .input-table td:nth-child(3) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(4) {
   text-align: center !important;
 } /* 보험코드 */
-.performance-edit-table .input-table td:nth-child(4) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(5) {
   text-align: right !important;
 } /* 단가 */
-.performance-edit-table .input-table td:nth-child(5) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(6) {
   text-align: right !important;
 } /* 처방수량 */
-.performance-edit-table .input-table td:nth-child(6) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: right !important;
 } /* 처방액 */
-.performance-edit-table .input-table td:nth-child(7) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(8) {
   text-align: center !important;
 } /* 처방구분 */
-.performance-edit-table .input-table td:nth-child(8) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(9) {
   text-align: left !important;
 } /* 비고 */
-.performance-edit-table .input-table td:nth-child(9) {
+.performance-edit-table .p-datatable-tbody > tr > td:nth-child(10) {
   text-align: center !important;
-} /* 삭제 */
-.performance-edit-table .input-table td:nth-child(10) {
-  text-align: center !important;
-} /* 추가 */
+} /* 작업 */
+
+/* 기존 실적 입력 테두리 -> 변경중 */
+.performance-edit-table .cell-focused {
+  outline: none !important;
+  border: 2px solid #1976d2 !important;
+  z-index: 2;
+  position: relative; /* 테두리가 잘리지 않도록 */
+}
+
+
+
+
 
 /* ------ 실적 등록 현황 (PerformanceRegisterList.vue) ------ */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(1) {
@@ -1567,7 +1581,7 @@ select.input-editable {
   text-align: left !important;
 } /* 거래처 */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important;
+  text-align: left !important;
 } /* 사업자등록번호 */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(4) {
   text-align: left !important;
@@ -1596,6 +1610,8 @@ select.input-editable {
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: left !important;
 } /* 비고 */
+
+
 
 /* ------ 실적 등록 (PerformanceRegister.vue) 주소 컬럼 오버플로우 처리 ------ */
 .performance-register-table.custom-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
@@ -1664,7 +1680,7 @@ select.input-editable {
   text-align: center !important;
 } /* No */
 .admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
+  text-align: left !important;
 } /* 구분 */
 .admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(3) {
   text-align: left !important;
@@ -1696,7 +1712,7 @@ select.input-editable {
   text-align: center !important;
 } /* No */
 .admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
+  text-align: left !important;
 } /* 구분 */
 .admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(3) {
   text-align: left !important;
@@ -2226,7 +2242,7 @@ select.input-editable {
   justify-content: center !important;
   background: var(--bg-page) !important;
   min-width: 400px !important;
-  box-shadow: 0 0 4px 0 rgba(0,0,0,0.2) !important;
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.2) !important;
   padding: 2.4rem 2rem 2rem 2rem !important;
   border-radius: var(--border-radius) !important;
 }
@@ -2267,6 +2283,7 @@ select.input-editable {
   width: 100% !important;
   color: var(--text-white) !important;
   font-size: var(--font-size-base) !important;
+  border-radius: 4px !important;
   margin-bottom: 0.5rem !important;
 }
 
@@ -2276,6 +2293,7 @@ select.input-editable {
   background: var(--primary-blue) !important;
   color: var(--text-white) !important;
   font-size: var(--font-size-base) !important;
+  border-radius: 4px !important;
 }
 
 /* [LoginView.vue] 저작권 표시 */
@@ -2296,7 +2314,6 @@ select.input-editable {
     width: 100vw !important;
   }
 }
-
 
 /* [SignupView.vue] 회원가입 전체 컨테이너
   - 회원가입 화면의 배경, 정렬, 전체 레이아웃을 담당 */
@@ -2322,7 +2339,7 @@ select.input-editable {
   width: 100% !important;
   max-width: 480px !important;
   padding: 2.4rem 2rem 2rem 2rem !important;
-  box-shadow: 0 0 4px 0 rgba(0,0,0,0.2) !important;
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.2) !important;
   border-radius: var(--border-radius) !important;
   position: relative !important;
 }
@@ -2389,15 +2406,17 @@ select.input-editable {
   color: var(--text-white) !important;
   border: none !important;
   font-size: var(--font-size-base) !important;
+  border-radius: 4px !important;
 }
 
 /* [SignupView.vue] 취소 버튼 */
 .cancel-btn {
   flex: 1 !important;
-  background: #e0e0e0 !important;
+  background: var(--gray-400) !important;
   color: var(--text-dark) !important;
   border: none !important;
   font-size: var(--font-size-base) !important;
+  border-radius: 4px !important;
 }
 
 /* [SignupView.vue] 로그인 링크(회원가입 하단)*/
@@ -2431,3 +2450,274 @@ select.input-editable {
     max-width: 98vw !important;
   }
 }
+
+/* ===================================================== */
+/* TopNavigationBar.vue (상단 네비게이션 바) 전역 스타일 */
+/* ===================================================== */
+
+/* [TopNavigationBar.vue] 상단 네비게이션 바 전체 컨테이너 - 고정 위치, 배경, 구분선, 그림자 등 */
+.top-nav {
+  height: 48px !important; /* 사이드바 로고 높이와 동기화 */
+  background: var(--bg-topbar) !important; /* CSS 변수 사용 (흰색) */
+  color: var(--text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important; /* 오른쪽 사용자 메뉴 등을 위한 공간 확보 */
+  padding: 0 1.5rem !important; /* 좌우 패딩 (24px) */
+  box-sizing: border-box !important;
+  position: fixed !important;
+  top: 0 !important; /* 상단에 붙임 */
+  left: 210px !important; /* 사이드바 너비와 일치시킴 */
+  right: 0 !important; /* 오른쪽 끝까지 확장 */
+  z-index: var(--z-index-topbar) !important;
+  border-bottom: 1px solid var(--border-secondary) !important; /* 구분선 색상 */
+  box-shadow: none !important; /* 그림자 제거 */
+}
+
+/* [TopNavigationBar.vue] 브레드크럼 영역 - 메뉴/서브메뉴 표시, 정렬, 간격 등 */
+.top-nav-breadcrumb {
+  display: flex !important;
+  align-items: center !important;
+  margin-left: 0 !important; /* 왼쪽 여백 제거 (top-nav 패딩 사용) */
+  font-size: var(--font-size-base) !important; /* 기본 폰트 크기 (15px) */
+  gap: 0.5rem !important; /* 아이템 간 간격 */
+}
+
+/* [TopNavigationBar.vue] 대메뉴 텍스트 */
+.breadcrumb-menu {
+  font-size: var(--font-size-base) !important; /* 대메뉴 폰트 크기 */
+  color: var(--text-secondary) !important; /* 약간 연한 색 */
+  font-weight: 500 !important;
+}
+
+/* [TopNavigationBar.vue] 브레드크럼 구분자 */
+.breadcrumb-sep {
+  color: var(--text-secondary) !important;
+}
+
+/* [TopNavigationBar.vue] 중메뉴 텍스트 */
+.breadcrumb-submenu {
+  font-size: var(--font-size-title) !important;
+  color: var(--text-primary) !important; /* 더 진한 색 */
+  font-weight: 600 !important; /* 중메뉴 더 굵게 */
+}
+
+/* ===================================================== */
+/* SideNavigationBar.vue (좌측 사이드 네비게이션 바) 전역 스타일 */
+/* ===================================================== */
+
+/* [SideNavigationBar.vue] 사이드 네비게이션 전체 컨테이너 - 고정 위치, 배경, 구분선, 레이아웃 등 */
+.side-nav {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100vh !important;
+  width: 210px !important;
+  background: var(--bg-sidebar) !important;
+  color: var(--text-primary) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-right: 1px solid var(--border-secondary) !important;
+  z-index: var(--z-index-sidebar) !important;
+}
+
+/* [SideNavigationBar.vue] 로고 영역 - 로고 이미지, 정렬, 크기 등 */
+.side-nav-logo {
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  color: var(--primary-color) !important;
+}
+.logo-image {
+  max-height: 40px !important;
+  max-width: 180px !important;
+  object-fit: contain !important;
+}
+
+/* [SideNavigationBar.vue] 메뉴 리스트(대메뉴/중메뉴) */
+.side-nav-list {
+  flex: 1 !important;
+  list-style: none !important;
+  margin: 0 !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1rem !important;
+  overflow-y: auto !important;
+}
+.side-nav-section {
+  margin-bottom: 0.25rem !important;
+}
+
+/* [SideNavigationBar.vue] 대메뉴 라벨(아이콘+텍스트) */
+.side-nav-section-label {
+  padding: 0.4rem 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  font-size: var(--font-size-lg) !important;
+  color: var(--text-primary) !important;
+  font-weight: bold !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  transition:
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out !important;
+  gap: 0.5rem !important;
+  text-shadow: none !important;
+}
+.side-nav-section-label:hover {
+  background-color: var(--primary-color-lightest) !important;
+  color: var(--primary-color) !important;
+  border-radius: 6px !important;
+  margin-right: 1.5rem !important;
+}
+.side-nav-section-label.open {
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+}
+.side-nav-section-icon {
+  font-size: var(--font-size-lg) !important;
+  color: var(--text-primary) !important;
+  transition: color 0.2s ease-in-out !important;
+  margin-right: 0 !important;
+}
+.side-nav-section-label:hover .side-nav-section-icon,
+.side-nav-section-label.open:hover .side-nav-section-icon {
+  color: var(--primary-color) !important;
+}
+
+/* [SideNavigationBar.vue] 중메뉴 리스트/아이템 */
+.side-nav-sub-list {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0.25rem 0 !important;
+  font-weight: 600 !important;
+}
+.side-nav-sub-item {
+  display: flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  padding: 0.4rem 1rem 0.4rem 1.6rem !important;
+  color: var(--text-secondary) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  transition:
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
+}
+.side-nav-sub-item.active {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  margin-right: 1.5rem;
+}
+.side-nav-sub-item:not(.active):hover {
+  background-color: var(--primary-color-lightest) !important;
+  border-radius: 6px !important;
+  margin-right: 1.5rem !important;
+}
+
+/* [SideNavigationBar.vue] 하단(프로필/로그아웃) */
+.side-nav-bottom {
+  border-top: 1px solid var(--border-secondary);
+  padding: 1rem 1rem;
+  background: var(--bg-sidebar);
+}
+.side-nav-profile {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.side-nav-profile-icon {
+  font-size: 1.4rem !important;
+  color: var(--text-secondary) !important;
+  margin-left: 1rem !important;
+}
+.side-nav-profile-info {
+  display: flex;
+  flex-direction: column;
+}
+.side-nav-profile-email {
+  font-size: var(--font-size-base) !important;
+  color: var(--text-primary) !important;
+  margin-left: 1rem !important;
+  font-weight: 500 !important;
+}
+.side-nav-profile-role {
+  font-size: var(--font-size-base) !important;
+  color: var(--text-secondary) !important;
+  margin-left: 1rem !important;
+}
+.side-nav-logout {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary) !important;
+  font-size: var(--font-size-base) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: color 0.15s !important;
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  margin-bottom: 0.5rem !important;
+}
+.side-nav-logout:hover {
+  color: var(--primary-color) !important;
+  opacity: 1 !important;
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* DataTable Footer (합계 행) 공통 스타일 */
+.p-datatable .p-datatable-tfoot > tr > td.footer-cell {
+  background-color: #f8f9fa !important; /* 합계 행 배경색 */
+  font-weight: bold !important; /* 글자 굵게 */
+  border-top: 1px solid #dee2e6 !important; 
+  border-right: 1px solid #dee2e6 !important; 
+}
+
+/* 제품 검색 드롭다운 스타일 */
+.product-search-dropdown {
+  position: absolute;
+  width: 100%; /* 부모 요소 너비에 맞춤 */
+  max-height: 220px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #d0d7e2;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.product-search-dropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-search-dropdown li:hover,
+.product-search-dropdown li.selected {
+  background-color: var(--primary-blue-light);
+}
+
+.product-search-dropdown li .product-name {
+  flex: 1;
+  text-align: left;
+}
+
+.product-search-dropdown li .insurance-code {
+  min-width: 90px;
+  text-align: right;
+  color: #888;
+}
+

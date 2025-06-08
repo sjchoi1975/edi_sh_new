@@ -6,7 +6,7 @@
     <div class="filter-card">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-          <label style="white-space: nowrap; font-weight: 400">기준월</label>
+          <label style="white-space: nowrap;">기준월</label>
           <select v-model="selectedMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
@@ -52,7 +52,7 @@
         </Column>
         <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true">
           <template #body="slotProps">
-            <a href="#" class="text-link" style="font-weight: 500;" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.product_name }}</a>
+            <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.product_name }}</a>
           </template>
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />

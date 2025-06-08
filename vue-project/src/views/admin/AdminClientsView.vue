@@ -75,7 +75,7 @@
               v-model="slotProps.data.name"
               class="inline-edit-input"
             />
-            <a v-else href="#" style="color: #1976d2; text-decoration: underline; cursor: pointer" @click.prevent="goToDetail(slotProps.data.id)">
+            <a v-else href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
               {{ slotProps.data.name }}
             </a>
           </template>
