@@ -38,7 +38,7 @@
           </label>
           <div v-if="files.length" style="margin-top:6px;">
             <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:2px;">
-              <button type="button" class="btn delete-m" @click="removeFile(idx)">삭제</button>
+              <button type="button" class="btn-delete-sm" @click="removeFile(idx)">삭제</button>
               <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
             </div>
           </div>

@@ -241,19 +241,12 @@
                 </div>
                 <div style="width: 80px; text-align: center">
                   <button
+                    class="btn-delete-sm"
                     @click="deleteFile(file, index)"
-                    style="
-                      color: red;
-                      border: none;
-                      background: none;
-                      cursor: pointer;
-                      font-size: 1.2rem;
-                      font-weight: 400;
-                    "
                     title="파일 삭제"
                     :disabled="!isInputPeriod"
                   >
-                    ×
+                    삭제
                   </button>
                 </div>
               </div>
@@ -312,10 +305,10 @@
               >
                 <span>{{ file.name }}</span>
                 <button
+                  class="btn-delete-sm"
                   @click="removeFile(index)"
-                  style="color: red; border: none; background: none; cursor: pointer"
                 >
-                  ×
+                  삭제
                 </button>
               </div>
             </div>

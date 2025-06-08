@@ -270,8 +270,19 @@ const prescriptionOptions = ref([]);
 // 업체/거래처 관련
 const selectedCompanyId = ref('');
 const selectedHospitalId = ref('');
-const companies = ref([]);
-const hospitals = ref([]);
+
+// 필터링된 업체/거래처 목록 (computed)
+const companies = computed(() => {
+  if (displayRows.value.length === 0) return [];
+  const uniqueCompanies = [...new Map(displayRows.value.map(item => [item.company_id, {id: item.company_id, company_name: item.company_name}])).values()];
+  return uniqueCompanies.sort((a,b) => a.company_name.localeCompare(b.company_name));
+});
+
+const hospitals = computed(() => {
+  if (displayRows.value.length === 0) return [];
+  const uniqueHospitals = [...new Map(displayRows.value.map(item => [item.client_id, {id: item.client_id, name: item.client_name}])).values()];
+  return uniqueHospitals.sort((a,b) => a.name.localeCompare(b.name));
+});
 
 // 분석 데이터
 const displayRows = ref([]);
@@ -363,15 +374,12 @@ watch(selectedSettlementMonth, () => {
   prescriptionMonth.value = '';
   selectedCompanyId.value = '';
   selectedHospitalId.value = '';
-  companies.value = [];
-  hospitals.value = [];
   hasExistingData.value = false; // 기존 데이터 존재 여부 초기화
   
   // 정산월 선택 시 흡수율 분석 데이터 자동 조회
   if (selectedSettlementMonth.value) {
     loadAbsorptionAnalysisData();
-    fetchCompanies();
-    fetchHospitals();
+    fetchAllMasterData();
   } else {
     displayRows.value = [];
   }
@@ -512,42 +520,101 @@ async function fetchAvailableMonths() {
   }
 }
 
-async function fetchCompanies() {
+async function fetchAllMasterData() {
   try {
-    const { data, error } = await supabase
-      .from('companies')
-      .select('*')
-      .order('company_name');
+    await fetchCompanies();
+    await fetchHospitals();
+  } catch (err) {
+    console.error('전체 마스터 데이터 로드 오류:', err);
+  }
+}
+
+async function fetchCompanies() {
+  if (!selectedSettlementMonth.value) {
+    companies.value = [];
+    return;
+  }
+  
+  try {
+    let query = supabase
+      .from('performance_records')
+      .select('company_id, companies!inner(*)')
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+      
+    const { data, error } = await query;
       
     if (error) {
-      console.error('업체 목록 조회 오류:', error);
+      console.error('업체 조회 오류:', error);
       return;
     }
     
-    companies.value = data || [];
-    allCompanies.value = data || [];
+    const uniqueCompanies = [];
+    const companyIds = new Set();
+    
+    data?.forEach(record => {
+      if (record.companies && !companyIds.has(record.companies.id)) {
+        companyIds.add(record.companies.id);
+        uniqueCompanies.push({
+          id: record.companies.id,
+          company_name: record.companies.company_name,
+        });
+      }
+    });
+    
+    companies.value = uniqueCompanies.sort((a, b) => a.company_name.localeCompare(b.company_name));
   } catch (err) {
     console.error('업체 목록 조회 예외:', err);
   }
 }
 
 async function fetchHospitals() {
+  if (!selectedSettlementMonth.value) {
+    hospitals.value = [];
+    return;
+  }
+  
   try {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('status', 'active')
-      .order('name');
+    let query = supabase
+      .from('performance_records')
+      .select('client_id, clients!inner(*)')
+      .eq('settlement_month', selectedSettlementMonth.value);
+
+    if (prescriptionOffset.value !== 0) {
+      query = query.eq('prescription_month', prescriptionMonth.value);
+    }
+
+    if (selectedCompanyId.value) {
+      query = query.eq('company_id', selectedCompanyId.value);
+    }
+      
+    const { data, error } = await query;
       
     if (error) {
       console.error('거래처 목록 조회 오류:', error);
       return;
     }
     
-    hospitals.value = data || [];
-    allClients.value = data || [];
+    const uniqueHospitals = [];
+    const seenIds = new Set();
+    
+    data?.forEach(record => {
+      if (record.clients && !seenIds.has(record.clients.id)) {
+        seenIds.add(record.clients.id);
+        uniqueHospitals.push({
+          id: record.clients.id,
+          name: record.clients.name
+        });
+      }
+    });
+    
+    hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
   } catch (err) {
     console.error('거래처 목록 조회 예외:', err);
+    hospitals.value = [];
   }
 }
 
@@ -580,6 +647,7 @@ async function loadAbsorptionAnalysisData() {
     if (error) {
       console.error('흡수율 분석 데이터 조회 오류:', error);
       displayRows.value = [];
+      hasExistingData.value = false; // 기존 데이터 없음
       return;
     }
 
@@ -1352,107 +1420,50 @@ async function runAbsorptionAnalysis() {
   }
 
   console.log('🚀 흡수율 분석 시작...');
-  console.log(`분석 대상: ${displayRows.value.length}건`);
-
+  
   try {
-    // 1단계: 처방월 범위 확인
-    const prescriptionMonths = [...new Set(displayRows.value.map(row => row.prescription_month))];
-    console.log('처방월 범위:', prescriptionMonths);
+    // 데이터 준비
+    const { data: wholesaleSales, error: wholesaleError } = await supabase.from('wholesale_sales').select('*');
+    if (wholesaleError) throw new Error('도매매출 데이터 조회 실패: ' + wholesaleError.message);
 
-    // 2단계: 도매매출 데이터 조회
-    console.log('📋 도매매출 데이터 조회 중...');
-    const { data: wholesaleSales, error: wholesaleError } = await supabase
-      .from('wholesale_sales')
-      .select('*');
-
-    if (wholesaleError) {
-      throw new Error('도매매출 데이터 조회 실패: ' + wholesaleError.message);
-    }
-
-    console.log(`도매매출 데이터: ${wholesaleSales?.length || 0}건`);
-
-    // 3단계: 직거래매출 데이터 조회  
-    console.log('📋 직거래매출 데이터 조회 중...');
-    const { data: directSales, error: directError } = await supabase
-      .from('direct_sales')
-      .select('*');
-
-    if (directError) {
-      throw new Error('직거래매출 데이터 조회 실패: ' + directError.message);
-    }
-
-    console.log(`직거래매출 데이터: ${directSales?.length || 0}건`);
-
-    // 4단계: 제품 정보 조회 (보험코드-표준코드 매핑용)
-    console.log('📋 제품 정보 조회 중...');
-    const { data: products, error: productsError } = await supabase
-      .from('products')
-      .select('*');
-
-    if (productsError) {
-      throw new Error('제품 정보 조회 실패: ' + productsError.message);
-    }
-
-    console.log(`제품 정보: ${products?.length || 0}건`);
-
-    // 5단계: 병원-약국 매핑 정보 조회
-    console.log('📋 병원-약국 매핑 정보 조회 중...');
-    const { data: pharmacyMappings, error: mappingError } = await supabase
-      .from('pharmacy_mappings')
-      .select(`
-        *,
-        clients!inner(name, business_registration_number),
-        pharmacies!inner(pharmacy_name, business_registration_number)
-      `);
-
-    if (mappingError) {
-      console.warn('병원-약국 매핑 정보 조회 실패:', mappingError.message);
-      // 매핑 정보가 없어도 일단 진행
-    }
-
-    console.log(`병원-약국 매핑: ${pharmacyMappings?.length || 0}건`);
-
-    // 6단계: 매출 데이터 필터링 및 매칭 준비
-    console.log('🔍 매출 데이터 매칭 시작...');
+    const { data: directSales, error: directError } = await supabase.from('direct_sales').select('*');
+    if (directError) throw new Error('직거래매출 데이터 조회 실패: ' + directError.message);
     
-    let processedCount = 0;
-    let matchedWholesale = 0;
-    let matchedDirect = 0;
+    const { data: products, error: productsError } = await supabase.from('products').select('insurance_code, standard_code');
+    if (productsError) throw new Error('제품 정보 조회 실패: ' + productsError.message);
+
+    const { data: pharmacyMappings, error: mappingError } = await supabase.from('pharmacy_mappings').select('client_id, pharmacy_id');
+    if (mappingError) console.warn('병원-약국 매핑 정보 조회 실패:', mappingError.message);
+
+    // [규칙 2] 보험코드 -> 표준코드 목록 맵 생성
+    const insuranceToStandardMap = products.reduce((map, p) => {
+      if (p.insurance_code && p.standard_code) {
+        if (!map[p.insurance_code]) {
+          map[p.insurance_code] = [];
+        }
+        map[p.insurance_code].push(p.standard_code);
+      }
+      return map;
+    }, {});
 
     for (let i = 0; i < displayRows.value.length; i++) {
       const row = displayRows.value[i];
       
-      console.log(`[${i+1}/${displayRows.value.length}] 처리 중: ${row.client_name} - ${row.product_name_display}`);
-      
-      // 7단계: 해당 행의 도매매출 계산
       const wholesaleAmount = await calculateWholesaleAmount(
-        row, wholesaleSales, products, pharmacyMappings
+        row, wholesaleSales, insuranceToStandardMap, pharmacyMappings || []
       );
       
-      // 8단계: 해당 행의 직거래매출 계산  
       const directAmount = await calculateDirectAmount(
-        row, directSales, products, pharmacyMappings
+        row, directSales, insuranceToStandardMap, pharmacyMappings || []
       );
       
-      // 9단계: 결과 적용
       row.wholesale_sales = wholesaleAmount;
       row.direct_sales = directAmount;
       
-      if (wholesaleAmount > 0) matchedWholesale++;
-      if (directAmount > 0) matchedDirect++;
-      
-      processedCount++;
-      
-      // 실시간 재계산
       recalculateRow(i);
     }
 
-    // 분석 완료 메시지
-    alert(`흡수율 분석 완료!\n\n` +
-          `✅ 처리 건수: ${processedCount}건\n` +
-          `📊 도매매출 매칭: ${matchedWholesale}건\n` +
-          `📊 직거래매출 매칭: ${matchedDirect}건\n\n` +
-          `이제 합산액과 흡수율이 자동 계산되었습니다.`);
+    alert('흡수율 분석이 완료되었습니다.');
 
   } catch (err) {
     console.error('흡수율 분석 오류:', err);
@@ -1461,14 +1472,24 @@ async function runAbsorptionAnalysis() {
 }
 
 // 도매매출 계산 함수
-async function calculateWholesaleAmount(row, wholesaleSales, products, pharmacyMappings) {
-  // TODO: 다음 단계에서 구현
-  console.log(`  📊 도매매출 계산: ${row.product_name_display}`);
-  return 0;
+async function calculateWholesaleAmount(row, wholesaleSales, insuranceToStandardMap, pharmacyMappings) {
+  const standardCodes = insuranceToStandardMap[row.insurance_code] || [];
+  if (standardCodes.length === 0) return 0;
+  
+  const prescriptionYearMonth = row.prescription_month.substring(0, 7);
+
+  const totalAmount = wholesaleSales
+    .filter(sale => 
+      standardCodes.includes(sale.standard_code) &&
+      sale.sale_date.startsWith(prescriptionYearMonth)
+    )
+    .reduce((sum, sale) => sum + (sale.amount || 0), 0);
+    
+  return totalAmount;
 }
 
 // 직거래매출 계산 함수  
-async function calculateDirectAmount(row, directSales, products, pharmacyMappings) {
+async function calculateDirectAmount(row, directSales, insuranceToStandardMap, pharmacyMappings) {
   // TODO: 다음 단계에서 구현
   console.log(`  📊 직거래매출 계산: ${row.product_name_display}`);
   return 0;
@@ -1477,8 +1498,7 @@ async function calculateDirectAmount(row, directSales, products, pharmacyMapping
 // 라이프사이클
 onMounted(async () => {
   await fetchAvailableMonths();
-  await fetchCompanies();
-  await fetchHospitals();
+  await fetchAllMasterData();
   
   document.addEventListener('click', handleGlobalClick);
 });

@@ -88,6 +88,7 @@
 .btn-reset-password,
 .btn-select-all,
 .btn-select-none,
+.file-upload-label,
 .file-label {
   padding: 0.4rem 1rem !important;
   margin: 0.5rem 1rem 0rem 0rem !important;
@@ -198,6 +199,11 @@
   border-color: var(--gray-400) !important;
   color: var(--text-dark) !important;
 }
+.file-upload-label {
+  background: var(--gray-100) !important;
+  border-color: var(--gray-400) !important;
+  color: var(--text-dark) !important;
+}
 .file-label {
   background: var(--gray-200) !important;
   border-color: var(--gray-400) !important;
@@ -225,6 +231,7 @@ button:hover:not(:disabled),
 .btn-close:hover:not(:disabled),
 .btn-select-all:hover:not(:disabled),
 .btn-select-none:hover:not(:disabled),
+.file-upload-label:hover:not(:disabled),
 .file-label:hover:not([disabled]) {
   opacity: 0.9 !important;
   transform: translateY(0px) !important;
