@@ -83,8 +83,8 @@
         class="admin-absorption-analysis-table"
         dataKey="id"
         :pt="{
-          wrapper: { style: 'min-width: 2800px;' },
-          table: { style: 'min-width: 2800px;' }
+          wrapper: { style: 'min-width: 3000px;' },
+          table: { style: 'min-width: 3000px;' }
         }"
       >
         <template #empty>
@@ -189,7 +189,7 @@
           <Column field="orig_registered_by" header="등록자" :headerStyle="{ width: columnWidths.orig_registered_by }" :sortable="true" />
           <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true" />
         
-        <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right" >
+        <Column header="작업" :headerStyle="{ width: columnWidths.actions }" frozen frozenPosition="right">
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center;">
                 <button v-if="!slotProps.data.isEditing" class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정">✎</button>
@@ -214,7 +214,7 @@
                     <Column footer="" footerClass="footer-cell" />
                     <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
                     <Column :colspan="4" footerClass="footer-cell" />
-                    <Column footer="" footerClass="footer-cell" frozen frozenPosition="right" />
+                    <Column footer="" footerClass="footer-cell" frozen />
                 </Row>
             </ColumnGroup>
         </DataTable>
@@ -649,21 +649,9 @@ async function loadPerformanceData() {
       .from('performance_records')
       .select(`
         *,
-        products!inner(
-          product_name, 
-          insurance_code, 
-          price,
-          commission_rate_a,
-          commission_rate_b,
-          commission_rate_c
-        ),
+        products!inner(product_name, insurance_code, price),
         clients!inner(name),
-        companies!inner(
-          company_name, 
-          company_group, 
-          assigned_pharmacist_contact,
-          default_commission_grade
-        )
+        companies!inner(company_name, company_group, assigned_pharmacist_contact)
       `)
       .eq('settlement_month', selectedSettlementMonth.value);
 
@@ -674,6 +662,9 @@ async function loadPerformanceData() {
     
     if (data && data.length > 0) {
       console.log('첫 번째 데이터 샘플:', data[0]);
+      console.log('companies 조인 데이터:', data[0].companies);
+      console.log('company_group:', data[0].companies?.company_group);
+      console.log('assigned_pharmacist_contact:', data[0].companies?.assigned_pharmacist_contact);
     }
 
     if (error) {
@@ -689,13 +680,14 @@ async function loadPerformanceData() {
 
     const analysisData = [];
     
+    // 실적 정보를 불러올 때는 기존 데이터가 없는 상태
     hasExistingData.value = false;
     
     for (const record of data) {
       const row = {
         id: `temp_${Date.now()}_${Math.random()}`,
         original_id: record.id,
-        company_id: record.company_id || record.companies.id,
+        company_id: record.company_id || record.companies.id, // company_id 추가 (없으면 companies.id)
         company_group: record.companies.company_group,
         company_name: record.companies.company_name,
         client_name: record.clients.name,
@@ -715,44 +707,72 @@ async function loadPerformanceData() {
         payment_amount: 0,
         remarks: record.remarks || '',
         orig_created_at: record.created_at,
-        orig_registered_by: record.companies.company_name,
+        orig_registered_by: record.companies.company_name, // 등록자는 업체명으로 설정
         assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact
       };
 
-      // 수수료율 자동 계산
-      const company = record.companies;
-      const product = record.products;
-      
-      if (company && product && company.default_commission_grade) {
-        let commissionRateDecimal = null;
-        const grade = company.default_commission_grade; // 'A', 'B', or 'C'
+      console.log('처리 중인 행:', row.company_name);
+      console.log('company_group:', row.company_group);
+      console.log('assigned_pharmacist_contact:', row.assigned_pharmacist_contact);
 
-        switch (grade) {
-          case 'A':
-            commissionRateDecimal = product.commission_rate_a;
-            break;
-          case 'B':
-            commissionRateDecimal = product.commission_rate_b;
-            break;
-          case 'C':
-            commissionRateDecimal = product.commission_rate_c;
-            break;
-        }
-        
-        if (commissionRateDecimal !== null && commissionRateDecimal !== undefined && !isNaN(commissionRateDecimal)) {
-          row.commission_rate = (Number(commissionRateDecimal) * 100).toFixed(1);
-          const prescriptionAmount = record.prescription_qty * product.price;
-          row.payment_amount = Math.round(prescriptionAmount * Number(commissionRateDecimal));
+      // 수수료율 자동 계산
+      try {
+        // 업체 정보 조회
+        const { data: company, error: companyError } = await supabase
+          .from('companies')
+          .select('commission_grade')
+          .eq('company_name', record.companies.company_name.trim())
+          .single();
+
+        if (companyError) {
+          console.warn(`업체 정보 조회 실패 (${record.companies.company_name}):`, companyError.message);
+        } else if (!company || !company.commission_grade) {
+          console.warn(`업체 수수료 등급 정보 없음: ${record.companies.company_name}`);
         } else {
-          row.commission_rate = '0.0';
+        // 제품 정보 조회
+          const { data: product, error: productError } = await supabase
+          .from('products')
+          .select('commission_rate_A, commission_rate_B, commission_rate_C')
+          .eq('product_name', record.products.product_name.trim())
+          .single();
+
+          if (productError) {
+            console.warn(`제품 정보 조회 실패 (${record.products.product_name}):`, productError.message);
+          } else if (!product) {
+            console.warn(`제품 수수료율 정보 없음: ${record.products.product_name}`);
+          } else {
+          const commissionField = `commission_rate_${company.commission_grade}`;
+          const commissionRate = product[commissionField];
+          
+            if (commissionRate !== null && commissionRate !== undefined && !isNaN(commissionRate)) {
+            const percentageRate = Number(commissionRate) * 100;
+            row.commission_rate = percentageRate;
+            
+            const prescriptionAmount = record.prescription_qty * record.products.price;
+            row.payment_amount = Math.round(prescriptionAmount * commissionRate);
+            
+              console.log(`수수료율 계산 성공: ${record.products.product_name} - ${percentageRate}%`);
+            } else {
+              console.warn(`수수료율 값이 유효하지 않음: ${record.products.product_name}, ${commissionField}=${commissionRate}`);
+            }
+          }
         }
-      } else {
-        row.commission_rate = '0.0';
+      } catch (err) {
+        console.error(`수수료율 계산 예외 (${record.products.product_name}):`, err);
+        // 에러가 발생해도 계속 진행
       }
+
       analysisData.push(row);
     }
 
     displayRows.value = analysisData;
+    
+    console.log('최종 analysisData:', analysisData.length, '건');
+    if (analysisData.length > 0) {
+      console.log('첫 번째 최종 데이터:', analysisData[0]);
+      console.log('최종 company_group:', analysisData[0].company_group);
+      console.log('최종 assigned_pharmacist_contact:', analysisData[0].assigned_pharmacist_contact);
+    }
     
     alert(`${analysisData.length}건의 실적 데이터를 불러왔습니다.`);
 

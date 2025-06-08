@@ -36,7 +36,7 @@
       <DataTable
         :value="filteredProducts"
         paginator
-        :rows="20"
+        :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"

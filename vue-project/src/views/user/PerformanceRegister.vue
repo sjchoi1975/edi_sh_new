@@ -432,10 +432,6 @@ const viewModalVisible = ref(false)
 const viewModalData = ref([])
 const viewModalClient = ref(null)
 
-const excelFileInput = ref(null)
-const selectedExcelFile = ref(null)
-const uploadErrors = ref([])
-
 const formatNumber = (value) => {
   if (!value) return '0'
   return new Intl.NumberFormat('ko-KR').format(value)

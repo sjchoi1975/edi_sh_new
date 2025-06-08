@@ -30,7 +30,7 @@
 
       <DataTable
         :value="pendingCompanies"
-        paginator :rows="20" :rowsPerPageOptions="[20, 50, 100]"
+        paginator :rows="50" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
         scrollable scrollHeight="calc(100vh - 250px)" 
         v-model:filters="filters"
