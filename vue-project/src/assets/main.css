@@ -900,7 +900,7 @@ select.input-editable {
 }
 
 .input-table.prime-like-table tr:hover td {
-  background: #f6faff;
+  background: var(--bg-hover) !important;
 }
 
 .input-table.prime-like-table .action-cell {
@@ -1235,7 +1235,7 @@ select.input-editable {
 }
 
 .input-table.prime-like-table tr:hover td {
-  background: #f6faff;
+  background: var(--bg-hover) !important;
 }
 
 .input-table.prime-like-table .action-cell {
