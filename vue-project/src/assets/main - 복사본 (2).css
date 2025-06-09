@@ -852,6 +852,199 @@ select.input-editable {
 /* ------ PerformanceRegister.vue 모달 스타일 ------ */
 /* 증빙파일 보기/업로드 모달에서 사용 */
 
+/* ------ PerformanceRegisterRegist.vue / PerformanceRegisterEdit.vue 실적 입력 테이블 스타일 ------ */
+/* 실적 등록 및 수정 화면의 테이블/입력 폼에서 사용 */
+.top-bar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.left-group {
+  display: flex;
+  align-items: center;
+}
+
+.input-table.prime-like-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+  overflow: hidden;
+  display: table;
+  position: relative;
+  padding: 0px 0px;
+}
+
+.input-table.prime-like-table th {
+  background: var(--bg-secondary) !important; /* #f1f3f5 */
+  border-bottom: 1px solid var(--border-primary) !important; /* #dee2e6 */
+  border-right: 1px solid var(--border-primary) !important; /* #dee2e6 */
+  padding: 4px 4px;
+  text-align: center;
+}
+
+.input-table.prime-like-table td {
+  border-bottom: 1px solid var(--border-secondary) !important; /* #d1dbe6 */
+  border-right: 1px solid var(--border-secondary) !important; /* #d1dbe6 */
+  padding: 4px 8px 0px 8px;
+  transition: background 0.2s;
+}
+
+/* 마지막 컬럼은 세로 선 제거 */
+.input-table.prime-like-table td:last-child,
+.input-table.prime-like-table th:last-child {
+  border-right: none;
+}
+
+.input-table.prime-like-table tr:hover td {
+  background: var(--bg-hover) !important;
+}
+
+.input-table.prime-like-table .action-cell {
+  text-align: center;
+}
+
+.btn-primary.register-button {
+  min-width: 80px;
+  height: 36px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary.register-button:disabled {
+  background: #bcd0ee;
+  cursor: not-allowed;
+}
+
+.input-table.prime-like-table td .readonly-span {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  line-height: 32px;
+  background: none;
+  border: none;
+  color: #222;
+  padding: 0 1rem;
+  text-align: inherit;
+}
+
+.product-search-dropdown {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 10;
+  width: 100%;
+  min-height: 36px;
+  max-height: 600px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d0d7e2;
+  border-radius: 0px 0px 6px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 실적 등록 테이블 높이 조정 */
+.input-table-wrapper {
+  position: relative;
+  height: 710px;
+  overflow: hidden;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-table.prime-like-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #f4f6fa !important;
+  color: #495057;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  padding: 0px 4px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.product-input-container {
+  position: relative;
+  margin: 0 0.5rem;
+  padding: 0 0;
+}
+
+/* 헤더 고정 강화 */
+.input-table.prime-like-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.input-table.prime-like-table tbody {
+  position: relative;
+  z-index: 1;
+}
+
+/* 고정 헤더 영역 */
+.table-header-fixed {
+  background: #f4f6fa;
+  border: 1px solid #dee2e6;
+  border-bottom: 2px solid #dee2e6;
+  border-radius: 0px 0px 0 0;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+.table-header-fixed table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.table-header-fixed th {
+  background: #f1f3f5 !important;
+  color: #495057;
+  font-weight: 400;
+  padding: 8px 4px;
+  text-align: center;
+  border: none;
+  border-right: 1px solid #dee2e6;
+}
+
+/* 스크롤 가능한 바디 영역 */
+.table-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 0px 0px;
+}
+
+.table-body-scroll table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.table-header-fixed table,
+.table-body-scroll table {
+  table-layout: fixed !important;
+}
 
 /* ========================================== */
 /* 15. 화면별 테이블 정렬 스타일                */
