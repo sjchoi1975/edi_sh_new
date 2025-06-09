@@ -335,11 +335,12 @@ onMounted(() => {
 })
 
 const downloadTemplate = () => {
+  // 기준월과 보험코드에 예시 데이터 추가 (보험코드 앞에 0이 있는 예시)
   const templateData = [
     {
       기준월: '2025-01',
       제품명: '팜플정',
-      보험코드: '601234567',
+      보험코드: '0601234567', // 앞자리 0이 있는 예시
       약가: 1000,
       수수료A: 0.45,
       수수료B: 0.44,
@@ -349,25 +350,68 @@ const downloadTemplate = () => {
       비고: '',
       상태: '활성',
     },
+    {
+      기준월: '2025-02',
+      제품명: '테스트약',
+      보험코드: '601234567',
+      약가: 2000,
+      수수료A: 0.40,
+      수수료B: 0.39,
+      표준코드: '8800987654321',
+      단위포장형태: '캡슐 20개',
+      단위수량: 20,
+      비고: '예시',
+      상태: '활성',
+    },
   ]
 
   const ws = XLSX.utils.json_to_sheet(templateData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '제품템플릿')
 
+  // 컬럼 너비 설정
   ws['!cols'] = [
-    { width: 10 },
-    { width: 20 },
-    { width: 12 },
-    { width: 10 },
-    { width: 10 },
-    { width: 10 },
-    { width: 16 },
-    { width: 16 },
-    { width: 10 },
-    { width: 20 },
-    { width: 10 },
+    { width: 12 }, // 기준월
+    { width: 20 }, // 제품명
+    { width: 15 }, // 보험코드
+    { width: 10 }, // 약가
+    { width: 10 }, // 수수료A
+    { width: 10 }, // 수수료B
+    { width: 16 }, // 표준코드
+    { width: 16 }, // 단위포장형태
+    { width: 10 }, // 단위수량
+    { width: 20 }, // 비고
+    { width: 10 }, // 상태
   ]
+
+  // A열과 C열 전체를 텍스트 형식으로 설정 (1000행까지 미리 설정)
+  const maxRows = 1000; // 충분한 행 수 설정
+  
+  for (let row = 0; row < maxRows; row++) {
+    // A열 (기준월) - 빈 셀이라도 텍스트 형식으로 설정
+    const cellA = XLSX.utils.encode_cell({ r: row, c: 0 })
+    if (!ws[cellA]) {
+      ws[cellA] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
+    } else {
+      ws[cellA].t = 's' // 문자열 타입
+      ws[cellA].z = '@' // 텍스트 형식
+    }
+    
+    // C열 (보험코드) - 빈 셀이라도 텍스트 형식으로 설정
+    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
+    if (!ws[cellC]) {
+      ws[cellC] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
+    } else {
+      ws[cellC].t = 's' // 문자열 타입
+      ws[cellC].z = '@' // 텍스트 형식
+    }
+  }
+  
+  // 워크시트 범위 업데이트 (1000행까지 확장)
+  ws['!ref'] = XLSX.utils.encode_range({
+    s: { c: 0, r: 0 },
+    e: { c: 10, r: maxRows - 1 }
+  })
 
   XLSX.writeFile(wb, '제품_엑셀등록_템플릿.xlsx')
 }
@@ -391,7 +435,50 @@ const handleFileUpload = async (event) => {
       return
     }
 
-    const uploadData = []
+    // 업로드 데이터의 기준월들 추출
+    const uploadMonths = [...new Set(jsonData.map(row => row['기준월']).filter(month => month))]
+    
+    // 기존 데이터 확인
+    let hasExistingData = false
+    for (const month of uploadMonths) {
+      const existingProducts = products.value.filter(p => p.base_month === month)
+      if (existingProducts.length > 0) {
+        hasExistingData = true
+        break
+      }
+    }
+
+    // 1단계: 기존 데이터 존재 시 확인
+    let isAppendMode = false
+    if (hasExistingData) {
+      if (!confirm('기존 데이터가 있습니다.\n계속 등록하시겠습니까?')) {
+        event.target.value = ''
+        return
+      }
+
+      // 2단계: 추가 vs 대체 선택
+      isAppendMode = confirm('기존 데이터에 추가하시겠습니까? 대체하시겠습니까?\n\n확인: 기존 데이터는 그대로 추가 등록\n취소: 기존 데이터를 모두 지우고 등록')
+      
+      if (!isAppendMode) {
+        // 대체 모드: 해당 기준월의 기존 데이터 삭제
+        for (const month of uploadMonths) {
+          const { error: deleteError } = await supabase
+            .from('products')
+            .delete()
+            .eq('base_month', month)
+          
+          if (deleteError) {
+            alert('기존 데이터 삭제 실패: ' + deleteError.message)
+            event.target.value = ''
+            return
+          }
+        }
+        // 대체 모드에서는 로컬 데이터도 업데이트
+        products.value = products.value.filter(p => !uploadMonths.includes(p.base_month))
+      }
+    }
+
+    let uploadData = []
     const errors = []
 
     jsonData.forEach((row, index) => {
@@ -442,6 +529,7 @@ const handleFileUpload = async (event) => {
         unit_quantity: Number(row['단위수량']) || 0,
         remarks: row['비고'] || '',
         status: statusValue,
+        rowNum: rowNum // 에러 표시용
       })
     })
 
@@ -450,12 +538,84 @@ const handleFileUpload = async (event) => {
       return
     }
 
-    const { error } = await supabase.from('products').insert(uploadData)
+    // 3단계: 추가 모드일 때만 표준코드 중복 체크
+    if (hasExistingData && isAppendMode) {
+      const duplicateErrors = []
+      const duplicateProducts = []
+      
+      for (const newProduct of uploadData) {
+        if (newProduct.standard_code) {
+          // 기존 데이터에서 동일한 기준월의 표준코드 중복 확인
+          const existingProduct = products.value.find(p => 
+            p.base_month === newProduct.base_month && 
+            p.standard_code === newProduct.standard_code
+          )
+          
+          if (existingProduct) {
+            duplicateErrors.push(`${newProduct.rowNum}행: 이미 동일한 표준코드 제품이 등록되어 있습니다.`)
+            duplicateProducts.push(newProduct)
+          }
+        }
+      }
+
+      if (duplicateErrors.length > 0) {
+        // 4단계: 중복 발견 시 계속 진행 여부 확인
+        if (!confirm('중복 오류:\n' + duplicateErrors.join('\n') + '\n\n계속 등록 작업을 진행하시겠습니까?')) {
+          return
+        }
+
+        // 5단계: 중복 해결 방법 선택
+        const shouldReplace = confirm('이미 동일한 표준코드 제품을 어떻게 처리하시겠습니까?\n\n확인: 기존 제품 정보를 신규 제품 정보로 교체하기\n취소: 기존 제품 정보는 그대로 두고 신규 제품 정보만 등록하기')
+        
+        if (shouldReplace) {
+          // 교체 모드: 중복되는 기존 제품들 삭제
+          for (const duplicateProduct of duplicateProducts) {
+            const { error: deleteError } = await supabase
+              .from('products')
+              .delete()
+              .eq('base_month', duplicateProduct.base_month)
+              .eq('standard_code', duplicateProduct.standard_code)
+            
+            if (deleteError) {
+              alert('기존 제품 삭제 실패: ' + deleteError.message)
+              return
+            }
+          }
+          // 로컬 데이터에서도 삭제
+          for (const duplicateProduct of duplicateProducts) {
+            const index = products.value.findIndex(p => 
+              p.base_month === duplicateProduct.base_month && 
+              p.standard_code === duplicateProduct.standard_code
+            )
+            if (index > -1) {
+              products.value.splice(index, 1)
+            }
+          }
+        } else {
+          // 기존 유지 모드: 중복되는 신규 제품들 제외
+          const duplicateStandardCodes = duplicateProducts.map(p => p.standard_code)
+          uploadData = uploadData.filter(item => !duplicateStandardCodes.includes(item.standard_code))
+        }
+      }
+    }
+
+    // 최종 등록
+    const insertData = uploadData.map(item => {
+      const { rowNum, ...data } = item
+      return data
+    })
+
+    if (insertData.length === 0) {
+      alert('등록할 데이터가 없습니다.')
+      return
+    }
+
+    const { error } = await supabase.from('products').insert(insertData)
 
     if (error) {
       alert('업로드 실패: ' + error.message)
     } else {
-      alert(`${uploadData.length}건의 제품 데이터가 업로드되었습니다.`)
+      alert(`${insertData.length}건의 제품 데이터가 업로드되었습니다.`)
       await fetchProducts()
     }
   } catch (error) {
@@ -492,26 +652,45 @@ const downloadExcel = () => {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '제품목록')
 
+  // 컬럼 너비 설정
   ws['!cols'] = [
-    { width: 10 },
-    { width: 20 },
-    { width: 12 },
-    { width: 10 },
-    { width: 10 },
-    { width: 10 },
-    { width: 12 },
-    { width: 15 },
-    { width: 10 },
-    { width: 20 },
-    { width: 12 },
-    { width: 12 },
+    { width: 12 }, // 기준월
+    { width: 20 }, // 제품명
+    { width: 15 }, // 보험코드
+    { width: 10 }, // 약가
+    { width: 10 }, // 수수료A
+    { width: 10 }, // 수수료B
+    { width: 12 }, // 표준코드
+    { width: 15 }, // 단위포장형태
+    { width: 10 }, // 단위수량
+    { width: 20 }, // 비고
+    { width: 12 }, // 상태
+    { width: 12 }, // 등록일
+    { width: 12 }, // 수정일
   ]
 
   const range = XLSX.utils.decode_range(ws['!ref'])
-  for (let row = 1; row <= range.e.r; row++) {
-    const cellAddress = XLSX.utils.encode_cell({ r: row, c: 3 })
-    if (ws[cellAddress]) {
-      ws[cellAddress].z = '#,##0'
+  
+  // 모든 행에 대해 형식 설정
+  for (let row = 0; row <= range.e.r; row++) {
+    // A열 (기준월) - 텍스트 형식으로 설정
+    const cellA = XLSX.utils.encode_cell({ r: row, c: 0 })
+    if (ws[cellA]) {
+      ws[cellA].t = 's' // 문자열 타입
+      ws[cellA].z = '@' // 텍스트 형식
+    }
+    
+    // C열 (보험코드) - 텍스트 형식으로 설정
+    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
+    if (ws[cellC]) {
+      ws[cellC].t = 's' // 문자열 타입
+      ws[cellC].z = '@' // 텍스트 형식
+    }
+    
+    // D열 (약가) - 숫자 천 단위 구분자 형식
+    const cellD = XLSX.utils.encode_cell({ r: row, c: 3 })
+    if (ws[cellD] && row > 0) { // 헤더 제외
+      ws[cellD].z = '#,##0'
     }
   }
 
@@ -616,13 +795,24 @@ const deleteProduct = async (row) => {
 }
 
 async function deleteAllProducts() {
-  if (!confirm('정말 모든 제품을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  const { error } = await supabase.from('products').delete().neq('id', 0); // 전체 삭제
+  if (!selectedMonth.value) {
+    alert('기준월을 선택해주세요.');
+    return;
+  }
+  
+  const confirmMessage = `정말 ${selectedMonth.value} 기준월의 모든 제품을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  if (!confirm(confirmMessage)) return;
+  
+  // 선택된 기준월에 해당하는 제품만 삭제
+  const { error } = await supabase.from('products').delete().eq('base_month', selectedMonth.value);
   if (error) {
     alert('삭제 중 오류가 발생했습니다: ' + error.message);
     return;
   }
-  products.value = [];
-  alert('모든 제품이 삭제되었습니다.');
+  
+  // 로컬 데이터에서도 해당 기준월 제품 제거
+  products.value = products.value.filter(p => p.base_month !== selectedMonth.value);
+  
+  alert(`${selectedMonth.value} 기준월의 모든 제품이 삭제되었습니다.`);
 }
 </script>

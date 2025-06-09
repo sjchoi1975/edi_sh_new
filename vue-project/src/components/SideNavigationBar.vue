@@ -17,6 +17,12 @@
       </li>
     </ul>
     <div class="side-nav-bottom">
+      <div class="side-nav-manual">
+        <a @click.prevent="goManual" href="#" class="side-nav-manual-link">
+          <i class="pi pi-book side-nav-manual-icon"></i>
+          <span>{{ userRole === 'admin' ? '관리자 메뉴얼' : '이용자 메뉴얼' }}</span>
+        </a>
+      </div>
       <div class="side-nav-profile">
         <i class="pi pi-user side-nav-profile-icon"></i>
         <div class="side-nav-profile-info">
@@ -159,6 +165,14 @@ function removeFile(idx) {
   files.value.splice(idx, 1);
 }
 
+function goManual() {
+  if (props.userRole === 'admin') {
+    router.push('/admin-manual');
+  } else {
+    router.push('/manual');
+  }
+}
+
 onMounted(async () => {
   window.__goToNotice = (id) => {
     router.push(`/notices/${id}`);
@@ -178,4 +192,30 @@ onMounted(async () => {
     }
   } catch {}
 });
-</script> 
+</script>
+
+<style scoped>
+.side-nav-manual {
+  border-bottom: 1px solid var(--border-secondary);
+  padding: 1rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.side-nav-manual-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  transition: color 0.15s;
+}
+
+.side-nav-manual-link:hover {
+  color: var(--primary-color);
+}
+
+.side-nav-manual-icon {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+</style> 

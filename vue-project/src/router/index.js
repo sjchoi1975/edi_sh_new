@@ -394,6 +394,14 @@ const router = createRouter({
       name: 'Settlements',
       component: () => import('@/views/user/SettlementShareDetailView.vue'),
       meta: { menu: '정산내역서 조회', submenu: '월별 정산 목록', requiresAuth: true },
+    },
+    {
+      path: '/manual',
+      component: () => import('@/views/ManualView.vue')
+    },
+    {
+      path: '/admin-manual',
+      component: () => import('@/views/ManualView.vue')
     }
   ]
 })
