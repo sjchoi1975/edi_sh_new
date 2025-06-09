@@ -347,6 +347,14 @@ const downloadTemplate = () => {
       비고: '예시 비고',
       상태: '활성',
     },
+    {
+      약국코드: 'PH002',
+      약국명: '테스트약국',
+      사업자등록번호: '012-34-56789', // 앞자리 0이 있는 예시
+      주소: '서울시 서초구 서초대로 456',
+      비고: '예시',
+      상태: '활성',
+    },
   ]
 
   const ws = XLSX.utils.json_to_sheet(templateData)
@@ -362,6 +370,26 @@ const downloadTemplate = () => {
     { width: 20 }, // 비고
     { width: 10 }, // 상태
   ]
+
+  // 사업자등록번호(C열) 전체를 텍스트 형식으로 설정 (1000행까지)
+  const maxRows = 1000;
+  
+  for (let row = 0; row < maxRows; row++) {
+    // C열 (사업자등록번호) - 빈 셀이라도 텍스트 형식으로 설정
+    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
+    if (!ws[cellC]) {
+      ws[cellC] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
+    } else {
+      ws[cellC].t = 's' // 문자열 타입
+      ws[cellC].z = '@' // 텍스트 형식
+    }
+  }
+  
+  // 워크시트 범위 업데이트 (1000행까지 확장)
+  ws['!ref'] = XLSX.utils.encode_range({
+    s: { c: 0, r: 0 },
+    e: { c: 5, r: maxRows - 1 }
+  })
 
   XLSX.writeFile(wb, '문전약국_엑셀등록_템플릿.xlsx')
 }
@@ -387,8 +415,36 @@ const handleFileUpload = async (event) => {
       return
     }
 
+    // 기존 데이터 확인
+    const hasExistingData = pharmacies.value.length > 0
+
+    // 1단계: 기존 데이터 존재 시 확인
+    let isAppendMode = false
+    if (hasExistingData) {
+      if (!confirm('기존 데이터가 있습니다.\n계속 등록하시겠습니까?')) {
+        event.target.value = ''
+        return
+      }
+
+      // 2단계: 추가 vs 대체 선택
+      isAppendMode = confirm('기존 데이터에 추가하시겠습니까? 대체하시겠습니까?\n\n확인: 기존 데이터는 그대로 추가 등록\n취소: 기존 데이터를 모두 지우고 등록')
+      
+      if (!isAppendMode) {
+        // 대체 모드: 기존 데이터 삭제
+        const { error: deleteError } = await supabase.from('pharmacies').delete().neq('id', 0)
+        
+        if (deleteError) {
+          alert('기존 데이터 삭제 실패: ' + deleteError.message)
+          event.target.value = ''
+          return
+        }
+        // 로컬 데이터도 초기화
+        pharmacies.value = []
+      }
+    }
+
     // 데이터 변환 및 검증
-    const uploadData = []
+    let uploadData = []
     const errors = []
 
     jsonData.forEach((row, index) => {
@@ -416,7 +472,6 @@ const handleFileUpload = async (event) => {
           return
         }
       } else {
-        // 상태 값이 비어있으면 기본값 '활성'('active') 사용
         statusValue = 'active'
       }
 
@@ -426,7 +481,8 @@ const handleFileUpload = async (event) => {
         business_registration_number: row['사업자등록번호'],
         address: row['주소'] || '',
         remarks: row['비고'] || '',
-        status: statusValue, // 변환된 값 사용
+        status: statusValue,
+        rowNum: rowNum // 에러 표시용
       })
     })
 
@@ -435,13 +491,82 @@ const handleFileUpload = async (event) => {
       return
     }
 
+    // 3단계: 추가 모드일 때만 사업자등록번호 중복 체크
+    if (hasExistingData && isAppendMode) {
+      const duplicateErrors = []
+      const duplicatePharmacies = []
+      
+      for (const newPharmacy of uploadData) {
+        if (newPharmacy.business_registration_number) {
+          // 기존 데이터에서 동일한 사업자등록번호 중복 확인
+          const existingPharmacy = pharmacies.value.find(p => 
+            p.business_registration_number === newPharmacy.business_registration_number
+          )
+          
+          if (existingPharmacy) {
+            duplicateErrors.push(`${newPharmacy.rowNum}행: 이미 동일한 사업자등록번호의 약국이 등록되어 있습니다.`)
+            duplicatePharmacies.push(newPharmacy)
+          }
+        }
+      }
+
+      if (duplicateErrors.length > 0) {
+        // 4단계: 중복 발견 시 계속 진행 여부 확인
+        if (!confirm('중복 오류:\n' + duplicateErrors.join('\n') + '\n\n계속 등록 작업을 진행하시겠습니까?')) {
+          return
+        }
+
+        // 5단계: 중복 해결 방법 선택
+        const shouldReplace = confirm('이미 동일한 사업자등록번호 약국을 어떻게 처리하시겠습니까?\n\n확인: 기존 약국 정보를 신규 약국 정보로 교체하기\n취소: 기존 약국 정보는 그대로 두고 신규 약국만 등록하기')
+        
+        if (shouldReplace) {
+          // 교체 모드: 중복되는 기존 약국들 삭제
+          for (const duplicatePharmacy of duplicatePharmacies) {
+            const { error: deleteError } = await supabase
+              .from('pharmacies')
+              .delete()
+              .eq('business_registration_number', duplicatePharmacy.business_registration_number)
+            
+            if (deleteError) {
+              alert('기존 약국 삭제 실패: ' + deleteError.message)
+              return
+            }
+          }
+          // 로컬 데이터에서도 삭제
+          for (const duplicatePharmacy of duplicatePharmacies) {
+            const index = pharmacies.value.findIndex(p => 
+              p.business_registration_number === duplicatePharmacy.business_registration_number
+            )
+            if (index > -1) {
+              pharmacies.value.splice(index, 1)
+            }
+          }
+        } else {
+          // 기존 유지 모드: 중복되는 신규 약국들 제외
+          const duplicateBusinessNumbers = duplicatePharmacies.map(p => p.business_registration_number)
+          uploadData = uploadData.filter(item => !duplicateBusinessNumbers.includes(item.business_registration_number))
+        }
+      }
+    }
+
+    // 최종 등록
+    const insertData = uploadData.map(item => {
+      const { rowNum, ...data } = item
+      return data
+    })
+
+    if (insertData.length === 0) {
+      alert('등록할 데이터가 없습니다.')
+      return
+    }
+
     // 데이터베이스에 일괄 삽입
-    const { error } = await supabase.from('pharmacies').insert(uploadData)
+    const { error } = await supabase.from('pharmacies').insert(insertData)
 
     if (error) {
       alert('업로드 실패: ' + error.message)
     } else {
-      alert(`${uploadData.length}건의 문전약국 데이터가 업로드되었습니다.`)
+      alert(`${insertData.length}건의 문전약국 데이터가 업로드되었습니다.`)
       await fetchPharmacies() // 목록 새로고침
     }
   } catch (error) {
@@ -489,6 +614,18 @@ const downloadExcel = () => {
     { width: 12 }, // 등록일
     { width: 12 }, // 수정일
   ]
+
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  
+  // 모든 행에 대해 형식 설정
+  for (let row = 0; row <= range.e.r; row++) {
+    // D열 (사업자등록번호) - 텍스트 형식으로 설정
+    const cellD = XLSX.utils.encode_cell({ r: row, c: 3 })
+    if (ws[cellD]) {
+      ws[cellD].t = 's' // 문자열 타입
+      ws[cellD].z = '@' // 텍스트 형식
+    }
+  }
 
   // 파일명에 현재 날짜 포함
   const today = new Date().toISOString().split('T')[0]
