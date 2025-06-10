@@ -407,43 +407,54 @@ async function fetchFinalData(perfRecordIds) {
         return;
     }
 
-    // 1. absorption_analysis 데이터 조회 (JOIN 없음)
-    const { data: analysisData, error: analysisError } = await supabase
+    let finalQuery = supabase
       .from('absorption_analysis')
-      .select('*')
-      .in('performance_record_id', perfRecordIds)
-      .order('id');
-    if (analysisError) throw analysisError;
+      .select(`
+        *,
+        performance_records (
+          *,
+          companies ( * ),
+          clients ( * ),
+          products ( * )
+        )
+      `)
+      .in('performance_record_id', perfRecordIds);
+    if (selectedReviewStatus.value !== 'ALL') finalQuery = finalQuery.eq('review_status', selectedReviewStatus.value);
+    if (selectedReviewAction.value !== 'ALL') finalQuery = finalQuery.eq('review_action', selectedReviewAction.value);
 
-    // 2. performance_records 데이터 별도 조회
-    const { data: recordsData, error: recordsError } = await supabase
-        .from('performance_records')
-        .select(`*, companies(id, company_name), clients(id, name), products(id, product_name, insurance_code, price, commission_rate)`)
-        .in('id', perfRecordIds);
-    if (recordsError) throw recordsError;
-    
-    const recordsMap = new Map(recordsData.map(r => [r.id, r]));
+    const { data: finalData, error: finalError } = await finalQuery.order('id');
+    if (finalError) throw finalError;
 
-    // 3. 등록자 정보 조회
-    const userIds = [...new Set(recordsData.map(r => r.registered_by).filter(Boolean))];
+    // 등록자 정보 조회를 위한 2단계 처리
+    const userIds = [...new Set(finalData.map(row => row.performance_records?.registered_by).filter(Boolean))];
     const userMap = new Map();
+
     if (userIds.length > 0) {
-      const { data: users } = await supabase.from('users').select('id, user_name').in('id', userIds);
-      users?.forEach(user => userMap.set(user.id, user.user_name));
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, user_name')
+        .in('id', userIds);
+      
+      if (userError) {
+        console.error('등록자 정보 조회 오류:', userError);
+      } else {
+        users.forEach(user => userMap.set(user.id, user.user_name));
+      }
     }
 
-    // 4. 데이터 조합하여 최종 displayRows 생성
-    displayRows.value = analysisData.map(row => {
-        const pr = recordsMap.get(row.performance_record_id);
-        if (!pr) return null;
+    displayRows.value = finalData.map(row => {
+        const pr = row.performance_records;
+        if (!pr) return null; // performance_records가 없는 데이터는 표시하지 않음
 
         const product = pr.products;
         const price = product?.price || 0;
         const qty = pr.prescription_qty || 0;
         const commission_rate = product?.commission_rate || 0;
+        const prescription_amount = price * qty;
         
+        // 수정된 값이 있으면 사용, 없으면 원본 값 사용
         const finalQty = row.prescription_qty_modify ?? qty;
-        const finalCommissionRate = row.commission_rate_modify ?? commission_rate * 100;
+        const finalCommissionRate = row.commission_rate_modify ?? commission_rate;
         const finalPaymentAmount = Math.round((price * finalQty) * (finalCommissionRate / 100));
 
         return {
@@ -456,17 +467,17 @@ async function fetchFinalData(perfRecordIds) {
             company_name: pr.companies?.company_name || 'N/A',
             client_name: pr.clients?.name || 'N/A',
             prescription_month: row.prescription_month_modify || pr.prescription_month,
-            product_name_display: product?.product_name || 'N/A',
+            product_name_display: allProducts.value.find(p => p.id === (row.product_id_modify || pr.product_id))?.product_name || 'N/A',
             insurance_code: product?.insurance_code || 'N/A',
             price: price.toLocaleString(),
             prescription_qty: finalQty,
             prescription_amount: (price * finalQty).toLocaleString(),
             prescription_type: row.prescription_type_modify || pr.prescription_type,
-            commission_rate: `${finalCommissionRate.toFixed(2)}%`,
+            commission_rate: `${finalCommissionRate}%`,
             payment_amount: finalPaymentAmount.toLocaleString(),
             remarks: row.remarks_modify ?? pr.remarks ?? '',
             created_date: formatDateTime(pr.created_at),
-            created_by: userMap.get(pr.registered_by) || 'N/A',
+            created_by: userMap.get(pr.registered_by) || pr.companies?.company_name || 'N/A',
             isEditing: false,
             originalData: null,
             ...row,
