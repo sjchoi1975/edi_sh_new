@@ -28,6 +28,7 @@
 
       <DataTable
         :value="filteredNotices"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -38,7 +39,9 @@
         class="admin-notices-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 공지사항이 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">등록된 공지사항이 없습니다.</div>
+        </template>
         <template #loading>공지사항 목록을 불러오는 중입니다...</template>
         
         <Column header="No" :headerStyle="{ width: columnWidths.no }">

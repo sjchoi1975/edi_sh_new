@@ -48,6 +48,7 @@
       </div>
       <DataTable
         :value="filteredRevenues"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -63,7 +64,9 @@
         class="admin-wholesale-revenue-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 매출이 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">등록된 매출이 없습니다.</div>
+        </template>
         <template #loading>매출 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -234,6 +237,7 @@ const columnWidths = {
 }
 
 const revenues = ref([])
+const loading = ref(false)
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const router = useRouter()
 const fileInput = ref(null)
@@ -247,18 +251,23 @@ function goCreate() {
 }
 
 const fetchRevenues = async () => {
-  const { data, error } = await supabase
-    .from('wholesale_sales')
-    .select('*')
-    .order('sales_date', { ascending: false })
-  if (!error && data) {
-    // 각 행에 편집 상태와 원본 데이터 백업 추가
-    revenues.value = data.map((item) => ({
-      ...item,
-      isEditing: false,
-      originalData: { ...item },
-    }))
-    generateAvailableMonths()
+  loading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('wholesale_sales')
+      .select('*')
+      .order('sales_date', { ascending: false })
+    if (!error && data) {
+      // 각 행에 편집 상태와 원본 데이터 백업 추가
+      revenues.value = data.map((item) => ({
+        ...item,
+        isEditing: false,
+        originalData: { ...item },
+      }))
+      generateAvailableMonths()
+    }
+  } finally {
+    loading.value = false;
   }
 }
 

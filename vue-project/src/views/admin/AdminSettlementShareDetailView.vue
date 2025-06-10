@@ -1,7 +1,7 @@
 <template>
   <div class="admin-settlement-share-detail-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
     <!-- 상단 필터카드 -->
-    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:1rem; padding:0.5rem 1rem;">
+    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:0rem; padding:0.25rem 1.5rem 0.25rem 1rem !important;">
       <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="goBack" />
       <div>
         <div style="font-size:1.2rem; font-weight:700;">{{ companyInfo.company_name }}</div>
@@ -21,10 +21,14 @@
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
         :value="detailRows" 
+        :loading="loading"
         scrollable 
         scrollHeight="calc(100vh - 220px)"
         class="admin-settlement-share-detail-table">
-        <template #empty>조회된 데이터가 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">조회된 데이터가 없습니다.</div>
+        </template>
+        <template #loading>정산 상세 데이터를 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
         </Column>
@@ -71,6 +75,7 @@ const month = route.query.month;
 const companyName = route.query.company;
 const companyInfo = ref({ company_name: '', business_registration_number: '', representative_name: '', business_address: '' });
 const detailRows = ref([]);
+const loading = ref(false);
 
 // 합계 계산
 const totalQty = computed(() => {
@@ -112,20 +117,28 @@ async function fetchCompanyInfo() {
 }
 
 async function fetchDetailRows() {
-  const { data, error } = await supabase
-    .from('absorption_analysis')
-    .select('*')
-    .eq('settlement_month', month)
-    .eq('company_name', companyName);
-  if (!error && data) {
-    detailRows.value = data.map(row => ({
-      ...row,
-      price: row.price?.toLocaleString() || '',
-      prescription_qty: row.prescription_qty?.toLocaleString() || '',
-      prescription_amount: row.prescription_amount?.toLocaleString() || '',
-      payment_amount: row.payment_amount?.toLocaleString() || '',
-      commission_rate: row.commission_rate ? row.commission_rate : '',
-    }));
+  loading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('absorption_analysis')
+      .select('*')
+      .eq('settlement_month', month)
+      .eq('company_name', companyName);
+    if (!error && data) {
+      detailRows.value = data.map(row => ({
+        ...row,
+        price: row.price?.toLocaleString() || '',
+        prescription_qty: row.prescription_qty?.toLocaleString() || '',
+        prescription_amount: row.prescription_amount?.toLocaleString() || '',
+        payment_amount: row.payment_amount?.toLocaleString() || '',
+        commission_rate: row.commission_rate ? row.commission_rate : '',
+      }));
+    }
+  } catch (err) {
+    console.error('상세 데이터 조회 오류:', err);
+    detailRows.value = [];
+  } finally {
+    loading.value = false;
   }
 }
 

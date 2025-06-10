@@ -283,7 +283,7 @@ select.input-editable {
   border: 1px solid var(--border-secondary) !important;
   border-radius: var(--border-radius) !important;
   box-shadow: var(--box-shadow-sm) !important;
-  padding: 0.6rem !important;
+  padding: 1.2rem 0.6rem 0.6rem 0.6rem !important;
   margin-bottom: 0rem !important;
   height: calc(100vh - 134px) !important;
 }
@@ -1024,7 +1024,7 @@ select.input-editable {
   background: var(--bg-secondary) !important; /* #f1f3f5 */
   border-bottom: 1px solid var(--border-primary) !important; /* #dee2e6 */
   border-right: 1px solid var(--border-primary) !important; /* #dee2e6 */
-  padding: 4px 4px;
+  padding: 2px 4px;
   text-align: center;
 }
 
@@ -1159,7 +1159,7 @@ select.input-editable {
 .table-header-fixed th {
   background: #f1f3f5 !important;
   color: #495057;
-  font-weight: 400;
+  font-weight: 500;
   padding: 8px 4px;
   text-align: center;
   border: none;
@@ -1238,6 +1238,8 @@ select.input-editable {
 .admin-performance-companies-table .p-datatable-column-title,
 /* 관리자 전체 등록 현황 테이블 헤더 */
 .admin-performance-whole-table .p-datatable-column-title,
+/* 관리자 실적 검수 테이블 헤더 */
+.admin-performance-review-table .p-datatable-column-title,
 /* 관리자 흡수율 분석 테이블 헤더 */
 .admin-absorption-analysis-table .p-datatable-column-title,
 /* 관리자 정산내역서 공유 테이블 헤더 */
@@ -1401,9 +1403,6 @@ select.input-editable {
   text-align: center !important;
 } /* 작업 */
 
-
-
-
 /* ------ 실적 등록 현황 (PerformanceRegisterList.vue) ------ */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(1) {
   text-align: center !important;
@@ -1412,7 +1411,7 @@ select.input-editable {
   text-align: left !important;
 } /* 거래처 */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
+  text-align: center !important;
 } /* 사업자등록번호 */
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(4) {
   text-align: left !important;
@@ -1441,8 +1440,9 @@ select.input-editable {
 .performance-list-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: left !important;
 } /* 비고 */
-
-
+.performance-list-table .p-datatable-tbody > tr > td:nth-child(13) {
+  text-align: center !important;
+} /* 검수 */
 
 /* ------ 실적 등록 (PerformanceRegister.vue) 주소 컬럼 오버플로우 처리 ------ */
 .performance-register-table.custom-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
@@ -1843,15 +1843,24 @@ select.input-editable {
   text-align: center !important;
 } /* 처방건수 */
 .admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 처방액 */
+  text-align: center !important;
+} /* 검수완료 */
 .admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(11) {
   text-align: center !important;
-} /* 증빙 파일 */
+} /* 검수중 */
 .admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: center !important;
-} /* 파일 보기 */
+} /* 검수미진행 */
 .admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(13) {
+  text-align: right !important;
+} /* 처방액 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(14) {
+  text-align: center !important;
+} /* 증빙 파일 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(15) {
+  text-align: center !important;
+} /* 파일 보기 */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(16) {
   text-align: center !important;
 } /* 최종 등록일시 */
 
@@ -1860,47 +1869,161 @@ select.input-editable {
   text-align: center !important;
 } /* No */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: left !important;
-} /* 구분 */
+  text-align: center !important;
+} /* 검수상태 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(3) {
   text-align: left !important;
-} /* 업체명 */
+} /* 구분 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(4) {
   text-align: left !important;
-} /* 거래처명 */
+} /* 업체명 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(5) {
+  text-align: left !important;
+} /* 거래처명 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(6) {
   text-align: center !important;
 } /* 처방월 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(6) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: left !important;
 } /* 제품명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(7) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(8) {
   text-align: center !important;
 } /* 보험코드 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: right !important;
-} /* 약가 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(9) {
   text-align: right !important;
-} /* 처방수량 */
+} /* 약가 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(10) {
   text-align: right !important;
-} /* 처방액 */
+} /* 처방수량 */
 .admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(11) {
+  text-align: right !important;
+} /* 처방액 */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: center !important;
 } /* 처방구분 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(12) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(13) {
   text-align: left !important;
 } /* 비고 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(13) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(14) {
   text-align: center !important;
 } /* 등록일시 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(14) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(15) {
   text-align: left !important;
 } /* 등록자 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(15) {
+.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(16) {
   text-align: center !important;
 } /* 관리자 */
+
+
+
+/* 실적 검수 테이블 바디 셀 배경색 (frozen 컬럼 겹침 방지) */
+.admin-performance-review-table .p-datatable-tbody > tr > td {
+  background-color: #ffffff !important;
+}
+
+/* 실적 검수 테이블 컬럼별 정렬 */
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(1) {
+  text-align: center !important; /* 체크박스 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(2) {
+  text-align: center !important; /* 검수상태 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(3) {
+  text-align: center !important; /* 검수구분 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(4) {
+  text-align: center !important; /* 액션 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(5) {
+  text-align: center !important; /* No */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(6) {
+  text-align: left !important; /* 구분 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(7) {
+  text-align: left !important; /* 업체명 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(8) {
+  text-align: left !important; /* 거래처명 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(9) {
+  text-align: center !important; /* 처방월 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(10) {
+  text-align: left !important; /* 제품명 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(11) {
+  text-align: center !important; /* 보험코드 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(12) {
+  text-align: right !important; /* 약가 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(13) {
+  text-align: right !important; /* 처방수량 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(14) {
+  text-align: right !important; /* 처방액 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(15) {
+  text-align: center !important; /* 처방구분 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(16) {
+  text-align: center !important; /* 수수료율 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(17) {
+  text-align: right !important; /* 지급액 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(18) {
+  text-align: left !important; /* 비고 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(19) {
+  text-align: center !important; /* 등록일시 */
+}
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(20) {
+  text-align: left !important; /* 등록자 */
+}
+
+
+
+/* 실적 검수 테이블 행 상태별 스타일 (td 레벨로 적용) */
+.admin-performance-review-table .p-datatable-tbody > tr[data-review-status="검수완료"] > td {
+  background-color: rgba(212, 237, 218, 0.5) !important; /* 연한 초록색 */
+}
+
+.admin-performance-review-table .p-datatable-tbody > tr[data-review-action="제외"] > td {
+  background-color: rgba(248, 215, 218, 0.7) !important; /* 연한 빨간색 */
+  opacity: 0.8 !important;
+}
+
+.admin-performance-review-table .p-datatable-tbody > tr[data-review-action="추가"] > td {
+  background-color: rgba(209, 236, 241, 0.7) !important; /* 연한 파란색 */
+}
+
+.admin-performance-review-table .p-datatable-tbody > tr[data-review-action="수정"] > td {
+  background-color: rgba(255, 243, 205, 0.7) !important; /* 연한 노란색 */
+}
+
+/* 편집 모드 셀 강조 */
+.admin-performance-review-table .p-datatable-tbody td.p-cell-editing {
+  background-color: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25) !important;
+}
+
+/* 체크박스 및 버튼 가운데 정렬 */
+.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
+.admin-performance-review-table .p-datatable-tbody td .p-button {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* 액션 버튼 컨테이너 */
+.admin-performance-review-table .p-datatable-tbody td:last-child > div {
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+
 
 /* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
 .admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1) {
@@ -2472,7 +2595,7 @@ select.input-editable {
 .p-datatable .p-datatable-tfoot > tr > td.footer-cell {
   background-color: #f8f9fa !important; /* 합계 행 배경색 */
   font-weight: bold !important; /* 글자 굵게 */
-  padding: 0.5rem 0.5rem !important;
+  padding: 0.25rem 0.5rem !important;
   border-top: 1px solid #dee2e6 !important; 
   border-right: 1px solid #dee2e6 !important; 
 }
@@ -2522,5 +2645,6 @@ select.input-editable {
 .product-search-dropdown li.selected .insurance-code {
   color: #fff !important; /* 또는 더 진한 색상 */
 }
+
 
 

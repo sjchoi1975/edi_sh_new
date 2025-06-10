@@ -34,13 +34,16 @@
       </div>
       <DataTable
         :value="companyList"
+        :loading="loading"
         scrollable
         scrollHeight="calc(100vh - 250px)"
         class="admin-performance-companies-table"
       >
-        <template #empty>{{
-          selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.'
-        }}</template>
+        <template #empty>
+          <div v-if="!loading">{{
+            selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.'
+          }}</div>
+        </template>
         <template #loading>업체별 실적을 불러오는 중입니다...</template>
 
         <!-- No 컬럼 -->
@@ -124,6 +127,42 @@
         </Column>
 
         <Column
+          header="검수완료"
+          :headerStyle="{ width: columnWidths.review_completed, textAlign: 'center' }"
+        >
+          <template #body="slotProps">
+            <span v-if="slotProps.data.review_completed > 0" style="color: var(--primary-blue); font-weight: 500;">
+              {{ slotProps.data.review_completed }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </Column>
+
+        <Column
+          header="검수중"
+          :headerStyle="{ width: columnWidths.review_in_progress, textAlign: 'center' }"
+        >
+          <template #body="slotProps">
+            <span v-if="slotProps.data.review_in_progress > 0" style="color: var(--primary-color); font-weight: 500;">
+              {{ slotProps.data.review_in_progress }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </Column>
+
+        <Column
+          header="미진행"
+          :headerStyle="{ width: columnWidths.review_pending, textAlign: 'center' }"
+        >
+          <template #body="slotProps">
+            <span v-if="slotProps.data.review_pending > 0" style="color: var(--danger); font-weight: 500;">
+              {{ slotProps.data.review_pending }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </Column>
+
+        <Column
           field="prescription_amount"
           header="처방액"
           :headerStyle="{ width: columnWidths.prescription_amount, textAlign: 'center' }"
@@ -175,6 +214,9 @@
             <Column :footer="totalClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="totalSubmittedClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="totalPrescriptionCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewCompleted.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewInProgress.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewPending.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>
@@ -267,18 +309,21 @@ import * as XLSX from 'xlsx'
 
 const columnWidths = {
   no: '4%',
-  company_group: '7%',
-  company_name: '16%',
-  business_registration_number: '8%',
-  representative_name: '7%',
-  assigned_pharmacist_contact: '7%',
-  total_clients: '7%',
-  submitted_clients: '7%',
-  prescription_count: '7%',
+  company_group: '6%',
+  company_name: '13%',
+  business_registration_number: '7%',
+  representative_name: '5.5%',
+  assigned_pharmacist_contact: '5.5%',
+  total_clients: '5.5%',
+  submitted_clients: '5.5%',
+  prescription_count: '5.5%',
+  review_completed: '5.5%',
+  review_in_progress: '5.5%',
+  review_pending: '5.5%',
   prescription_amount: '7%',
-  evidence_files: '7%',
-  file_view: '7%',
-  last_registered_at: '9%',
+  evidence_files: '5.5%',
+  file_view: '5.5%',
+  last_registered_at: '8%',
 }
 
 // 반응형 데이터
@@ -439,6 +484,59 @@ const fetchCompanyList = async () => {
           0,
         )
 
+        // 검수 상태별 건수 조회
+        let reviewCompleted = 0
+        let reviewInProgress = 0
+        let reviewPending = 0
+
+        try {
+          // 1. absorption_analysis에서 검수완료, 검수중 카운트
+          const { data: reviewData, error: reviewError } = await supabase
+            .from('absorption_analysis')
+            .select('review_status')
+            .eq('company_id', company.id)
+            .eq('settlement_month', selectedSettlementMonth.value)
+
+          if (reviewError) {
+            console.error(`Company ${company.company_name} - 검수 데이터 조회 오류:`, reviewError)
+          } else if (reviewData) {
+            reviewCompleted = reviewData.filter(r => r.review_status === '완료').length
+            reviewInProgress = reviewData.filter(r => r.review_status === '검수중').length
+            
+            console.log(`Company ${company.company_name} - Absorption analysis review status:`, {
+              completed: reviewCompleted,
+              in_progress: reviewInProgress,
+              total: reviewData.length
+            })
+          }
+
+          // 2. performance_records에서 검수미진행(대기) 카운트
+          const { data: pendingData, error: pendingError } = await supabase
+            .from('performance_records')
+            .select('id')
+            .eq('company_id', company.id)
+            .eq('settlement_month', selectedSettlementMonth.value)
+            .eq('user_edit_status', '대기')
+
+          if (pendingError) {
+            console.error(`Company ${company.company_name} - 대기 상태 조회 오류:`, pendingError)
+          } else if (pendingData) {
+            reviewPending = pendingData.length
+            
+            console.log(`Company ${company.company_name} - Performance records pending:`, {
+              pending: reviewPending
+            })
+          }
+          
+          console.log(`Company ${company.company_name} - Final review status:`, {
+            completed: reviewCompleted,
+            in_progress: reviewInProgress,
+            pending: reviewPending
+          })
+        } catch (reviewErr) {
+          console.error(`Company ${company.company_name} - 검수 데이터 조회 예외:`, reviewErr)
+        }
+
         console.log(`Company ${company.company_name} - Calculated:`, {
           submitted_clients: submittedClients,
           prescription_count: prescriptionCount,
@@ -561,6 +659,9 @@ const fetchCompanyList = async () => {
           total_clients: totalClientCount || 0,
           submitted_clients: submittedClients,
           prescription_count: prescriptionCount,
+          review_completed: reviewCompleted,
+          review_in_progress: reviewInProgress,
+          review_pending: reviewPending,
           prescription_amount: prescriptionAmount,
           evidence_files: evidenceFileCount || 0,
           last_registered_at: lastRegisteredAt,
@@ -576,6 +677,9 @@ const fetchCompanyList = async () => {
           total_clients: totalClientCount || 0,
           submitted_clients: submittedClients,
           prescription_count: prescriptionCount,
+          review_completed: reviewCompleted,
+          review_in_progress: reviewInProgress,
+          review_pending: reviewPending,
           prescription_amount: prescriptionAmount,
           evidence_files: evidenceFileCount || 0,
           last_registered_at: lastRegisteredAt,
@@ -593,6 +697,9 @@ const fetchCompanyList = async () => {
           total_clients: 0,
           submitted_clients: 0,
           prescription_count: 0,
+          review_completed: 0,
+          review_in_progress: 0,
+          review_pending: 0,
           prescription_amount: 0,
           evidence_files: 0,
           last_registered_at: '-',
@@ -646,6 +753,15 @@ const totalPrescriptionCount = computed(() =>
 const totalPrescriptionAmount = computed(() =>
   companyList.value.reduce((sum, c) => sum + (c.prescription_amount || 0), 0),
 )
+const totalReviewCompleted = computed(() =>
+  companyList.value.reduce((sum, c) => sum + (c.review_completed || 0), 0),
+)
+const totalReviewInProgress = computed(() =>
+  companyList.value.reduce((sum, c) => sum + (c.review_in_progress || 0), 0),
+)
+const totalReviewPending = computed(() =>
+  companyList.value.reduce((sum, c) => sum + (c.review_pending || 0), 0),
+)
 
 // 엑셀 다운로드
 const downloadExcel = () => {
@@ -665,6 +781,9 @@ const downloadExcel = () => {
     '총 거래처': company.total_clients || 0,
     '제출 거래처': company.submitted_clients || 0,
     처방건수: company.prescription_count || 0,
+    검수완료: company.review_completed || 0,
+    검수중: company.review_in_progress || 0,
+    검수미진행: company.review_pending || 0,
     처방액: company.prescription_amount || 0,
     '증빙 파일': company.evidence_files || 0,
     '최종 등록일시': company.last_registered_at || '-',
@@ -681,6 +800,9 @@ const downloadExcel = () => {
     '총 거래처': totalClients.value,
     '제출 거래처': totalSubmittedClients.value,
     처방건수: totalPrescriptionCount.value,
+    검수완료: totalReviewCompleted.value,
+    검수중: totalReviewInProgress.value,
+    검수미진행: totalReviewPending.value,
     처방액: totalPrescriptionAmount.value,
     '증빙 파일': '',
     '최종 등록일시': '',
@@ -701,6 +823,9 @@ const downloadExcel = () => {
     { width: 12 }, // 총 거래처
     { width: 12 }, // 제출 거래처
     { width: 12 }, // 처방건수
+    { width: 12 }, // 검수완료
+    { width: 12 }, // 검수중
+    { width: 12 }, // 검수미진행
     { width: 15 }, // 처방액
     { width: 12 }, // 증빙 파일
     { width: 12 }, // 최종 등록일시
@@ -709,8 +834,8 @@ const downloadExcel = () => {
   // 숫자 형식 지정 (천 단위 구분)
   const range = XLSX.utils.decode_range(ws['!ref'])
   for (let row = 1; row <= range.e.r; row++) {
-    // 처방액 컬럼 (J열)
-    const prescriptionAmountCell = XLSX.utils.encode_cell({ r: row, c: 9 })
+    // 처방액 컬럼 (M열)
+    const prescriptionAmountCell = XLSX.utils.encode_cell({ r: row, c: 12 })
     if (ws[prescriptionAmountCell] && typeof ws[prescriptionAmountCell].v === 'number') {
       ws[prescriptionAmountCell].z = '#,##0'
     }

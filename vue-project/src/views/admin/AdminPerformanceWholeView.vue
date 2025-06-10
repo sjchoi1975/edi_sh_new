@@ -33,6 +33,15 @@
             <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight:400;">검수</label>
+          <select v-model="selectedReviewStatus" class="select_120px">
+            <option value="">- 전체 -</option>
+            <option value="완료">완료</option>
+            <option value="검수중">검수중</option>
+            <option value="대기">미진행</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -49,6 +58,7 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           :value="displayRows" 
+          :loading="loading"
           scrollable 
           scrollHeight="calc(100vh - 220px)"
           scrollDirection="both"
@@ -58,12 +68,22 @@
             table: { style: 'min-width: 2200px;' }
           }"
         >
-          <template #empty>등록된 실적이 없습니다.</template>
+          <template #empty>
+            <div v-if="!loading">등록된 실적이 없습니다.</div>
+          </template>
           <template #loading>전체 실적을 불러오는 중입니다...</template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }">
             <template #body="slotProps">
               {{ slotProps.index + 1 }}
+            </template>
+          </Column>
+          <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :sortable="true">
+            <template #body="slotProps">
+              <span v-if="slotProps.data.review_status === '검수완료'" style="color: var(--primary-blue)">완료</span>
+              <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">진행중</span>
+              <span v-else-if="slotProps.data.review_status === '검수미진행'" style="color: var(--danger)">미진행</span>
+              <span v-else>-</span>
             </template>
           </Column>
           <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true">
@@ -101,7 +121,7 @@
               <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-              <Column :colspan="5" footerClass="footer-cell" />
+              <Column :colspan="6" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -121,6 +141,7 @@ import * as XLSX from 'xlsx';
 
 const columnWidths = {
   no: '4%',
+  review_status: '5%',
   company_group: '8%',
   company_name: '12%',
   client_name: '18%',
@@ -144,6 +165,8 @@ const selectedMonthInfo = ref(null); // 선택된 정산월 정보
 const prescriptionMonth = ref('');
 const prescriptionOffset = ref(0); // 0: 전체, 1: -1M, 2: -2M, 3: -3M
 const prescriptionOptions = ref([]);
+const loading = ref(false);
+const selectedReviewStatus = ref('');
 
 // 업체 관련
 const selectedCompanyId = ref(''); // 선택된 업체 ID
@@ -155,7 +178,19 @@ const hospitals = ref([]);
 
 // 실적 데이터
 const performanceRecords = ref([]); // DB에서 가져온 실적 데이터
-const displayRows = ref([]); // 화면에 표시할 행들
+const rawRows = ref([]);
+const displayRows = computed(() => {
+  let rows = rawRows.value;
+  if (selectedReviewStatus.value) {
+    rows = rows.filter(row => {
+      if (selectedReviewStatus.value === '완료') return row.review_status === '검수완료';
+      if (selectedReviewStatus.value === '검수중') return row.review_status === '검수중';
+      if (selectedReviewStatus.value === '대기') return row.review_status === '검수미진행';
+      return true;
+    });
+  }
+  return rows;
+});
 
 // 유틸리티 함수들
 function getPrescriptionMonth(settlementMonth, offset) {
@@ -204,7 +239,7 @@ watch(selectedSettlementMonth, () => {
   } else {
     companies.value = [];
     hospitals.value = [];
-    displayRows.value = [];
+    rawRows.value = [];
     performanceRecords.value = [];
   }
 });
@@ -372,10 +407,11 @@ async function fetchHospitals() {
 
 async function fetchPerformanceRecords() {
   if (!selectedSettlementMonth.value) {
-    displayRows.value = [];
+    rawRows.value = [];
     return;
   }
   
+  loading.value = true;
   try {
     let query = supabase
       .from('performance_records')
@@ -409,21 +445,24 @@ async function fetchPerformanceRecords() {
     
     if (error) {
       console.error('실적 데이터 조회 오류:', error);
-      displayRows.value = [];
+      rawRows.value = [];
       return;
     }
     
     if (!data || data.length === 0) {
-      displayRows.value = [];
+      rawRows.value = [];
       return;
     }
     
     // 데이터 변환
-    displayRows.value = data.map(record => {
+    rawRows.value = data.map(record => {
       const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
-      
+      let review_status = '검수미진행';
+      if (record.user_edit_status === '완료') review_status = '검수완료';
+      else if (record.user_edit_status === '검수중') review_status = '검수중';
       return {
         id: record.id,
+        review_status,
         company_group: record.companies?.company_group || '',
         company_name: record.companies?.company_name || '',
         client_name: record.clients?.name || '',
@@ -444,14 +483,16 @@ async function fetchPerformanceRecords() {
           const minutes = String(date.getMinutes()).padStart(2, '0')
           return `${year}-${month}-${day} ${hours}:${minutes}`
         })() : '',
-        created_by: record.companies?.company_name || '', // 등록자는 업체명으로 표시
+        created_by: record.companies?.company_name || '',
         assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || ''
       };
     });
     
   } catch (err) {
     console.error('실적 데이터 조회 예외:', err);
-    displayRows.value = [];
+    rawRows.value = [];
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -477,6 +518,7 @@ const downloadExcel = () => {
   // 엑셀용 데이터 준비
   const excelData = displayRows.value.map((row, index) => ({
     'No': index + 1,
+    '검수상태': row.review_status,
     '구분': row.company_group || '',
     '업체명': row.company_name || '',
     '거래처명': row.client_name || '',
@@ -496,6 +538,7 @@ const downloadExcel = () => {
   // 합계 행 추가
   excelData.push({
     'No': '',
+    '검수상태': '',
     '구분': '',
     '업체명': '',
     '거래처명': '',
@@ -519,6 +562,7 @@ const downloadExcel = () => {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 6 },   // No
+    { width: 10 },  // 검수상태
     { width: 10 },  // 구분
     { width: 15 },  // 업체명
     { width: 20 },  // 거래처명
@@ -572,3 +616,28 @@ onMounted(() => {
   fetchAvailableMonths();
 });
 </script>
+
+<style scoped>
+.select_120px {
+  width: 120px;
+  min-width: 120px;
+  height: 38px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 0 !important;
+  display: inline-block;
+}
+.select_180px {
+  width: 180px;
+  min-width: 120px;
+  height: 38px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 0 !important;
+  display: inline-block;
+}
+</style>

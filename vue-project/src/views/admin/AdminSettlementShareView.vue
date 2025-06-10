@@ -28,11 +28,15 @@
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
         :value="filteredCompanies" 
+        :loading="loading"
         scrollable 
         scrollHeight="calc(100vh - 220px)"
         class="admin-settlement-share-table"
       >
-        <template #empty>조회된 데이터가 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">조회된 데이터가 없습니다.</div>
+        </template>
+        <template #loading>정산내역서를 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
         </Column>
@@ -99,6 +103,7 @@ const columnWidths = {
 const selectedMonth = ref('');
 const availableMonths = ref([]);
 const companies = ref([]);
+const loading = ref(false);
 const router = useRouter();
 
 // 합계 계산
@@ -164,7 +169,9 @@ async function fetchCompanyIdAndShare() {
 // 업체별 집계 데이터
 async function fetchCompanies() {
   if (!selectedMonth.value) return;
-  await fetchCompanyIdAndShare();
+  loading.value = true;
+  try {
+    await fetchCompanyIdAndShare();
   
   // 1. absorption_analysis에서 해당 월의 모든 데이터 가져오기
   const { data: analysisData, error: analysisError } = await supabase
@@ -227,6 +234,12 @@ async function fetchCompanies() {
     prescription_amount: c.prescription_amount.toLocaleString(),
     payment_amount: c.payment_amount.toLocaleString(),
   }));
+  } catch (err) {
+    console.error('업체 데이터 조회 오류:', err);
+    companies.value = [];
+  } finally {
+    loading.value = false;
+  }
 }
 
 onMounted(async () => {

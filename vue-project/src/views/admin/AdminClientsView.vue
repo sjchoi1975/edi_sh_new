@@ -36,6 +36,7 @@
       </div>
       <DataTable
         :value="clients"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -46,7 +47,9 @@
         class="admin-clients-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 거래처가 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">등록된 거래처가 없습니다.</div>
+        </template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -189,6 +192,7 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 
 const clients = ref([])
+const loading = ref(false)
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const router = useRouter()
 const fileInput = ref(null)
@@ -216,17 +220,22 @@ function goToDetail(id) {
 }
 
 const fetchClients = async () => {
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('client_code', { ascending: true })
-  if (!error && data) {
-    // 각 행에 편집 상태와 원본 데이터 백업 추가
-    clients.value = data.map((item) => ({
-      ...item,
-      isEditing: false,
-      originalData: { ...item },
-    }))
+  loading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('client_code', { ascending: true })
+    if (!error && data) {
+      // 각 행에 편집 상태와 원본 데이터 백업 추가
+      clients.value = data.map((item) => ({
+        ...item,
+        isEditing: false,
+        originalData: { ...item },
+      }))
+    }
+  } finally {
+    loading.value = false;
   }
 }
 

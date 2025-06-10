@@ -344,17 +344,16 @@ function updatePrescriptionOptions() {
   ];
 }
 
-// 편집용 처방월 옵션 업데이트
+// 편집용 처방월 옵션 업데이트 (-3M ~ -1M)
 function updatePrescriptionMonthOptions() {
   if (!selectedSettlementMonth.value) {
     prescriptionMonthOptions.value = [];
     return;
   }
   
-  prescriptionMonthOptions.value = [1, 2, 3].map(offset => ({
-    value: getPrescriptionMonth(selectedSettlementMonth.value, offset),
-    month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
-  }));
+  prescriptionMonthOptions.value = [1, 2, 3].map(offset => 
+    getPrescriptionMonth(selectedSettlementMonth.value, offset)
+  );
 }
 
 function getPrescriptionMonth(settlementMonth, offset) {
@@ -524,8 +523,60 @@ async function fetchAllMasterData() {
   try {
     await fetchCompanies();
     await fetchHospitals();
+    await fetchAllCompanies();
+    await fetchAllClients();
+    await fetchAllProducts();
   } catch (err) {
     console.error('전체 마스터 데이터 로드 오류:', err);
+  }
+}
+
+// 전체 업체 목록 조회 (편집용)
+async function fetchAllCompanies() {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('status', 'approved')
+      .order('company_name');
+    
+    if (!error && data) {
+      allCompanies.value = data;
+    }
+  } catch (err) {
+    console.error('전체 업체 조회 오류:', err);
+  }
+}
+
+// 전체 거래처 목록 조회 (편집용)
+async function fetchAllClients() {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name');
+    
+    if (!error && data) {
+      allClients.value = data;
+    }
+  } catch (err) {
+    console.error('전체 거래처 조회 오류:', err);
+  }
+}
+
+// 전체 제품 목록 조회 (편집용)
+async function fetchAllProducts() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('product_name');
+    
+    if (!error && data) {
+      allProducts.value = data;
+    }
+  } catch (err) {
+    console.error('전체 제품 조회 오류:', err);
   }
 }
 
@@ -664,6 +715,9 @@ async function loadAbsorptionAnalysisData() {
     displayRows.value = data.map(record => ({
       id: record.id,
       original_id: record.id,
+      company_id: record.company_id,
+      client_id: record.client_id,
+      product_id: record.product_id,
       company_group: record.company_group,
       company_name: record.company_name,
       client_name: record.client_name,
@@ -684,7 +738,8 @@ async function loadAbsorptionAnalysisData() {
       remarks: record.remarks || '',
       orig_created_at: record.orig_created_at,
       orig_registered_by: record.orig_registered_by || '알 수 없음', // 원본 registered_by 값 사용
-      assigned_pharmacist_contact: record.assigned_pharmacist_contact
+      assigned_pharmacist_contact: record.assigned_pharmacist_contact,
+      isEditing: false
     }));
     
     console.log('매핑된 displayRows:', displayRows.value.length, '건');
@@ -764,6 +819,8 @@ async function loadPerformanceData() {
         id: `temp_${Date.now()}_${Math.random()}`,
         original_id: record.id,
         company_id: record.company_id || record.companies.id,
+        client_id: record.client_id,
+        product_id: record.product_id,
         company_group: record.companies.company_group,
         company_name: record.companies.company_name,
         client_name: record.clients.name,
@@ -784,7 +841,8 @@ async function loadPerformanceData() {
         remarks: record.remarks || '',
         orig_created_at: record.created_at,
         orig_registered_by: record.companies.company_name,
-        assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact
+        assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact,
+        isEditing: false
       };
 
       // 수수료율 자동 계산
@@ -830,74 +888,7 @@ async function loadPerformanceData() {
   }
 }
 
-// 이벤트 핸들러
-async function onCompanyInput(rowIndex) {
-  updateCommissionRate(rowIndex);
-  markAsChanged(); // 업체 변경시
-}
 
-function onQtyInput(rowIndex) {
-  recalculateRow(rowIndex);
-  markAsChanged(); // 수량 변경시
-}
-
-function onPrescriptionTypeInput(rowIndex) {
-  // 처방구분 변경시 처리
-  markAsChanged(); // 처방구분 변경시
-}
-
-function onSalesInput(rowIndex) {
-  recalculateRow(rowIndex);
-  markAsChanged(); // 매출 변경시
-}
-
-function onCommissionInput(rowIndex) {
-  recalculateRow(rowIndex);
-  markAsChanged(); // 수수료율 변경시
-}
-
-// 수수료율 자동 조회 함수
-async function updateCommissionRate(rowIndex) {
-  const row = displayRows.value[rowIndex];
-  
-  if (!row.company_name || !row.product_name) {
-    return;
-  }
-  
-  try {
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .select('commission_grade, company_name')
-      .eq('company_name', row.company_name.trim())
-      .single();
-      
-    if (companyError || !company) {
-      return;
-    }
-    
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('product_name', row.product_name.trim())
-      .single();
-      
-    if (productError || !product) {
-      return;
-    }
-    
-    const commissionField = `commission_rate_${company.commission_grade}`;
-    const commissionRate = product[commissionField];
-    
-    if (commissionRate !== null && commissionRate !== undefined) {
-      const percentageRate = Number(commissionRate) * 100;
-      row.commission_rate = percentageRate;
-      recalculateRow(rowIndex);
-    }
-    
-  } catch (err) {
-    console.error('수수료율 조회 예외:', err);
-  }
-}
 
 function recalculateRow(rowIndex) {
   const row = displayRows.value[rowIndex];
@@ -1206,6 +1197,164 @@ function truncateText(text, maxLength) {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
+// 편집 관련 함수들
+function startEdit(rowData) {
+  // 편집 시작 전 원본 데이터 백업
+  rowData.originalData = { ...rowData };
+  rowData.isEditing = true;
+  markAsChanged();
+}
+
+function saveEdit(rowData) {
+  // 편집 완료 시 재계산
+  const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+  if (rowIndex !== -1) {
+    recalculateRow(rowIndex);
+  }
+  
+  rowData.isEditing = false;
+  delete rowData.originalData;
+  markAsChanged();
+}
+
+function cancelEdit(rowData) {
+  // 원본 데이터로 복원
+  if (rowData.originalData) {
+    Object.assign(rowData, rowData.originalData);
+    delete rowData.originalData;
+  }
+  rowData.isEditing = false;
+}
+
+// 업체 변경 시 이벤트 핸들러
+function onCompanyChange(rowData) {
+  const company = allCompanies.value.find(c => c.id === rowData.company_id);
+  if (company) {
+    rowData.company_name = company.company_name;
+    rowData.company_group = company.company_group || '';
+    rowData.assigned_pharmacist_contact = company.assigned_pharmacist_contact || '';
+    
+    // 수수료율 자동 계산
+    const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+    if (rowIndex !== -1) {
+      updateCommissionRate(rowIndex);
+    }
+  }
+  markAsChanged();
+}
+
+// 거래처 변경 시 이벤트 핸들러
+function onClientChange(rowData) {
+  const client = allClients.value.find(c => c.id === rowData.client_id);
+  if (client) {
+    rowData.client_name = client.name;
+  }
+  markAsChanged();
+}
+
+// 제품 변경 시 이벤트 핸들러
+function onProductChange(rowData) {
+  const product = allProducts.value.find(p => p.id === rowData.product_id);
+  if (product) {
+    rowData.product_name = product.product_name;
+    rowData.product_name_display = product.product_name;
+    rowData.insurance_code = product.insurance_code;
+    rowData.price = product.price ? Number(product.price).toLocaleString() : '0';
+    
+    // 처방액 재계산
+    const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+    if (rowIndex !== -1) {
+      recalculateRow(rowIndex);
+      // 수수료율 자동 계산
+      updateCommissionRate(rowIndex);
+    }
+  }
+  markAsChanged();
+}
+
+// 처방월 변경 시 이벤트 핸들러
+function onPrescriptionMonthChange(rowData) {
+  // 수수료율 자동 계산
+  const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+  if (rowIndex !== -1) {
+    updateCommissionRate(rowIndex);
+  }
+  markAsChanged();
+}
+
+// 값 변경 시 이벤트 핸들러 (수량, 수수료율 등)
+function onValueChange(rowData) {
+  const rowIndex = displayRows.value.findIndex(row => row.id === rowData.id);
+  if (rowIndex !== -1) {
+    recalculateRow(rowIndex);
+  }
+  markAsChanged();
+}
+
+// 편집용 제품 필터링 함수
+function getFilteredProducts(rowData) {
+  return allProducts.value;
+}
+
+// 수수료율 자동 계산 함수 (개선된 버전)
+async function updateCommissionRate(rowIndex) {
+  const row = displayRows.value[rowIndex];
+  
+  if (!row.company_id || !row.product_id || !row.prescription_month) {
+    return;
+  }
+  
+  try {
+    // 1. 업체의 수수료율 등급 조회
+    const { data: companyData, error: companyError } = await supabase
+      .from('companies')
+      .select('commission_grade')
+      .eq('id', row.company_id)
+      .single();
+    
+    if (companyError || !companyData) {
+      console.error('업체 정보 조회 오류:', companyError);
+      return;
+    }
+    
+    // 2. 처방월 기준으로 정산월 조회
+    const { data: settlementData, error: settlementError } = await supabase
+      .from('settlement_months')
+      .select('id')
+      .eq('settlement_month', row.prescription_month)
+      .single();
+    
+    if (settlementError || !settlementData) {
+      console.error('정산월 정보 조회 오류:', settlementError);
+      return;
+    }
+    
+    // 3. 해당 정산월, 제품, 등급의 수수료율 조회
+    const { data: rateData, error: rateError } = await supabase
+      .from('settlement_share')
+      .select('commission_rate')
+      .eq('settlement_month_id', settlementData.id)
+      .eq('product_id', row.product_id)
+      .eq('grade', companyData.commission_grade)
+      .single();
+    
+    if (rateError || !rateData) {
+      console.error('수수료율 정보 조회 오류:', rateError);
+      return;
+    }
+    
+    // 4. 수수료율 적용 (퍼센트로 변환)
+    const commissionRate = (rateData.commission_rate || 0) * 100;
+    row.commission_rate = commissionRate;
+    
+    // 5. 금액 재계산
+    recalculateRow(rowIndex);
+    
+  } catch (err) {
+    console.error('수수료율 계산 오류:', err);
+  }
+}
+
 // 행 삭제/추가 함수들
 function confirmDeleteRow(rowIndex) {
   if (displayRows.value.length === 1) {
@@ -1219,20 +1368,28 @@ function confirmDeleteRow(rowIndex) {
   }
 }
 
-function confirmAddRowBelow(rowIndex) {
+function addRowBelow(rowIndex) {
+  // 기본 처방월을 정산월 -1개월로 설정
+  const defaultPrescriptionMonth = prescriptionMonthOptions.value.length > 0 
+    ? prescriptionMonthOptions.value[0] 
+    : selectedSettlementMonth.value;
+  
   const newRow = {
     id: `new_${Date.now()}_${Math.random()}`,
     original_id: null,
+    company_id: null,
+    client_id: null,
+    product_id: null,
     company_group: '',
     company_name: '',
     client_name: '',
-    prescription_month: selectedSettlementMonth.value,
+    prescription_month: defaultPrescriptionMonth,
     product_name: '',
     product_name_display: '',
     insurance_code: '',
-    price: '',
+    price: '0',
     prescription_qty: 0,
-    prescription_amount: '',
+    prescription_amount: '0',
     prescription_type: 'EDI',
     wholesale_sales: 0,
     direct_sales: 0,
@@ -1243,7 +1400,8 @@ function confirmAddRowBelow(rowIndex) {
     remarks: '',
     orig_created_at: new Date().toISOString(),
     orig_registered_by: '관리자', // 새로 추가하는 행은 관리자가 등록자
-    assigned_pharmacist_contact: ''
+    assigned_pharmacist_contact: '',
+    isEditing: false
   };
   
   displayRows.value.splice(rowIndex + 1, 0, newRow);
@@ -1368,8 +1526,10 @@ async function saveAnalysisData() {
     const saveData = validRows.map(row => ({
         settlement_month: selectedSettlementMonth.value,
         prescription_month: row.prescription_month,
-        company_id: row.company_id, // company_id 저장
-      company_group: row.company_group,
+        company_id: row.company_id,
+        client_id: row.client_id,
+        product_id: row.product_id,
+        company_group: row.company_group,
         company_name: row.company_name,
         client_name: row.client_name,
         product_name: row.product_name,
@@ -1384,10 +1544,10 @@ async function saveAnalysisData() {
         absorption_rate: Number(row.absorption_rate) || 0,
         commission_rate: Number(row.commission_rate) || 0,
         payment_amount: Number(row.payment_amount) || 0,
-      remarks: row.remarks || '',
-      orig_created_at: row.orig_created_at,
-      orig_registered_by: row.orig_registered_by,
-      assigned_pharmacist_contact: row.assigned_pharmacist_contact || ''
+        remarks: row.remarks || '',
+        orig_created_at: row.orig_created_at,
+        orig_registered_by: row.orig_registered_by,
+        assigned_pharmacist_contact: row.assigned_pharmacist_contact || ''
     }));
     
     const { error: insertError } = await supabase
@@ -1680,11 +1840,6 @@ function applySelectedCompanyFromSearch(rowIndex) {
 // 변경사항 표시
 function markAsChanged() {
   hasUnsavedChanges.value = true;
-}
-
-// 처방월 변경 핸들러
-function onPrescriptionMonthChange(rowIndex) {
-  markAsChanged(); // 사용자가 처방월을 변경했을 때
 }
 
 // 모든 드롭다운 닫기

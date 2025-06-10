@@ -83,6 +83,7 @@ const adminMenuTree = [
     { label: '전체 등록 현황', path: '/admin/performance/whole' }
   ]},
   { label: '정산 관리', icon: 'pi pi-file', children: [
+    { label: '실적 검수', path: '/admin/performance/review' },
     { label: '흡수율 분석', path: '/admin/absorption-analysis' },
     { label: '정산내역서 공유', path: '/admin/settlement-share' }
   ]}

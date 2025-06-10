@@ -56,6 +56,11 @@ const router = createRouter({
       component: LoginView
     },
     {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('@/views/ResetPasswordView.vue')
+    },
+    {
       path: '/signup',
       name: 'signup',
       component: SignupView
@@ -228,6 +233,12 @@ const router = createRouter({
       component: () => import('../views/admin/AdminPerformanceRegisterList.vue'),
       meta: { requiresAuth: true, role: 'admin' },
       redirect: '/admin/performance/whole'
+    },
+    {
+      path: '/admin/performance/review',
+      name: 'AdminPerformanceReview',
+      component: () => import('@/views/admin/AdminPerformanceReviewView.vue'),
+      meta: { menu: '정산 관리', submenu: '실적 검수', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/absorption-analysis',

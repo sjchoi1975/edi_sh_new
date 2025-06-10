@@ -36,6 +36,7 @@
       </div>
       <DataTable
         :value="pharmacies"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -46,7 +47,9 @@
         class="admin-pharmacies-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 약국이 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">등록된 약국이 없습니다.</div>
+        </template>
         <template #loading>약국 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -215,6 +218,7 @@ const columnWidths = {
 };
 
 const pharmacies = ref([])
+const loading = ref(false)
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const router = useRouter()
 const fileInput = ref(null)
@@ -228,17 +232,22 @@ function goToDetail(id) {
 }
 
 const fetchPharmacies = async () => {
-  const { data, error } = await supabase
-    .from('pharmacies')
-    .select('*')
-    .order('pharmacy_code', { ascending: true })
-  if (!error && data) {
-    // 각 행에 편집 상태와 원본 데이터 백업 추가
-    pharmacies.value = data.map((item) => ({
-      ...item,
-      isEditing: false,
-      originalData: { ...item },
-    }))
+  loading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('pharmacies')
+      .select('*')
+      .order('pharmacy_code', { ascending: true })
+    if (!error && data) {
+      // 각 행에 편집 상태와 원본 데이터 백업 추가
+      pharmacies.value = data.map((item) => ({
+        ...item,
+        isEditing: false,
+        originalData: { ...item },
+      }))
+    }
+  } finally {
+    loading.value = false;
   }
 }
 

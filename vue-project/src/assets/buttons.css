@@ -74,6 +74,7 @@
 .btn-list,
 .btn-cancel,
 .btn-success,
+.btn-warning,
 .btn-add,
 .btn-save,
 .btn-edit,
@@ -91,7 +92,7 @@
 .file-upload-label,
 .file-label {
   padding: 0.4rem 1rem !important;
-  margin: 0.5rem 1rem 0rem 0rem !important;
+  margin: 0rem 1rem 0rem 0rem !important;
   font-size: var(--font-size-md) !important;
   font-weight: 400 !important;
   border: 1px solid transparent !important;
@@ -128,6 +129,11 @@
   background: var(--success) !important;
   border-color: var(--success) !important;
   color: var(--text-white) !important;
+}
+.btn-warning {
+  background: var(--warning) !important;
+  border-color: var(--warning) !important;
+  color: var(--text-dark) !important;
 }
 .btn-add {
   background: var(--primary-blue) !important;
@@ -217,6 +223,7 @@ button:hover:not(:disabled),
 .btn-list:hover:not(:disabled),
 .btn-cancel:hover:not(:disabled),
 .btn-success:hover:not(:disabled),
+.btn-warning:hover:not(:disabled),
 .btn-add:hover:not(:disabled),
 .btn-save:hover:not(:disabled),
 .btn-edit:hover:not(:disabled),
@@ -246,6 +253,7 @@ button:focus,
 .btn-list:focus,
 .btn-cancel:focus,
 .btn-success:focus,
+.btn-warning:focus,
 .btn-add:focus,
 .btn-save:focus,
 .btn-edit:focus,

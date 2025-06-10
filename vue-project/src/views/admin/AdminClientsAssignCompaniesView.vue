@@ -34,6 +34,7 @@
 
       <DataTable
         :value="filteredClients"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -44,7 +45,9 @@
         class="admin-assign-companies-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 거래처가 없습니다.</template>
+        <template #empty>
+          <div v-if="!loading">등록된 거래처가 없습니다.</div>
+        </template>
         <template #loading>거래처 목록을 불러오는 중입니다...</template>
 
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
@@ -205,6 +208,7 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 
 const clients = ref([])
+const loading = ref(false)
 const companies = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const assignModalVisible = ref(false)
@@ -228,20 +232,25 @@ const columnWidths = {
 }
 
 const fetchClients = async () => {
-  const { data: clientsData, error } = await supabase
-    .from('clients')
-    .select(
-      `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number))`,
-    )
-    .eq('status', 'active')
-  if (!error && clientsData) {
-    clients.value = clientsData.map((client) => {
-      const companiesArr = client.companies.map((c) => c.company)
-      return {
-        ...client,
-        companies: companiesArr,
-      }
-    })
+  loading.value = true;
+  try {
+    const { data: clientsData, error } = await supabase
+      .from('clients')
+      .select(
+        `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number))`,
+      )
+      .eq('status', 'active')
+    if (!error && clientsData) {
+      clients.value = clientsData.map((client) => {
+        const companiesArr = client.companies.map((c) => c.company)
+        return {
+          ...client,
+          companies: companiesArr,
+        }
+      })
+    }
+  } finally {
+    loading.value = false;
   }
 }
 const fetchCompanies = async () => {

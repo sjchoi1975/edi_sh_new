@@ -124,7 +124,7 @@
         </div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-reset-password" @click="handleResetPassword">비밀번호 초기화</button>
+        <button class="btn-reset-password" @click="handleResetPassword">비밀번호 재설정 이메일 발송</button>
         <button class="btn-edit" @click="goEdit">수정</button>
         <button class="btn-list" @click="goList">목록</button>
       </div>
@@ -173,12 +173,23 @@ async function handleResetPassword() {
     alert('이메일 정보가 없습니다.');
     return;
   }
-  if (!confirm('정말 비밀번호를 asdf1234로 초기화하시겠습니까?')) return;
-  const { error } = await supabase.auth.admin.updateUserByEmail(company.value.email, { password: 'asdf1234' });
-  if (error) {
-    alert('비밀번호 초기화 실패: ' + error.message);
-  } else {
-    alert('비밀번호가 asdf1234로 초기화되었습니다.');
+  if (!confirm(`${company.value.email}로 비밀번호 재설정 이메일을 발송하시겠습니까?`)) return;
+  
+  try {
+    // Supabase 이메일 비밀번호 재설정 기능 사용
+    const { error } = await supabase.auth.resetPasswordForEmail(company.value.email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    
+    if (error) {
+      console.error('비밀번호 재설정 이메일 발송 오류:', error);
+      throw new Error(error.message || '이메일 발송에 실패했습니다.');
+    }
+    
+    alert(`${company.value.email}로 비밀번호 재설정 이메일이 발송되었습니다.\n해당 업체에서 이메일을 확인하여 비밀번호를 재설정하도록 안내해주세요.`);
+  } catch (error) {
+    console.error('비밀번호 재설정 이메일 발송 실패:', error);
+    alert('이메일 발송 실패: ' + error.message);
   }
 }
 </script>

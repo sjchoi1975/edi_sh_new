@@ -31,6 +31,7 @@
 
       <DataTable
         :value="approvedCompanies"
+        :loading="loading"
         paginator :rows="50" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
         scrollable scrollHeight="calc(100vh - 250px)" 
@@ -39,7 +40,9 @@
         class="admin-companies-approved-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty> 승인된 업체가 없습니다. </template>
+        <template #empty>
+          <div v-if="!loading">승인된 업체가 없습니다.</div>
+        </template>
         <template #loading> 승인된 업체 목록을 불러오는 중입니다... </template>
         
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
@@ -276,24 +279,7 @@ const getLastModifiedBy = (company) => {
     return `${company.company_name}(${company.email})`
   }
 }
-// 비밀번호 초기화 기능
-const resetCompanyPassword = async () => {
-  try {
-    loading.value = true
-    const response = await fetch('/api/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: selectedCompany.email, newPassword: 'asdf1234' }),
-    })
-    const result = await response.json()
-    if (!response.ok) throw new Error(result.error || '비밀번호 초기화 실패')
-    alert('비밀번호가 asdf1234로 초기화되었습니다.')
-  } catch (err) {
-    console.error('비밀번호 초기화 중 오류가 발생했습니다.', err)
-  } finally {
-    loading.value = false
-  }
-}
+
 
 function getTextEditor(slotProps) {
   return h(InputText, {

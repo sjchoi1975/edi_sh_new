@@ -51,6 +51,7 @@
 
       <DataTable
         :value="filteredProducts"
+        :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -61,7 +62,9 @@
         class="admin-products-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty> 등록된 제품이 없습니다. </template>
+        <template #empty>
+          <div v-if="!loading">등록된 제품이 없습니다.</div>
+        </template>
         <template #loading> 제품 목록을 불러오는 중입니다... </template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -250,6 +253,7 @@ const columnWidths = {
 };
 
 const products = ref([])
+const loading = ref(false)
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const selectedMonth = ref('')
 const availableMonths = ref([])
@@ -311,22 +315,27 @@ function goToDetail(id) {
 }
 
 const fetchProducts = async () => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('base_month', { ascending: false });
-  if (!error && data) {
-    products.value = data;
-    // 중복 없이 기준월만 추출
-    const monthSet = new Set();
-    data.forEach((item) => {
-      if (item.base_month) monthSet.add(item.base_month);
-    });
-    availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
-    // 최신 연월을 기본값으로
-    if (availableMonths.value.length > 0) {
-      selectedMonth.value = availableMonths.value[0];
+  loading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('base_month', { ascending: false });
+    if (!error && data) {
+      products.value = data;
+      // 중복 없이 기준월만 추출
+      const monthSet = new Set();
+      data.forEach((item) => {
+        if (item.base_month) monthSet.add(item.base_month);
+      });
+      availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+      // 최신 연월을 기본값으로
+      if (availableMonths.value.length > 0) {
+        selectedMonth.value = availableMonths.value[0];
+      }
     }
+  } finally {
+    loading.value = false;
   }
 }
 

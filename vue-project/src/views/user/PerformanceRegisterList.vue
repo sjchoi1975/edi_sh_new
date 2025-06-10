@@ -148,12 +148,27 @@
             :headerStyle="{ width: columnWidths.remarks }"
             :sortable="true"
           />
+          <Column
+            field="user_edit_status"
+            header="검수"
+            :headerStyle="{ width: columnWidths.user_edit_status }"
+            :sortable="true"
+          >
+            <template #body="slotProps">
+              <span 
+                :class="getStatusClass(slotProps.data.user_edit_status)"
+                style="font-size: var(--font-size-sm); font-weight: 400; padding: 2px 6px; border-radius: 4px;"
+              >
+                {{ slotProps.data.user_edit_status }}
+              </span>
+            </template>
+          </Column>
           <ColumnGroup type="footer">
             <Row>
               <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-              <Column :colspan="2" footerClass="footer-cell" />
+              <Column :colspan="3" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -176,17 +191,18 @@ import * as XLSX from 'xlsx'
 
 const columnWidths = {
   no: '4%',
-  client_name: '13%',
+  client_name: '14%',
   business_registration_number: '8%',
-  address: '14%',
-  prescription_month: '6%',
-  product_name_display: '14%',
-  insurance_code: '6%',
+  address: '10%',
+  prescription_month: '5%',
+  product_name_display: '12%',
+  insurance_code: '7%',
   price: '6%',
   prescription_qty: '6%',
   prescription_amount: '6%',
   prescription_type: '7%',
   remarks: '10%',
+  user_edit_status: '5%'
 }
 
 // 반응형 데이터
@@ -329,6 +345,20 @@ function getPrescriptionMonth(settlementMonth, offset) {
     yy -= 1
   }
   return `${yy}-${String(mm).padStart(2, '0')}`
+}
+
+// 상태에 따른 CSS 클래스 반환
+function getStatusClass(status) {
+  switch (status) {
+    case '대기':
+      return 'status-pending'
+    case '진행중':
+      return 'status-reviewing'
+    case '완료':
+      return 'status-completed'
+    default:
+      return 'status-pending'
+  }
 }
 
 function truncateText(text, maxLength) {
@@ -1507,6 +1537,7 @@ async function fetchPerformanceRecords() {
         address: record.clients?.address || '',
         prescription_month: record.prescription_month,
         remarks: record.remarks || '',
+        user_edit_status: record.user_edit_status || '대기',
       }))
     }
 
@@ -1563,6 +1594,7 @@ function downloadExcel() {
       ? Number(row.prescription_amount.toString().replace(/,/g, ''))
       : 0,
     처방구분: row.prescription_type || '',
+    '확인(검수)': row.user_edit_status || '대기',
     비고: row.remarks || '',
   }))
   console.log('엑셀 다운로드 - excelData:', excelData)
@@ -1587,6 +1619,7 @@ function downloadExcel() {
     처방수량: totalQtyNum,
     처방액: totalAmountNum,
     처방구분: '',
+    '확인(검수)': '',
     비고: '',
   })
 
@@ -1607,6 +1640,7 @@ function downloadExcel() {
     { wpx: 80 }, // 처방수량
     { wpx: 100 }, // 처방액
     { wpx: 80 }, // 처방구분
+    { wpx: 90 }, // 확인(검수)
     { wpx: 120 }, // 비고
   ]
 
@@ -1681,3 +1715,24 @@ function addNewRow() {
   })
 }
 </script>
+
+<style scoped>
+/* 확인(검수) 상태 스타일링 */
+.status-pending {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.status-reviewing {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-completed {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+</style>
