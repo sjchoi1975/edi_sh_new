@@ -73,12 +73,12 @@
           </template>
           <template #loading>전체 실적을 불러오는 중입니다...</template>
           
-          <Column header="No" :headerStyle="{ width: columnWidths.no }">
+          <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
             <template #body="slotProps">
               {{ slotProps.index + 1 }}
             </template>
           </Column>
-          <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :sortable="true">
+          <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span v-if="slotProps.data.review_status === '검수완료'" style="color: var(--primary-blue)">완료</span>
               <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">진행중</span>
@@ -91,18 +91,18 @@
               <span style="font-weight: 400;">{{ slotProps.data.company_group }}</span>
             </template>
           </Column>
-          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true">
+          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.company_name }}</span>
             </template>
           </Column>
-          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
             </template>
           </Column>
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
-          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"/>
+          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"  :frozen="true"/>
           <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true"/>
           <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true"/>
           <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true"/>
@@ -629,6 +629,7 @@ onMounted(() => {
   margin-bottom: 0 !important;
   display: inline-block;
 }
+
 .select_180px {
   width: 180px;
   min-width: 120px;
@@ -639,5 +640,27 @@ onMounted(() => {
   font-size: 13px;
   margin-bottom: 0 !important;
   display: inline-block;
+}
+
+/* 테이블 틀고정 중첩 현상 해결 - 바디에만 흰색 적용 */
+.admin-performance-whole-table :deep(.p-datatable-tbody) {
+  background-color: white !important;
+}
+
+.admin-performance-whole-table :deep(.p-datatable-tbody tr td) {
+  background-color: white !important;
+}
+
+.admin-performance-whole-table :deep(.p-datatable-tbody .p-datatable-frozen-column) {
+  background-color: white !important;
+  border-right: 1px solid #e5e7eb !important;
+}
+
+.admin-performance-whole-table :deep(.p-datatable-tbody tr:hover td) {
+  background-color: #f8f9fa !important;
+}
+
+.admin-performance-whole-table :deep(.p-datatable-tbody tr:hover .p-datatable-frozen-column) {
+  background-color: #f8f9fa !important;
 }
 </style>

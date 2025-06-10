@@ -209,7 +209,7 @@
           </Column>
           
           <!-- 거래처명 - 항상 읽기전용(수정 불가) -->
-          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
+          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
             </template>
