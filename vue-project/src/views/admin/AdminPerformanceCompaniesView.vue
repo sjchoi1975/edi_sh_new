@@ -310,8 +310,8 @@ import * as XLSX from 'xlsx'
 const columnWidths = {
   no: '4%',
   company_group: '6%',
-  company_name: '13%',
-  business_registration_number: '7%',
+  company_name: '12%',
+  business_registration_number: '8%',
   representative_name: '5.5%',
   assigned_pharmacist_contact: '5.5%',
   total_clients: '5.5%',
@@ -485,57 +485,15 @@ const fetchCompanyList = async () => {
         )
 
         // 검수 상태별 건수 조회
-        let reviewCompleted = 0
-        let reviewInProgress = 0
-        let reviewPending = 0
+        const reviewCompleted = companyPerformances.filter(p => p.user_edit_status === '완료').length;
+        const reviewInProgress = companyPerformances.filter(p => p.user_edit_status === '검수중').length;
+        const reviewPending = companyPerformances.filter(p => p.user_edit_status === '대기').length;
 
-        try {
-          // 1. absorption_analysis에서 검수완료, 검수중 카운트
-          const { data: reviewData, error: reviewError } = await supabase
-            .from('absorption_analysis')
-            .select('review_status')
-            .eq('company_id', company.id)
-            .eq('settlement_month', selectedSettlementMonth.value)
-
-          if (reviewError) {
-            console.error(`Company ${company.company_name} - 검수 데이터 조회 오류:`, reviewError)
-          } else if (reviewData) {
-            reviewCompleted = reviewData.filter(r => r.review_status === '완료').length
-            reviewInProgress = reviewData.filter(r => r.review_status === '검수중').length
-            
-            console.log(`Company ${company.company_name} - Absorption analysis review status:`, {
-              completed: reviewCompleted,
-              in_progress: reviewInProgress,
-              total: reviewData.length
-            })
-          }
-
-          // 2. performance_records에서 검수미진행(대기) 카운트
-          const { data: pendingData, error: pendingError } = await supabase
-            .from('performance_records')
-            .select('id')
-            .eq('company_id', company.id)
-            .eq('settlement_month', selectedSettlementMonth.value)
-            .eq('user_edit_status', '대기')
-
-          if (pendingError) {
-            console.error(`Company ${company.company_name} - 대기 상태 조회 오류:`, pendingError)
-          } else if (pendingData) {
-            reviewPending = pendingData.length
-            
-            console.log(`Company ${company.company_name} - Performance records pending:`, {
-              pending: reviewPending
-            })
-          }
-          
-          console.log(`Company ${company.company_name} - Final review status:`, {
-            completed: reviewCompleted,
-            in_progress: reviewInProgress,
-            pending: reviewPending
-          })
-        } catch (reviewErr) {
-          console.error(`Company ${company.company_name} - 검수 데이터 조회 예외:`, reviewErr)
-        }
+        console.log(`Company ${company.company_name} - Calculated Review Status:`, {
+          completed: reviewCompleted,
+          in_progress: reviewInProgress,
+          pending: reviewPending
+        });
 
         console.log(`Company ${company.company_name} - Calculated:`, {
           submitted_clients: submittedClients,

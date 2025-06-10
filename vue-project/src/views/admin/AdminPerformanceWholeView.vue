@@ -118,10 +118,10 @@
           </Column>
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column footer="합계" :colspan="9" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-              <Column :colspan="6" footerClass="footer-cell" />
+              <Column :colspan="5" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -143,18 +143,18 @@ const columnWidths = {
   no: '4%',
   review_status: '5%',
   company_group: '8%',
-  company_name: '12%',
-  client_name: '18%',
+  company_name: '10%',
+  client_name: '14%',
   prescription_month: '7%',
-  product_name_display: '16%',
+  product_name_display: '14%',
   insurance_code: '7%',
   price: '6%',
-  prescription_qty: '8%',
-  prescription_amount: '8%',
+  prescription_qty: '7%',
+  prescription_amount: '7%',
   prescription_type: '8%',
-  remarks: '16%',
+  remarks: '12%',
   created_date: '10%',
-  created_by: '12%',
+  created_by: '9%',
   assigned_pharmacist_contact: '6%'
 };
 

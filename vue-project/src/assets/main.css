@@ -1935,51 +1935,45 @@ select.input-editable {
   text-align: center !important; /* 액션 */
 }
 .admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important; /* No */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important; /* 구분 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: left !important; /* 업체명 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(8) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(6) {
   text-align: left !important; /* 거래처명 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(9) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: center !important; /* 처방월 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(10) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(8) {
   text-align: left !important; /* 제품명 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(11) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(9) {
   text-align: center !important; /* 보험코드 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(12) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(10) {
   text-align: right !important; /* 약가 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(13) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(11) {
   text-align: right !important; /* 처방수량 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(14) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: right !important; /* 처방액 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(15) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(13) {
   text-align: center !important; /* 처방구분 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(16) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(14) {
   text-align: center !important; /* 수수료율 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(17) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(15) {
   text-align: right !important; /* 지급액 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(18) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(16) {
   text-align: left !important; /* 비고 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(19) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(17) {
   text-align: center !important; /* 등록일시 */
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(20) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(18) {
   text-align: left !important; /* 등록자 */
 }
 
