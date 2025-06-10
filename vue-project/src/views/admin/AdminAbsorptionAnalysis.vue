@@ -739,7 +739,11 @@ async function loadAbsorptionAnalysisData() {
       orig_created_at: record.orig_created_at,
       orig_registered_by: record.orig_registered_by || '알 수 없음', // 원본 registered_by 값 사용
       assigned_pharmacist_contact: record.assigned_pharmacist_contact,
-      isEditing: false
+      isEditing: false,
+      product_id_modify: null,
+      prescription_qty_modify: null,
+      prescription_type_modify: null,
+      remarks_modify: null
     }));
     
     console.log('매핑된 displayRows:', displayRows.value.length, '건');
@@ -842,7 +846,11 @@ async function loadPerformanceData() {
         orig_created_at: record.created_at,
         orig_registered_by: record.companies.company_name,
         assigned_pharmacist_contact: record.companies.assigned_pharmacist_contact,
-        isEditing: false
+        isEditing: false,
+        product_id_modify: null,
+        prescription_qty_modify: null,
+        prescription_type_modify: null,
+        remarks_modify: null
       };
 
       // 수수료율 자동 계산
@@ -1401,7 +1409,11 @@ function addRowBelow(rowIndex) {
     orig_created_at: new Date().toISOString(),
     orig_registered_by: '관리자', // 새로 추가하는 행은 관리자가 등록자
     assigned_pharmacist_contact: '',
-    isEditing: false
+    isEditing: false,
+    product_id_modify: null,
+    prescription_qty_modify: null,
+    prescription_type_modify: null,
+    remarks_modify: null
   };
   
   displayRows.value.splice(rowIndex + 1, 0, newRow);
@@ -1547,7 +1559,11 @@ async function saveAnalysisData() {
         remarks: row.remarks || '',
         orig_created_at: row.orig_created_at,
         orig_registered_by: row.orig_registered_by,
-        assigned_pharmacist_contact: row.assigned_pharmacist_contact || ''
+        assigned_pharmacist_contact: row.assigned_pharmacist_contact || '',
+        product_id_modify: row.product_id_modify,
+        prescription_qty_modify: row.prescription_qty_modify,
+        prescription_type_modify: row.prescription_type_modify,
+        remarks_modify: row.remarks_modify
     }));
     
     const { error: insertError } = await supabase

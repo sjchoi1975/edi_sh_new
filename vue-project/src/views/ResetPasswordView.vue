@@ -48,7 +48,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/supabase';
 
 const router = useRouter();
 const loading = ref(true);
