@@ -425,59 +425,111 @@ async function fetchFinalData(perfRecordIds) {
     const { data: finalData, error: finalError } = await finalQuery.order('id');
     if (finalError) throw finalError;
 
-    // 등록자 정보 조회를 위한 2단계 처리
-    const userIds = [...new Set(finalData.map(row => row.performance_records?.registered_by).filter(Boolean))];
-    const userMap = new Map();
-
-    if (userIds.length > 0) {
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('id, user_name')
-        .in('id', userIds);
-      
-      if (userError) {
-        console.error('등록자 정보 조회 오류:', userError);
-      } else {
-        users.forEach(user => userMap.set(user.id, user.user_name));
-      }
+    // --- 데이터 보강 (3단계 처리) ---
+    
+    // 1. 전체 업체 정보 조회 (등록자, 등급, 이름 매핑용)
+    const companyMapById = new Map();
+    const registrantMapByUserId = new Map();
+    const { data: allCompanies, error: companiesError } = await supabase
+        .from('companies')
+        .select('id, user_id, company_name, default_commission_grade');
+    if (companiesError) {
+        console.error('전체 업체 정보 조회 오류:', companiesError);
+    } else {
+        allCompanies.forEach(c => {
+            companyMapById.set(c.id, c);
+            if (c.user_id) {
+                registrantMapByUserId.set(c.user_id, c.company_name);
+            }
+        });
     }
 
+    // 2. 제품 수수료율 정보 조회 (월별 기준)
+    const productRateMap = new Map();
+    const uniqueProductMonthPairs = new Set();
+    finalData.forEach(row => {
+        const pr = row.performance_records;
+        const productId = row.product_id_modify || pr?.product_id;
+        const prescriptionMonth = row.prescription_month_modify || pr?.prescription_month;
+        if (productId && prescriptionMonth) {
+            uniqueProductMonthPairs.add(`${productId}|${prescriptionMonth}`);
+        }
+    });
+
+    if (uniqueProductMonthPairs.size > 0) {
+        const orConditions = [...uniqueProductMonthPairs].map(pair => {
+            const [productId, month] = pair.split('|');
+            return `and(id.eq.${productId},base_month.eq.${month})`;
+        }).join(',');
+
+        const { data: productRates, error: productRateError } = await supabase
+            .from('products') 
+            .select('id, base_month, commission_rate_a, commission_rate_b')
+            .or(orConditions);
+        
+        if (productRateError) {
+            console.error('월별 제품 수수료율 조회 오류:', productRateError);
+        } else {
+            productRates.forEach(p => {
+                // `allProducts` 에서 제품 이름을 찾아 추가합니다.
+                const productInfo = allProducts.value.find(ap => ap.id === p.id);
+                productRateMap.set(`${p.id}|${p.base_month}`, { ...p, product_name: productInfo?.product_name || 'N/A' });
+            });
+        }
+    }
+    
     displayRows.value = finalData.map(row => {
         const pr = row.performance_records;
-        if (!pr) return null; // performance_records가 없는 데이터는 표시하지 않음
-
-        const product = pr.products;
-        const price = product?.price || 0;
-        const qty = pr.prescription_qty || 0;
-        const commission_rate = product?.commission_rate || 0;
-        const prescription_amount = price * qty;
         
-        // 수정된 값이 있으면 사용, 없으면 원본 값 사용
-        const finalQty = row.prescription_qty_modify ?? qty;
-        const finalCommissionRate = row.commission_rate_modify ?? commission_rate;
-        const finalPaymentAmount = Math.round((price * finalQty) * (finalCommissionRate / 100));
+        // --- 정보 결정 ---
+        const companyId = row.company_id_add || pr?.company_id;
+        const companyData = companyMapById.get(companyId);
+        const commissionGrade = companyData?.default_commission_grade || 'A';
+        const companyName = companyData?.company_name || 'N/A';
+        
+        const productId = row.product_id_modify || pr?.product_id;
+        const prescriptionMonth = row.prescription_month_modify || pr?.prescription_month;
+        const productRateData = productRateMap.get(`${productId}|${prescriptionMonth}`);
 
+        // --- 최종 수수료율 계산 ---
+        let finalCommissionRate = 0;
+        if (productRateData) {
+            finalCommissionRate = (commissionGrade === 'B') ? productRateData.commission_rate_b : productRateData.commission_rate_a;
+        } else {
+            // 월별 요율 정보가 없을 경우, products 기본 정보나 0으로 처리
+            const productInfo = allProducts.value.find(p => p.id === productId);
+            finalCommissionRate = productInfo?.commission_rate || 0;
+        }
+
+        // --- 기타 값 계산 ---
+        const price = pr?.products?.price || allProducts.value.find(p => p.id === productId)?.price || 0;
+        const qty = pr?.prescription_qty || 0;
+        const finalQty = row.prescription_qty_modify ?? qty;
+        const finalPaymentAmount = Math.round((price * finalQty) * finalCommissionRate);
+        
+        const createdBy = !pr ? '관리자' : (registrantMapByUserId.get(pr.registered_by) || companyName);
+        
         return {
             id: row.id,
             performance_record_id: row.performance_record_id,
-            company_id: pr.company_id,
-            client_id: pr.client_id,
+            company_id: companyId,
+            client_id: pr?.client_id || row.client_id,
             review_status: row.review_status,
             review_action: row.review_action,
-            company_name: pr.companies?.company_name || 'N/A',
-            client_name: pr.clients?.name || 'N/A',
-            prescription_month: row.prescription_month_modify || pr.prescription_month,
-            product_name_display: allProducts.value.find(p => p.id === (row.product_id_modify || pr.product_id))?.product_name || 'N/A',
-            insurance_code: product?.insurance_code || 'N/A',
+            company_name: companyName,
+            client_name: pr?.clients?.name || 'N/A',
+            prescription_month: prescriptionMonth,
+            product_name_display: allProducts.value.find(p => p.id === productId)?.product_name || 'N/A',
+            insurance_code: allProducts.value.find(p => p.id === productId)?.insurance_code || 'N/A',
             price: price.toLocaleString(),
             prescription_qty: finalQty,
             prescription_amount: (price * finalQty).toLocaleString(),
-            prescription_type: row.prescription_type_modify || pr.prescription_type,
-            commission_rate: `${finalCommissionRate}%`,
+            prescription_type: row.prescription_type_modify || pr?.prescription_type,
+            commission_rate: `${finalCommissionRate * 100}%`,
             payment_amount: finalPaymentAmount.toLocaleString(),
-            remarks: row.remarks_modify ?? pr.remarks ?? '',
-            created_date: formatDateTime(pr.created_at),
-            created_by: userMap.get(pr.registered_by) || pr.companies?.company_name || 'N/A',
+            remarks: row.remarks_modify ?? pr?.remarks ?? '',
+            created_date: formatDateTime(pr?.created_at),
+            created_by: createdBy,
             isEditing: false,
             originalData: null,
             ...row,
