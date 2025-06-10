@@ -122,8 +122,7 @@
         
         <Column field="client_name" header="거래처" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
           <template #body="slotProps">
-                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.client_id" :options="allClients" optionLabel="name" optionValue="id" @change="onClientChange(slotProps.data)" style="width:100%" placeholder="거래처 선택" :filter="true" />
-                <span v-else>{{ slotProps.data.client_name }}</span>
+            <span>{{ slotProps.data.client_name }}</span>
           </template>
         </Column>
         

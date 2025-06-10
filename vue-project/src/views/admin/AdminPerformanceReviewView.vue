@@ -167,15 +167,16 @@
           <!-- 액션 컬럼 -->
           <Column header="액션" :headerStyle="{ width: columnWidths.actions }" :frozen="true">
             <template #body="slotProps">
-              <div style="display: flex; gap: 4px;">
-                <Button 
-                  icon="pi pi-times" 
-                  size="small" 
-                  severity="warning" 
-                  @click="excludeRow(slotProps.data)"
-                  :disabled="slotProps.data.review_status === '완료' || slotProps.data.review_action === '제외'"
-                  title="제외"
-                />
+              <div style="display: flex; gap: 4px; justify-content: center;">
+                <template v-if="slotProps.data.isEditing">
+                  <button class="btn-save-sm" @click="saveEdit(slotProps.data)" title="저장">✓</button>
+                  <button class="btn-cancel-sm" @click="cancelEdit(slotProps.data)" title="취소">✕</button>
+                </template>
+                <template v-else>
+                  <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정">✎</button>
+                  <button class="btn-delete-sm" @click="confirmDeleteRow(slotProps.index)" title="삭제">－</button>
+                  <button class="btn-add-sm" @click="addRowBelow(slotProps.index)" title="추가">＋</button>
+                </template>
               </div>
             </template>
           </Column>          
@@ -195,36 +196,48 @@
             </template>
           </Column>
           
-          <!-- 거래처명 - 편집 가능 -->
+          <!-- 거래처명 - 항상 읽기전용(수정 불가) -->
           <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true">
-            <template #editor="{ data, field }">
-              <Dropdown 
-                v-model="data[field]" 
-                :options="allClients" 
-                optionLabel="name" 
-                optionValue="name"
-                placeholder="거래처 선택"
-                @change="onClientChange(data, $event.value)"
-              />
-            </template>
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
             </template>
           </Column>
           
-          <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true"/>
+          <!-- 처방월(수정) - 편집 가능 -->
+          <Column field="prescription_month_modify" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true">
+            <template #body="slotProps">
+              <template v-if="slotProps.data.isEditing">
+                <select v-model="slotProps.data.prescription_month_modify" class="select_month">
+                  <option value="">- 선택 -</option>
+                  <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
+                    {{ month.settlement_month }}
+                  </option>
+                </select>
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">
+                  {{ slotProps.data.prescription_month_modify || slotProps.data.prescription_month }}
+                </span>
+              </template>
+            </template>
+          </Column>
           
           <!-- 제품명 - 편집 가능 -->
           <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true">
-            <template #editor="{ data, field }">
-              <Dropdown 
-                v-model="data[field]" 
-                :options="allProducts" 
-                optionLabel="product_name" 
-                optionValue="product_name"
-                placeholder="제품 선택"
-                @change="onProductChange(data, $event.value)"
-              />
+            <template #body="slotProps">
+              <template v-if="slotProps.data.isEditing">
+                <Dropdown 
+                  v-model="slotProps.data.product_name_display" 
+                  :options="allProducts" 
+                  optionLabel="product_name" 
+                  optionValue="product_name"
+                  placeholder="제품 선택"
+                  @change="onProductChange(slotProps.data, $event.value)"
+                />
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">{{ slotProps.data.product_name_display }}</span>
+              </template>
             </template>
           </Column>
           
@@ -233,8 +246,13 @@
           
           <!-- 처방수량 - 편집 가능 -->
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
-            <template #editor="{ data, field }">
-              <InputNumber v-model="data[field]" :min="0" />
+            <template #body="slotProps">
+              <template v-if="slotProps.data.isEditing">
+                <InputNumber v-model="slotProps.data.prescription_qty" :min="0" @change="onCellEditComplete({ data: slotProps.data, field: 'prescription_qty' })" />
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">{{ slotProps.data.prescription_qty }}</span>
+              </template>
             </template>
           </Column>
           
@@ -242,22 +260,30 @@
           
           <!-- 처방구분 - 편집 가능 -->
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
-            <template #editor="{ data, field }">
-              <Dropdown 
-                v-model="data[field]" 
-                :options="prescriptionTypes" 
-                placeholder="처방구분 선택"
-              />
+            <template #body="slotProps">
+              <template v-if="slotProps.data.isEditing">
+                <Dropdown 
+                  v-model="slotProps.data.prescription_type" 
+                  :options="prescriptionTypes" 
+                  placeholder="처방구분 선택"
+                  @change="onCellEditComplete({ data: slotProps.data, field: 'prescription_type' })"
+                />
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">{{ slotProps.data.prescription_type }}</span>
+              </template>
             </template>
           </Column>
           
           <!-- 수수료율 - 편집 가능 -->
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
-            <template #editor="{ data, field }">
-              <InputNumber v-model="data[field]" :min="0" :max="100" suffix="%" />
-            </template>
             <template #body="slotProps">
-              {{ slotProps.data.commission_rate }}%
+              <template v-if="slotProps.data.isEditing">
+                <InputNumber v-model="slotProps.data.commission_rate_modify" :min="0" :max="100" suffix="%" @change="onCellEditComplete({ data: slotProps.data, field: 'commission_rate_modify' })" />
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">{{ getCommissionRate(slotProps.data) }}%</span>
+              </template>
             </template>
           </Column>
           
@@ -265,8 +291,13 @@
           
           <!-- 비고 - 편집 가능 -->
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
-            <template #editor="{ data, field }">
-              <InputText v-model="data[field]" />
+            <template #body="slotProps">
+              <template v-if="slotProps.data.isEditing">
+                <InputText v-model="slotProps.data.remarks" @change="onCellEditComplete({ data: slotProps.data, field: 'remarks' })" />
+              </template>
+              <template v-else>
+                <span style="font-weight: 400;">{{ slotProps.data.remarks }}</span>
+              </template>
             </template>
           </Column>
           <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
@@ -294,7 +325,7 @@ const columnWidths = {
   checkbox: '3%',
   review_status: '4%',
   review_action: '4%',
-  actions: '3%',
+  actions: '6%',
   no: '3%',
   company_group: '6%',
   company_name: '10%',
@@ -741,7 +772,7 @@ async function loadPerformanceData() {
     return;
   }
 
-  if (!confirm('새로 검수완료된 실적을 불러와서 검수 작업에 추가하시겠습니까?\n기존 작업 중인 데이터는 유지됩니다.')) {
+  if (!confirm('해당 실적을 검수 작업에 추가하시겠습니까?\n기존 작업 중인 데이터는 유지됩니다.')) {
     return;
   }
 
@@ -892,7 +923,9 @@ async function loadPerformanceData() {
         assigned_pharmacist_contact: company.assigned_pharmacist_contact || '',
         performance_record_id: record.id,
         review_status: '검수중', // 새로 추가되는 데이터는 검수중 상태
-        review_action: null // 초기 액션 없음
+        review_action: null, // 초기 액션 없음
+        isEditing: false,
+        originalData: { ...record }
       };
 
       analysisData.push(analysisRow);
@@ -953,7 +986,7 @@ async function loadPerformanceData() {
     
     const filterText = filterInfo.length > 0 ? `\n필터 조건: ${filterInfo.join(', ')}` : '';
     
-    alert(`${analysisData.length}건의 새로운 실적 데이터를 검수 작업에 추가했습니다.${filterText}\n기존 작업 중인 데이터는 그대로 유지됩니다.\n\n해당 실적들은 사용자가 수정할 수 없는 '검수중' 상태로 변경되었습니다.`);
+    alert(`${analysisData.length}건의 신규 실적 데이터를 검수 작업에 추가했습니다.\n${filterText}\n해당 실적들은 사용자에게 수정이 불가능한 '검수중"으로 보여집니다.`);
     
   } catch (err) {
     console.error('실적 데이터 불러오기 예외:', err);
@@ -1045,36 +1078,74 @@ function excludeRow(rowData) {
   updateSelectAllState();
 }
 
-
-
-// 편집 관련 함수
-
-function onCellEditComplete(event) {
-  const { data, newValue, field } = event;
-  
-  // 수정 액션 표시 및 데이터베이스 업데이트
-  if (!data.review_action && data.review_status !== '완료') {
-    data.review_action = '수정';
-    
-    // absorption_analysis에 review_action 저장
-    if (!data.id.toString().startsWith('new_')) {
-      supabase
-        .from('absorption_analysis')
-        .update({ review_action: '수정' })
-        .eq('id', data.id)
-        .then(({ error }) => {
-          if (error) console.error('액션 저장 오류:', error);
-        });
-    }
+// 편집 관련 함수들
+function startEdit(row) {
+  if (row.review_status === '완료') {
+    alert('완료된 실적은 수정할 수 없습니다.');
+    return;
   }
   
-  // 수량이나 수수료율이 변경된 경우 금액 재계산
-  if (field === 'prescription_qty' || field === 'commission_rate') {
-    recalculateAmounts(data);
+  row.isEditing = true;
+  row.originalData = { ...row };
+}
+
+async function saveEdit(row) {
+  try {
+    // 수정된 데이터를 *_modify 컬럼에 저장
+    const { error } = await supabase
+      .from('absorption_analysis')
+      .update({
+        product_id_modify: row.product_id,
+        prescription_qty_modify: row.prescription_qty,
+        prescription_type_modify: row.prescription_type,
+        remarks_modify: row.remarks,
+        prescription_month_modify: row.prescription_month_modify, // 처방월 수정값
+        commission_rate_modify: row.commission_rate_modify, // 수수료율 수정값
+        review_action: '수정'
+      })
+      .eq('id', row.id);
+
+    if (error) {
+      throw error;
+    }
+
+    // 성공적으로 저장되면 편집 모드 종료
+    row.isEditing = false;
+    row.review_action = '수정';
+    
+    // 금액 재계산
+    recalculateAmounts(row);
+    
+  } catch (err) {
+    console.error('수정 저장 오류:', err);
+    alert('수정 저장 중 오류가 발생했습니다.');
+    // 오류 발생 시 원래 데이터로 복원
+    cancelEdit(row);
   }
 }
 
-// 편집 관련 이벤트 핸들러들
+function cancelEdit(row) {
+  // 원래 데이터로 복원
+  Object.assign(row, row.originalData);
+  row.isEditing = false;
+  row.review_action = null;
+}
+
+function confirmDeleteRow(index) {
+  // 삭제 로직 구현
+  // 이 부분은 실제 구현에 따라 달라질 수 있습니다.
+  // 예시로 간단하게 처리
+  console.log(`삭제할 행의 인덱스: ${index}`);
+}
+
+function addRowBelow(index) {
+  // 새로운 행 추가 로직 구현
+  // 이 부분은 실제 구현에 따라 달라질 수 있습니다.
+  // 예시로 간단하게 처리
+  console.log(`새로운 행을 추가할 인덱스: ${index}`);
+}
+
+// 편집 관련 함수들
 function onClientChange(data, clientName) {
   const client = allClients.value.find(c => c.name === clientName);
   if (client) {
@@ -1101,14 +1172,12 @@ function onProductChange(data, productName) {
   const product = allProducts.value.find(p => p.product_name === productName);
   if (product) {
     data.product_id = product.id;
+    data.product_name_display = product.product_name;
     data.insurance_code = product.insurance_code;
     data.price = product.price.toLocaleString();
-    
     recalculateAmounts(data);
-    
     if (!data.review_action && data.review_status !== '완료') {
       data.review_action = '수정';
-      
       // absorption_analysis에 review_action 저장
       if (!data.id.toString().startsWith('new_')) {
         supabase
@@ -1123,14 +1192,22 @@ function onProductChange(data, productName) {
   }
 }
 
-// 금액 재계산 함수
+// 수수료율 표시 및 계산 시 commission_rate_modify 우선 사용
+function getCommissionRate(row) {
+  if (row.commission_rate_modify !== undefined && row.commission_rate_modify !== null && row.commission_rate_modify !== '') {
+    return row.commission_rate_modify;
+  }
+  // 제품목록에서 product_id로 찾아서 commission_rate 반환
+  const product = allProducts.value.find(p => p.id === (row.product_id_modify || row.product_id));
+  return product ? product.commission_rate : 0;
+}
+
 function recalculateAmounts(data) {
   const price = parseFloat(data.price.replace(/,/g, '')) || 0;
   const qty = data.prescription_qty || 0;
   const prescriptionAmount = price * qty;
-  const commissionRate = data.commission_rate || 0;
+  const commissionRate = getCommissionRate(data) || 0;
   const paymentAmount = prescriptionAmount * (commissionRate / 100);
-  
   data.prescription_amount = prescriptionAmount.toLocaleString();
   data.payment_amount = paymentAmount.toLocaleString();
 }
@@ -1259,7 +1336,7 @@ async function removeFromReview() {
     return;
   }
   
-  const confirmMessage = `선택된 ${selectedRows.value.length}건의 실적을 검수 대상에서 제외하시겠습니까?\n\n제외된 실적은 사용자가 다시 수정할 수 있는 상태가 됩니다.`;
+  const confirmMessage = `선택된 ${selectedRows.value.length}건의 실적을 검수 대상에서 제외하시겠습니까?\n제외된 실적은 사용자가 다시 수정할 수 있는 상태가 됩니다.`;
   
   if (!confirm(confirmMessage)) {
     return;
@@ -1429,5 +1506,21 @@ onMounted(async () => {
   transform: translateY(0px) !important;
   box-shadow: none !important;
   transition: all 0.2s ease-in-out !important;
+}
+
+/* 드롭다운 아이콘 셀 오른쪽 정렬 */
+.admin-performance-review-table :deep(.p-dropdown) {
+  width: 100% !important;
+}
+.admin-performance-review-table :deep(.p-dropdown .p-dropdown-label) {
+  padding-right: 2.5em !important;
+}
+.admin-performance-review-table :deep(.p-dropdown .p-dropdown-trigger) {
+  right: 0.5em !important;
+  left: auto !important;
+  position: absolute !important;
+}
+.admin-performance-review-table :deep(.p-dropdown) {
+  position: relative !important;
 }
 </style> 

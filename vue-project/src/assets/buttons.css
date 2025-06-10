@@ -363,8 +363,8 @@ button:focus,
 .btn-view-sm,
 .btn-input-sm,
 .btn-upload-sm {
-  padding: 0.2rem 0.5rem !important;
-  margin: 0 0.25rem !important;
+  padding: 0.2rem 0.4rem !important;
+  margin: 0 0.2rem !important;
   font-size: var(--font-size-sm) !important;
   font-weight: 400 !important;
   border: 1px solid transparent !important;
