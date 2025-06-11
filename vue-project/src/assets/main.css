@@ -1241,7 +1241,7 @@ select.input-editable {
 /* 관리자 실적 검수 테이블 헤더 */
 .admin-performance-review-table .p-datatable-column-title,
 /* 관리자 흡수율 분석 테이블 헤더 */
-.admin-absorption-analysis-table .p-datatable-column-title,
+.absorption-analysis-table .p-datatable-column-title,
 /* 관리자 정산내역서 공유 테이블 헤더 */
 .admin-settlement-share-table .p-datatable-column-title,
 /* 관리자 정산내역서 상세 테이블 헤더 */
@@ -2020,72 +2020,67 @@ select.input-editable {
 
 
 /* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1) {
-  text-align: center !important;
-} /* No */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: left !important;
-} /* 구분 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 거래처 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 처방월 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 제품명 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 보험코드 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: right !important;
-} /* 약가 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: right !important;
-} /* 처방수량 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 처방액 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 처방구분 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: right !important;
-} /* 도매매출 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: right !important;
-} /* 직거래매출 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(14) {
-  text-align: right !important;
-} /* 합산액 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(15) {
-  text-align: center !important;
-} /* 흡수율 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16) {
-  text-align: center !important;
-} /* 수수료율 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17) {
-  text-align: right !important;
-} /* 지급액 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18) {
-  text-align: left !important;
-} /* 비고 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19) {
-  text-align: center !important;
-} /* 등록일시 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20) {
-  text-align: left !important;
-} /* 등록자 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(21) {
-  text-align: center !important;
-} /* 관리자 */
-.admin-absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(22) {
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1) {
   text-align: center !important;
 } /* 작업 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(2) {
+  text-align: center !important;
+} /* 액션 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(3) {
+  text-align: left !important;
+} /* 업체명 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(4) {
+  text-align: left !important;
+} /* 거래처 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(5) {
+  text-align: center !important;
+} /* 처방월 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(6) {
+  text-align: left !important;
+} /* 제품명 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(7) {
+  text-align: center !important;
+} /* 보험코드 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(8) {
+  text-align: right !important;
+} /* 약가 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(9) {
+  text-align: right !important;
+} /* 처방수량 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(10) {
+  text-align: right !important;
+} /* 처방액 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(11) {
+  text-align: center !important;
+} /* 처방구분 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(12) {
+  text-align: right !important;
+} /* 도매매출 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(13) {
+  text-align: right !important;
+} /* 직거래매출 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(14) {
+  text-align: right !important;
+} /* 합산액 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(15) {
+  text-align: center !important;
+} /* 흡수율 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16) {
+  text-align: center !important;
+} /* 수수료율 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17) {
+  text-align: right !important;
+} /* 지급액 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18) {
+  text-align: left !important;
+} /* 비고 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19) {
+  text-align: center !important;
+} /* 등록일시 */
+.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(20) {
+  text-align: left !important;
+} /* 등록자 */
+
 
 /* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(1) {

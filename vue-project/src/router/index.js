@@ -243,7 +243,7 @@ const router = createRouter({
     {
       path: '/admin/absorption-analysis',
       name: 'AdminAbsorptionAnalysis',
-      component: () => import('@/views/admin/AdminAbsorptionAnalysis.vue'),
+      component: () => import('@/views/admin/AdminAbsorptionAnalysisView.vue'),
       meta: { menu: '정산 관리', submenu: '흡수율 분석', requiresAuth: true, isAdmin: true },
     },
     {
