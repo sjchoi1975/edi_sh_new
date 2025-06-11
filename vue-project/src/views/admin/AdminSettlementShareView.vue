@@ -8,7 +8,7 @@
     <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">정산월</label>
+          <label>정산월</label>
           <select v-model="selectedMonth" @change="loadSettlementData" class="select_month">
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
           </select>
@@ -22,7 +22,7 @@
         <div class="action-buttons-group">
           <button class="btn-secondary" @click="toggleAllShares(true)">전체 공유</button>
           <button class="btn-secondary" @click="toggleAllShares(false)">전체 해제</button>
-          <button class="btn-primary" @click="saveShareStatus">저장</button>
+          <button class="btn-save" @click="saveShareStatus">저장</button>
         </div>
       </div>
       <div style="flex-grow: 1; overflow: auto;">
@@ -242,7 +242,6 @@ function formatDateTime(dateTimeString) {
   border: 1px solid #ced4da;
   border-radius: 4px;
   background-color: #fff;
-  min-width: 150px;
 }
 .action-buttons-group {
     display: flex;

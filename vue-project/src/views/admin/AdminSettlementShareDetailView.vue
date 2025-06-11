@@ -34,7 +34,7 @@
         </Column>
         <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
-        <Column field="product_name" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true" />
+        <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" />
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
         <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
         <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
@@ -71,120 +71,127 @@ import * as XLSX from 'xlsx';
 
 const route = useRoute();
 const router = useRouter();
-const month = route.query.month;
-const companyName = route.query.company;
-const companyInfo = ref({ company_name: '', business_registration_number: '', representative_name: '', business_address: '' });
+const month = ref(route.query.month);
+const companyId = ref(route.query.company_id);
+
+const companyInfo = ref({});
 const detailRows = ref([]);
 const loading = ref(false);
 
-// 합계 계산
-const totalQty = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
-});
-const totalPrescriptionAmount = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
-});
-const totalPaymentAmount = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
-});
-
 const columnWidths = {
   no: '4%',
-  client_name: '16%',
+  client_name: '18%',
   prescription_month: '6%',
-  product_name: '16%',
+  product_name_display: '16%',
   insurance_code: '7%',
   price: '7%',
   prescription_qty: '7%',
   prescription_amount: '7%',
   commission_rate: '7%',
   payment_amount: '7%',
-  remarks: '16%'
+  remarks: '14%'
 };
 
-async function fetchCompanyInfo() {
-  if (!companyName) return;
-  const { data, error } = await supabase
-    .from('companies')
-    .select('company_name, business_registration_number, representative_name, business_address')
-    .eq('company_name', companyName)
-    .single();
-  if (!error && data) {
-    companyInfo.value = data;
-  } else if (error) {
-    console.error("Failed to fetch company info:", error);
-  }
-}
+onMounted(async () => {
+  await loadDetailData();
+});
 
-async function fetchDetailRows() {
+async function loadDetailData() {
+  if (!month.value || !companyId.value) return;
   loading.value = true;
   try {
-    const { data, error } = await supabase
-      .from('absorption_analysis')
-      .select('*')
-      .eq('settlement_month', month)
-      .eq('company_name', companyName);
-    if (!error && data) {
-      detailRows.value = data.map(row => ({
-        ...row,
-        price: row.price?.toLocaleString() || '',
-        prescription_qty: row.prescription_qty?.toLocaleString() || '',
-        prescription_amount: row.prescription_amount?.toLocaleString() || '',
-        payment_amount: row.payment_amount?.toLocaleString() || '',
-        commission_rate: row.commission_rate ? row.commission_rate : '',
-      }));
+    // 1. 상세 데이터 조회 (RPC 사용)
+    const { data, error } = await supabase.rpc('get_absorption_analysis_details', {
+        p_settlement_month: month.value,
+        p_company_id: companyId.value,
+        p_client_id: null,
+        p_prescription_month: null
+    });
+    if (error) throw error;
+    
+    // 2. 데이터 가공
+    detailRows.value = data.map(row => ({
+      ...row,
+      price: row.price.toLocaleString(),
+      prescription_qty: row.prescription_qty.toLocaleString(),
+      prescription_amount: row.prescription_amount.toLocaleString(),
+      commission_rate: `${(row.commission_rate * 100).toFixed(2)}%`,
+      payment_amount: row.payment_amount.toLocaleString(),
+    }));
+
+    // 3. 업체 정보 설정 (주소 필드 추가)
+    if (data.length > 0) {
+      const { data: cInfo, error: cError } = await supabase
+        .from('companies')
+        .select('company_name, business_registration_number, representative_name, business_address')
+        .eq('id', companyId.value)
+        .single();
+      if(cError) throw cError;
+      companyInfo.value = cInfo;
     }
+
   } catch (err) {
     console.error('상세 데이터 조회 오류:', err);
+    alert('상세 데이터를 불러오는 중 오류가 발생했습니다.');
     detailRows.value = [];
   } finally {
     loading.value = false;
   }
 }
 
+// 합계 계산
+const totalQty = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + Number(String(row.prescription_qty).replace(/,/g, '')), 0).toLocaleString();
+});
+const totalPrescriptionAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + Number(String(row.prescription_amount).replace(/,/g, '')), 0).toLocaleString();
+});
+const totalPaymentAmount = computed(() => {
+  return detailRows.value.reduce((sum, row) => sum + Number(String(row.payment_amount).replace(/,/g, '')), 0).toLocaleString();
+});
+
 function goBack() {
   router.push('/admin/settlement-share');
 }
 
-onMounted(async () => {
-  await fetchCompanyInfo();
-  await fetchDetailRows();
-});
-
 function downloadExcel() {
-  if (!detailRows.value.length) {
+  if (detailRows.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
   const excelData = detailRows.value.map(row => ({
-    거래처명: row.client_name,
-    처방월: row.prescription_month,
-    제품명: row.product_name,
-    보험코드: row.insurance_code,
-    약가: Number(row.price?.toString().replace(/,/g, '')) || 0,
-    처방수량: Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0,
-    처방액: Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0,
-    수수료율: Number(row.commission_rate?.toString().replace(/,/g, '')) || 0,
-    지급액: Number(row.payment_amount?.toString().replace(/,/g, '')) || 0,
-    비고: row.remarks || '',
+    '거래처명': row.client_name,
+    '처방월': row.prescription_month,
+    '제품명': row.product_name_display,
+    '보험코드': row.insurance_code,
+    '약가': Number(String(row.price).replace(/,/g, '')),
+    '처방수량': Number(String(row.prescription_qty).replace(/,/g, '')),
+    '처방액': Number(String(row.prescription_amount).replace(/,/g, '')),
+    '수수료율(%)': Number(String(row.commission_rate).replace('%', '')) / 100,
+    '지급액': Number(String(row.payment_amount).replace(/,/g, '')),
+    '비고': row.remarks || '',
   }));
   const ws = XLSX.utils.json_to_sheet(excelData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '정산내역서상세');
-  ws['!cols'] = [
-    { width: 16 }, { width: 10 }, { width: 18 }, { width: 12 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 16 }
-  ];
-  // 숫자 셀 서식 적용 (약가, 처방수량, 처방액, 수수료율, 지급액)
-  const numCols = [5, 6, 7, 8, 9]; // E~I
+
+  ws['!cols'] = [ { wch: 20 }, { wch: 10 }, { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 20 }];
+  
   const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let row = 1; row <= range.e.r; row++) {
-    numCols.forEach(col => {
-      const cell = ws[XLSX.utils.encode_cell({ r: row, c: col })];
-      if (cell) cell.z = '#,##0';
-    });
+  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+    ws[XLSX.utils.encode_cell({c: 4, r: R})].z = '#,##0';
+    ws[XLSX.utils.encode_cell({c: 5, r: R})].z = '#,##0';
+    ws[XLSX.utils.encode_cell({c: 6, r: R})].z = '#,##0';
+    ws[XLSX.utils.encode_cell({c: 7, r: R})].z = '0.00%';
+    ws[XLSX.utils.encode_cell({c: 8, r: R})].z = '#,##0.0';
   }
+
   const today = new Date().toISOString().split('T')[0];
-  const fileName = `정산내역서상세_${companyInfo.value.company_name || ''}_${today}.xlsx`;
+  const fileName = `정산내역서상세_${companyInfo.value.company_name || ''}_${month.value}_${today}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 </script>
+
+<style scoped>
+/* 필요한 경우 여기에 스타일 추가 */
+</style>

@@ -43,7 +43,7 @@
             :disabled="loading"
             style="height: 38px;"
           >
-            분석 데이터 불러오기
+            검수 완료 불러오기
           </button>
         </div>
       </div>
