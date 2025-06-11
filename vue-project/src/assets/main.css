@@ -2109,19 +2109,17 @@ select.input-editable {
 } /* 처방건수 */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(9) {
   text-align: right !important;
-} /* 처방액 */
+} /* 총 처방액 */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(10) {
   text-align: right !important;
-} /* 지급액 */
+} /* 총 지급액 */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(11) {
   text-align: center !important;
 } /* 상세 */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(12) {
   text-align: center !important;
-} /* 엑셀 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: center !important;
 } /* 공유 */
+
 
 /* 관리자 정산내역서 상세 (AdminSettlementShareDetailView.vue) */
 .admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(1) {
