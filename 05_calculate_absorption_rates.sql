@@ -21,45 +21,50 @@ BEGIN
 
     -- 2. 제품의 보험코드와 표준코드를 매핑하는 임시 테이블 생성
     CREATE TEMP TABLE temp_product_codes AS
-    SELECT DISTINCT insurance_code, standard_code
+    SELECT DISTINCT insurance_code, TRIM(standard_code) AS standard_code
     FROM public.products
     WHERE standard_code IS NOT NULL;
 
     -- 3. 각 약국별, 제품별, 월별 매출(도매/직거래) 집계
     CREATE TEMP TABLE temp_pharmacy_sales AS
-    SELECT 
-        cs.business_registration_number,
-        pc.insurance_code,
-        cs.sales_month,
-        SUM(cs.monthly_wholesale) AS monthly_wholesale,
-        SUM(cs.monthly_direct) AS monthly_direct
-    FROM (
-        -- 도매 매출
-        SELECT 
-            business_registration_number,
-            standard_code,
-            TO_CHAR(sales_date, 'YYYY-MM') AS sales_month,
-            sales_amount AS monthly_wholesale,
-            0 AS monthly_direct
-        FROM public.wholesale_sales
-        UNION ALL
-        -- 직거래 매출
-        SELECT 
-            business_registration_number,
-            standard_code,
-            TO_CHAR(sales_date, 'YYYY-MM') AS sales_month,
-            0 AS monthly_wholesale,
-            sales_amount AS monthly_direct
-        FROM public.direct_sales
-    ) cs
-    JOIN temp_product_codes pc ON cs.standard_code = pc.standard_code
-    GROUP BY cs.business_registration_number, pc.insurance_code, cs.sales_month;
+    SELECT
+        business_registration_number,
+        insurance_code,
+        sales_month,
+        SUM(monthly_wholesale) AS monthly_wholesale,
+        SUM(monthly_direct) AS monthly_direct
+    FROM
+        (
+            SELECT
+                TRIM(ws.business_registration_number) AS business_registration_number,
+                pc.insurance_code,
+                TO_CHAR(ws.sales_date, 'YYYY-MM') AS sales_month,
+                ws.sales_amount AS monthly_wholesale,
+                0 AS monthly_direct
+            FROM
+                public.wholesale_sales ws
+                JOIN temp_product_codes pc ON TRIM(ws.standard_code) = pc.standard_code
+            UNION ALL
+            SELECT
+                TRIM(ds.business_registration_number) AS business_registration_number,
+                pc.insurance_code,
+                TO_CHAR(ds.sales_date, 'YYYY-MM') AS sales_month,
+                0 AS monthly_wholesale,
+                ds.sales_amount AS monthly_direct
+            FROM
+                public.direct_sales ds
+                JOIN temp_product_codes pc ON TRIM(ds.standard_code) = pc.standard_code
+        ) AS combined_sales
+    GROUP BY
+        business_registration_number,
+        insurance_code,
+        sales_month;
 
     -- 4. 각 병원(client)에 연결된 문전약국 목록 생성
     CREATE TEMP TABLE temp_client_pharmacy_map AS
     SELECT 
         cpm.client_id,
-        p.business_registration_number AS pharmacy_brn
+        TRIM(p.business_registration_number) AS pharmacy_brn
     FROM public.client_pharmacy_assignments cpm
     JOIN public.pharmacies p ON cpm.pharmacy_id = p.id;
 

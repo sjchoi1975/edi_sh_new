@@ -70,8 +70,8 @@
           scrollHeight="calc(100vh - 220px)"
           class="absorption-analysis-table"
           :pt="{
-            wrapper: { style: 'min-width: 2400px;' },
-            table: { style: 'min-width: 2400px;' }
+            wrapper: { style: 'min-width: 2200px;' },
+            table: { style: 'min-width: 2200px;' }
           }"
         >
           <template #empty>
@@ -122,6 +122,20 @@
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
           <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true" />
           <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
+
+          <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column :footer="totalWholesaleRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalDirectRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalCombinedRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :colspan="2" footerClass="footer-cell" />
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :colspan="3" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
         </DataTable>
       </div>
     </div>
@@ -129,33 +143,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import Tag from 'primevue/tag';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
   review_action: '4%',
-  company_name: '10%',
-  client_name: '12%',
+  company_name: '9%',
+  client_name: '16%',
   prescription_month: '5%',
-  product_name_display: '14%',
+  product_name_display: '16%',
   insurance_code: '6%',
   price: '5%',
-  prescription_qty: '5%',
-  prescription_amount: '6%',
-  prescription_type: '6%',
-  wholesale_revenue: '6%',
-  direct_revenue: '6%',
-  total_revenue: '7%',
+  prescription_qty: '6%',
+  prescription_amount: '7%',
+  prescription_type: '7%',
+  wholesale_revenue: '7%',
+  direct_revenue: '7%',
+  total_revenue: '8%',
   absorption_rate: '6%',
   commission_rate: '6%',
-  payment_amount: '6%',
+  payment_amount: '8%',
   remarks: '10%',
   created_date: '9%',
-  created_by: '10%'
+  created_by: '9%'
 };
 
 // --- 상태 변수 정의 ---
@@ -171,6 +187,32 @@ const selectedSettlementMonth = ref('');
 const selectedCompanyId = ref('ALL');
 const selectedHospitalId = ref('ALL');
 const prescriptionOffset = ref(0);
+
+// --- 합계 계산 ---
+const totalPrescriptionAmount = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalWholesaleRevenue = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (row.wholesale_revenue || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalDirectRevenue = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (row.direct_revenue || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalCombinedRevenue = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (row.total_revenue || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalPaymentAmount = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
 
 // --- 초기화 및 데이터 로딩 ---
 onMounted(async () => {
@@ -408,6 +450,16 @@ function downloadExcel() {
     '등록자': row.created_by,
   }));
 
+  // 합계 행 추가
+  dataToExport.push({
+    '작업': '합계',
+    '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
+    '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
+    '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
+    '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
+    '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
+  });
+
   // 2. 워크북 및 워크시트 생성
   const worksheet = XLSX.utils.json_to_sheet(dataToExport);
 
@@ -455,5 +507,10 @@ function downloadExcel() {
 /* 셀 배경색을 흰색으로 지정 */
 :deep(.p-datatable-tbody > tr > td) {
   background: #ffffff !important;
+}
+
+:deep(.p-datatable-tfoot > tr > td) {
+    background: #f8f9fa !important;
+    font-weight: bold;
 }
 </style> 
