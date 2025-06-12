@@ -338,7 +338,7 @@ async function calculateAbsorptionRates() {
 
     alert('흡수율 분석이 완료되었습니다.');
   } catch (err) {
-    console.error('흡수율 분석 오류:', err);
+    console.error('흡수율 분석 오류:', JSON.stringify(err, null, 2));
     alert(`흡수율 분석 중 오류가 발생했습니다: ${err.message}`);
   } finally {
     loading.value = false;

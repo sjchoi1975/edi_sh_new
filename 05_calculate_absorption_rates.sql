@@ -1,10 +1,11 @@
 -- 기존 함수가 존재하면 삭제
 DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
+DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month character varying);
 
 -- 새로운 함수 정의
 CREATE OR REPLACE FUNCTION public.calculate_absorption_rates(p_settlement_month text)
 RETURNS TABLE(
-    analysis_id uuid, 
+    analysis_id bigint, 
     wholesale_revenue numeric, 
     direct_revenue numeric
 )
@@ -27,22 +28,39 @@ BEGIN
     -- 3. 각 약국별, 제품별, 월별 매출(도매/직거래) 집계
     CREATE TEMP TABLE temp_pharmacy_sales AS
     SELECT 
-        p.business_registration_number,
+        cs.business_registration_number,
         pc.insurance_code,
-        TO_CHAR(s.sales_date, 'YYYY-MM') AS sales_month,
-        SUM(CASE WHEN s.sales_type = '도매' THEN s.sales_amount ELSE 0 END) AS monthly_wholesale,
-        SUM(CASE WHEN s.sales_type = '직거래' THEN s.sales_amount ELSE 0 END) AS monthly_direct
-    FROM public.sales_records s
-    JOIN public.pharmacies p ON s.pharmacy_id = p.id
-    JOIN temp_product_codes pc ON s.product_standard_code = pc.standard_code
-    GROUP BY p.business_registration_number, pc.insurance_code, TO_CHAR(s.sales_date, 'YYYY-MM');
+        cs.sales_month,
+        SUM(cs.monthly_wholesale) AS monthly_wholesale,
+        SUM(cs.monthly_direct) AS monthly_direct
+    FROM (
+        -- 도매 매출
+        SELECT 
+            business_registration_number,
+            standard_code,
+            TO_CHAR(sales_date, 'YYYY-MM') AS sales_month,
+            sales_amount AS monthly_wholesale,
+            0 AS monthly_direct
+        FROM public.wholesale_sales
+        UNION ALL
+        -- 직거래 매출
+        SELECT 
+            business_registration_number,
+            standard_code,
+            TO_CHAR(sales_date, 'YYYY-MM') AS sales_month,
+            0 AS monthly_wholesale,
+            sales_amount AS monthly_direct
+        FROM public.direct_sales
+    ) cs
+    JOIN temp_product_codes pc ON cs.standard_code = pc.standard_code
+    GROUP BY cs.business_registration_number, pc.insurance_code, cs.sales_month;
 
     -- 4. 각 병원(client)에 연결된 문전약국 목록 생성
     CREATE TEMP TABLE temp_client_pharmacy_map AS
     SELECT 
         cpm.client_id,
         p.business_registration_number AS pharmacy_brn
-    FROM public.client_pharmacy_mappings cpm
+    FROM public.client_pharmacy_assignments cpm
     JOIN public.pharmacies p ON cpm.pharmacy_id = p.id;
 
     -- 5. 약국별로 연결된 병원 수 계산
