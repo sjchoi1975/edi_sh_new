@@ -53,6 +53,9 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons">
+           <button class="btn-add" @click="calculateAbsorptionRates" :disabled="displayRows.length === 0">
+             흡수율 분석
+           </button>
            <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
              엑셀 다운로드
            </button>
@@ -302,6 +305,46 @@ watch(selectedCompanyId, async () => {
 });
 
 // --- 유틸리티 함수 ---
+async function calculateAbsorptionRates() {
+  if (!selectedSettlementMonth.value) {
+    alert('정산월을 선택해주세요.');
+    return;
+  }
+  loading.value = true;
+  try {
+    const { data: analysisResults, error } = await supabase.rpc('calculate_absorption_rates', {
+      p_settlement_month: selectedSettlementMonth.value
+    });
+
+    if (error) throw error;
+
+    const resultsMap = new Map(analysisResults.map(r => [r.analysis_id, r]));
+
+    displayRows.value.forEach(row => {
+      const result = resultsMap.get(row.id);
+      if (result) {
+        row.wholesale_revenue = result.wholesale_revenue || 0;
+        row.direct_revenue = result.direct_revenue || 0;
+        row.total_revenue = row.wholesale_revenue + row.direct_revenue;
+        
+        const prescriptionAmount = Number(String(row.prescription_amount).replace(/,/g, '')) || 0;
+        if (prescriptionAmount > 0) {
+          row.absorption_rate = ((row.total_revenue / prescriptionAmount) * 100).toFixed(1);
+        } else {
+          row.absorption_rate = '0.0';
+        }
+      }
+    });
+
+    alert('흡수율 분석이 완료되었습니다.');
+  } catch (err) {
+    console.error('흡수율 분석 오류:', err);
+    alert(`흡수율 분석 중 오류가 발생했습니다: ${err.message}`);
+  } finally {
+    loading.value = false;
+  }
+}
+
 function getPrescriptionMonth(settlementMonth, offset) {
   if (!settlementMonth || offset === null) return '';
   const [y, m] = settlementMonth.split('-');
