@@ -122,9 +122,7 @@ const adminTabs = [
         <h3>1.1 공지사항 목록 <span class="path">/admin/notices</span></h3>
         <p><strong>설명:</strong> 공지사항을 조회하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_1_notice_list.png" alt="공지사항 목록" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -145,9 +143,7 @@ const adminTabs = [
         <h3>2.1 승인 업체 목록 <span class="path">/admin/companies/approved</span></h3>
         <p><strong>설명:</strong> CSO 업체의 기본 정보를 조회하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_2_1_company_list.png" alt="승인 업체 목록" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -161,9 +157,7 @@ const adminTabs = [
         <h3>2.2 미승인 업체 목록 <span class="path">/admin/companies/pending</span></h3>
         <p><strong>설명:</strong> 신규 등록된 CSO 업체의 승인/반려 처리를 할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_2_2_company_list.png" alt="미승인 업체 목록" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -184,9 +178,7 @@ const adminTabs = [
         <h3>3.1 제품 목록 <span class="path">/admin/products</span></h3>
         <p><strong>설명:</strong> 제품 정보를 조회하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_3_1_product_list.png" alt="제품 목록" class="manual-image">
         
         <h4>📤 엑셀 등록 (5단계 확인 프로세스):</h4>
         <div class="process-steps">
@@ -230,9 +222,7 @@ const adminTabs = [
         <h3>4.1 병의원 목록 <span class="path">/admin/clients</span></h3>
         <p><strong>설명:</strong> 병의원(병원) 정보를 조회하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_4_1_hospital_list.png" alt="병의원 목록" class="manual-image">
         
         <h4>📤 엑셀 등록 (5단계 확인 프로세스):</h4>
         <div class="process-steps">
@@ -268,7 +258,7 @@ const adminTabs = [
 
         <h3>4.2 담당업체 지정 <span class="path">/admin/clients/assign-companies</span></h3>
         <p><strong>설명:</strong> 특정 병의원에 실적을 등록할 담당 CSO 업체를 지정하고 관리합니다. 이 설정을 통해 업체별로 담당 병의원이 명확하게 구분됩니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_4_2_hospital-company_list.png" alt="담당업체 지정" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
             <li><strong>병의원별 담당업체 지정</strong> - 병의원을 선택한 후, 해당 병의원을 담당할 CSO 업체를 목록에서 찾아 지정할 수 있습니다.</li>
@@ -278,7 +268,7 @@ const adminTabs = [
 
         <h3>4.3 문전약국 지정 <span class="path">/admin/clients/assign-pharmacies</span></h3>
         <p><strong>설명:</strong> 병의원과 연관된 문전약국을 지정하여 관리합니다. 실적 데이터의 정확성을 높이기 위해 병의원-약국 관계를 설정합니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_4_3_hospital-pharmacies_list.png" alt="문전약국 지정" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
             <li><strong>병의원별 문전약국 지정</strong> - 병의원을 선택한 후, 관련 문전약국을 목록에서 찾아 지정할 수 있습니다.</li>
@@ -296,9 +286,7 @@ const adminTabs = [
         <h3>5.1 문전약국 목록 <span class="path">/admin/pharmacies</span></h3>
         <p><strong>설명:</strong> 문전약국 정보를 조회하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_5_pharmacies_list.png" alt="문전약국 목록" class="manual-image">
         
         <h4>📤 엑셀 등록 (5단계 확인 프로세스):</h4>
         <div class="process-steps">
@@ -342,16 +330,12 @@ const adminTabs = [
         <h3>6.1 도매매출 관리 <span class="path">/admin/wholesale-revenue</span></h3>
         <p><strong>설명:</strong> 도매매출 데이터를 등록하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_6_1_wholesale_sales_list.png" alt="도매매출 관리" class="manual-image">
         
         <h3>6.2 직거래매출 관리 <span class="path">/admin/direct-revenue</span></h3>
         <p><strong>설명:</strong> 직거래매출 데이터를 등록하고 관리할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/admin_6_2_direct_sales_list.png" alt="직거래매출 관리" class="manual-image">
       </div>
     `
   },
@@ -363,7 +347,7 @@ const adminTabs = [
         
         <h3>7.1 정산월 관리 <span class="path">/admin/settlement-months</span></h3>
         <p><strong>설명:</strong> 정산 작업을 수행할 기준 '정산월'을 생성하고 관리합니다. 정산월을 생성해야 해당 월의 실적 등록, 검수, 정산 절차를 시작할 수 있습니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_7_1_settlement_months.png" alt="정산월 관리" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>신규 정산월 생성 (예: 2024년 7월)</li>
@@ -373,7 +357,7 @@ const adminTabs = [
 
         <h3>7.2 업체별 등록 현황 <span class="path">/admin/performance/companies</span></h3>
         <p><strong>설명:</strong> 정산월을 기준으로 CSO 업체별 실적 등록 현황을 모니터링합니다. 어느 업체가 실적을 제출했고, 어떤 상태인지 한눈에 파악할 수 있습니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_7_2_performance_company.png" alt="업체별 등록 현황" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>정산월 기준 업체별 실적 제출 상태 조회 (제출/미제출)</li>
@@ -383,7 +367,7 @@ const adminTabs = [
 
         <h3>7.3 전체 등록 현황 <span class="path">/admin/performance/all</span></h3>
         <p><strong>설명:</strong> 모든 업체가 등록한 전체 실적 현황을 통합하여 조회하고 관리합니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_7_3_settlement_all.png" alt="전체 등록 현황" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>기간, 업체, 제품 등 다양한 조건으로 전체 실적 데이터 필터링 및 검색</li>
@@ -401,7 +385,7 @@ const adminTabs = [
 
         <h3>8.1 실적 검수 <span class="path">/admin/performance-review</span></h3>
         <p><strong>설명:</strong> CSO 업체들이 등록한 실적 데이터를 건별로 상세히 검토하고 승인 또는 반려 처리를 합니다. 이 과정을 통해 데이터의 정합성을 확보하고 정산의 기초 자료를 마련합니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_8_1_check.png" alt="실적 검수" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>업체별/기간별 실적 제출 내역 상세 조회</li>
@@ -412,7 +396,7 @@ const adminTabs = [
 
         <h3>8.2 흡수율 분석 <span class="path">/admin/absorption-analysis</span></h3>
         <p><strong>설명:</strong> 전체 매출 대비 CSO 업체들이 제출하여 '승인'된 실적의 흡수율을 분석하고 리포트를 생성합니다. 이를 통해 실적 목표 달성률과 효율성을 파악할 수 있습니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_8_2_absorption_analysis.png" alt="흡수율 분석" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>기간별, 제품별, 업체별 흡수율 조회</li>
@@ -423,7 +407,7 @@ const adminTabs = [
 
         <h3>8.3 정산내역서 공유 <span class="path">/admin/settlement-share</span></h3>
         <p><strong>설명:</strong> 최종 확정된 실적을 바탕으로 CSO 업체별 정산내역서를 생성하고 시스템을 통해 공유합니다. 업체는 공유된 내역서를 확인하고 다운로드할 수 있습니다.</p>
-        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <img src="/manual-images/admin_8_3_settlement_share.png" alt="정산내역서 공유" class="manual-image">
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li>정산 대상월 선택 및 정산내역서 일괄 생성</li>
@@ -446,9 +430,7 @@ const userTabs = [
         <h3>1.1 공지사항 조회 <span class="path">/notices</span></h3>
         <p><strong>설명:</strong> 관리자(제약사)의 주요 공지사항을 확인할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_1_notice_list.png" alt="공지사항 조회" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -469,9 +451,7 @@ const userTabs = [
         <h3>2.1 제품 조회 <span class="path">/products</span></h3>
         <p><strong>설명:</strong> 제품 정보를 조회하고 상세 내용을 확인할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_2_product_list.png" alt="제품 조회" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -492,9 +472,7 @@ const userTabs = [
         <h3>3.1 병의원 조회 <span class="path">/clients</span></h3>
         <p><strong>설명:</strong> 담당 병의원 정보를 조회하고 상세 내용을 확인할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_3_hospital_list.png" alt="병의원 조회" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -515,9 +493,7 @@ const userTabs = [
         <h3>4.1 실적 등록 <span class="path">/performance/register</span></h3>
         <p><strong>설명:</strong> 담당 병의원에 대한 실적 데이터를 등록할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_4_1_edi.png" alt="실적 등록" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -528,20 +504,17 @@ const userTabs = [
           <li><strong>실적 데이터 수정</strong> - 이미 등록된 실적 데이터를 선택하여 내용을 수정할 수 있습니다.</li>
         </ul>
 
-        <h3>4.2 엑셀 업로드 <span class="path">/performance/excell</span></h3>
-        <p><strong>설명:</strong> 엑셀 파일을 통해 실적 데이터를 대량으로 등록할 수 있습니다.</p>
+        <h3>4.2 등록 현황 <span class="path">/performance/list</span></h3>
+        <p><strong>설명:</strong> 전체 등록한 실적 내용을 조회할 수 있습니다. 이번 달뿐 아니라 지난 내역까지 모두 확인할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_4_2_edi.png" alt="등록 현황" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
-          <li><strong>엑셀 파일 업로드</strong> - 정해진 양식의 엑셀 파일을 선택하여 대량의 실적 데이터를 한 번에 업로드할 수 있습니다.</li>
-          <li><strong>데이터 검증</strong> - 업로드된 엑셀 데이터의 형식과 내용을 자동으로 검증하여 오류를 사전에 확인합니다.</li>
-          <li><strong>업로드 결과 확인</strong> - 성공/실패한 데이터 건수와 오류 내역을 상세히 확인할 수 있습니다.</li>
-          <li><strong>템플릿 다운로드</strong> - 실적 데이터 입력을 위한 표준 엑셀 템플릿을 다운로드할 수 있습니다.</li>
-          <li><strong>오류 데이터 확인</strong> - 업로드 실패한 데이터의 구체적인 오류 원인과 위치를 확인할 수 있습니다.</li>
+          <li><strong>전체 실적 조회</strong> - 월 제한 없이 등록된 모든 실적 데이터를 확인할 수 있습니다.</li>
+          <li><strong>처방월별 필터링</strong> - 특정 처방월을 기준으로 실적 데이터를 필터링하여 볼 수 있습니다.</li>
+          <li><strong>병의원별 필터링</strong> - 특정 병의원을 기준으로 실적 데이터를 필터링하여 볼 수 있습니다.</li>
+          <li><strong>실적 상세 조회</strong> - 각 실적 건의 상세 내용을 확인할 수 있습니다.</li>
         </ul>
       </div>
     `
@@ -554,9 +527,7 @@ const userTabs = [
         <h3>5.1 정산내역서 조회 <span class="path">/settlements</span></h3>
         <p><strong>설명:</strong> 공유된 정산내역서를 조회하고 다운로드할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_5_1_payment.png" alt="정산내역서 조회" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -577,9 +548,7 @@ const userTabs = [
         <h3>6.1 내 정보 조회/수정 <span class="path">/my-info</span></h3>
         <p><strong>설명:</strong> 계정 정보를 조회하고 수정할 수 있습니다.</p>
         
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <img src="/manual-images/user_6_1_myinfo.png" alt="내 정보 조회/수정" class="manual-image">
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
@@ -596,7 +565,9 @@ const userTabs = [
         <div class="image-placeholder">
           <div class="placeholder-text">📷 화면 이미지</div>
         </div>
-        
+
+        <img src="/manual-images/user_6_2_pw.png" alt="내 정보 조회/수정" class="manual-image">
+
         <h4>주요 기능:</h4>
         <ul class="feature-list">
           <li><strong>현재 비밀번호 확인</strong> - 보안을 위해 현재 사용 중인 비밀번호를 입력하여 본인 확인을 수행합니다.</li>
@@ -771,22 +742,12 @@ h1 {
   font-weight: 600;
 }
 
-.manual-html-content :deep(.image-placeholder) {
+.manual-html-content :deep(.manual-image) {
   width: 100%;
-  height: 520px;
-  border: 2px dashed #ddd;
+  border: 1px solid #eee;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin: 20px 0;
-  background-color: #f8f9fa;
-}
-
-.manual-html-content :deep(.placeholder-text) {
-  color: #999;
-  font-size: 16px;
-  font-weight: 500;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
 .manual-html-content :deep(.process-steps) {
