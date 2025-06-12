@@ -193,11 +193,29 @@ function downloadExcel() {
     '지급액': Number(row.payment_amount?.toString().replace(/,/g, '')),
     '비고': row.remarks || '',
   }));
+
   const ws = XLSX.utils.json_to_sheet(excelData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '정산내역서상세');
-  ws['!cols'] = [ { width: 16 }, { width: 10 }, { width: 18 }, { width: 12 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 8 }, { width: 12 }, { width: 16 } ];
-  ws['O2'].z = '0.0%';
+
+  ws['!cols'] = [ { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 18 } ];
+  
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+    const numberFormat = '#,##0';
+    const percentFormat = '0.0%';
+
+    // 약가, 처방수량, 처방액, 지급액 (E, F, G, I열)
+    ['E', 'F', 'G', 'I'].forEach(col => {
+      const cellAddress = `${col}${R + 1}`;
+      if (ws[cellAddress]) ws[cellAddress].z = numberFormat;
+    });
+    
+    // 수수료율 (H열)
+    const commissionCell = `H${R + 1}`;
+    if (ws[commissionCell]) ws[commissionCell].z = percentFormat;
+  }
+
   const today = new Date().toISOString().split('T')[0];
   const fileName = `정산내역서상세_${selectedMonth.value || ''}_${today}.xlsx`;
   XLSX.writeFile(wb, fileName);

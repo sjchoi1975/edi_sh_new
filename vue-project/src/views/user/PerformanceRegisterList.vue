@@ -1715,24 +1715,3 @@ function addNewRow() {
   })
 }
 </script>
-
-<style scoped>
-/* 확인(검수) 상태 스타일링 */
-.status-pending {
-  background-color: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-}
-
-.status-reviewing {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
-}
-
-.status-completed {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-</style>

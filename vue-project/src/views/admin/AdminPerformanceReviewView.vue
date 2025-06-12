@@ -159,7 +159,7 @@
           </Column>
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
              <template #body="slotProps">
-                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_type_modify" :options="prescriptionTypes" class="edit-mode-input"/>
+                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_type_modify" :options="prescriptionTypeOptions" class="edit-mode-input"/>
                 <span v-else>{{ slotProps.data.prescription_type }}</span>
             </template>
           </Column>
@@ -243,7 +243,19 @@ const reviewStatusOptions = [
   { label: '검수중', value: '검수중' },
   { label: '신규', value: '신규' },
 ];
-const prescriptionTypes = ref(['EDI', '대한조제', '의료매출', '직거래매입', '차감', '원내매출', '원외매출']);
+
+const statusOptions = ['전체', '대기', '검수중', '완료'];
+
+const prescriptionTypeOptions = [
+  '전체',
+  'EDI',
+  'ERP직거래자료',
+  '매출자료',
+  '약국조제',
+  '원내매출',
+  '원외매출',
+  '차감',
+];
 
 // --- 선택 관련 ---
 const selectedRows = ref([]);

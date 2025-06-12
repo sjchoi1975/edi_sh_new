@@ -17,9 +17,9 @@
     </div>
     <div class="data-card">
       <div class="input-table-wrapper performance-edit-table">
-        <div class="top-bar-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="top-bar-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
           <div class="total-count-display">실적: {{ validRowCount }} 건</div>
-          <button class="btn-save" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:90px; margin-bottom:0.5rem !important;">저장</button>
+          <button class="btn-save" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:90px; margin-bottom:0rem !important;">저장</button>
         </div>
         <div class="table-header-fixed">
           <table>
@@ -295,12 +295,12 @@ const currentCell = ref({ row: 0, col: 'product_name' });
 
 const prescriptionTypeOptions = [
   'EDI',
-  '대한조제',
-  '의료매출',
-  '직거래매입',
-  '차감',
+  'ERP직거래자료',
+  '매출자료',
+  '약국조제',
   '원내매출',
   '원외매출',
+  '차감',
 ];
 const products = ref([]);
 const productSearchForRow = ref({
@@ -1177,32 +1177,6 @@ function goBackToList() {
 </script>
 
 <style scoped>
-/* 편집 상태 메시지 스타일링 */
-.status-message {
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.status-pending {
-  background-color: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-}
-
-.status-reviewing {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
-}
-
-.status-completed {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
 
 /* 비활성화된 입력 필드 스타일 */
 .disabled-area {
