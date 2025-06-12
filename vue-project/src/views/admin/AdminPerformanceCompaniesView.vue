@@ -100,7 +100,7 @@
 
         <!-- 실적 정보 -->
         <Column
-          header="총 거래처"
+          header="총 병의원"
           :headerStyle="{ width: columnWidths.total_clients, textAlign: 'center' }"
         >
           <template #body="slotProps">
@@ -109,7 +109,7 @@
         </Column>
 
         <Column
-          header="제출 거래처"
+          header="제출 병의원"
           :headerStyle="{ width: columnWidths.submitted_clients, textAlign: 'center' }"
         >
           <template #body="slotProps">
@@ -151,7 +151,7 @@
         </Column>
 
         <Column
-          header="미진행"
+          header="신규"
           :headerStyle="{ width: columnWidths.review_pending, textAlign: 'center' }"
         >
           <template #body="slotProps">
@@ -252,7 +252,7 @@
                     border-right: 1px solid #dee2e6;
                   "
                 >
-                  거래처명
+                  병의원명
                 </th>
                 <th style="width: 50%; padding: 12px; text-align: left">파일명</th>
               </tr>
@@ -446,7 +446,7 @@ const fetchCompanyList = async () => {
     for (const company of companiesData) {
       console.log('Processing company:', company.company_name, company.id)
 
-      // 총 거래처 수 조회 (client_company_assignments에서) - 두 가지 방법으로 시도
+      // 총 병의원 수 조회 (client_company_assignments에서) - 두 가지 방법으로 시도
       try {
         // 방법 1: count로 조회
         const { count: totalClientCount, error: clientCountError } = await supabase
@@ -471,7 +471,7 @@ const fetchCompanyList = async () => {
         )
         console.log(`Company ${company.company_name} - Sample performance:`, companyPerformances[0])
 
-        // 제출 거래처 수 (중복 제거)
+        // 제출 병의원 수 (중복 제거)
         const submittedClientIds = new Set(
           companyPerformances.map((p) => p.client_id).filter((id) => id),
         )
@@ -736,12 +736,12 @@ const downloadExcel = () => {
     사업자등록번호: company.business_registration_number || '',
     대표자: company.representative_name || '',
     관리자: company.assigned_pharmacist_contact || '',
-    '총 거래처': company.total_clients || 0,
-    '제출 거래처': company.submitted_clients || 0,
+    '총 병의원': company.total_clients || 0,
+    '제출 병의원': company.submitted_clients || 0,
     처방건수: company.prescription_count || 0,
     검수완료: company.review_completed || 0,
     검수중: company.review_in_progress || 0,
-    검수미진행: company.review_pending || 0,
+    신규: company.review_pending || 0,
     처방액: company.prescription_amount || 0,
     '증빙 파일': company.evidence_files || 0,
     '최종 등록일시': company.last_registered_at || '-',
@@ -755,8 +755,8 @@ const downloadExcel = () => {
     사업자등록번호: '',
     대표자: '합계',
     관리자: '',
-    '총 거래처': totalClients.value,
-    '제출 거래처': totalSubmittedClients.value,
+    '총 병의원': totalClients.value,
+    '제출 병의원': totalSubmittedClients.value,
     처방건수: totalPrescriptionCount.value,
     검수완료: totalReviewCompleted.value,
     검수중: totalReviewInProgress.value,
@@ -778,12 +778,12 @@ const downloadExcel = () => {
     { width: 18 }, // 사업자등록번호
     { width: 12 }, // 대표자
     { width: 12 }, // 관리자
-    { width: 12 }, // 총 거래처
-    { width: 12 }, // 제출 거래처
+    { width: 12 }, // 총 병의원
+    { width: 12 }, // 제출 병의원
     { width: 12 }, // 처방건수
     { width: 12 }, // 검수완료
     { width: 12 }, // 검수중
-    { width: 12 }, // 검수미진행
+    { width: 12 }, // 신규
     { width: 15 }, // 처방액
     { width: 12 }, // 증빙 파일
     { width: 12 }, // 최종 등록일시
@@ -917,25 +917,25 @@ const fetchCompanyFiles = async (company) => {
 
     console.log(`✅ 정상 조회 성공: ${realFiles.length}개 파일`)
 
-    // 거래처 정보를 별도로 조회
+    // 병의원 정보를 별도로 조회
     const clientIds = [...new Set(realFiles.map((f) => f.client_id).filter(Boolean))]
     let clientsMap = {}
 
     if (clientIds.length > 0) {
       try {
-        console.log('거래처 정보 조회:', clientIds)
+        console.log('병의원 정보 조회:', clientIds)
         const { data: clientsData, error: clientsError } = await supabase
           .from('clients')
           .select('id, name')
           .in('id', clientIds)
 
-        console.log('거래처 조회 결과:', clientsData?.length || 0, 'Error:', clientsError)
+        console.log('병의원 조회 결과:', clientsData?.length || 0, 'Error:', clientsError)
 
         if (clientsData && !clientsError) {
           clientsMap = Object.fromEntries(clientsData.map((c) => [c.id, c]))
         }
       } catch (clientErr) {
-        console.error('거래처 조회 오류:', clientErr)
+        console.error('병의원 조회 오류:', clientErr)
       }
     }
 
@@ -947,7 +947,7 @@ const fetchCompanyFiles = async (company) => {
       file_size: file.file_size || 0,
       client_id: file.client_id,
       clients: clientsMap[file.client_id] || {
-        name: file.client_id ? `거래처 ${file.client_id}` : '미지정',
+        name: file.client_id ? `병의원 ${file.client_id}` : '미지정',
       },
       uploaded_at: file.uploaded_at || file.created_at,
     }))

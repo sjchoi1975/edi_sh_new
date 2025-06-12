@@ -39,8 +39,8 @@
           scrollHeight="calc(100vh - 220px)"
           class="custom-table performance-register-table"
         >
-          <template #empty>등록된 거래처가 없습니다.</template>
-          <template #loading>거래처 목록을 불러오는 중입니다...</template>
+          <template #empty>등록된 병의원이 없습니다.</template>
+          <template #loading>병의원 목록을 불러오는 중입니다...</template>
 
           <!-- No 컬럼 -->
           <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
@@ -51,7 +51,7 @@
           <!-- 거래처 정보 -->
           <Column
             field="client_code"
-            header="거래처코드"
+            header="병의원코드"
             :headerStyle="{ width: columnWidths.client_code, textAlign: 'center' }"
           />
           <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
@@ -832,7 +832,7 @@ function downloadExcel() {
   // 엑셀 데이터 준비
   const excelData = clientList.value.map((client, index) => ({
     No: index + 1,
-    거래처코드: client.client_code || '',
+    병의원코드: client.client_code || '',
     병의원명: client.name || '',
     사업자등록번호: client.business_registration_number || '',
     주소: client.address || '',
@@ -848,7 +848,7 @@ function downloadExcel() {
 
   excelData.push({
     No: '',
-    거래처코드: '',
+    병의원코드: '',
     병의원명: '',
     사업자등록번호: '',
     주소: '합계',
@@ -864,7 +864,7 @@ function downloadExcel() {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { wpx: 50 }, // No
-    { wpx: 100 }, // 거래처코드
+    { wpx: 100 }, // 병의원코드
     { wpx: 200 }, // 병의원명
     { wpx: 150 }, // 사업자등록번호
     { wpx: 300 }, // 주소

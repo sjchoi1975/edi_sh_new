@@ -10,28 +10,28 @@
         
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>정산월</label>
-          <select v-model="selectedSettlementMonth" class="select-basic">
+          <select v-model="selectedSettlementMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
           </select>
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>처방월</label>
-          <select v-model="prescriptionOffset" class="select-basic">
+          <select v-model="prescriptionOffset" class="select_month">
             <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
           </select>
         </div>
         
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>업체</label>
-          <select v-model="selectedCompanyId" class="select-wide">
+          <select v-model="selectedCompanyId" class="select_200px">
             <option v-for="company in companyOptions" :key="company.id" :value="company.id">{{ company.company_name }}</option>
           </select>
         </div>
         
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>거래처</label>
-          <select v-model="selectedHospitalId" class="select-wide">
+          <select v-model="selectedHospitalId" class="select_200px">
             <option v-for="hospital in hospitalOptions" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
@@ -41,7 +41,6 @@
             class="btn-primary" 
             @click="loadAnalysisData" 
             :disabled="loading"
-            style="height: 38px;"
           >
             검수 완료 불러오기
           </button>
@@ -68,13 +67,13 @@
           scrollHeight="calc(100vh - 220px)"
           class="absorption-analysis-table"
           :pt="{
-            wrapper: { style: 'min-width: 2200px;' },
-            table: { style: 'min-width: 2200px;' }
+            wrapper: { style: 'min-width: 2400px;' },
+            table: { style: 'min-width: 2400px;' }
           }"
         >
           <template #empty>
             <div v-if="loading">데이터를 불러오는 중입니다.</div>
-            <div v-else>필터 조건을 선택하고 '분석 데이터 불러오기'를 클릭하세요.</div>
+            <div v-else>필터 조건을 선택하고 '검수 완료 불러오기'를 클릭하세요.</div>
           </template>
           
           <Column header="작업" field="review_action" :headerStyle="{ width: columnWidths.review_action }" :frozen="true">
@@ -83,17 +82,11 @@
             </template>
           </Column>
 
-          <Column header="액션" :headerStyle="{ width: columnWidths.actions }" :frozen="true">
-             <template #body>
-              <div style="text-align: center;">-</div>
-            </template>
-          </Column>
-
           <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" :frozen="true" />
           <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true" />
           
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
-          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" />
+          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" :frozen="true" />
           <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
           <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
@@ -142,11 +135,10 @@ import * as XLSX from 'xlsx';
 
 const columnWidths = {
   review_action: '4%',
-  actions: '6%',
-  company_name: '8%',
-  client_name: '10%',
+  company_name: '10%',
+  client_name: '12%',
   prescription_month: '5%',
-  product_name_display: '12%',
+  product_name_display: '14%',
   insurance_code: '6%',
   price: '5%',
   prescription_qty: '5%',
@@ -154,13 +146,13 @@ const columnWidths = {
   prescription_type: '6%',
   wholesale_revenue: '6%',
   direct_revenue: '6%',
-  total_revenue: '6%',
-  absorption_rate: '5%',
-  commission_rate: '5%',
+  total_revenue: '7%',
+  absorption_rate: '6%',
+  commission_rate: '6%',
   payment_amount: '6%',
   remarks: '10%',
-  created_date: '8%',
-  created_by: '8%'
+  created_date: '9%',
+  created_by: '10%'
 };
 
 // --- 상태 변수 정의 ---
@@ -246,15 +238,25 @@ async function loadAnalysisData() {
   displayRows.value = [];
   
   try {
-    const prescriptionMonth = prescriptionOffset.value === 0 ? null : getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+    let query = supabase
+      .from('v_review_details')
+      .select('*')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('review_status', '완료');
+    
+    if (selectedCompanyId.value !== 'ALL') {
+      query = query.eq('company_id', selectedCompanyId.value);
+    }
+    if (selectedHospitalId.value !== 'ALL') {
+      query = query.eq('client_id', selectedHospitalId.value);
+    }
+    
+    if (prescriptionOffset.value !== 0) {
+      const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+      query = query.eq('prescription_month', prescriptionMonth);
+    }
 
-    const { data, error } = await supabase.rpc('get_absorption_analysis_details', {
-        p_settlement_month: selectedSettlementMonth.value,
-        p_company_id: selectedCompanyId.value === 'ALL' ? null : selectedCompanyId.value,
-        p_client_id: selectedHospitalId.value === 'ALL' ? null : selectedHospitalId.value,
-        p_prescription_month: prescriptionMonth
-      });
-
+    const { data, error } = await query;
     if (error) throw error;
 
     displayRows.value = data.map(row => {
@@ -265,10 +267,10 @@ async function loadAnalysisData() {
 
         return {
             ...row,
-            price: row.price.toLocaleString(),
-            prescription_amount: row.prescription_amount.toLocaleString(),
-            commission_rate: `${row.commission_rate * 100}%`,
-            payment_amount: row.payment_amount.toLocaleString(),
+            price: row.price?.toLocaleString() || 0,
+            prescription_amount: row.prescription_amount?.toLocaleString() || 0,
+            commission_rate: `${(row.commission_rate * 100).toFixed(1)}%`,
+            payment_amount: Math.round(row.prescription_amount * row.commission_rate).toLocaleString(),
             created_date: formatDateTime(row.created_at),
             wholesale_revenue,
             direct_revenue,
@@ -403,20 +405,7 @@ function downloadExcel() {
 </script>
 
 <style scoped>
-/* 기본 select 스타일 */
-.select-basic, .select-wide {
-  height: 38px;
-  padding: 4px 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  background-color: #fff;
-}
-.select-basic {
-  width: 120px;
-}
-.select-wide {
-  width: 220px;
-}
+
 .absorption-analysis-view { padding: 0px; }
 .data-card-buttons { display: flex; gap: 8px; }
 

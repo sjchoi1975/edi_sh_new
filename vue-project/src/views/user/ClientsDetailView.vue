@@ -1,10 +1,10 @@
 <template>
   <div class="board_640">
-    <div class="form-title">거래처 상세</div>
+    <div class="form-title">병의원 상세</div>
     <div class="notice-form single-row-form">
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">거래처코드</label>
+          <label style="text-align: right;">병의원코드</label>
         </div>
         <div class="form-col input-col">
           <input class="input-readonly-detail" :value="client.client_code || '-'" readonly disabled />

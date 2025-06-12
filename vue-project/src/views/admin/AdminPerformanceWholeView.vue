@@ -4,42 +4,42 @@
       <div class="header-title">전체 등록 현황</div>
     </div>
 
-    <!-- 필터 카드: 정산월, 처방월, 업체, 거래처 드롭다운 -->
+    <!-- 필터 카드: 정산월, 처방월, 업체, 병의원 드롭다운 -->
     <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">정산월</label>
+          <label>정산월</label>
           <select v-model="selectedSettlementMonth" class="select_month">
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">처방월</label>
+          <label>처방월</label>
           <select v-model="prescriptionOffset" class="select_month">
             <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.value">{{ opt.month }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">업체</label>
-          <select v-model="selectedCompanyId" class="select_240px">
+          <label>업체</label>
+          <select v-model="selectedCompanyId" class="select_200px">
             <option value="">- 전체 -</option>
             <option v-for="company in companies" :key="company.id" :value="company.id">{{ company.company_name }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight:400;">거래처</label>
-          <select v-model="selectedHospitalId" class="select_240px">
+          <label>병의원</label>
+          <select v-model="selectedHospitalId" class="select_200px">
             <option value="">- 전체 -</option>
             <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-weight:400;">검수</label>
-          <select v-model="selectedReviewStatus" class="select_120px">
+          <select v-model="selectedReviewStatus" class="select_100px">
             <option value="">- 전체 -</option>
             <option value="완료">완료</option>
             <option value="검수중">검수중</option>
-            <option value="대기">미진행</option>
+            <option value="대기">신규</option>
           </select>
         </div>
       </div>
@@ -81,8 +81,8 @@
           <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span v-if="slotProps.data.review_status === '검수완료'" style="color: var(--primary-blue)">완료</span>
-              <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">진행중</span>
-              <span v-else-if="slotProps.data.review_status === '검수미진행'" style="color: var(--danger)">미진행</span>
+              <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">검수중</span>
+              <span v-else-if="slotProps.data.review_status === '신규'" style="color: var(--danger)">신규</span>
               <span v-else>-</span>
             </template>
           </Column>
@@ -96,7 +96,7 @@
               <span style="font-weight: 400;">{{ slotProps.data.company_name }}</span>
             </template>
           </Column>
-          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true">
+          <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true">
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.client_name }}</span>
             </template>
@@ -172,7 +172,7 @@ const selectedReviewStatus = ref('');
 const selectedCompanyId = ref(''); // 선택된 업체 ID
 const companies = ref([]); // 업체 목록
 
-// 거래처 관련
+// 병의원 관련
 const selectedHospitalId = ref(''); // 빈 문자열로 초기화 (전체)
 const hospitals = ref([]);
 
@@ -185,7 +185,7 @@ const displayRows = computed(() => {
     rows = rows.filter(row => {
       if (selectedReviewStatus.value === '완료') return row.review_status === '검수완료';
       if (selectedReviewStatus.value === '검수중') return row.review_status === '검수중';
-      if (selectedReviewStatus.value === '대기') return row.review_status === '검수미진행';
+      if (selectedReviewStatus.value === '대기') return row.review_status === '신규';
       return true;
     });
   }
@@ -229,7 +229,7 @@ watch(selectedSettlementMonth, () => {
   // 업체 선택 초기화
   selectedCompanyId.value = '';
   
-  // 거래처 선택 초기화
+  // 병의원 선택 초기화
   selectedHospitalId.value = '';
   
   if (selectedSettlementMonth.value) {
@@ -254,7 +254,7 @@ watch(prescriptionOffset, (val) => {
   // 업체 선택 초기화
   selectedCompanyId.value = '';
   
-  // 거래처 선택 초기화
+  // 병의원 선택 초기화
   selectedHospitalId.value = '';
   
   if (selectedSettlementMonth.value) {
@@ -265,7 +265,7 @@ watch(prescriptionOffset, (val) => {
 });
 
 watch(selectedCompanyId, () => {
-  // 거래처 선택 초기화
+  // 병의원 선택 초기화
   selectedHospitalId.value = '';
   
   if (selectedSettlementMonth.value) {
@@ -378,11 +378,11 @@ async function fetchHospitals() {
     const { data, error } = await query;
       
     if (error) {
-      console.error('거래처 조회 오류:', error);
+      console.error('병의원 조회 오류:', error);
       return;
     }
     
-    // 중복 제거 후 거래처 정보만 추출
+    // 중복 제거 후 병의원 정보만 추출
     const uniqueHospitals = [];
     const seenIds = new Set();
     
@@ -400,7 +400,7 @@ async function fetchHospitals() {
     hospitals.value = uniqueHospitals.sort((a, b) => a.name.localeCompare(b.name));
     
   } catch (err) {
-    console.error('거래처 조회 예외:', err);
+    console.error('병의원 조회 예외:', err);
     hospitals.value = [];
   }
 }
@@ -433,7 +433,7 @@ async function fetchPerformanceRecords() {
       query = query.eq('company_id', selectedCompanyId.value);
     }
     
-    // 거래처가 선택된 경우
+    // 병의원이 선택된 경우
     if (selectedHospitalId.value) {
       query = query.eq('client_id', selectedHospitalId.value);
     }
@@ -457,7 +457,7 @@ async function fetchPerformanceRecords() {
     // 데이터 변환
     rawRows.value = data.map(record => {
       const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
-      let review_status = '검수미진행';
+      let review_status = '신규';
       if (record.user_edit_status === '완료') review_status = '검수완료';
       else if (record.user_edit_status === '검수중') review_status = '검수중';
       return {
@@ -521,7 +521,7 @@ const downloadExcel = () => {
     '검수상태': row.review_status,
     '구분': row.company_group || '',
     '업체명': row.company_name || '',
-    '거래처명': row.client_name || '',
+    '병의원명': row.client_name || '',
     '처방월': row.prescription_month || '',
     '제품명': row.product_name_display || '',
     '보험코드': row.insurance_code || '',
@@ -541,7 +541,7 @@ const downloadExcel = () => {
     '검수상태': '',
     '구분': '',
     '업체명': '',
-    '거래처명': '',
+    '병의원명': '',
     '처방월': '',
     '제품명': '',
     '보험코드': '',
@@ -565,7 +565,7 @@ const downloadExcel = () => {
     { width: 10 },  // 검수상태
     { width: 10 },  // 구분
     { width: 15 },  // 업체명
-    { width: 20 },  // 거래처명
+    { width: 20 },  // 병의원명
     { width: 10 },  // 처방월
     { width: 20 },  // 제품명
     { width: 12 },  // 보험코드
@@ -618,29 +618,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.select_120px {
-  width: 120px;
-  min-width: 120px;
-  height: 38px;
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  margin-bottom: 0 !important;
-  display: inline-block;
-}
-
-.select_180px {
-  width: 180px;
-  min-width: 120px;
-  height: 38px;
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  margin-bottom: 0 !important;
-  display: inline-block;
-}
 
 /* 테이블 틀고정 중첩 현상 해결 - 바디에만 흰색 적용 */
 .admin-performance-whole-table :deep(.p-datatable-tbody) {

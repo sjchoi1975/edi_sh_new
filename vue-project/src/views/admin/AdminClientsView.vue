@@ -1,14 +1,14 @@
 <template>
   <div class="admin-clients-view page-container">
     <div class="page-header-title-area">
-      <div class="header-title">거래처 목록</div>
+      <div class="header-title">병의원 목록</div>
     </div>
     <div class="filter-card">
       <div class="filter-row">
         <span class="p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
-            placeholder="거래처코드, 병의원명, 사업자등록번호 검색"
+            placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
             class="search-input"
           />
         </span>
@@ -48,9 +48,9 @@
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>
-          <div v-if="!loading">등록된 거래처가 없습니다.</div>
+          <div v-if="!loading">등록된 병의원이 없습니다.</div>
         </template>
-        <template #loading>거래처 목록을 불러오는 중입니다...</template>
+        <template #loading>병의원 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
@@ -58,7 +58,7 @@
         </Column>
         <Column
           field="client_code"
-          header="거래처코드"
+          header="병의원코드"
           :headerStyle="{ width: columnWidths.client_code }"
           :sortable="true"
         >
@@ -88,7 +88,7 @@
           header="사업자등록번호"
           :headerStyle="{ width: columnWidths.business_registration_number }"
           :sortable="true"
-        >
+          >
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -338,7 +338,7 @@ const deleteClient = async (row) => {
 const downloadTemplate = () => {
   const templateData = [
     {
-      거래처코드: '10001',
+      병의원코드: '10001',
       병의원명: '강남사랑병원',
       사업자등록번호: '123-45-67890',
       원장명: '홍길동',
@@ -347,7 +347,7 @@ const downloadTemplate = () => {
       상태: '활성',
     },
     {
-      거래처코드: '10002',
+      병의원코드: '10002',
       병의원명: '테스트병원',
       사업자등록번호: '012-34-56789', // 앞자리 0이 있는 예시
       원장명: '김철수',
@@ -359,11 +359,11 @@ const downloadTemplate = () => {
 
   const ws = XLSX.utils.json_to_sheet(templateData)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '거래처템플릿')
+  XLSX.utils.book_append_sheet(wb, ws, '병의원템플릿')
 
   // 컬럼 너비 설정
   ws['!cols'] = [
-    { width: 12 }, // 거래처코드
+    { width: 12 }, // 병의원코드
     { width: 25 }, // 병의원명
     { width: 15 }, // 사업자등록번호
     { width: 12 }, // 원장명
@@ -392,7 +392,7 @@ const downloadTemplate = () => {
     e: { c: 6, r: maxRows - 1 }
   })
 
-  XLSX.writeFile(wb, '거래처_엑셀등록_템플릿.xlsx')
+  XLSX.writeFile(wb, '병의원_엑셀등록_템플릿.xlsx')
 }
 
 // 파일 업로드 트리거
@@ -477,7 +477,7 @@ const handleFileUpload = async (event) => {
       }
 
       uploadData.push({
-        client_code: row['거래처코드'] || '',
+        client_code: row['병의원코드'] || '',
         name: row['병의원명'],
         business_registration_number: row['사업자등록번호'],
         owner_name: row['원장명'] || '',
@@ -506,7 +506,7 @@ const handleFileUpload = async (event) => {
           )
           
           if (existingClient) {
-            duplicateErrors.push(`${newClient.rowNum}행: 이미 동일한 사업자등록번호의 거래처가 등록되어 있습니다.`)
+            duplicateErrors.push(`${newClient.rowNum}행: 이미 동일한 사업자등록번호의 병의원이 등록되어 있습니다.`)
             duplicateClients.push(newClient)
           }
         }
@@ -519,10 +519,10 @@ const handleFileUpload = async (event) => {
         }
 
         // 5단계: 중복 해결 방법 선택
-        const shouldReplace = confirm('이미 동일한 사업자등록번호 거래처를 어떻게 처리하시겠습니까?\n\n확인: 기존 거래처 정보를 신규 거래처 정보로 교체하기\n취소: 기존 거래처 정보는 그대로 두고 신규 거래처만 등록하기')
+        const shouldReplace = confirm('이미 동일한 사업자등록번호 병의원을 어떻게 처리하시겠습니까?\n\n확인: 기존 병의원 정보를 신규 병의원 정보로 교체하기\n취소: 기존 병의원 정보는 그대로 두고 신규 병의원만 등록하기')
         
         if (shouldReplace) {
-          // 교체 모드: 중복되는 기존 거래처들 삭제
+          // 교체 모드: 중복되는 기존 병의원들 삭제
           for (const duplicateClient of duplicateClients) {
             const { error: deleteError } = await supabase
               .from('clients')
@@ -530,7 +530,7 @@ const handleFileUpload = async (event) => {
               .eq('business_registration_number', duplicateClient.business_registration_number)
             
             if (deleteError) {
-              alert('기존 거래처 삭제 실패: ' + deleteError.message)
+              alert('기존 병의원 삭제 실패: ' + deleteError.message)
               return
             }
           }
@@ -544,7 +544,7 @@ const handleFileUpload = async (event) => {
             }
           }
         } else {
-          // 기존 유지 모드: 중복되는 신규 거래처들 제외
+          // 기존 유지 모드: 중복되는 신규 병의원들 제외
           const duplicateBusinessNumbers = duplicateClients.map(c => c.business_registration_number)
           uploadData = uploadData.filter(item => !duplicateBusinessNumbers.includes(item.business_registration_number))
         }
@@ -568,7 +568,7 @@ const handleFileUpload = async (event) => {
     if (error) {
       alert('업로드 실패: ' + error.message)
     } else {
-      alert(`${insertData.length}건의 거래처 데이터가 업로드되었습니다.`)
+      alert(`${insertData.length}건의 병의원 정보가 업로드되었습니다.`)
       await fetchClients() // 목록 새로고침
     }
   } catch (error) {
@@ -590,7 +590,7 @@ const downloadExcel = () => {
   // 데이터 변환
   const excelData = clients.value.map((client) => ({
     ID: client.id,
-    거래처코드: client.client_code || '',
+    병의원코드: client.client_code || '',
     병의원명: client.name || '',
     사업자등록번호: client.business_registration_number || '',
     원장명: client.owner_name || '',
@@ -603,12 +603,12 @@ const downloadExcel = () => {
 
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '거래처목록')
+  XLSX.utils.book_append_sheet(wb, ws, '병의원목록')
 
   // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 10 }, // ID
-    { width: 12 }, // 거래처코드
+    { width: 12 }, // 병의원코드
     { width: 20 }, // 병의원명
     { width: 15 }, // 사업자등록번호
     { width: 12 }, // 원장명
@@ -633,13 +633,13 @@ const downloadExcel = () => {
 
   // 파일명에 현재 날짜 포함
   const today = new Date().toISOString().split('T')[0]
-  const fileName = `거래처목록_${today}.xlsx`
+  const fileName = `병의원목록_${today}.xlsx`
 
   XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllClients() {
-  if (!confirm('정말 모든 거래처를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if (!confirm('정말 모든 병의원 정보를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   // 거래처 전체 삭제
   const { error: clientError } = await supabase.from('clients').delete().neq('id', 0);
   // 담당업체 지정 전체 삭제
@@ -651,7 +651,7 @@ async function deleteAllClients() {
     return;
   }
   clients.value = [];
-  alert('모든 거래처 및 관련 지정 데이터가 삭제되었습니다.');
+  alert('모든 병의원 및 관련 지정 데이터가 삭제되었습니다.');
 }
 
 onMounted(() => {

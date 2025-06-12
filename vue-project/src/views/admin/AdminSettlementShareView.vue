@@ -121,7 +121,7 @@ const totalPrescriptionAmount = computed(() => {
 
 const totalPaymentAmount = computed(() => {
     const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_payment_amount || 0), 0);
-    return total.toLocaleString();
+    return total.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
 });
 
 
@@ -139,16 +139,27 @@ watch(selectedMonth, async (newMonth) => {
 
 async function fetchAvailableMonths() {
     try {
-        const { data, error } = await supabase.rpc('get_distinct_settlement_months_from_analysis');
+        const { data, error } = await supabase
+            .from('v_review_details')
+            .select('settlement_month', { distinct: true })
+            .eq('review_status', '완료');
+            
         if (error) throw error;
-        data.sort((a, b) => b.settlement_month.localeCompare(a.settlement_month));
-        availableMonths.value = data;
-        if (data.length > 0) {
-            selectedMonth.value = data[0].settlement_month;
-            await loadSettlementData();
+        
+        const months = data.map(item => ({ settlement_month: item.settlement_month }));
+        months.sort((a, b) => b.settlement_month.localeCompare(a.settlement_month));
+        
+        availableMonths.value = months;
+
+        if (months.length > 0) {
+            selectedMonth.value = months[0].settlement_month;
+        } else {
+            // 데이터가 없을 경우에 대한 처리
+            companySummary.value = [];
         }
     } catch (err) {
         console.error('정산월 조회 오류', err);
+        alert('정산월 목록을 불러오는 중 오류가 발생했습니다.');
     }
 }
 
@@ -158,13 +169,55 @@ async function loadSettlementData() {
     shareChanges.value = {};
     
     try {
-        const { data, error } = await supabase.rpc('get_settlement_share_summary', {
-            p_settlement_month: selectedMonth.value
+        const { data: details, error: detailsError } = await supabase
+            .from('v_review_details')
+            .select('*')
+            .eq('settlement_month', selectedMonth.value)
+            .eq('review_status', '완료');
+        
+        if (detailsError) throw detailsError;
+
+        const { data: shares, error: sharesError } = await supabase
+            .from('settlement_share')
+            .select('*')
+            .eq('settlement_month', selectedMonth.value);
+
+        if (sharesError) throw sharesError;
+        
+        const sharesMap = new Map(shares.map(s => [s.company_id, { is_shared: s.share_enabled, settlement_share_id: s.id }]));
+
+        const summaryMap = new Map();
+
+        details.forEach(row => {
+            if (!summaryMap.has(row.company_id)) {
+                summaryMap.set(row.company_id, {
+                    company_id: row.company_id,
+                    company_type: row.company_type,
+                    company_name: row.company_name,
+                    business_registration_number: row.business_registration_number,
+                    representative_name: row.representative_name,
+                    manager_name: row.manager_name,
+                    client_count: new Set(),
+                    prescription_count: 0,
+                    total_prescription_amount: 0,
+                    total_payment_amount: 0,
+                    is_shared: sharesMap.has(row.company_id) ? sharesMap.get(row.company_id).is_shared : false,
+                    settlement_share_id: sharesMap.has(row.company_id) ? sharesMap.get(row.company_id).settlement_share_id : null,
+                });
+            }
+            const summary = summaryMap.get(row.company_id);
+            summary.client_count.add(row.client_id);
+            summary.prescription_count += 1;
+            summary.total_prescription_amount += row.prescription_amount || 0;
+            summary.total_payment_amount += row.payment_amount || 0;
+        });
+        
+        const finalSummary = Array.from(summaryMap.values()).map(s => {
+            s.client_count = s.client_count.size;
+            return s;
         });
 
-        if (error) throw error;
-        
-        companySummary.value = data.sort((a,b) => a.company_name.localeCompare(b.company_name));
+        companySummary.value = finalSummary.sort((a,b) => a.company_name.localeCompare(b.company_name));
         
     } catch (err) {
         console.error('정산 공유 데이터 로드 오류:', err);
@@ -175,7 +228,10 @@ async function loadSettlementData() {
 }
 
 function onShareChange(companyData) {
-    shareChanges.value[companyData.company_id] = companyData.is_shared;
+    shareChanges.value[companyData.company_id] = {
+      is_shared: companyData.is_shared,
+      id: companyData.settlement_share_id
+    };
 }
 
 // 전체 공유/해제
@@ -192,29 +248,54 @@ async function saveShareStatus() {
         return;
     }
 
-    const recordsToUpsert = [];
+    loading.value = true;
+    
+    const recordsToInsert = [];
+    const recordsToUpdate = [];
 
     for (const companyId in shareChanges.value) {
-        recordsToUpsert.push({
-            settlement_month: selectedMonth.value,
-            company_id: companyId,
-            share_enabled: shareChanges.value[companyId],
-        });
+        const change = shareChanges.value[companyId];
+        if (change.id) { // ID가 있으면 업데이트
+            recordsToUpdate.push({
+                id: change.id,
+                share_enabled: change.is_shared
+            });
+        } else { // ID가 없으면 삽입
+            recordsToInsert.push({
+                settlement_month: selectedMonth.value,
+                company_id: companyId,
+                share_enabled: change.is_shared,
+            });
+        }
     }
-    
+
     try {
-        const { error } = await supabase.from('settlement_share').upsert(recordsToUpsert, {
-            onConflict: 'settlement_month, company_id'
+        const promises = [];
+        if (recordsToInsert.length > 0) {
+            promises.push(supabase.from('settlement_share').insert(recordsToInsert));
+        }
+        if (recordsToUpdate.length > 0) {
+            const updatePromises = recordsToUpdate.map(record => 
+                supabase.from('settlement_share').update({ share_enabled: record.share_enabled }).eq('id', record.id)
+            );
+            promises.push(...updatePromises);
+        }
+
+        const results = await Promise.all(promises);
+        
+        results.forEach(res => {
+            if (res.error) throw res.error;
         });
 
-        if (error) throw error;
-
+        shareChanges.value = {};
         alert('공유 상태가 성공적으로 저장되었습니다.');
         await loadSettlementData();
 
     } catch (err) {
         console.error('공유 상태 저장 오류:', err);
         alert('공유 상태 저장 중 오류가 발생했습니다.');
+    } finally {
+        loading.value = false;
     }
 }
 
@@ -236,13 +317,6 @@ function formatDateTime(dateTimeString) {
 </script>
 
 <style scoped>
-.select_month {
-  height: 38px;
-  padding: 4px 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  background-color: #fff;
-}
 .action-buttons-group {
     display: flex;
     gap: 8px;

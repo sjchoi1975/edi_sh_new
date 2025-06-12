@@ -8,7 +8,7 @@
         <span class="p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
-            placeholder="거래처코드, 병의원명, 사업자등록번호 검색"
+            placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
             class="search-input"
           />
         </span>
@@ -47,9 +47,9 @@
         v-model:first="currentPageFirstIndex"
       >
         <template #empty>
-          <div v-if="!loading">등록된 거래처가 없습니다.</div>
+          <div v-if="!loading">등록된 병의원이 없습니다.</div>
         </template>
-        <template #loading>거래처 목록을 불러오는 중입니다...</template>
+        <template #loading>병의원 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}
@@ -57,11 +57,17 @@
         </Column>
         <Column
           field="client_code"
-          header="거래처코드"
+          header="병의원코드"
           :headerStyle="{ width: columnWidths.client_code }"
           :sortable="true"
         />
-        <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true" />
+        <Column 
+          field="name" 
+          header="병의원명" 
+          :headerStyle="{ width: columnWidths.name }" 
+          :style="{ fontWeight: '500 !important' }"  
+          :sortable="true" 
+        />
         <Column
           field="business_registration_number"
           header="사업자등록번호"
@@ -81,7 +87,7 @@
               <div
                 v-for="(pharmacy, idx) in slotProps.data.pharmacies"
                 :key="pharmacy.id"
-                style="min-height: 32px; display: flex; align-items: center"
+                style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
               >
                 {{ pharmacy.name }}
               </div>
@@ -279,14 +285,14 @@ async function deleteAssignment(client, pharmacy = null) {
 
 const downloadTemplate = () => {
   const templateData = [
-    { '거래처 사업자등록번호': '123-45-67890', '약국 사업자등록번호': '222-11-33333' },
-    { '거래처 사업자등록번호': '987-65-43210', '약국 사업자등록번호': '555-44-66666' },
+    { '병의원 사업자등록번호': '123-45-67890', '약국 사업자등록번호': '222-11-33333' },
+    { '병의원 사업자등록번호': '987-65-43210', '약국 사업자등록번호': '555-44-66666' },
   ]
   const ws = XLSX.utils.json_to_sheet(templateData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '문전약국지정템플릿')
   ws['!cols'] = [{ width: 20 }, { width: 20 }]
-  XLSX.writeFile(wb, '거래처-약국매핑_엑셀등록_템플릿.xlsx')
+  XLSX.writeFile(wb, '병의원-약국매핑_엑셀등록_템플릿.xlsx')
 }
 
 const triggerFileUpload = () => {
@@ -321,7 +327,7 @@ const handleFileUpload = async (event) => {
       .select('id, business_registration_number')
 
     if (clientError || pharmacyError) {
-      alert('거래처 또는 약국 정보 조회 중 오류가 발생했습니다.')
+      alert('병의원 또는 약국 정보 조회 중 오류가 발생했습니다.')
       console.error(clientError || pharmacyError)
       return
     }
@@ -333,11 +339,11 @@ const handleFileUpload = async (event) => {
 
     for (const [index, row] of jsonData.entries()) {
       const rowNum = index + 2
-      const clientBrn = row['거래처 사업자등록번호']
+      const clientBrn = row['병의원 사업자등록번호']
       const pharmacyBrn = row['약국 사업자등록번호']
 
       if (!clientBrn || !pharmacyBrn) {
-        errors.push(`${rowNum}행: 거래처 또는 약국의 사업자등록번호가 비어있습니다.`)
+        errors.push(`${rowNum}행: 병의원 또는 약국의 사업자등록번호가 비어있습니다.`)
         continue
       }
 
@@ -346,7 +352,7 @@ const handleFileUpload = async (event) => {
 
       if (!clientId) {
         errors.push(
-          `${rowNum}행: 거래처 사업자등록번호 '${clientBrn}'에 해당하는 거래처를 찾을 수 없습니다.`,
+          `${rowNum}행: 병의원 사업자등록번호 '${clientBrn}'에 해당하는 병의원을 찾을 수 없습니다.`,
         )
       }
       if (!pharmacyId) {
@@ -396,8 +402,8 @@ const downloadExcel = () => {
     if (client.pharmacies && client.pharmacies.length > 0) {
       client.pharmacies.forEach((pharmacy) => {
         excelData.push({
-          거래처ID: client.id,
-          거래처코드: client.client_code,
+          병의원ID: client.id,
+          병의원코드: client.client_code,
           병의원명: client.name,
           사업자등록번호: client.business_registration_number,
           원장명: client.owner_name,
@@ -409,8 +415,8 @@ const downloadExcel = () => {
       })
     } else {
       excelData.push({
-        거래처ID: client.id,
-        거래처코드: client.client_code,
+        병의원ID: client.id,
+        병의원코드: client.client_code,
         병의원명: client.name,
         사업자등록번호: client.business_registration_number,
         원장명: client.owner_name,

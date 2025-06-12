@@ -129,19 +129,19 @@ const router = createRouter({
       path: '/admin/clients',
       name: 'AdminClients',
       component: () => import('@/views/admin/AdminClientsView.vue'),
-      meta: { menu: '거래처 관리', submenu: '거래처 목록', requiresAuth: true, isAdmin: true },
+      meta: { menu: '병의원 관리', submenu: '병의원 목록', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/clients/create',
       name: 'AdminClientCreate',
       component: () => import('@/views/admin/AdminClientsCreateView.vue'),
-      meta: { menu: '거래처 관리', submenu: '거래처 등록', requiresAuth: true, isAdmin: true },
+      meta: { menu: '병의원 관리', submenu: '병의원 등록', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/clients/:id',
       name: 'AdminClientDetail',
       component: () => import('@/views/admin/AdminClientsDetailView.vue'),
-      meta: { menu: '거래처 관리', submenu: '거래처 상세', requiresAuth: true, isAdmin: true },
+      meta: { menu: '병의원 관리', submenu: '병의원 상세', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/clients/:id/edit',
@@ -153,13 +153,13 @@ const router = createRouter({
       path: '/admin/clients/assign-companies',
       name: 'AdminClientsAssignCompanies',
       component: () => import('@/views/admin/AdminClientsAssignCompaniesView.vue'),
-      meta: { menu: '거래처 관리', submenu: '담당업체 지정', requiresAuth: true, isAdmin: true },
+      meta: { menu: '병의원 관리', submenu: '담당업체 지정', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/clients/assign-pharmacies',
       name: 'AdminClientsAssignPharmacies',
       component: () => import('@/views/admin/AdminClientsAssignPharmaciesView.vue'),
-      meta: { menu: '거래처 관리', submenu: '문전약국 지정', requiresAuth: true, isAdmin: true },
+      meta: { menu: '병의원 관리', submenu: '문전약국 지정', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/pharmacies',
@@ -328,7 +328,7 @@ const router = createRouter({
       path: '/clients',
       name: 'Clients',
       component: () => import('@/views/user/ClientsView.vue'),
-      meta: { menu: '거래처 조회', submenu: '거래처 목록', requiresAuth: true },
+      meta: { menu: '병의원 조회', submenu: '병의원 목록', requiresAuth: true },
     },
     {
       path: '/clients/:id',

@@ -1,10 +1,10 @@
 <template>
   <div class="board_640">
-    <div class="form-title">거래처 수정</div>
+    <div class="form-title">병의원 수정</div>
     <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">거래처코드</label>
+          <label style="text-align: right;">병의원코드</label>
         </div>
         <div class="form-col input-col">
           <input v-model="clientCode" type="text" />

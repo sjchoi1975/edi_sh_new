@@ -62,11 +62,11 @@ const adminMenuTree = [
     { label: '승인 업체', path: '/admin/companies/approved' },
     { label: '미승인 업체', path: '/admin/companies/pending' }
   ]},
-  { label: '제품 관리', icon: 'pi pi-briefcase', children: [
+  { label: '제품 관리', icon: 'pi pi-box', children: [
     { label: '제품 목록', path: '/admin/products' }
   ]},
-  { label: '거래처 관리', icon: 'pi pi-building', children: [
-    { label: '거래처 목록', path: '/admin/clients' },
+  { label: '병의원 관리', icon: 'pi pi-building', children: [
+    { label: '병의원 목록', path: '/admin/clients' },
     { label: '담당업체 지정', path: '/admin/clients/assign-companies' },
     { label: '문전약국 지정', path: '/admin/clients/assign-pharmacies' }
   ]},
@@ -92,11 +92,11 @@ const userMenuTree = [
   { label: '공지사항 조회', icon: 'pi pi-bell', children: [
     { label: '공지사항 목록', path: '/notices' }
   ]},
-  { label: '제품 조회', icon: 'pi pi-briefcase', children: [
+  { label: '제품 조회', icon: 'pi pi-box', children: [
     { label: '제품 목록', path: '/products' }
   ]},
-  { label: '거래처 조회', icon: 'pi pi-building', children: [
-    { label: '거래처 목록', path: '/clients' }
+  { label: '병의원 조회', icon: 'pi pi-building', children: [
+    { label: '병의원 목록', path: '/clients' }
   ]},
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '실적 등록', path: '/performance/register' },
@@ -198,7 +198,7 @@ onMounted(async () => {
 <style scoped>
 .side-nav-manual {
   border-bottom: 1px solid var(--border-secondary);
-  padding: 1rem 1rem;
+  padding: 2rem 1.6rem;
   margin-bottom: 1rem;
 }
 
@@ -217,6 +217,6 @@ onMounted(async () => {
 
 .side-nav-manual-icon {
   font-size: 1.2rem;
-  margin-right: 0.5rem;
+  margin-right: 1.1rem;
 }
 </style> 

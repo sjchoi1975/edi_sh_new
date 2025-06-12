@@ -52,7 +52,7 @@
   --text-dark: #333333;
 
   /* 레이아웃 */
-  --border-radius: 4px;
+  --border-radius: 2px;
   --border-radius-s: 2px;
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -91,10 +91,9 @@
 .btn-select-none,
 .file-upload-label,
 .file-label {
-  padding: 0.4rem 1rem !important;
-  margin: 0rem 1rem 0rem 0rem !important;
-  font-size: var(--font-size-md) !important;
-  font-weight: 400 !important;
+  padding: 0.25rem 1rem !important;
+  margin: 0 0.5rem !important;
+  font-size: var(--font-size-base) !important;
   border: 1px solid transparent !important;
   border-radius: var(--border-radius) !important;
   cursor: pointer !important;
@@ -363,7 +362,7 @@ button:focus,
 .btn-view-sm,
 .btn-input-sm,
 .btn-upload-sm {
-  padding: 0.2rem 0.4rem !important;
+  padding: 0.15rem 0.4rem !important;
   margin: 0 0.2rem !important;
   font-size: var(--font-size-sm) !important;
   font-weight: 400 !important;
@@ -593,7 +592,7 @@ button:disabled {
 .required-badge,
 .active-badge,
 .inactive-badge {
-  padding: 0.4em 0.8em !important;
+  padding: 0.3em 0.8em !important;
   font-size: var(--font-size-sm) !important;
   font-weight: 300 !important;
   border-radius: 40px !important;

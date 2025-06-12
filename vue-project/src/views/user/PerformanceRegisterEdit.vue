@@ -1,12 +1,12 @@
 <template>
   <div class="performance-register-view">
     <div class="header-title">실적 등록</div>
-    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:0rem; padding:0.25rem 1.5rem 0.25rem 1rem !important;">
+    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:0rem; padding:0.15rem 1.5rem 0.15rem 1rem !important;">
       <div style="display:flex; align-items:center; flex:1;">
         <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="goBackToList" style="margin-right:12px;" />
         <div>
-          <div style="font-size:1.2rem; font-weight:700;">{{ route.query.clientName }}</div>
-          <div style="font-size:0.95rem; color:#555;">
+          <div style="font-size:1.1rem; font-weight:700;">{{ route.query.clientName }}</div>
+          <div style="font-size:0.88rem; color:#444;">
             {{ route.query.businessRegistrationNumber }} / {{ route.query.address }}
           </div>
         </div>
@@ -19,7 +19,7 @@
       <div class="input-table-wrapper performance-edit-table">
         <div class="top-bar-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div class="total-count-display">실적: {{ validRowCount }} 건</div>
-          <button class="btn-primary register-button" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:90px; margin-bottom:0.5rem !important;">저장</button>
+          <button class="btn-save" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:90px; margin-bottom:0.5rem !important;">저장</button>
         </div>
         <div class="table-header-fixed">
           <table>

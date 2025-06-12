@@ -3,7 +3,10 @@
     <div class="manual-content">
       <!-- 고정될 헤더 영역 (제목 + 탭) -->
       <div class="manual-header">
-        <h1>{{ isAdminManual ? '신일제약 CSO 실적 관리 시스템 - 관리자 메뉴얼' : '신일제약 CSO 실적 관리 시스템 - 이용자 메뉴얼' }}</h1>
+        <div class="header-top">
+          <h1>{{ isAdminManual ? '신일제약 CSO 실적 관리 시스템 - 관리자 메뉴얼' : '신일제약 CSO 실적 관리 시스템 - 이용자 메뉴얼' }}</h1>
+          <Button label="PDF 다운로드" icon="pi pi-download" iconPos="right" @click="downloadPDF" :loading="isPrinting" text severity="secondary" class="pdf-download-button" aria-label="PDF 다운로드" />
+        </div>
         
         <!-- 탭 메뉴 -->
         <div class="manual-tabs">
@@ -21,18 +24,93 @@
       
       <!-- 탭 내용 -->
       <div v-html="tabs[activeTab]?.content" class="manual-html-content"></div>
+
+      <!-- PDF 렌더링을 위한 숨겨진 컨테이너 -->
+      <div v-if="isPrinting" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="pdf-render-container" v-html="fullManualContent" class="manual-html-content" style="width: 1200px; background: white;"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
+import Button from 'primevue/button';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const route = useRoute();
 const activeTab = ref(0);
+const isPrinting = ref(false);
 
 const isAdminManual = computed(() => route.path === '/admin-manual');
+
+const fullManualContent = computed(() => {
+  return tabs.value.map(tab => tab.content).join('');
+});
+
+const downloadPDF = async () => {
+  isPrinting.value = true;
+  await nextTick();
+
+  const renderContainer = document.getElementById('pdf-render-container');
+  if (!renderContainer) {
+    isPrinting.value = false;
+    return;
+  }
+
+  const title = isAdminManual.value ? '관리자 메뉴얼' : '이용자 메뉴얼';
+  const fileName = `${title}.pdf`;
+
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const margin = { top: 20, right: 15, bottom: 20, left: 15 };
+  const pdfWidth = pdf.internal.pageSize.getWidth() - margin.left - margin.right;
+  const pageHeight = pdf.internal.pageSize.getHeight() - margin.top - margin.bottom;
+
+  const sections = renderContainer.querySelectorAll('.section');
+
+  try {
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      const canvas = await html2canvas(section, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const ratio = canvas.width / pdfWidth;
+      const imgHeight = canvas.height / ratio;
+
+      if (imgHeight > pageHeight) {
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', margin.left, margin.top, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', margin.left, margin.top + position, pdfWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+      } else {
+        pdf.addImage(imgData, 'PNG', margin.left, margin.top, pdfWidth, imgHeight);
+      }
+
+      if (i < sections.length - 1) {
+        pdf.addPage();
+      }
+    }
+    pdf.save(fileName);
+  } catch (error) {
+    console.error('PDF 생성 오류:', error);
+  } finally {
+    isPrinting.value = false;
+  }
+};
 
 // 관리자 탭 내용
 const adminTabs = [
@@ -50,11 +128,11 @@ const adminTabs = [
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
-          <li>공지사항 목록 조회 (제목, 작성일시, 조회수, 고정여부)</li>
-          <li>공지사항 등록</li>
-          <li>공지사항 수정</li>
-          <li>공지사항 삭제</li>
-          <li>첨부파일 관리</li>
+          <li><strong>공지사항 목록 조회</strong> - 등록된 모든 공지사항을 제목, 작성일시, 조회수, 고정여부와 함께 확인할 수 있습니다.</li>
+          <li><strong>공지사항 등록</strong> - 새로운 공지사항을 작성하고, 중요도에 따라 상단 고정 여부를 설정할 수 있습니다.</li>
+          <li><strong>공지사항 수정</strong> - 기존에 등록된 공지사항의 내용을 수정할 수 있습니다.</li>
+          <li><strong>공지사항 삭제</strong> - 더 이상 필요하지 않은 공지사항을 시스템에서 삭제합니다.</li>
+          <li><strong>첨부파일 관리</strong> - 공지사항에 관련 파일을 첨부하여 사용자들이 다운로드할 수 있도록 합니다.</li>
         </ul>
       </div>
     `
@@ -145,12 +223,12 @@ const adminTabs = [
     `
   },
   {
-    label: '4. 거래처 관리',
+    label: '4. 병의원 관리',
     content: `
       <div class="section">
-        <h2>4. 거래처 관리</h2>
-        <h3>4.1 거래처 목록 <span class="path">/admin/clients</span></h3>
-        <p><strong>설명:</strong> 거래처(병원) 정보를 조회하고 관리할 수 있습니다.</p>
+        <h2>4. 병의원 관리</h2>
+        <h3>4.1 병의원 목록 <span class="path">/admin/clients</span></h3>
+        <p><strong>설명:</strong> 병의원(병원) 정보를 조회하고 관리할 수 있습니다.</p>
         
         <div class="image-placeholder">
           <div class="placeholder-text">📷 화면 이미지</div>
@@ -160,7 +238,7 @@ const adminTabs = [
         <div class="process-steps">
           <div class="step">
             <strong>1단계: 기존 데이터 존재 확인</strong><br>
-            <em>조건:</em> 기존 거래처가 있는 경우<br>
+            <em>조건:</em> 기존 병의원이 있는 경우<br>
             <em>메시지:</em> "기존 데이터가 있습니다. 계속 등록하시겠습니까?"<br>
             <em>확인:</em> 2단계로 진행 / <em>취소:</em> 작업 중단
           </div>
@@ -177,16 +255,36 @@ const adminTabs = [
           </div>
           <div class="step">
             <strong>4단계: 중복 발견 시 계속 진행 여부</strong><br>
-            <em>메시지:</em> "n행: 이미 동일한 사업자등록번호의 거래처가 등록되어 있습니다. 계속 등록 작업을 진행하시겠습니까?"<br>
+            <em>메시지:</em> "n행: 이미 동일한 사업자등록번호의 병의원이 등록되어 있습니다. 계속 등록 작업을 진행하시겠습니까?"<br>
             <em>확인:</em> 5단계로 진행 / <em>취소:</em> 작업 중단
           </div>
           <div class="step">
             <strong>5단계: 중복 해결 방법 선택</strong><br>
-            <em>메시지:</em> "이미 동일한 사업자등록번호 거래처를 어떻게 처리하시겠습니까?"<br>
-            <em>교체:</em> 기존 거래처정보 삭제 후 신규 거래처 등록<br>
-            <em>유지:</em> 중복되지 않는 신규 거래처만 등록 (기존 유지)
+            <em>메시지:</em> "이미 동일한 사업자등록번호 병의원을 어떻게 처리하시겠습니까?"<br>
+            <em>교체:</em> 기존 병의원정보 삭제 후 신규 병의원 등록<br>
+            <em>유지:</em> 중복되지 않는 신규 병의원만 등록 (기존 유지)
           </div>
         </div>
+
+        <h3>4.2 담당업체 지정 <span class="path">/admin/clients/assign-companies</span></h3>
+        <p><strong>설명:</strong> 특정 병의원에 실적을 등록할 담당 CSO 업체를 지정하고 관리합니다. 이 설정을 통해 업체별로 담당 병의원이 명확하게 구분됩니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+            <li><strong>병의원별 담당업체 지정</strong> - 병의원을 선택한 후, 해당 병의원을 담당할 CSO 업체를 목록에서 찾아 지정할 수 있습니다.</li>
+            <li><strong>다중 업체 지정</strong> - 하나의 병의원에 여러 CSO 업체를 담당으로 지정할 수 있습니다.</li>
+            <li><strong>담당업체 조회 및 해제</strong> - 특정 병의원에 현재 지정된 담당업체 목록을 확인하고, 필요 시 지정을 해제할 수 있습니다.</li>
+        </ul>
+
+        <h3>4.3 문전약국 지정 <span class="path">/admin/clients/assign-pharmacies</span></h3>
+        <p><strong>설명:</strong> 병의원과 연관된 문전약국을 지정하여 관리합니다. 실적 데이터의 정확성을 높이기 위해 병의원-약국 관계를 설정합니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+            <li><strong>병의원별 문전약국 지정</strong> - 병의원을 선택한 후, 관련 문전약국을 목록에서 찾아 지정할 수 있습니다.</li>
+            <li><strong>다중 약국 지정</strong> - 하나의 병의원에 여러 문전약국을 지정할 수 있습니다.</li>
+            <li><strong>지정된 약국 조회 및 해제</strong> - 특정 병의원에 지정된 문전약국 목록을 확인하고, 필요 시 지정을 해제할 수 있습니다.</li>
+        </ul>
       </div>
     `
   },
@@ -262,19 +360,36 @@ const adminTabs = [
     content: `
       <div class="section">
         <h2>7. 실적 관리</h2>
+        
         <h3>7.1 정산월 관리 <span class="path">/admin/settlement-months</span></h3>
-        <p><strong>설명:</strong> 정산월을 설정하고 관리할 수 있습니다.</p>
-        
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
-        
+        <p><strong>설명:</strong> 정산 작업을 수행할 기준 '정산월'을 생성하고 관리합니다. 정산월을 생성해야 해당 월의 실적 등록, 검수, 정산 절차를 시작할 수 있습니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>신규 정산월 생성 (예: 2024년 7월)</li>
+          <li>정산월별 상태 관리 (예정, 진행중, 마감)</li>
+          <li>마감된 정산월 데이터 동결</li>
+        </ul>
+
         <h3>7.2 업체별 등록 현황 <span class="path">/admin/performance/companies</span></h3>
-        <p><strong>설명:</strong> CSO 업체별 실적 등록 현황을 조회하고 관리할 수 있습니다.</p>
-        
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+        <p><strong>설명:</strong> 정산월을 기준으로 CSO 업체별 실적 등록 현황을 모니터링합니다. 어느 업체가 실적을 제출했고, 어떤 상태인지 한눈에 파악할 수 있습니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>정산월 기준 업체별 실적 제출 상태 조회 (제출/미제출)</li>
+          <li>업체별 제출 건수 및 최종 제출일 확인</li>
+          <li>실적이 제출된 경우 '실적 검수' 메뉴로 바로 이동하여 검토 가능</li>
+        </ul>
+
+        <h3>7.3 전체 등록 현황 <span class="path">/admin/performance/all</span></h3>
+        <p><strong>설명:</strong> 모든 업체가 등록한 전체 실적 현황을 통합하여 조회하고 관리합니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>기간, 업체, 제품 등 다양한 조건으로 전체 실적 데이터 필터링 및 검색</li>
+          <li>등록된 모든 실적 데이터 목록 확인</li>
+          <li>개별 실적 건에 대한 상세 정보 조회</li>
+        </ul>
       </div>
     `
   },
@@ -283,19 +398,39 @@ const adminTabs = [
     content: `
       <div class="section">
         <h2>8. 정산 관리</h2>
-        <h3>8.1 흡수율 분석 <span class="path">/admin/absorption-analysis</span></h3>
-        <p><strong>설명:</strong> 매출 대비 실적 흡수율을 분석하고 리포트를 생성할 수 있습니다.</p>
-        
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
-        
-        <h3>8.2 정산내역서 공유 <span class="path">/admin/settlement-share</span></h3>
-        <p><strong>설명:</strong> CSO 업체별 정산내역서를 생성하고 공유할 수 있습니다.</p>
-        
-        <div class="image-placeholder">
-          <div class="placeholder-text">📷 화면 이미지</div>
-        </div>
+
+        <h3>8.1 실적 검수 <span class="path">/admin/performance-review</span></h3>
+        <p><strong>설명:</strong> CSO 업체들이 등록한 실적 데이터를 건별로 상세히 검토하고 승인 또는 반려 처리를 합니다. 이 과정을 통해 데이터의 정합성을 확보하고 정산의 기초 자료를 마련합니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>업체별/기간별 실적 제출 내역 상세 조회</li>
+          <li>실적 데이터 상세 검토 (증빙자료 확인 포함)</li>
+          <li>검토 상태(대기, 승인, 반려) 관리</li>
+          <li>실적 승인 또는 반려 처리 (반려 시 사유 입력 및 업체 통보)</li>
+        </ul>
+
+        <h3>8.2 흡수율 분석 <span class="path">/admin/absorption-analysis</span></h3>
+        <p><strong>설명:</strong> 전체 매출 대비 CSO 업체들이 제출하여 '승인'된 실적의 흡수율을 분석하고 리포트를 생성합니다. 이를 통해 실적 목표 달성률과 효율성을 파악할 수 있습니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>기간별, 제품별, 업체별 흡수율 조회</li>
+          <li>매출 데이터와 실적 데이터 비교 분석</li>
+          <li>분석 결과 차트 및 표로 시각화</li>
+          <li>분석 리포트 엑셀 다운로드</li>
+        </ul>
+
+        <h3>8.3 정산내역서 공유 <span class="path">/admin/settlement-share</span></h3>
+        <p><strong>설명:</strong> 최종 확정된 실적을 바탕으로 CSO 업체별 정산내역서를 생성하고 시스템을 통해 공유합니다. 업체는 공유된 내역서를 확인하고 다운로드할 수 있습니다.</p>
+        <div class="image-placeholder"><div class="placeholder-text">📷 화면 이미지</div></div>
+        <h4>주요 기능:</h4>
+        <ul class="feature-list">
+          <li>정산 대상월 선택 및 정산내역서 일괄 생성</li>
+          <li>업체별 정산내역서 상세 확인 및 수정 <span class="path">/admin/settlement-share/:id</span></li>
+          <li>생성된 내역서를 선택된 업체에 공유 및 알림</li>
+          <li>업체의 확인 여부 등 공유 상태 관리</li>
+        </ul>
       </div>
     `
   }
@@ -350,12 +485,12 @@ const userTabs = [
     `
   },
   {
-    label: '3. 거래처 조회',
+    label: '3. 병의원 조회',
     content: `
       <div class="section">
-        <h2>3. 거래처 조회</h2>
-        <h3>3.1 거래처 조회 <span class="path">/clients</span></h3>
-        <p><strong>설명:</strong> 담당 거래처 정보를 조회하고 상세 내용을 확인할 수 있습니다.</p>
+        <h2>3. 병의원 조회</h2>
+        <h3>3.1 병의원 조회 <span class="path">/clients</span></h3>
+        <p><strong>설명:</strong> 담당 병의원 정보를 조회하고 상세 내용을 확인할 수 있습니다.</p>
         
         <div class="image-placeholder">
           <div class="placeholder-text">📷 화면 이미지</div>
@@ -363,11 +498,11 @@ const userTabs = [
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
-          <li><strong>거래처 목록 조회</strong> - 본인이 담당하는 거래처들의 거래처명, 사업자번호, 담당자, 연락처 정보를 확인할 수 있습니다.</li>
-          <li><strong>거래처 상세 정보 조회</strong> - 특정 거래처를 선택하여 주소, 원장명, 진료과목 등 상세 정보를 확인할 수 있습니다.</li>
-          <li><strong>거래처 검색</strong> - 거래처명이나 사업자번호로 담당 거래처를 빠르게 검색할 수 있습니다.</li>
-          <li><strong>정렬 기능</strong> - 거래처명, 등록일, 지역 등 다양한 기준으로 목록을 정렬하여 확인할 수 있습니다.</li>
-          <li><strong>필터링 기능</strong> - 지역이나 진료과목 등으로 거래처 목록을 필터링할 수 있습니다.</li>
+          <li><strong>병의원 목록 조회</strong> - 본인이 담당하는 병의원들의 병의원명, 사업자번호, 담당자, 연락처 정보를 확인할 수 있습니다.</li>
+          <li><strong>병의원 상세 정보 조회</strong> - 특정 병의원을 선택하여 주소, 원장명, 진료과목 등 상세 정보를 확인할 수 있습니다.</li>
+          <li><strong>병의원 검색</strong> - 병의원명이나 사업자번호로 담당 병의원을 빠르게 검색할 수 있습니다.</li>
+          <li><strong>정렬 기능</strong> - 병의원명, 등록일, 지역 등 다양한 기준으로 목록을 정렬하여 확인할 수 있습니다.</li>
+          <li><strong>필터링 기능</strong> - 지역이나 진료과목 등으로 병의원 목록을 필터링할 수 있습니다.</li>
         </ul>
       </div>
     `
@@ -378,7 +513,7 @@ const userTabs = [
       <div class="section">
         <h2>4. 실적 관리</h2>
         <h3>4.1 실적 등록 <span class="path">/performance/register</span></h3>
-        <p><strong>설명:</strong> 담당 거래처에 대한 실적 데이터를 등록할 수 있습니다.</p>
+        <p><strong>설명:</strong> 담당 병의원에 대한 실적 데이터를 등록할 수 있습니다.</p>
         
         <div class="image-placeholder">
           <div class="placeholder-text">📷 화면 이미지</div>
@@ -386,7 +521,7 @@ const userTabs = [
         
         <h4>주요 기능:</h4>
         <ul class="feature-list">
-          <li><strong>기본 정보 입력</strong> - 담당 거래처, 판매 제품, 처방 수량, 처방 금액 등 실적의 기본 정보를 입력할 수 있습니다.</li>
+          <li><strong>기본 정보 입력</strong> - 담당 병의원, 판매 제품, 처방 수량, 처방 금액 등 실적의 기본 정보를 입력할 수 있습니다.</li>
           <li><strong>증빙 파일 업로드</strong> - 처방전, 영수증 등 실적을 증명하는 파일을 업로드하여 관리할 수 있습니다.</li>
           <li><strong>입력값 유효성 검사</strong> - 필수 항목 누락, 숫자 형식 오류 등을 자동으로 체크하여 정확한 데이터 입력을 도와줍니다.</li>
           <li><strong>저장 시 확인 메시지</strong> - 실적 데이터 저장 전 입력 내용을 최종 확인할 수 있는 메시지를 제공합니다.</li>
@@ -484,7 +619,7 @@ const tabs = computed(() => {
 .manual-container {
   height: 100vh;
   overflow-y: auto;
-  background-color: #f8f9fa;
+  background-color: #fff;
   padding: 0px;
   margin-left: 0px;
 }
@@ -509,11 +644,19 @@ const tabs = computed(() => {
   margin: 0;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 40px 16px 40px;
+}
+
 h1 {
-  color: #2c3e50;
-  border-bottom: 2px solid #3498db;
-  padding: 20px 30px;
-  margin: 0;
+  color: #555;
+  border-bottom: none;
+  padding: 0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   background: #fff;
   font-size: 24px;
   font-weight: 600;
@@ -528,60 +671,65 @@ h1 {
 }
 
 .manual-tab {
-  padding: 15px 20px;
+  padding: 1rem 1.5rem;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   white-space: nowrap;
   transition: all 0.3s ease;
+  font-size: var(--font-size-lg);
   font-weight: 500;
-  color: #6c757d;
+  color: #999;
   flex-shrink: 0;
 }
 
 .manual-tab:hover {
-  background-color: #f8f9fa;
-  color: #495057;
+  background-color: var(--primary-color-lightest);
+  color: var(--primary-color);
 }
 
 .manual-tab.active {
-  border-bottom-color: #3498db;
-  color: #3498db;
-  background-color: #f8f9fa;
+  border-bottom-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+  background-color: #fff;
 }
 
 .manual-html-content {
   font-family: 'Noto Sans KR', sans-serif;
   line-height: 1.6;
   color: #333;
-  padding: 20px;
+  padding: 40px;
 }
 
 .manual-html-content :deep(.section) {
   margin-bottom: 30px;
-  padding: 20px;
+  padding: 0px;
   background: #fff;
   border-radius: 5px;
 }
 
 .manual-html-content :deep(h2) {
-  color: #2980b9;
+  color: var(--primary-color);
   margin-top: 0;
   margin-bottom: 20px;
   font-size: 20px;
+  font-weight: 600;
 }
 
 .manual-html-content :deep(h3) {
-  color: #16a085;
+  color: #555;
   margin-top: 25px;
   margin-bottom: 15px;
   font-size: 18px;
+  font-weight: 500;
 }
 
 .manual-html-content :deep(h4) {
-  color: #27ae60;
+  color: #333;
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 16px;
+  font-weight: 500;
 }
 
 .manual-html-content :deep(.feature-list) {
@@ -598,7 +746,7 @@ h1 {
 
 .manual-html-content :deep(.feature-list li:before) {
   content: "•";
-  color: #3498db;
+  color: var(--primary-color);
   font-weight: bold;
   position: absolute;
   left: -15px;
@@ -625,7 +773,7 @@ h1 {
 
 .manual-html-content :deep(.image-placeholder) {
   width: 100%;
-  height: 300px;
+  height: 520px;
   border: 2px dashed #ddd;
   border-radius: 8px;
   display: flex;
@@ -665,6 +813,16 @@ h1 {
   font-style: normal;
   font-weight: 600;
   color: #27ae60;
+}
+
+.pdf-download-button {
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+:deep(.pdf-download-button .p-button-icon) {
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
 }
 
 @media (max-width: 768px) {

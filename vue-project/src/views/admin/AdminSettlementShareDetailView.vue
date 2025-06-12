@@ -1,11 +1,11 @@
 <template>
   <div class="admin-settlement-share-detail-view page-container" style="display: flex; flex-direction: column; height: 100vh;">
     <!-- 상단 필터카드 -->
-    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:0rem; padding:0.25rem 1.5rem 0.25rem 1rem !important;">
+    <div class="filter-card" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom:0rem; padding:0.15rem 1.5rem 0.15rem 1rem !important;">
       <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="goBack" />
       <div>
-        <div style="font-size:1.2rem; font-weight:700;">{{ companyInfo.company_name }}</div>
-        <div style="font-size:0.95rem; color:#555;">
+        <div style="font-size:1.1rem; font-weight:700;">{{ companyInfo.company_name }}</div>
+        <div style="font-size:0.88rem; color:#444;">
           {{ companyInfo.business_registration_number }} / {{ companyInfo.representative_name }} / {{ companyInfo.business_address }}
         </div>
       </div>

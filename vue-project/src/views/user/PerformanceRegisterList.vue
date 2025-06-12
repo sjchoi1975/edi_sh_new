@@ -4,7 +4,7 @@
       <div class="header-title">등록 현황</div>
     </div>
 
-    <!-- 필터 카드: 정산월, 처방월, 거래처 드롭다운 -->
+    <!-- 필터 카드: 정산월, 처방월, 병의원 드롭다운 -->
     <div class="filter-card" style="flex-shrink: 0;">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end">
         <div style="display: flex; align-items: center; gap: 8px">
@@ -24,7 +24,7 @@
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 8px">
-          <label>거래처</label>
+          <label>병의원</label>
           <select v-model="selectedHospitalId" class="select_240px">
             <option value="">- 전체 -</option>
             <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">
@@ -65,7 +65,7 @@
           </Column>
           <Column
             field="client_name"
-            header="거래처"
+            header="병의원"
             :headerStyle="{ width: columnWidths.client_name }"
             :sortable="true"
           >
@@ -516,7 +516,7 @@ function checkForChanges() {
   hasChanges.value = false
 }
 
-// 병원 관련 함수들은 제거됨 (모달 방식에서 드롭다운으로 변경)
+// 병의원 관련 함수들은 제거됨 (모달 방식에서 드롭다운으로 변경)
 
 // 데이터 fetch 함수들
 async function fetchHospitals() {
@@ -1497,7 +1497,7 @@ async function fetchPerformanceRecords() {
       query = query.eq('company_id', currentUserCompanyId.value)
     }
 
-    // 병원 필터링
+    // 병의원 필터링
     if (selectedHospitalId.value) {
       query = query.eq('client_id', selectedHospitalId.value)
     }
@@ -1582,7 +1582,7 @@ function downloadExcel() {
   // 엑셀 데이터 준비 - 숫자 필드는 실제 숫자값으로 변환
   const excelData = dataToExport.map((row, index) => ({
     No: index + 1,
-    거래처: row.client_name || '',
+    병의원: row.client_name || '',
     사업자등록번호: row.business_registration_number || '',
     주소: row.address || '',
     처방월: row.prescription_month || '',
@@ -1609,7 +1609,7 @@ function downloadExcel() {
   const totalAmountNum = excelData.reduce((sum, row) => sum + (row['처방액'] || 0), 0)
   excelData.push({
     No: '',
-    거래처: '',
+    병의원: '',
     사업자등록번호: '',
     주소: '',
     처방월: '',
@@ -1630,7 +1630,7 @@ function downloadExcel() {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { wpx: 50 }, // No
-    { wpx: 130 }, // 거래처
+    { wpx: 130 }, // 병의원
     { wpx: 130 }, // 사업자등록번호
     { wpx: 180 }, // 주소
     { wpx: 80 }, // 처방월
@@ -1668,7 +1668,7 @@ function downloadExcel() {
   // 워크시트를 워크북에 추가
   XLSX.utils.book_append_sheet(wb, ws, '실적 등록 현황')
 
-  // 파일명 생성 (정산월_처방월_병원명_날짜)
+  // 파일명 생성 (정산월_처방월_병의원명_날짜)
   const today = new Date()
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
   let fileName = '실적등록현황'

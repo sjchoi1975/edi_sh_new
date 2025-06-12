@@ -1,14 +1,14 @@
 <template>
   <div class="admin-clients-view page-container">
-    <div class="page-header-title-area">
-      <div class="header-title">거래처 목록</div>
+    <div class="page-header">
+      <div class="header-title">병의원 목록</div>
     </div>
     <div class="filter-card">
       <div class="filter-row">
         <span class="filter-item p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
-            placeholder="거래처코드, 병의원명, 사업자등록번호 검색"
+            placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
             class="search-input"
           />
         </span>
@@ -20,10 +20,10 @@
           전체 {{ clients.length }} 건
         </div>
         <div class="data-card-buttons">
-          <button class="btn-excell-download" @click="downloadExcel" :disabled="clients.length === 0">
-            엑셀 다운로드
-          </button>
-        </div>
+        <button class="btn-excell-download" @click="downloadExcel" :disabled="clients.length === 0">
+          엑셀 다운로드
+        </button>
+      </div>
       </div>
       <DataTable
         :value="clients"
@@ -37,12 +37,12 @@
         class="custom-table clients-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 거래처가 없습니다.</template>
-        <template #loading>거래처 목록을 불러오는 중입니다...</template>
+        <template #empty>등록된 병의원이 없습니다.</template>
+        <template #loading>병의원 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
-        <Column field="client_code" header="거래처코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
+        <Column field="client_code" header="병의원코드" :headerStyle="{ width: columnWidths.client_code }" :sortable="true" />
         <Column field="name" header="병의원명" :headerStyle="{ width: columnWidths.name }" :sortable="true">
           <template #body="slotProps">
             <a href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">{{ slotProps.data.name }}</a>
@@ -140,7 +140,7 @@ function downloadExcel() {
   // 엑셀 데이터 준비
   const excelData = clients.value.map((client, index) => ({
     'No': index + 1,
-    '거래처코드': client.client_code || '',
+    '병의원코드': client.client_code || '',
     '병의원명': client.name || '',
     '사업자등록번호': client.business_registration_number || '',
     '원장명': client.owner_name || '',
@@ -155,7 +155,7 @@ function downloadExcel() {
   // 컬럼 너비 설정
   ws['!cols'] = [
     { wpx: 50 },  // No
-    { wpx: 100 }, // 거래처코드
+    { wpx: 100 }, // 병의원코드
     { wpx: 180 }, // 병의원명
     { wpx: 120 }, // 사업자등록번호
     { wpx: 100 }, // 원장명
@@ -164,12 +164,12 @@ function downloadExcel() {
   ];
 
   // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '거래처 목록');
+  XLSX.utils.book_append_sheet(wb, ws, '병의원 목록');
 
   // 파일명 생성
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  const fileName = `거래처목록_${dateStr}.xlsx`;
+  const fileName = `병의원목록_${dateStr}.xlsx`;
 
   // 파일 다운로드
   XLSX.writeFile(wb, fileName);
