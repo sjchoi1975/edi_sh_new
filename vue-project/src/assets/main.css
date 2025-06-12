@@ -1031,7 +1031,8 @@ select.input-editable {
 .input-table.prime-like-table td {
   border-bottom: 1px solid var(--border-secondary) !important; /* #d1dbe6 */
   border-right: 1px solid var(--border-secondary) !important; /* #d1dbe6 */
-  padding: 4px 8px 0px 8px;
+  height: 40px !important;
+  padding: 2px 4px;
   transition: background 0.2s;
 }
 

@@ -142,7 +142,7 @@
                     :tabindex="isRowEditable(row) ? 0 : -1"
                     :readonly="!isRowEditable(row)"
                     @change="onPrescriptionTypeInput(rowIdx)"
-                    @keydown="onPrescriptionTypeKeydown($event, rowIdx)"
+                    @keydown="onArrowKey($event, rowIdx, 'prescription_type')"
                     @focus="handleFieldFocus(rowIdx, 'prescription_type')"
                     :disabled="!isRowEditable(row)"
                     :class="[
@@ -522,6 +522,17 @@ function navigateProductSearchList(direction) {
   } else if (direction === 'up') {
     productSearchForRow.value.selectedIndex = (productSearchForRow.value.selectedIndex - 1 + productSearchForRow.value.results.length) % productSearchForRow.value.results.length;
   }
+
+  // 선택된 항목이 보이도록 스크롤
+  nextTick(() => {
+    const listElement = document.querySelector('.product-search-dropdown ul');
+    const newIndex = productSearchForRow.value.selectedIndex;
+    if (listElement && listElement.children[newIndex]) {
+      listElement.children[newIndex].scrollIntoView({
+        block: 'nearest',
+      });
+    }
+  });
 }
 
 function applySelectedProduct(product, rowIndex) {
@@ -653,13 +664,20 @@ function focusField(rowIdx, col) {
     if (!table) return;
     const row = table.querySelectorAll('tbody tr')[rowIdx];
     if (!row) return;
+
     let el = null;
-    if (col === 'product_name') el = row.querySelector('td:nth-child(2) input');
-    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(5) input');
-    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(7) select');
-    else if (col === 'remarks') el = row.querySelector('td:nth-child(8) input');
+    if (col === 'prescription_month') el = row.querySelector('td:nth-child(1) select');
+    else if (col === 'product_name') el = row.querySelector('td:nth-child(3) input');
+    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(6) input');
+    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(8) select');
+    else if (col === 'remarks') el = row.querySelector('td:nth-child(9) input');
  
-    if (el) el.focus();
+    if (el) {
+      el.focus();
+      if (el.tagName === 'INPUT') {
+        el.select();
+      }
+    }
   });
 }
 
@@ -736,45 +754,6 @@ function onPrescriptionTypeInput(rowIdx) {
   }
 }
 
-function onPrescriptionTypeKeydown(e, rowIdx) {
-  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
-  e.preventDefault();
-  const cols = ["product_name", "prescription_qty", "prescription_type", "remarks"];
-  let currentColIdx = cols.indexOf(currentCell.value.col);
-  let newRow = currentCell.value.row;
-  let newColIdx = currentColIdx;
-  if (e.key === "ArrowUp") newRow = Math.max(0, currentCell.value.row - 1);
-  if (e.key === "ArrowDown") {
-    // 아래 화살표시 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새행 생성
-    const currentRow = inputRows.value[currentCell.value.row];
-    if (currentRow.product_id && currentRow.prescription_qty && currentCell.value.row === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        prescription_month: getDefaultPrescriptionMonth(),
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '',
-        user_edit_status: '대기중',
-      });
-      newRow = currentCell.value.row + 1;
-      newColIdx = 0;
-    // 제품명으로 이동
-    } else {
-      newRow = Math.min(inputRows.value.length - 1, currentCell.value.row + 1);
-    }
-  }
-  if (e.key === "ArrowLeft") newColIdx = Math.max(0, currentColIdx - 1);
-  if (e.key === "ArrowRight") newColIdx = Math.min(cols.length - 1, currentColIdx + 1);
-  if (e.key === "ArrowLeft" && currentColIdx === 0) newColIdx = 0;
-  if (e.key === "ArrowRight" && currentColIdx === cols.length - 1) newColIdx = cols.length - 1;
-  currentCell.value = { row: newRow, col: cols[newColIdx] };
-  focusField(newRow, cols[newColIdx]);
-}
-
 function onQtyInput(rowIdx) {
   const qty = Number(inputRows.value[rowIdx].prescription_qty.toString().replace(/,/g, ''));
   const price = Number(inputRows.value[rowIdx].price.toString().replace(/,/g, ''));
@@ -786,54 +765,41 @@ function onQtyInput(rowIdx) {
 }
 
 function onArrowKey(e, rowIdx, col) {
-  // 제품 검색 드롭다운이 열려있을 때는 상하 화살표만 허용
+  // 제품 검색 드롭다운이 열려있을 때는 좌우 화살표만 막고, 상하키는 리스트 탐색을 위해 허용
   if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex === rowIdx) {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      return;
-    // 제품 검색 리스트 네비게이션은 별도 함수에서 처리
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
-      return; // 좌우 화살표 차단
     }
     return;
   }
   
   if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
   e.preventDefault();
-  const cols = ["product_name", "prescription_qty", "prescription_type", "remarks"];
-  let currentColIdx = cols.indexOf(col);
+
+  const cols = ["prescription_month", "product_name", "prescription_qty", "prescription_type", "remarks"];
+  const currentColIdx = cols.indexOf(col);
+
+  if (currentColIdx === -1) return;
+
   let newRow = rowIdx;
   let newColIdx = currentColIdx;
-  if (e.key === "ArrowUp") newRow = Math.max(0, rowIdx - 1);
-  if (e.key === "ArrowDown") {
-    // 아래 화살표시 제품명과 수량이 모두 입력된 상태에서 마지막 행이면 새행 생성
-    const currentRow = inputRows.value[rowIdx];
-    if (currentRow.product_id && currentRow.prescription_qty && rowIdx === inputRows.value.length - 1) {
-      inputRows.value.push({ 
-        prescription_month: getDefaultPrescriptionMonth(),
-        product_name_display: '', 
-        product_id: null, 
-        insurance_code: '', 
-        price: '', 
-        prescription_qty: '', 
-        prescription_amount: '', 
-        prescription_type: 'EDI',
-        remarks: '',
-        user_edit_status: '대기중',
-      });
-      newRow = rowIdx + 1;
-      newColIdx = 0;
-    // 제품명으로 이동
-    } else {
-      newRow = Math.min(inputRows.value.length - 1, rowIdx + 1);
-    }
+
+  if (e.key === "ArrowUp") {
+    newRow = Math.max(0, rowIdx - 1);
+  } else if (e.key === "ArrowDown") {
+    newRow = Math.min(inputRows.value.length - 1, rowIdx + 1);
+  } else if (e.key === "ArrowLeft") {
+    newColIdx = Math.max(0, currentColIdx - 1);
+  } else if (e.key === "ArrowRight") {
+    newColIdx = Math.min(cols.length - 1, currentColIdx + 1);
   }
-  if (e.key === "ArrowLeft") newColIdx = Math.max(0, currentColIdx - 1);
-  if (e.key === "ArrowRight") newColIdx = Math.min(cols.length - 1, currentColIdx + 1);
-  if (e.key === "ArrowLeft" && currentColIdx === 0) newColIdx = 0;
-  if (e.key === "ArrowRight" && currentColIdx === cols.length - 1) newColIdx = cols.length - 1;
-  currentCell.value = { row: newRow, col: cols[newColIdx] };
-  focusField(newRow, cols[newColIdx]);
+
+  // 이동하려는 행이 편집 가능한 경우에만 포커스 이동
+  if (isRowEditable(inputRows.value[newRow])) {
+    const newCol = cols[newColIdx];
+    currentCell.value = { row: newRow, col: newCol };
+    focusField(newRow, newCol);
+  }
 }
 
 function cellClass(rowIdx, col) {
@@ -1179,10 +1145,12 @@ onMounted(async () => {
   await checkPerformanceEditStatus();
   // 편집 가능한 경우에만 포커스
   if (isInputEnabled.value) {
-    // 마지막 행의 제품명에 포커스
+    // 편집 가능한 첫 행의 제품명에 포커스
     nextTick(() => {
-      const lastRowIndex = inputRows.value.length - 1;
-      focusField(lastRowIndex, 'product_name');
+      const firstEditableRowIndex = inputRows.value.findIndex(row => isRowEditable(row));
+      if (firstEditableRowIndex !== -1) {
+        focusField(firstEditableRowIndex, 'product_name');
+      }
     });
   }
   document.addEventListener('keydown', handleGlobalKeydown);
