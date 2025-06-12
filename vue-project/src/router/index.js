@@ -343,12 +343,6 @@ const router = createRouter({
       meta: { menu: '실적 관리', submenu: '실적 등록', requiresAuth: true },
     },
     {
-      path: '/performance/excell',
-      name: 'performance-register-excell',
-      component: () => import('../views/user/PerformanceRegisterExcell.vue'),
-      meta: { requiresAuth: true, role: 'user' }
-    },
-    {
       path: '/performance/list',
       name: 'PerformanceRegisterList',
       component: () => import('@/views/user/PerformanceRegisterList.vue'),
