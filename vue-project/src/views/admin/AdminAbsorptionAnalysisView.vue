@@ -30,7 +30,7 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label>거래처</label>
+          <label>병의원</label>
           <select v-model="selectedHospitalId" class="select_200px">
             <option v-for="hospital in hospitalOptions" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
@@ -86,7 +86,7 @@
           </Column>
 
           <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" :frozen="true" />
-          <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true" />
+          <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true" />
           
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
           <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" :frozen="true" />
@@ -446,7 +446,7 @@ function downloadExcel() {
   const dataToExport = displayRows.value.map(row => ({
     '작업': row.review_action || '-',
     '업체명': row.company_name,
-    '거래처명': row.client_name,
+    '병의원명': row.client_name,
     '처방월': row.prescription_month,
     '제품명': row.product_name_display,
     '보험코드': row.insurance_code,

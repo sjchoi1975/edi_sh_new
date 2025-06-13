@@ -37,7 +37,7 @@
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
         </Column>
-        <Column field="client_name" header="거래처명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
+        <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
         <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" />
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
@@ -105,13 +105,14 @@ async function loadDetailData() {
   if (!month.value || !companyId.value) return;
   loading.value = true;
   try {
-    // 1. 상세 데이터 조회 (RPC 사용)
-    const { data, error } = await supabase.rpc('get_absorption_analysis_details', {
-        p_settlement_month: month.value,
-        p_company_id: companyId.value,
-        p_client_id: null,
-        p_prescription_month: null
-    });
+    // 1. 상세 데이터 조회 (v_review_details 뷰 사용으로 변경)
+    const { data, error } = await supabase
+      .from('v_review_details')
+      .select('*')
+      .eq('settlement_month', month.value)
+      .eq('company_id', companyId.value)
+      .eq('review_status', '완료');
+      
     if (error) throw error;
     
     // 2. 데이터 가공
@@ -121,7 +122,7 @@ async function loadDetailData() {
       prescription_qty: row.prescription_qty.toLocaleString(),
       prescription_amount: row.prescription_amount,
       commission_rate: `${(row.commission_rate * 100).toFixed(2)}%`,
-      payment_amount: row.payment_amount.toLocaleString(),
+      payment_amount: Math.round(row.payment_amount).toLocaleString(),
     }));
 
     // 3. 데이터 정렬
@@ -168,7 +169,7 @@ const totalPrescriptionAmount = computed(() => {
   return detailRows.value.reduce((sum, row) => sum + Number(String(row.prescription_amount).replace(/,/g, '')), 0).toLocaleString();
 });
 const totalPaymentAmount = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + Number(String(row.payment_amount).replace(/,/g, '')), 0).toLocaleString();
+  return Math.round(detailRows.value.reduce((sum, row) => sum + Number(String(row.payment_amount).replace(/,/g, '')), 0)).toLocaleString();
 });
 
 const settlementSummary = computed(() => {
@@ -196,7 +197,7 @@ function downloadExcel() {
     return;
   }
   const excelData = detailRows.value.map(row => ({
-    '거래처명': row.client_name,
+    '병의원명': row.client_name,
     '처방월': row.prescription_month,
     '제품명': row.product_name_display,
     '보험코드': row.insurance_code,

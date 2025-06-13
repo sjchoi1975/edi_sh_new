@@ -97,7 +97,7 @@ const allDataForMonth = ref([]);
 
 const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
 const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
-const totalPaymentAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString('ko-KR', { maximumFractionDigits: 1 }));
+const totalPaymentAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0)).toLocaleString());
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
@@ -116,7 +116,18 @@ const settlementSummary = computed(() => {
   };
 });
 
-const columnWidths = { no: '4%', client_name: '14%', prescription_month: '8%', product_name: '14%', insurance_code: '8%', price: '8%', prescription_qty: '8%', prescription_amount: '8%', commission_rate: '8%', payment_amount: '8%', remarks: '12%' };
+const columnWidths = {
+   no: '4%',
+   client_name: '18%',
+   prescription_month: '6%',
+   product_name: '16%',
+   insurance_code: '7%',
+   price: '7%',
+   prescription_qty: '7%',
+   prescription_amount: '7%',
+   commission_rate: '7%',
+   payment_amount: '7%',
+   remarks: '14%' };
 
 async function fetchCompanyId() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -160,7 +171,7 @@ async function fetchAllDataForMonth() {
     price: row.price?.toLocaleString() || '',
     prescription_qty: row.prescription_qty?.toLocaleString() || '',
     prescription_amount: row.prescription_amount?.toLocaleString() || '',
-    payment_amount: (row.payment_amount || 0).toLocaleString('ko-KR', { maximumFractionDigits: 1 }),
+    payment_amount: Math.round(row.payment_amount || 0).toLocaleString(),
     commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
   }));
   

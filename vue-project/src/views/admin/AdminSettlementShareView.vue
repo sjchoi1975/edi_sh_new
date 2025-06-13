@@ -46,7 +46,7 @@
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true"/>
         <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true"/>
         <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" :sortable="true"/>
-        <Column field="client_count" header="거래처 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
+        <Column field="client_count" header="병의원 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
         <Column field="prescription_count" header="처방건수" :headerStyle="{ width: columnWidths.prescription_count }" :sortable="true"/>
         <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
             <template #body="slotProps">{{ slotProps.data.total_prescription_amount.toLocaleString() }}</template>
@@ -121,7 +121,7 @@ const totalPrescriptionAmount = computed(() => {
 
 const totalPaymentAmount = computed(() => {
     const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_payment_amount || 0), 0);
-    return total.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+    return Math.round(total).toLocaleString();
 });
 
 
@@ -209,7 +209,7 @@ async function loadSettlementData() {
             summary.client_count.add(row.client_id);
             summary.prescription_count += 1;
             summary.total_prescription_amount += row.prescription_amount || 0;
-            summary.total_payment_amount += row.payment_amount || 0;
+            summary.total_payment_amount += Math.round(row.payment_amount || 0);
         });
         
         const finalSummary = Array.from(summaryMap.values()).map(s => {
