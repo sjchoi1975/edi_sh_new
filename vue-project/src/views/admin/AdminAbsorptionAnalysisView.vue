@@ -36,15 +36,6 @@
           </select>
         </div>
         
-        <div style="display: flex; align-items: center; margin-left: auto;">
-          <button 
-            class="btn-primary" 
-            @click="loadAnalysisData" 
-            :disabled="loading"
-          >
-            검수 완료 불러오기
-          </button>
-        </div>
       </div>
     </div>
 
@@ -52,7 +43,18 @@
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
-        <div class="data-card-buttons">
+         <div v-if="!loading && displayRows.length === 0" class="header-center-message">
+          필터 조건을 선택하고 '검수 완료 불러오기'를 클릭하세요.
+        </div>
+        <div class="data-card-buttons" style="margin-left: auto;">
+          <button 
+            class="btn-primary" 
+            @click="loadAnalysisData" 
+            :disabled="loading"
+            style="margin-right: 1rem;"
+          >
+            검수 완료 불러오기
+          </button>
            <button class="btn-add" @click="calculateAbsorptionRates" :disabled="displayRows.length === 0">
              흡수율 분석
            </button>
@@ -521,6 +523,7 @@ function downloadExcel() {
 :deep(.p-datatable-tbody > tr > td) {
   background: #ffffff !important;
 }
+
 
 :deep(.p-datatable-tfoot > tr > td) {
     background: #f8f9fa !important;

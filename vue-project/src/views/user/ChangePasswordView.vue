@@ -5,12 +5,20 @@
       <div class="form-row">
         <div class="form-col">
           <label>현재 비밀번호 <span class="required">*</span></label>
-          <input 
-            v-model="currentPassword" 
-            type="password" 
-            required 
-            placeholder="현재 비밀번호를 입력하세요"
-          />
+          <div style="position: relative;">
+            <input 
+              v-model="currentPassword" 
+              :type="showCurrentPassword ? 'text' : 'password'" 
+              required 
+              placeholder="현재 비밀번호를 입력하세요"
+              style="padding-right:2.5rem;"
+            />
+            <i
+              :class="showCurrentPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showCurrentPassword = !showCurrentPassword"
+            ></i>
+          </div>
         </div>
         <div class="form-col"></div>
         <div class="form-col"></div>
@@ -18,23 +26,39 @@
       <div class="form-row">
         <div class="form-col">
           <label>새 비밀번호 <span class="required">*</span></label>
-          <input 
-            v-model="newPassword" 
-            type="password" 
-            required 
-            placeholder="새 비밀번호를 입력하세요"
-            minlength="6"
-          />
+          <div style="position: relative;">
+            <input 
+              v-model="newPassword" 
+              :type="showNewPassword ? 'text' : 'password'" 
+              required 
+              placeholder="새 비밀번호를 입력하세요"
+              minlength="6"
+              style="padding-right:2.5rem;"
+            />
+            <i
+              :class="showNewPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showNewPassword = !showNewPassword"
+            ></i>
+          </div>
         </div>
         <div class="form-col">
           <label>새 비밀번호 확인 <span class="required">*</span></label>
-          <input 
-            v-model="confirmPassword" 
-            type="password" 
-            required 
-            placeholder="새 비밀번호를 다시 입력하세요"
-            minlength="6"
-          />
+          <div style="position: relative;">
+            <input 
+              v-model="confirmPassword" 
+              :type="showConfirmPassword ? 'text' : 'password'" 
+              required 
+              placeholder="새 비밀번호를 다시 입력하세요"
+              minlength="6"
+              style="padding-right:2.5rem;"
+            />
+            <i
+              :class="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showConfirmPassword = !showConfirmPassword"
+            ></i>
+          </div>
         </div>
         <div class="form-col"></div>
       </div>
@@ -69,6 +93,9 @@ const loading = ref(false)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 function goBack() {
   router.push('/my-info')

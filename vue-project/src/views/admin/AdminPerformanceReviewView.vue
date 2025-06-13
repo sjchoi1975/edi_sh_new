@@ -37,15 +37,6 @@
             <option v-for="opt in reviewStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </div>
-        <div style="display: flex; align-items: center; margin-left: auto;">
-          <button 
-            class="btn-primary" 
-            @click="loadPerformanceData" 
-            :disabled="loading"
-          >
-            실적 정보 불러오기
-          </button>
-        </div>
       </div>
     </div>
 
@@ -53,7 +44,18 @@
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
-        <div class="data-card-buttons">
+        <div v-if="!loading && displayRows.length === 0" class="header-center-message">
+          필터 조건을 선택하고 '실적 정보 불러오기'를 클릭하세요.
+        </div>
+        <div class="data-card-buttons" style="margin-left: auto;">
+           <button 
+            class="btn-primary" 
+            @click="loadPerformanceData" 
+            :disabled="loading"
+            style="margin-right: 1rem;"
+          >
+            실적 정보 불러오기
+          </button>
            <button class="btn-secondary" @click="selectAll">전체 선택</button>
            <button class="btn-secondary" @click="unselectAll">전체 해제</button>
            <button class="btn-primary" @click="changeReviewStatus" :disabled="selectedRows.length === 0">
@@ -849,5 +851,32 @@ async function removeFromReview() {
   align-items: center; 
   justify-content: center; 
 }
+
 .btn-restore-sm:hover { background-color: #218838; }
+
+.empty-data-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 1.1rem;
+  color: #888;
+  margin-top: 2rem;
+}
+
+/* 체크박스 및 버튼 가운데 정렬 */
+.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
+.admin-performance-review-table .p-datatable-tbody td .p-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 체크박스 및 버튼 가운데 정렬 */
+.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
+.admin-performance-review-table .p-datatable-tbody td .p-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 </style>

@@ -9,6 +9,8 @@ import Toast from 'primevue/toast';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import { useToast } from 'primevue/usetoast';
+import EmptyLayout from './layouts/EmptyLayout.vue';
+import DefaultLayout from './layouts/DefaultLayout.vue';
 
 const user = ref(null);
 const userEmail = ref('');
@@ -235,7 +237,10 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
 </script>
 
 <template>
-  <div id="app-container">
+  <EmptyLayout v-if="route.meta.layout === 'empty'">
+    <router-view />
+  </EmptyLayout>
+  <DefaultLayout v-else>
     <SideNavigationBar v-if="user" :userRole="userType" :userEmail="userEmail" @logout="handleLogout" />
     <TopNavigationBar v-if="user" @logout="handleLogout" />
     <div class="main-content">
@@ -249,5 +254,5 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
         <Button label="승인 취소" @click="handleCancel" />
       </template>
     </Dialog>
-  </div>
+  </DefaultLayout>
 </template>

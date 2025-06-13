@@ -15,16 +15,26 @@
         <div class="form-col label-col">
           <label style="text-align: right;">비밀번호 <span class="required">*</span></label>
         </div>
-        <div class="form-col input-col">
-          <input v-model="password" type="password" required />
+        <div class="form-col input-col" style="position: relative;">
+          <input v-model="password" :type="showPassword ? 'text' : 'password'" required style="padding-right:2.5rem;" />
+          <i
+            :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+            @click="showPassword = !showPassword"
+          ></i>
         </div>
       </div>
       <div class="form-row">
         <div class="form-col label-col">
           <label style="text-align: right;">비밀번호 확인 <span class="required">*</span></label>
         </div>
-        <div class="form-col input-col">
-          <input v-model="confirmPassword" type="password" required />
+        <div class="form-col input-col" style="position: relative;">
+          <input v-model="confirmPassword" :type="showPassword2 ? 'text' : 'password'" required style="padding-right:2.5rem;" />
+          <i
+            :class="showPassword2 ? 'pi pi-eye-slash' : 'pi pi-eye'"
+            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+            @click="showPassword2 = !showPassword2"
+          ></i>
         </div>
       </div>
       <div class="form-row">
@@ -185,6 +195,8 @@ const approvalStatus = ref('미승인')
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
+const showPassword = ref(false)
+const showPassword2 = ref(false)
 
 const commissionGradeOptions = [
   { label: 'A', value: 'A' },

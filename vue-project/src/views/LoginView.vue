@@ -5,11 +5,23 @@
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">아이디(이메일)</label>
-          <input id="email" type="email" v-model="email" />
+          <input id="email" type="email" v-model="email" ref="emailInputRef" />
         </div>
         <div class="form-group" style="margin-top: 0rem; margin-bottom: 1rem;">
           <label for="password">비밀번호</label>
-          <input id="password" type="password" v-model="password" />
+          <div style="position: relative;">
+            <input
+              id="password"
+              :type="showPassword ? 'text' : 'password'"
+              v-model="password"
+              style="padding-right: 2.5rem;"
+            />
+            <i
+              :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showPassword = !showPassword"
+            ></i>
+          </div>
         </div>
         <Button :label="'로그인'" class="login-btn" :disabled="!canLogin" :style="loginBtnStyle" @click="handleLogin" />
         <Button label="회원가입" class="signup-btn" @click="$router.push('/signup')" />
@@ -78,10 +90,12 @@ const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const router = useRouter();
+const emailInputRef = ref(null);
 
 const isPasswordResetModalOpen = ref(false);
 const isConfirmationModalOpen = ref(false);
 const resetEmail = ref('');
+const showPassword = ref(false);
 
 const canLogin = computed(() => email.value.trim() !== '' && password.value.trim() !== '');
 const loginBtnStyle = computed(() => ({
@@ -178,6 +192,9 @@ const handlePasswordReset = async () => {
 
 onMounted(() => {
   document.body.classList.add('no-main-padding');
+  if (emailInputRef.value) {
+    emailInputRef.value.focus();
+  }
 });
 
 onUnmounted(() => {

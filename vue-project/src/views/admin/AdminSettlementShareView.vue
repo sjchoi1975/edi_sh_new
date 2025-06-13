@@ -22,7 +22,7 @@
         <div class="action-buttons-group">
           <button class="btn-secondary" @click="toggleAllShares(true)">전체 공유</button>
           <button class="btn-secondary" @click="toggleAllShares(false)">전체 해제</button>
-          <button class="btn-save" @click="saveShareStatus">저장</button>
+          <button class="btn-save" @click="saveShareStatus" :disabled="Object.keys(shareChanges).length === 0">저장</button>
         </div>
       </div>
       <div style="flex-grow: 1; overflow: auto;">
@@ -84,7 +84,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
-import { useRouter } from 'vue-router';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { supabase } from '@/supabase';
 
 const columnWidths = {
@@ -310,6 +310,18 @@ function goDetail(companyData) {
       query: { month: selectedMonth.value, company_id: companyData.company_id } 
   });
 }
+
+onBeforeRouteLeave((to, from, next) => {
+  if (Object.keys(shareChanges.value).length > 0) {
+    if (confirm('저장하지 않은 변경사항이 있습니다. 페이지를 떠나시겠습니까?')) {
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
 
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return '-';

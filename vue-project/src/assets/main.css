@@ -706,7 +706,14 @@ select.input-editable {
 .status-reviewing { background-color: var(--primary-color); color: #fff; }
 .status-completed { background-color: var(--danger); color: #fff; }
 
-
+/* 실적 검수, 흡수율 분석 헤더 메시지 (필터 조건을 선택하고 '실적 정보 불러오기'(검수 완료 불러오기)를 클릭하세요.) */
+.header-center-message {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #f35858;
+}
 
 
 

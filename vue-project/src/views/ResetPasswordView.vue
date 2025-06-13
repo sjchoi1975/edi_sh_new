@@ -15,26 +15,42 @@
       <form v-else @submit.prevent="handleResetPassword" class="reset-form">
         <div class="form-group">
           <label for="password">새 비밀번호</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
-            required 
-            minlength="6"
-            placeholder="새 비밀번호를 입력하세요"
-          />
+          <div style="position: relative;">
+            <input 
+              :type="showPassword ? 'text' : 'password'" 
+              id="password" 
+              v-model="password" 
+              required 
+              minlength="6"
+              placeholder="새 비밀번호를 입력하세요"
+              style="padding-right:2.5rem;"
+            />
+            <i
+              :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showPassword = !showPassword"
+            ></i>
+          </div>
         </div>
         
         <div class="form-group">
           <label for="confirmPassword">비밀번호 확인</label>
-          <input 
-            type="password" 
-            id="confirmPassword" 
-            v-model="confirmPassword" 
-            required 
-            minlength="6"
-            placeholder="비밀번호를 다시 입력하세요"
-          />
+          <div style="position: relative;">
+            <input 
+              :type="showPassword2 ? 'text' : 'password'" 
+              id="confirmPassword" 
+              v-model="confirmPassword" 
+              required 
+              minlength="6"
+              placeholder="비밀번호를 다시 입력하세요"
+              style="padding-right:2.5rem;"
+            />
+            <i
+              :class="showPassword2 ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showPassword2 = !showPassword2"
+            ></i>
+          </div>
         </div>
         
         <button type="submit" :disabled="!canSubmit" class="btn-submit">
@@ -55,6 +71,8 @@ const loading = ref(true);
 const error = ref('');
 const password = ref('');
 const confirmPassword = ref('');
+const showPassword = ref(false);
+const showPassword2 = ref(false);
 
 const canSubmit = computed(() => {
   return password.value.length >= 6 && 

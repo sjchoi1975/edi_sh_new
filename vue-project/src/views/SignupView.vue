@@ -11,18 +11,32 @@
             :type="field.inputType"
             v-model="formData[field.key]"
           />
-          <input
-            v-else-if="field.type === 'password'"
-            :id="field.key"
-            type="password"
-            v-model="formData.password"
-          />
-          <input
-            v-else-if="field.type === 'password2'"
-            :id="field.key"
-            type="password"
-            v-model="formData.confirmPassword"
-          />
+          <div v-else-if="field.type === 'password'" style="position: relative;">
+            <input
+              :id="field.key"
+              :type="showPassword ? 'text' : 'password'"
+              v-model="formData.password"
+              style="padding-right: 2.5rem;"
+            />
+            <i
+              :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showPassword = !showPassword"
+            ></i>
+          </div>
+          <div v-else-if="field.type === 'password2'" style="position: relative;">
+            <input
+              :id="field.key"
+              :type="showPassword2 ? 'text' : 'password'"
+              v-model="formData.confirmPassword"
+              style="padding-right: 2.5rem;"
+            />
+            <i
+              :class="showPassword2 ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+              @click="showPassword2 = !showPassword2"
+            ></i>
+          </div>
         </div>
         <div class="button-row">
           <Button label="회원가입" class="signup-btn" @click="handleSignup" />
@@ -68,6 +82,9 @@ const fields = [
   { key: 'contactPersonName', label: '담당자명', inputType: 'text' },
   { key: 'mobilePhone', label: '휴대폰번호', inputType: 'text' },
 ];
+
+const showPassword = ref(false);
+const showPassword2 = ref(false);
 
 const handleSignup = async () => {
   if (formData.value.password !== formData.value.confirmPassword) {
