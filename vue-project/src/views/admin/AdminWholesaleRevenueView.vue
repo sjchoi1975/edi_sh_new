@@ -264,7 +264,6 @@ const fetchRevenues = async () => {
         isEditing: false,
         originalData: { ...item },
       }))
-      generateAvailableMonths()
     }
   } finally {
     loading.value = false;
@@ -387,9 +386,6 @@ const deleteRevenue = async (row) => {
     if (index > -1) {
       revenues.value.splice(index, 1)
     }
-
-    // 월별 목록 업데이트
-    generateAvailableMonths()
 
     alert('삭제되었습니다.')
   } catch (error) {

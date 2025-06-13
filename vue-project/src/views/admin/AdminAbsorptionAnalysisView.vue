@@ -127,7 +127,10 @@
 
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center;" />
+              <Column footer="합계" :colspan="3" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
+              <Column :colspan="1" footerClass="footer-cell" />
+              <Column :colspan="1" footerClass="footer-cell" :frozen="true" />
+              <Column :colspan="3" footerClass="footer-cell" />
               <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column footer="" footerClass="footer-cell" />
               <Column :footer="totalWholesaleRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />

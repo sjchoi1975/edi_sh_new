@@ -118,7 +118,12 @@
           </Column>
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="9" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+              <Column :colspan="2" footerClass="footer-cell" :frozen="true" />
+              <Column :colspan="1" footerClass="footer-cell" />
+              <Column footer="합계" :colspan="2" footerClass="footer-cell" footerStyle="text-align:center !important;" :frozen="true" />
+              <Column :colspan="1" footerClass="footer-cell" />
+              <Column :colspan="1" footerClass="footer-cell" :frozen="true" />
+              <Column :colspan="2" footerClass="footer-cell" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :colspan="5" footerClass="footer-cell" />
