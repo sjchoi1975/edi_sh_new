@@ -28,9 +28,17 @@ git push origin main
 #1976d2;
 
 ---------------------------------------------------------------------
-
-
-
-거래처코드, 벙의원명, 사업자등록번호, 원장명, 주소, 처방건수, 처방액,  조회, 입력, 증빙파일, 보기, 등록
-
-
+develop 브랜치 변경사항을 main 브랜치에 머지하는 명령어
+main 브랜치에 있는지 확인
+Apply to LoginView.vu...
+Run
+최신 상태로 업데이트
+Apply to LoginView.vu...
+Run
+develop 브랜치의 변경사항을 main에 머지
+Apply to LoginView.vu...
+Run
+머지 후 충돌 해결(필요시) → 저장/커밋
+머지된 main 브랜치를 원격 저장소에 푸시
+Apply to LoginView.vu...
+Run
