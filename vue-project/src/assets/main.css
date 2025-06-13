@@ -527,26 +527,24 @@ select.input-editable {
 
 /* 모달 헤더 */
 .p-dialog-header {
-  background: var(--gray-300) !important;
-  padding: 0.75rem 1rem !important;
-  border-bottom: 1px solid var(--border-secondary) !important;
-  border-radius: 4px 4px 0px 0px;
+  background: none !important;
+  padding: 1.5rem 2rem 0.5rem 1rem !important;
+  border-radius: 4px !important;
 }
 
 .p-dialog-title {
   font-size: var(--font-size-title) !important;
-  font-weight: 600 !important;
+  font-weight: 700!important;
   color: var(--text-primary) !important;
   margin-left: 1rem !important;
-  padding: 0 !important;
 }
 
 /* 모달 내용 */
 .p-dialog-content {
-  min-height: 580px !important;
-  max-height: 580px !important;
+  min-height: 600px !important;
+  max-height: 600px !important;
   overflow-y: auto !important;
-  padding: 1.5rem 2rem 0rem 2rem !important;
+  padding: 1rem 2rem 1rem 2rem !important;
   background: transparent !important;
 }
 
@@ -565,7 +563,7 @@ select.input-editable {
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
   background: #fff !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18) !important;
   min-width: 480px !important;
   max-width: 90vw !important;
@@ -590,10 +588,8 @@ select.input-editable {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  margin-bottom: 1rem !important;
   padding: 1rem !important;
-  border-bottom: 1px solid var(--border-secondary) !important;
-  background: var(--gray-300) !important;
+  background: none !important;
   color: var(--text-dark) !important;
 }
 
@@ -674,7 +670,14 @@ select.input-editable {
   text-align: left !important;
 }
 
-
+/* 정산내역서 세금계산서 발행급액 표기 */
+.settlement-summary {
+  display: flex;
+  gap: 24px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+}
 
 /* 편집 상태 메시지 스타일링 */
 .status-message {
@@ -922,47 +925,7 @@ select.input-editable {
   color: #888;
   margin-bottom: 2px;
 }
-.btn-detail,
-.btn-excel {
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-  font-size: 12px;
-}
-.btn-detail:hover {
-  background: #e3f2fd;
-}
-.btn-excel:hover {
-  background: #e8f5e8;
-}
-.btn-outline {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  padding: 2px 10px;
-  border-radius: 4px;
-  margin-right: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.btn-outline:hover {
-  background: #f2f2f2;
-}
-.btn-primary {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  padding: 2px 10px;
-  border-radius: 4px;
-  margin-right: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.btn-primary:hover {
-  background: #f2f2f2;
-}
+
 .share-checkbox {
   /* 1. 기본 체크박스 숨기기 */
   appearance: none;
@@ -1227,6 +1190,10 @@ select.input-editable {
   table-layout: fixed !important;
 }
 
+
+
+
+
 /* ========================================== */
 /* 15. 화면별 테이블 정렬 스타일                */
 /* ========================================== */
@@ -1299,27 +1266,15 @@ select.input-editable {
 /* 이용자용 */
 
 /* ------ 공지사항 목록 (NoticesView.vue) ------ */
-.notices-table .p-datatable-tbody > tr > td:nth-child(1) {
+
+/* --- 중앙 정렬 (No, 필수, 첨부파일, 조회수, 작성일시) --- */
+.notices-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(5), :nth-child(6), :nth-child(7)) {
   text-align: center !important;
-} /* No */
-.notices-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 필수 */
-.notices-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (제목, 내용) --- */
+.notices-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(4)) {
   text-align: left !important;
-} /* 제목 */
-.notices-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 내용 */
-.notices-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 첨부파일 */
-.notices-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 조회수 */
-.notices-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 작성일시 */
+}
 
 /* 내용 미리보기 스타일 */
 .content-preview {
@@ -1331,161 +1286,81 @@ select.input-editable {
   color: #666 !important;
 }
 
-/* ------ 제품 목록 (ProductsView.vue) ------ */
-.products-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* ------ 공지사항 목록 (NoticesView.vue) ------ */
+/* --- 중앙 정렬 (No, 필수, 첨부파일, 조회수, 작성일시) --- */
+.notices-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(5), :nth-child(6), :nth-child(7)) {
   text-align: center !important;
-} /* No */
-.products-table .p-datatable-tbody > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (제목, 내용) --- */
+.notices-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(4)) {
   text-align: left !important;
-} /* 제품명 */
-.products-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+
+/* ------ 제품 목록 (ProductsView.vue) ------ */
+/* --- 중앙 정렬 (No, 보험코드, 수수료율(%)) --- */
+.products-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(5)) {
   text-align: center !important;
-} /* 보험코드 */
+}
+/* --- 좌측 정렬 (제품명, 비고) --- */
+.products-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(6)) {
+  text-align: left !important;
+}
+/* --- 우측 정렬 (약가) --- */
 .products-table .p-datatable-tbody > tr > td:nth-child(4) {
   text-align: right !important;
-} /* 약가 */
-.products-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 수수료율(%) */
-.products-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 비고 */
+}
 
 /* ------ 거래처 목록 (ClientsView.vue) ------ */
-.clients-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명) --- */
+.clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5)) {
   text-align: center !important;
-} /* No */
-.clients-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 거래처코드 */
-.clients-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (병의원명, 주소, 비고) --- */
+.clients-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
   text-align: left !important;
-} /* 병의원명 */
-.clients-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.clients-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 원장명 */
-.clients-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 주소 */
-.clients-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 비고 */
+}
 
 /* ------ 실적 등록 (PerformanceRegister.vue) ------ */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 처방건수, 조회, 등록, 증빙파일, 보기, 업로드) --- */
+.performance-register-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(6), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12)) {
   text-align: center !important;
-} /* No */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 거래처코드 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (병의원명, 주소) --- */
+.performance-register-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(5)) {
   text-align: left !important;
-} /* 병의원명 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 주소 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 처방건수 */
+}
+/* --- 우측 정렬 (처방액) --- */
 .performance-register-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: right !important;
-} /* 처방액 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 조회 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 등록 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 증빙파일 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 보기 */
-.performance-register-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: center !important;
-} /* 업로드 */
-
-
+}
 
 /* ------ 실적 입력 테이블 (PerformanceRegisterEdit.vue) ------ */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 처방월, 보험코드, 처방구분, 작업) --- */
+.performance-edit-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(8), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 처방월 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (제품명, 비고) --- */
+.performance-edit-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(9)) {
   text-align: left !important;
-} /* 제품명 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 보험코드 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(5) {
+}
+/* --- 우측 정렬 (단가, 처방수량, 처방액) --- */
+.performance-edit-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6), :nth-child(7)) {
   text-align: right !important;
-} /* 단가 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: right !important;
-} /* 처방수량 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: right !important;
-} /* 처방액 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 처방구분 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: left !important;
-} /* 비고 */
-.performance-edit-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 실적 등록 현황 (PerformanceRegisterList.vue) ------ */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 사업자등록번호, 처방월, 보험코드, 처방구분, 검수) --- */
+.performance-list-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(7), :nth-child(11), :nth-child(13)) {
   text-align: center !important;
-} /* No */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (거래처, 주소, 제품명, 비고) --- */
+.performance-list-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(4), :nth-child(6), :nth-child(12)) {
   text-align: left !important;
-} /* 거래처 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 주소 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 처방월 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 제품명 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 보험코드 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(8) {
+}
+/* --- 우측 정렬 (약가, 처방수량, 처방액) --- */
+.performance-list-table .p-datatable-tbody > tr > td:is(:nth-child(8), :nth-child(9), :nth-child(10)) {
   text-align: right !important;
-} /* 약가 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: right !important;
-} /* 처방수량 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 처방액 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 처방구분 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: left !important;
-} /* 비고 */
-.performance-list-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: center !important;
-} /* 검수 */
+}
 
 /* ------ 실적 등록 (PerformanceRegister.vue) 주소 컬럼 오버플로우 처리 ------ */
 .performance-register-table.custom-table .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
@@ -1518,536 +1393,211 @@ select.input-editable {
 }
 
 
-/* 사용자 정산내역서 상세 (UserSettlementShareDetailView.vue) */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(1), /* No */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(3), /* 처방월 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(5), /* 보험코드 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(9) { /* 수수료율 */
+/* ------ 사용자 정산내역서 상세 (UserSettlementShareDetailView.vue) ------ */
+/* --- 중앙 정렬 (No, 처방월, 보험코드, 수수료율) --- */
+.user-settlement-detail-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(9)) {
   text-align: center !important;
 }
-
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(2), /* 병의원명 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(4), /* 제품명 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(11) { /* 비고 */
+/* --- 좌측 정렬 (병의원명, 제품명, 비고) --- */
+.user-settlement-detail-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(4), :nth-child(11)) {
   text-align: left !important;
 }
-
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(6), /* 약가 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(7), /* 처방수량 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(8), /* 처방액 */
-.user-settlement-detail-table .p-datatable-tbody > tr > td:nth-child(10) { /* 지급액 */
+/* --- 우측 정렬 (약가, 처방수량, 처방액, 지급액) --- */
+.user-settlement-detail-table .p-datatable-tbody > tr > td:is(:nth-child(6), :nth-child(7), :nth-child(8), :nth-child(10)) {
   text-align: right !important;
 }
 
-
-
-
-
-
-
-/* 실적 등록 테이블 헤더 가운데 정렬 강제 적용 */
-/*.performance-register-table .p-datatable .p-datatable-thead > tr > th,
-.performance-register-table.custom-table .p-datatable-thead > tr > th,
-.performance-register-table th {
-  text-align: center !important;
-}  */
 
 /* 관리자용 */
 
 /* ------ 관리자 공지사항 목록 (AdminNoticesView.vue) ------ */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 필수, 첨부파일, 조회수, 작성일시) --- */
+.admin-notices-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(5), :nth-child(6), :nth-child(7)) {
   text-align: center !important;
-} /* No */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 필수 */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (제목, 내용) --- */
+.admin-notices-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(4)) {
   text-align: left !important;
-} /* 제목 */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 내용 */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 첨부파일 */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 조회수 */
-.admin-notices-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 작성일시 */
+}
 
 /* ------ 관리자 승인 업체 (AdminCompaniesApprovedView.vue) ------ */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 수수료 등급, 관리자, 승인 처리) --- */
+.admin-companies-approved-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (구분, 업체명, 사업장소재지, 비고) --- */
+.admin-companies-approved-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(6), :nth-child(9)) {
   text-align: left !important;
-} /* 구분 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 대표자 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 사업장소재지 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 수수료 등급 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 관리자 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: left !important;
-} /* 비고 */
-.admin-companies-approved-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 승인 처리 */
+}
 
 /* ------ 관리자 미승인 업체 (AdminCompaniesPendingView.vue) ------ */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 수수료 등급, 관리자, 승인 처리) --- */
+.admin-companies-pending-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (구분, 업체명, 사업장소재지, 비고) --- */
+.admin-companies-pending-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(6), :nth-child(9)) {
   text-align: left !important;
-} /* 구분 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 대표자 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 사업장소재지 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 수수료 등급 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 관리자 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: left !important;
-} /* 비고 */
-.admin-companies-pending-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 승인 처리 */
+}
 
 /* ------ 관리자 제품 목록 (AdminProductsView.vue) ------ */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 보험코드, 수수료A, 수수료B, 표준코드, 단위/포장형태, 단위수량, 등록일자, 상태, 작업) --- */
+.admin-products-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12)) {
   text-align: center !important;
-} /* No */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (제품명) --- */
+.admin-products-table .p-datatable-tbody > tr > td:is(:nth-child(2)) {
   text-align: left !important;
-} /* 제품명 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important;
-} /* 보험코드 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(4) {
+}
+/* --- 우측 정렬 (약가) --- */
+.admin-products-table .p-datatable-tbody > tr > td:is(:nth-child(4)) {
   text-align: right !important;
-} /* 약가 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 수수료A */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 수수료B */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 표준코드 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 단위/포장형태 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 단위수량 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 등록일자 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 상태 */
-.admin-products-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 거래처 목록 (AdminClientsView.vue) ------ */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 등록일자, 상태, 작업) --- */
+.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 거래처코드 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (병의원명, 주소, 비고) --- */
+.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
   text-align: left !important;
-} /* 병의원명 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 원장명 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 주소 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 비고 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 등록일자 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 상태 */
-.admin-clients-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 담당업체 지정 (AdminClientsAssignCompaniesView.vue) ------ */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 업체 사업자등록번호, 작업) --- */
+.admin-assign-companies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9)) {
   text-align: center !important;
-} /* No */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 거래처코드 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (병의원명, 주소, 업체명) --- */
+.admin-assign-companies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
   text-align: left !important;
-} /* 병의원명 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 원장명 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 주소 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 업체 사업자등록번호 */
-.admin-assign-companies-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 문전약국 지정 (AdminClientsAssignPharmaciesView.vue) ------ */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 약국 사업자등록번호, 작업) --- */
+.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9)) {
   text-align: center !important;
-} /* No */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 거래처코드 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (병의원명, 주소, 약국명) --- */
+.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(8)) {
   text-align: left !important;
-} /* 병의원명 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(4) {
+}
+
+/* ------ 관리자 담당업체 지정 모달 (AdminClientsAssignCompaniesView.vue) ------ */
+/* --- 중앙 정렬 (체크박스, 사업자등록번호, 대표자명) --- */
+.modal-assign-companies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(4)) {
   text-align: center !important;
-} /* 사업자등록번호 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 원장명 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(6) {
+}
+/* --- 좌측 정렬 (업체명, 사업장 소재지) --- */
+.modal-assign-companies-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(5)) {
   text-align: left !important;
-} /* 주소 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(7) {
+}
+
+/* ------ 관리자 문전약국 지정 모달 (AdminClientsAssignPharmaciesView.vue) ------ */
+/* --- 중앙 정렬 (체크박스, 사업자등록번호) --- */
+.modal-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3)) {
+  text-align: center !important;
+}
+/* --- 좌측 정렬 (약국명, 주소) --- */
+.modal-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(4)) {
   text-align: left !important;
-} /* 약국명 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 약국 사업자등록번호 */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 문전약국 목록 (AdminPharmaciesView.vue) ------ */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 약국코드, 사업자등록번호, 등록일자, 상태, 작업) --- */
+.admin-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(7), :nth-child(8), :nth-child(9)) {
   text-align: center !important;
-} /* No */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 약국코드 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (약국명, 주소, 비고) --- */
+.admin-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(5), :nth-child(6)) {
   text-align: left !important;
-} /* 약국명 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 주소 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 비고 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 등록일자 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 상태 */
-.admin-pharmacies-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 도매매출 목록 (AdminWholesaleRevenueView.vue) ------ */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 약국코드, 사업자번호, 표준코드, 매출일자, 작업) --- */
+.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(6), :nth-child(9), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 약국코드 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (약국명, 주소, 제품명) --- */
+.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(5), :nth-child(7)) {
   text-align: left !important;
-} /* 약국명 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자번호 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 주소 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 표준코드 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 제품명 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(8) {
+}
+/* --- 우측 정렬 (매출액) --- */
+.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(8)) {
   text-align: right !important;
-} /* 매출액 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 매출일자 */
-.admin-wholesale-revenue-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 직거래매출 목록 (AdminDirectRevenueView.vue) ------ */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 약국코드, 사업자번호, 표준코드, 매출일자, 작업) --- */
+.admin-direct-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(6), :nth-child(9), :nth-child(10)) {
   text-align: center !important;
-} /* No */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 약국코드 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (약국명, 주소, 제품명) --- */
+.admin-direct-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(5), :nth-child(7)) {
   text-align: left !important;
-} /* 약국명 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자번호 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 주소 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 표준코드 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 제품명 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(8) {
+}
+/* --- 우측 정렬 (매출액) --- */
+.admin-direct-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(8)) {
   text-align: right !important;
-} /* 매출액 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 매출일자 */
-.admin-direct-revenue-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 작업 */
+}
 
 /* ------ 관리자 정산월관리 목록 (AdminSettlementMonthsView.vue) ------ */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 정산월, 실적입력 시작일, 실적입력 종료일, 상태) --- */
+.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(7)) {
   text-align: center !important;
-} /* No */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 정산월 */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important;
-} /* 실적입력 시작일 */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 실적입력 종료일 */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(5) {
+}
+/* --- 좌측 정렬 (전달 사항, 비고) --- */
+.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6)) {
   text-align: left !important;
-} /* 전달 사항 */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important;
-} /* 비고 */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 상태 */
+}
 
 /* ------ 관리자 업체별 등록 현황 (AdminPerformanceCompaniesView.vue) ------ */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 총 거래처, 제출 거래처, 처방건수, 검수완료, 검수중, 검수미진행, 증빙 파일, 파일 보기, 최종 등록일시) --- */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12), :nth-child(14), :nth-child(15), :nth-child(16)) {
   text-align: center !important;
-} /* No */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (구분, 업체명) --- */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3)) {
   text-align: left !important;
-} /* 구분 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 대표자 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 관리자 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 총 거래처 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 제출 거래처 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 처방건수 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 검수완료 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 검수중 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: center !important;
-} /* 검수미진행 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(13) {
+}
+/* --- 우측 정렬 (처방액) --- */
+.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(13)) {
   text-align: right !important;
-} /* 처방액 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(14) {
-  text-align: center !important;
-} /* 증빙 파일 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(15) {
-  text-align: center !important;
-} /* 파일 보기 */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:nth-child(16) {
-  text-align: center !important;
-} /* 최종 등록일시 */
+}
 
 /* ------ 관리자 전체 등록 현황 (AdminPerformanceWholeView.vue) ------ */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 검수상태, 처방월, 보험코드, 처방구분, 등록일시, 관리자) --- */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(6), :nth-child(8), :nth-child(12), :nth-child(14), :nth-child(16)) {
   text-align: center !important;
-} /* No */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important;
-} /* 검수상태 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 좌측 정렬 (구분, 업체명, 거래처명, 제품명, 비고, 등록자) --- */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(4), :nth-child(5), :nth-child(7), :nth-child(13), :nth-child(15)) {
   text-align: left !important;
-} /* 구분 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 업체명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 거래처명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 처방월 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: left !important;
-} /* 제품명 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 보험코드 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(9) {
+}
+/* --- 우측 정렬 (약가, 처방수량, 처방액) --- */
+.admin-performance-whole-table .p-datatable-tbody > tr > td:is(:nth-child(9), :nth-child(10), :nth-child(11)) {
   text-align: right !important;
-} /* 약가 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 처방수량 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: right !important;
-} /* 처방액 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: center !important;
-} /* 처방구분 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: left !important;
-} /* 비고 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(14) {
-  text-align: center !important;
-} /* 등록일시 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(15) {
-  text-align: left !important;
-} /* 등록자 */
-.admin-performance-whole-table .p-datatable-tbody > tr > td:nth-child(16) {
-  text-align: center !important;
-} /* 관리자 */
-
-
+}
 
 /* 실적 검수 테이블 바디 셀 배경색 (frozen 컬럼 겹침 방지) */
 .admin-performance-review-table .p-datatable-tbody > tr > td {
   background-color: #ffffff !important;
 }
 
-/* 실적 검수 테이블 컬럼별 정렬 */
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(1) {
-  text-align: center !important; /* 체크박스 */
+/* ------ 실적 검수 테이블 ------ */
+/* --- 중앙 정렬 (체크박스, 검수상태, 검수구분, 액션, 처방월, 보험코드, 처방구분, 수수료율, 등록일시) --- */
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(7), :nth-child(9), :nth-child(13), :nth-child(14), :nth-child(17)) {
+  text-align: center !important;
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: center !important; /* 검수상태 */
+/* --- 좌측 정렬 (업체명, 거래처명, 제품명, 비고, 등록자) --- */
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6), :nth-child(8), :nth-child(16), :nth-child(18)) {
+  text-align: left !important;
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important; /* 검수구분 */
+/* --- 우측 정렬 (약가, 처방수량, 처방액, 지급액) --- */
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(10), :nth-child(11), :nth-child(12), :nth-child(15)) {
+  text-align: right !important;
 }
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important; /* 액션 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important; /* 업체명 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: left !important; /* 거래처명 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important; /* 처방월 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: left !important; /* 제품명 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important; /* 보험코드 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important; /* 약가 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: right !important; /* 처방수량 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: right !important; /* 처방액 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: center !important; /* 처방구분 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(14) {
-  text-align: center !important; /* 수수료율 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(15) {
-  text-align: right !important; /* 지급액 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(16) {
-  text-align: left !important; /* 비고 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(17) {
-  text-align: center !important; /* 등록일시 */
-}
-.admin-performance-review-table .p-datatable-tbody > tr > td:nth-child(18) {
-  text-align: left !important; /* 등록자 */
-}
-
 
 
 /* 실적 검수 테이블 행 상태별 스타일 (td 레벨로 적용) */
@@ -2088,141 +1638,51 @@ select.input-editable {
   align-items: center !important;
 }
 
-
-
 /* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (작업, 처방월, 보험코드, 처방구분, 흡수율, 수수료율, 등록일시) --- */
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(6), :nth-child(10), :nth-child(14), :nth-child(15), :nth-child(18)) {
   text-align: center !important;
-} /* 작업 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (업체명, 거래처, 제품명, 비고, 등록자) --- */
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(5), :nth-child(17), :nth-child(19)) {
   text-align: left !important;
-} /* 업체명 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: left !important;
-} /* 거래처 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 처방월 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: left !important;
-} /* 제품명 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 보험코드 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(7) {
+}
+/* --- 우측 정렬 (약가, 처방수량, 처방액, 도매매출, 직거래매출, 합산액, 지급액) --- */
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(7), :nth-child(8), :nth-child(9), :nth-child(11), :nth-child(12), :nth-child(13), :nth-child(16)) {
   text-align: right !important;
-} /* 약가 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: right !important;
-} /* 처방수량 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: right !important;
-} /* 처방액 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: center !important;
-} /* 처방구분 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: right !important;
-} /* 도매매출 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: right !important;
-} /* 직거래매출 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(13) {
-  text-align: right !important;
-} /* 합산액 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(14) {
-  text-align: center !important;
-} /* 흡수율 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(15) {
-  text-align: center !important;
-} /* 수수료율 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(16) {
-  text-align: right !important;
-} /* 지급액 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(17) {
-  text-align: left !important;
-} /* 비고 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(18) {
-  text-align: center !important;
-} /* 등록일시 */
-.absorption-analysis-table .p-datatable-tbody > tr > td:nth-child(19) {
-  text-align: left !important;
-} /* 등록자 */
-
+}
 
 /* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(1) {
+/* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 거래처수, 처방건수, 상세, 공유) --- */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(11), :nth-child(12)) {
   text-align: center !important;
-} /* No */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(2) {
+}
+/* --- 좌측 정렬 (구분, 업체명) --- */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3)) {
   text-align: left !important;
-} /* 구분 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(3) {
+}
+/* --- 우측 정렬 (총 처방액, 총 지급액) --- */
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(9), :nth-child(10)) {
+  text-align: right !important;
+}
+
+/* ------ 관리자 정산내역서 상세 (AdminSettlementShareDetailView.vue) ------ */
+/* --- 중앙 정렬 (No, 처방월, 보험코드, 수수료율) --- */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(9)) {
+  text-align: center !important;
+}
+/* --- 좌측 정렬 (거래처명, 제품명, 비고) --- */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(4), :nth-child(11)) {
   text-align: left !important;
-} /* 업체명 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: center !important;
-} /* 사업자등록번호 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 대표자 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: center !important;
-} /* 관리자 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: center !important;
-} /* 거래처수 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: center !important;
-} /* 처방건수 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(9) {
+}
+/* --- 우측 정렬 (약가, 처방수량, 처방액, 지급액) --- */
+.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:is(:nth-child(6), :nth-child(7), :nth-child(8), :nth-child(10)) {
   text-align: right !important;
-} /* 총 처방액 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 총 지급액 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: center !important;
-} /* 상세 */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:nth-child(12) {
-  text-align: center !important;
-} /* 공유 */
+}
 
 
-/* 관리자 정산내역서 상세 (AdminSettlementShareDetailView.vue) */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(1) {
-  text-align: center !important;
-} /* No */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(2) {
-  text-align: left !important;
-} /* 거래처명 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(3) {
-  text-align: center !important;
-} /* 처방월 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(4) {
-  text-align: left !important;
-} /* 제품명 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(5) {
-  text-align: center !important;
-} /* 보험코드 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(6) {
-  text-align: right !important;
-} /* 약가 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(7) {
-  text-align: right !important;
-} /* 처방수량 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(8) {
-  text-align: right !important;
-} /* 처방액 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(9) {
-  text-align: center !important;
-} /* 수수료율 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(10) {
-  text-align: right !important;
-} /* 지급액 */
-.admin-settlement-share-detail-table .p-datatable-tbody > tr > td:nth-child(11) {
-  text-align: left !important;
-} /* 비고 */
+
+
 
 /* ===================================================== */
 /* 로그인/회원가입 화면 전용 스타일 (LoginView.vue, SignupView.vue) */
@@ -2639,10 +2099,6 @@ select.input-editable {
 }
 .side-nav-logout:hover {
   text-decoration: underline !important;
-  opacity: 0 !important;
-  transform: translateY(0px) !important;
-  box-shadow: 0 0px 0px rgba(0, 0, 0, 0) !important;
-  transition: all 0.2s ease-in-out !important;
 }
 
 /* DataTable Footer (합계 행) 공통 스타일 */
@@ -2699,5 +2155,4 @@ select.input-editable {
 .product-search-dropdown li.selected .insurance-code {
   color: #fff !important; /* 또는 더 진한 색상 */
 }
-
 

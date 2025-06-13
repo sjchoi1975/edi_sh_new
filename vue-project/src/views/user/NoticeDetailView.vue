@@ -33,7 +33,7 @@
         </div>
         <div class="form-col input-col input-400">
           <div v-for="(url, idx) in notice.file_url" :key="url" style="margin-bottom:2px;">
-            <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
+            <a @click.prevent="downloadFile(url)" class="file-link" style="cursor: pointer;">{{ getFileName(url) }}</a>
           </div>
         </div>
       </div>
@@ -86,9 +86,38 @@ function getFileName(url) {
 function goEdit() {
   router.push(`/admin/notices/${route.params.id}/edit`);
 }
+
+async function downloadFile(fileUrl) {
+  try {
+    const url = new URL(fileUrl);
+    const filePath = url.pathname.split('/').slice(6).join('/');
+    const fileName = getFileName(fileUrl);
+
+    const { data, error } = await supabase.storage
+      .from('notices')
+      .download(filePath);
+      
+    if (error) throw error;
+
+    const blobUrl = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+
+  } catch (err) {
+    console.error('파일 다운로드 오류:', err);
+    alert('파일을 다운로드하는 중 오류가 발생했습니다.');
+  }
+}
+
 function goList() {
   router.push('/notices');
 }
+
 async function handleDelete() {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   const { error } = await supabase.from('notices').delete().eq('id', route.params.id);

@@ -143,7 +143,7 @@
     </div>
 
     <!-- 담당업체 지정 모달 -->
-    <Dialog v-model:visible="assignModalVisible" header="업체 지정" :modal="true">
+    <Dialog v-model:visible="assignModalVisible" header="업체 지정" :modal="true" :style="{ width: '60vw' }">
       <div>
         <InputText
           v-model="companySearch"
@@ -155,8 +155,9 @@
           :value="filteredCompanies"
           v-model:selection="selectedCompanies"
           selectionMode="multiple"
-          :rows="20"
-          class="custom-table"
+          class="custom-table modal-assign-companies-table"
+          scrollable
+          scrollHeight="440px"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
           <Column
@@ -185,14 +186,15 @@
           />
         </DataTable>
         <div class="btn-row" style="margin-top: 16px">
-          <button class="btn-cancel" @click="closeAssignModal">취소</button>
-          <button
-            class="btn-save"
-            :disabled="selectedCompanies.length === 0"
-            @click="assignCompanies"
-          >
-            지정
-          </button>
+          <button class="btn-cancel"
+          @click="closeAssignModal">
+          취소
+        </button>
+          <button class="btn-save"
+          :disabled="selectedCompanies.length === 0"
+          @click="assignCompanies">
+          지정
+        </button>
         </div>
       </div>
     </Dialog>

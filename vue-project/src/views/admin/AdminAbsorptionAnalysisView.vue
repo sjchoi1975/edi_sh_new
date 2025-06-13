@@ -496,11 +496,9 @@ function downloadExcel() {
   XLSX.utils.book_append_sheet(workbook, worksheet, '흡수율 분석');
   XLSX.writeFile(workbook, '흡수율_분석_데이터.xlsx');
 }
-
 </script>
 
 <style scoped>
-
 .absorption-analysis-view { padding: 0px; }
 .data-card-buttons { display: flex; gap: 8px; }
 

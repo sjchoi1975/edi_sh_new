@@ -12,8 +12,13 @@
     </div>
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
-      <div class="data-card-header" style="flex-shrink: 0;">
+      <div class="data-card-header" style="flex-shrink: 0; justify-content: space-between;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
+        <div class="settlement-summary">
+          <span>공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
+          <span>부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
+          <span>합계 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
+        </div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
@@ -150,6 +155,21 @@ const totalPaymentAmount = computed(() => {
   return detailRows.value.reduce((sum, row) => sum + Number(String(row.payment_amount).replace(/,/g, '')), 0).toLocaleString();
 });
 
+const settlementSummary = computed(() => {
+  const totalPrice = detailRows.value.reduce((sum, row) => {
+    return sum + (parseFloat(row.payment_amount?.toString().replace(/,/g, '')) || 0);
+  }, 0);
+
+  const supplyPrice = Math.round(totalPrice / 1.1);
+  const vatPrice = Math.round(totalPrice - supplyPrice);
+
+  return {
+    total_price: Math.round(totalPrice),
+    supply_price: supplyPrice,
+    vat_price: vatPrice,
+  };
+});
+
 function goBack() {
   router.push('/admin/settlement-share');
 }
@@ -191,7 +211,3 @@ function downloadExcel() {
   XLSX.writeFile(wb, fileName);
 }
 </script>
-
-<style scoped>
-/* 필요한 경우 여기에 스타일 추가 */
-</style>

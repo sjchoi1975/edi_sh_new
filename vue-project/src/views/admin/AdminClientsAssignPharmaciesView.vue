@@ -138,7 +138,7 @@
     </div>
 
     <!-- 담당약국 지정 모달 -->
-    <Dialog v-model:visible="assignModalVisible" header="약국 지정" :modal="true">
+    <Dialog v-model:visible="assignModalVisible" header="약국 지정" :modal="true" :style="{ width: '60vw' }">
       <div>
         <InputText
           v-model="pharmacySearch"
@@ -150,8 +150,9 @@
           :value="filteredPharmacies"
           v-model:selection="selectedPharmacies"
           selectionMode="multiple"
-          :rows="20"
-          class="custom-table"
+          class="custom-table modal-assign-pharmacies-table"
+          scrollable
+          scrollHeight="440px"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
           <Column field="name" header="약국명" :headerStyle="{ width: '28%' }" :sortable="true" />

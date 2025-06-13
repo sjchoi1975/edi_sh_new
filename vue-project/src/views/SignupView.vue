@@ -29,7 +29,7 @@
           <Button label="취소" class="cancel-btn" @click.prevent="goToLogin" />
         </div>
         <div class="login-link">
-          이미 계정이 있으신가요? <a @click.prevent="goToLogin" href="#">로그인</a>
+          <a @click.prevent="goToLogin" href="#">이미 계정이 있으신가요? 로그인</a>
         </div>
       </form>
       <div class="copyright">© 2025. 주식회사 팜플코리아 All Rights Reserved.</div>

@@ -3,40 +3,39 @@
 /* ========================================== */
 
 /* ========================================== */
-/* 1. CSS 변수 정의                           */
+/* 1. CSS 변수 정의 (색상 시스템)              */
 /* ========================================== */
 :root {
-  /* 기본 색상 */
-  --primary-color: #5fa56b; /* 로그인 버튼 녹색 */
-  --primary-color-light: #8fc89e; /* 밝은 녹색 */
-  --primary-color-lightest: #e3f3e8; /* 아주 밝은 녹색 */
-  --primary-color-dark: #488a54; /* 어두운 녹색 */
-  --primary-color-hover: #4e9e5c; /* 호버 시 녹색 */
+  /* 기본 색상 팔레트 */
+  --primary-color: #5fa56b;
+  --primary-color-hover: #4e9e5c;
+  --primary-color-light: #8fc89e;
+  --primary-color-lightest: #e3f3e8;
 
-  --primary-blue: #1976d2; /* 포인트 파랑 */
-  --primary-blue-light: #e3f2fd; /* 아주 밝은 파랑 */
-  --primary-blue-lightest: #f1f8ff; /* 거의 흰색에 가까운 파랑 */
-  --primary-blue-dark: #1565c0; /* 어두운 파랑 */
-  --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
+  --primary-blue: #1976d2;
+  --primary-blue-hover: #1565c0;
+  --primary-blue-light: #e3f2fd;
+  --primary-blue-lightest: #f1f8ff;
 
   /* 상태 색상 */
   --success: #28a745;
+  --success-hover: #24963f;
   --success-light: #6fdc8c;
   --success-lightest: #e6f9ed;
-  --success-dark: #218838;
-  --success-hover: #24963f;
+
   --danger: #dc3545;
+  --danger-hover: #c82333;
   --danger-light: #ff6f7d;
   --danger-lightest: #ffeaea;
-  --danger-dark: #c82333;
-  --danger-hover: #c82333;
+
   --warning: #ffc107;
+  --warning-hover: #e0b200;
+  --warning-dark: #b8860b;
   --warning-light: #ffe066;
   --warning-lightest: #fffbe6;
-  --warning-dark: #b8860b;
-  --warning-hover: #e0b200;
 
-  /* 중립 색상 */
+  /* 중립 색상 (그레이 스케일) */
+  --white: #ffffff;
   --gray-100: #f8f9fa;
   --gray-200: #e9ecef;
   --gray-300: #dee2e6;
@@ -51,17 +50,23 @@
   --text-white: #ffffff;
   --text-dark: #333333;
 
-  /* 레이아웃 */
+  /* 디자인 토큰 */
   --border-radius: 2px;
-  --border-radius-s: 2px;
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --border-radius-large: 4px;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --focus-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25);
+  
+  /* 폰트 크기 */
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
 }
 
 /* ========================================== */
-/* 2. 기본 버튼 스타일                        */
+/* 2. 기본 버튼 스타일 (일반 크기)             */
 /* ========================================== */
-/* 
+/*
 사용처: 
 - 로그인/회원가입 폼의 제출 버튼
 - 모달 창의 확인/취소 버튼  
@@ -69,6 +74,7 @@
 - 폼 하단의 액션 버튼들
 */
 
+/* 기본 버튼 공통 스타일 */
 .btn-primary,
 .btn-secondary,
 .btn-list,
@@ -94,129 +100,293 @@
   padding: 0.25rem 1rem !important;
   margin: 0 0.5rem !important;
   font-size: var(--font-size-base) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
   border: 1px solid transparent !important;
   border-radius: var(--border-radius) !important;
   cursor: pointer !important;
-  transition: all 0.2s ease-in-out !important;
   white-space: nowrap !important;
-  line-height: 1.5 !important;
+  text-align: center !important;
+  transition: all 0.2s ease-in-out !important;
   box-shadow: var(--shadow-sm) !important;
 }
 
-/* 기본 버튼 색상 정의 */
-.btn-primary {
-  background: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  color: var(--text-white) !important;
-}
-.btn-secondary {
-  background: var(--gray-600) !important;
-  border-color: var(--gray-600) !important;
-  color: var(--text-white) !important;
-}
-.btn-list {
-  background: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  color: var(--text-white) !important;
-}
-.btn-cancel {
-  background: var(--gray-300) !important;
-  border-color: var(--gray-300) !important;
-  color: var(--text-dark) !important;
-}
-.btn-success {
-  background: var(--success) !important;
-  border-color: var(--success) !important;
-  color: var(--text-white) !important;
-}
-.btn-warning {
-  background: var(--warning) !important;
-  border-color: var(--warning) !important;
-  color: var(--text-dark) !important;
-}
-.btn-add {
-  background: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-.btn-save {
-  background: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-.btn-edit {
-  background: var(--warning) !important;
-  border-color: var(--warning) !important;
-  color: var(--text-dark) !important;
-}
-.btn-delete {
-  background: var(--danger) !important;
-  border-color: var(--danger) !important;
-  color: var(--text-white) !important;
-}
-.btn-danger {
-  background: var(--danger) !important;
-  border-color: var(--danger) !important;
-  color: var(--text-white) !important;
-}
-.btn-excell-upload {
-  background: var(--primary-blue) !important;
-  border-color: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
+/* 기본 버튼 색상 스타일 */
+.btn-primary,
+.btn-list,
 .btn-excell-download {
   background: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
   color: var(--text-white) !important;
 }
+
+.btn-add,
+.btn-save,
+.btn-excell-upload {
+  background: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+
+.btn-success {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+  color: var(--text-white) !important;
+}
+
+.btn-warning,
+.btn-edit {
+  background: var(--warning) !important;
+  border-color: var(--warning) !important;
+  color: var(--text-dark) !important;
+}
+
+.btn-danger,
+.btn-delete {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: var(--text-white) !important;
+}
+
+.btn-secondary,
 .btn-excell-template {
   background: var(--gray-600) !important;
   border-color: var(--gray-600) !important;
   color: var(--text-white) !important;
 }
+
 .btn-reset-password {
   background: var(--gray-800) !important;
   border-color: var(--gray-800) !important;
   color: var(--text-white) !important;
 }
-.btn-upload {
-  background: var(--gray-200) !important;
-  border-color: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-}
-.btn-download {
-  background: var(--gray-200) !important;
-  border-color: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-}
-.btn-close {
-  background: var(--gray-200) !important;
-  border-color: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-}
-.btn-select-all {
-  background: var(--gray-200) !important;
-  border-color: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-}
+
+.btn-cancel,
+.btn-upload,
+.btn-download,
+.btn-close,
+.btn-select-all,
 .btn-select-none {
   background: var(--gray-200) !important;
   border-color: var(--gray-400) !important;
   color: var(--text-dark) !important;
 }
+
 .file-upload-label {
   background: var(--gray-100) !important;
   border-color: var(--gray-400) !important;
   color: var(--text-dark) !important;
 }
+
 .file-label {
   background: var(--gray-200) !important;
   border-color: var(--gray-400) !important;
   color: var(--text-dark) !important;
 }
 
-/* 기본 버튼 호버 효과 */
-button:hover:not(:disabled),
+/* 배경 없는 닫기 버튼 */
+.btn-close-nobg {
+  font-size: 1rem !important;
+  background: none !important;
+  border: none !important;
+  color: var(--text-dark) !important;
+  padding: 0.25rem !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 버튼 크기 변형 */
+.btn-sm {
+  padding: 0.35rem 0.8rem !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.btn-lg {
+  padding: 0.8rem 1.5rem !important;
+  font-size: var(--font-size-lg) !important;
+}
+
+/* ========================================== */
+/* 3. 특수 버튼 스타일 (로그인/회원가입)        */
+/* ========================================== */
+
+/* 로그인 버튼 */
+.login-btn {
+  width: 100% !important;
+  padding: 0.4rem 1rem !important;
+  background: var(--primary-color) !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-size: var(--font-size-base) !important;
+  color: var(--text-white) !important;
+}
+
+/* 회원가입 버튼 */
+.signup-btn {
+  flex: 1 !important;
+  padding: 0.4rem 1rem !important;
+  background: var(--primary-blue) !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-size: var(--font-size-base) !important;
+  color: var(--text-white) !important;
+}
+
+/* 취소 버튼 */
+.cancel-btn {
+  flex: 1 !important;
+  padding: 0.4rem 1rem !important;
+  background: var(--gray-400) !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-size: var(--font-size-base) !important;
+  color: var(--text-dark) !important;
+}
+
+/* ========================================== */
+/* 4. 작은 버튼 스타일 (테이블용 -sm 접미사)    */
+/* ========================================== */
+/*
+사용처:
+- DataTable 내의 행별 액션 버튼 (편집, 삭제, 승인 등)
+- 실적 등록 화면의 행 추가/삭제 버튼
+- 승인/대기 상태 변경 버튼
+- 테이블 행의 간단한 액션들
+*/
+
+/* 작은 버튼 공통 스타일 */
+.btn-primary-sm,
+.btn-add-sm,
+.btn-approve-sm,
+.btn-pending-sm,
+.btn-save-sm,
+.btn-edit-sm,
+.btn-delete-sm,
+.btn-cancel-sm,
+.btn-view-sm,
+.btn-input-sm,
+.btn-detail,
+.btn-upload-sm {  
+  padding: 0.15rem 0.4rem !important;
+  margin: 0 0.2rem !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 400 !important;
+  line-height: 1.25 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: none !important;
+}
+
+/* 작은 버튼 색상 스타일 (외곽선 스타일) */
+.btn-approve-sm,
+.btn-add-sm {
+  background: var(--white) !important;
+  color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.btn-pending-sm,
+.btn-delete-sm {
+  background: var(--white) !important;
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
+
+.btn-edit-sm {
+  background: var(--white) !important;
+  color: var(--warning-dark) !important;
+  border-color: var(--warning-dark) !important;
+}
+
+.btn-save-sm {
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.btn-detail,
+.btn-cancel-sm,
+.btn-view-sm,
+.btn-input-sm,
+.btn-upload-sm {
+  background: var(--gray-100) !important;
+  color: var(--text-dark) !important;
+  border-color: var(--gray-500) !important;
+}
+
+/* ========================================== */
+/* 5. 뱃지 스타일                             */
+/* ========================================== */
+/*
+사용처:
+- 공지사항 필수 표시 (.required-badge)
+- 제품/거래처/문전약국 활성화 상태 표시 (.active-badge/.inactive-badge)
+- 상태 표시용 라벨들
+*/
+
+.required-badge,
+.active-badge,
+.inactive-badge {
+  padding: 0.3em 0.8em !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 300 !important;
+  line-height: 1.2 !important;
+  border-radius: 40px !important;
+  display: inline-block !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  vertical-align: baseline !important;
+}
+
+.required-badge {
+  background: var(--danger) !important;
+  color: var(--text-white) !important;
+}
+
+.active-badge {
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+}
+
+.inactive-badge {
+  background: var(--gray-600) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--gray-400) !important;
+}
+
+/* ========================================== */
+/* 6. 액션 셀 스타일 (테이블용)                */
+/* ========================================== */
+/*
+사용처:
+- DataTable 내 버튼이 있는 셀의 배경
+- 실적 등록/조회 화면의 액션 셀
+- 테이블의 작업 열
+*/
+
+.action-cell {
+  padding: 0px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  background: none !important;
+}
+
+.action-cell-disabled {
+  padding: 0px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  background: var(--gray-100) !important;
+  opacity: 0.5 !important;
+}
+
+/* ========================================== */
+/* 7. 상호작용 효과 (호버, 포커스, 비활성화)    */
+/* ========================================== */
+
+/* 호버 효과 - 일반 버튼 */
 .btn-primary:hover:not(:disabled),
 .btn-secondary:hover:not(:disabled),
 .btn-list:hover:not(:disabled),
@@ -238,14 +408,56 @@ button:hover:not(:disabled),
 .btn-select-all:hover:not(:disabled),
 .btn-select-none:hover:not(:disabled),
 .file-upload-label:hover:not(:disabled),
-.file-label:hover:not([disabled]) {
+.file-label:hover:not(:disabled),
+.login-btn:hover:not(:disabled),
+.signup-btn:hover:not(:disabled),
+.cancel-btn:hover:not(:disabled) {
   opacity: 0.9 !important;
   transform: translateY(0px) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow) !important;
   transition: all 0.2s ease-in-out !important;
 }
 
-/* 기본 버튼 포커스 효과 */
+/* 호버 효과 - 작은 버튼 (배경색 변경) */
+.btn-approve-sm:hover:not(:disabled),
+.btn-add-sm:hover:not(:disabled) {
+  background: var(--primary-blue-hover) !important;
+  color: var(--text-white) !important;
+  border-color: var(--primary-blue-hover) !important;
+}
+
+.btn-pending-sm:hover:not(:disabled),
+.btn-delete-sm:hover:not(:disabled) {
+  background: var(--danger-hover) !important;
+  color: var(--text-white) !important;
+  border-color: var(--danger-hover) !important;
+}
+
+.btn-edit-sm:hover:not(:disabled) {
+  background: var(--warning-hover) !important;
+  color: var(--text-white) !important;
+  border-color: var(--warning-hover) !important;
+}
+
+.btn-save-sm:hover:not(:disabled) {
+  background: var(--primary-blue-hover) !important;
+  border-color: var(--primary-blue-hover) !important;
+}
+
+.btn-detail:hover:not(:disabled) {
+  background: var(--gray-300) !important;
+  border-color: var(--gray-500) !important;
+}
+
+.btn-cancel-sm:hover:not(:disabled),
+.btn-view-sm:hover:not(:disabled),
+.btn-input-sm:hover:not(:disabled),
+.btn-upload-sm:hover:not(:disabled) {
+  background: var(--gray-200) !important;
+  border-color: var(--gray-500) !important;
+}
+
+/* 포커스 효과 */
 button:focus,
 .btn-primary:focus,
 .btn-secondary:focus,
@@ -268,265 +480,10 @@ button:focus,
 .btn-close-nobg:focus,
 .btn-select-all:focus,
 .btn-select-none:focus,
-.file-label:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25) !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-.btn-close-nobg {
-  font-size: 1rem;
-  background: none !important;
-  border: none !important;
-  border-color: none !important;
-  color: var(--text-dark) !important;
-}
-
-.btn-close-nobg:hover:not([disabled]) {
-  opacity: 1 !important;
-  transform: translateY(0px) !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-/* 버튼 크기 변형 */
-.btn-sm {
-  padding: 0.35rem 0.8rem !important;
-  font-size: 0.875rem !important;
-}
-.btn-lg {
-  padding: 0.8rem 1.5rem !important;
-  font-size: 1.125rem !important;
-}
-
-
-
-/* [LoginView.vue] 로그인 버튼 */
-.login-btn {
-  width: 100% !important;
-  color: var(--text-white) !important;
-}
-
-/* [LoginView.vue] 회원가입 버튼 */
-.signup-btn {
-  width: 100% !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-
-/* [SignupView.vue] 회원가입 버튼 */
-.signup-btn {
-  flex: 1 !important;
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-
-/* [SignupView.vue] 취소 버튼 */
-.cancel-btn {
-  flex: 1 !important;
-  background: var(--gray-400) !important;
-  color: var(--text-dark) !important;
-}
-
-.login-btn,
-.signup-btn,
-.cancel-btn {
-  flex: 1 !important;
-  border: none !important;
-  font-size: var(--font-size-base) !important;
-  border-radius: 4px !important;
-  padding: 0.4rem 1rem !important;
-}
-
-
-
-/* ========================================== */
-/* 3. 테이블 내 작은 버튼 스타일 (-m 접미사)   */
-/* ========================================== */
-/* 
-사용처:
-- DataTable 내의 행별 액션 버튼 (편집, 삭제, 승인 등)
-- 실적 등록 화면의 행 추가/삭제 버튼
-- 승인/대기 상태 변경 버튼
-- 테이블 행의 간단한 액션들
-*/
-
-.btn-primary-sm,
-.btn-add-sm,
-.btn-approve-sm,
-.btn-pending-sm,
-.btn-save-sm,
-.btn-edit-sm,
-.btn-delete-sm,
-.btn-cancel-sm,
-.btn-view-sm,
-.btn-input-sm,
-.btn-upload-sm {
-  padding: 0.15rem 0.4rem !important;
-  margin: 0 0.2rem !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 400 !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--border-radius-s) !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease-in-out !important;
-  background: transparent !important;
-  line-height: 1.25 !important;
-  box-shadow: none !important;
-}
-
-:root {
-  /* 기본 색상 */
-  --primary-color: #5fa56b; /* 로그인 버튼 녹색 */
-  --primary-color-light: #8fc89e; /* 밝은 녹색 */
-  --primary-color-lightest: #e3f3e8; /* 아주 밝은 녹색 */
-  --primary-color-dark: #488a54; /* 어두운 녹색 */
-  --primary-color-hover: #4e9e5c; /* 호버 시 녹색 */
-
-  --primary-blue: #1976d2; /* 포인트 파랑 */
-  --primary-blue-light: #e3f2fd; /* 아주 밝은 파랑 */
-  --primary-blue-lightest: #f1f8ff; /* 거의 흰색에 가까운 파랑 */
-  --primary-blue-dark: #1565c0; /* 어두운 파랑 */
-  --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
-
-  /* 상태 색상 */
-  --success: #28a745;
-  --success-light: #6fdc8c;
-  --success-lightest: #e6f9ed;
-  --success-dark: #218838;
-  --success-hover: #24963f;
-  --danger: #dc3545;
-  --danger-light: #ff6f7d;
-  --danger-lightest: #ffeaea;
-  --danger-dark: #c82333;
-  --danger-hover: #c82333;
-  --warning: #ffc107;
-  --warning-light: #ffe066;
-  --warning-lightest: #fffbe6;
-  --warning-dark: #b8860b;
-  --warning-hover: #e0b200;
-
-  --text-white: #ffffff;
-  --text-dark: #333333;
-}
-
-/* 테이블 버튼 기본 색상 + 외곽선 (텍스트 버튼 스타일) */
-.btn-approve-sm {
-  background: var(--white) !important;
-  color: var(--primary-blue) !important;
-  border: 1px solid var(--primary-blue) !important;
-}
-.btn-approve-sm:hover:not(:disabled) {
-  background: var(--primary-blue-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--primary-blue-hover) !important;
-}
-.btn-pending-sm {
-  background: var(--white) !important;
-  color: var(--danger) !important;
-  border: 1px solid var(--danger) !important;
-}
-.btn-pending-sm:hover:not(:disabled) {
-  background: var(--danger-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--danger-hover) !important;
-}
-.btn-add-sm {
-  background: var(--white) !important;
-  color: var(--primary-blue) !important;
-  border: 1px solid var(--primary-blue) !important;
-}
-.btn-add-sm:hover:not(:disabled) {
-  background: var(--primary-blue-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--primary-blue-hover) !important;
-}
-.btn-edit-sm {
-  background: var(--white) !important;
-  color: var(--warning-dark) !important;
-  border: 1px solid var(--warning-dark) !important;
-}
-.btn-edit-sm:hover:not(:disabled) {
-  background: var(--warning-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--warning-hover) !important;
-}
-.btn-delete-sm {
-  background: var(--white) !important;
-  color: var(--danger) !important;
-  border: 1px solid var(--danger) !important;
-}
-.btn-delete-sm:hover:not(:disabled) {
-  background: var(--danger-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--danger-hover) !important;
-}
-
-.btn-save-sm {
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--primary-blue) !important;
-}
-.btn-save-sm:hover:not(:disabled) {
-  background: var(--primary-blue-hover) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--primary-blue-hover) !important;
-}
-
-.btn-cancel-sm {
-  background: var(--gray-300) !important;
-  color: var(--datk) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-
-.btn-view-sm {
-  background: var(--gray-100) !important;
-  color: var(--text-dark) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-.btn-view-sm:hover:not(:disabled) {
-  background: var(--gray-200) !important;
-  color: var(--text-dark) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-.btn-input-sm {
-  background: var(--gray-100) !important;
-  color: var(--text-dark) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-.btn-input-sm:hover:not(:disabled) {
-  background: var(--gray-200) !important;
-  color: var(--text-dark) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-.btn-upload-sm {
-  background: var(--gray-100) !important;
-  color: var(--text-dark) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-.btn-upload-sm:hover:not(:disabled)
-
-
-/* 테이블 버튼 호버 효과 */
-.btn-primary-sm:hover:not(:disabled)
-.btn-add-sm:hover:not(:disabled)
-.btn-approve-sm:hover:not(:disabled)
-.btn-pending-sm:hover:not(:disabled)
-.btn-edit-sm:hover:not(:disabled)
-.btn-delete-sm:hover:not(:disabled)
-.btn-save-sm:hover:not(:disabled)
-.btn-cancel-sm:hover:not(:disabled)
-.btn-view-sm:hover:not(:disabled)
-.btn-input-sm:hover:not(:disabled)
-.btn-upload-sm:hover:not(:disabled) {
-  opacity: 0.9 !important;
-  transform: translateY(0px) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-/* 기본 버튼 포커스 효과 */
-button:focus,
+.file-label:focus,
+.login-btn:focus,
+.signup-btn:focus,
+.cancel-btn:focus,
 .btn-primary-sm:focus,
 .btn-add-sm:focus,
 .btn-approve-sm:focus,
@@ -539,106 +496,41 @@ button:focus,
 .btn-input-sm:focus,
 .btn-upload-sm:focus {
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25) !important;
+  box-shadow: var(--focus-shadow) !important;
   transition: all 0.2s ease-in-out !important;
 }
 
-.btn-view-sm:hover {
-  background: #f8f9fa;
-}
-.btn-input-sm:hover,
-.btn-upload-sm:hover {
-  background: #000000;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ========================================== */
-/* 5. 액션 셀 스타일                          */
-/* ========================================== */
-/* 
-사용처:
-- DataTable 내 버튼이 있는 셀의 배경
-- 실적 등록/조회 화면의 액션 셀
-- 테이블의 작업 열
-*/
-.action-cell {
-  text-align: center !important;
-  background: none !important;
-  padding: 0px !important;
-  vertical-align: middle !important;
-}
-
-.action-cell-disabled {
-  text-align: center !important;
-  background: var(--gray-100) !important;
-  padding: 0px !important;
-  vertical-align: middle !important;
-  opacity: 0.5 !important;
-}
-
-/* ========================================== */
-/* 6. 뱃지 스타일                             */
-/* ========================================== */
-/* 
-사용처:
-- 공지사항 필수 표시 (.required-badge)
-- 제품/거래처/문전약국 활성화 상태 표시 (.active-badge/.inactive-badge)
-- 상태 표시용 라벨들
-*/
-.required-badge,
-.active-badge,
-.inactive-badge {
-  padding: 0.3em 0.8em !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 300 !important;
-  border-radius: 40px !important;
-  display: inline-block !important;
-  line-height: 1.2 !important;
-  text-align: center !important;
-  white-space: nowrap !important;
-  vertical-align: baseline !important;
-}
-
-.required-badge {
-  background: var(--danger) !important;
-  color: var(--text-white) !important;
-}
-.active-badge {
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-.inactive-badge {
-  background: var(--gray-600) !important;
-  color: var(--text-white) !important;
-  border: 1px solid transparent !important;
-  border-color: var(--gray-400) !important;
-}
-
-/* ========================================== */
-/* 7. 비활성화 상태 스타일                     */
-/* ========================================== */
-/* 모든 버튼에 공통 적용되는 비활성화 스타일 */
+/* 비활성화 상태 */
 .btn-primary:disabled,
-.btn-add:disabled,
-.btn-edit:disabled,
-.btn-delete:disabled,
+.btn-secondary:disabled,
 .btn-list:disabled,
 .btn-cancel:disabled,
-.btn-secondary:disabled,
 .btn-success:disabled,
+.btn-warning:disabled,
+.btn-add:disabled,
+.btn-save:disabled,
+.btn-edit:disabled,
+.btn-delete:disabled,
 .btn-danger:disabled,
+.btn-excell-upload:disabled,
+.btn-excell-download:disabled,
+.btn-excell-template:disabled,
 .btn-reset-password:disabled,
+.btn-upload:disabled,
+.btn-download:disabled,
+.btn-close:disabled,
+.btn-select-all:disabled,
+.btn-select-none:disabled,
 .file-label[disabled],
+.login-btn:disabled,
+.signup-btn:disabled,
+.cancel-btn:disabled,
 .btn-primary-sm:disabled,
 .btn-add-sm:disabled,
-.btn-edit-sm:disabled,
-.btn-delete-sm:disabled,
 .btn-approve-sm:disabled,
 .btn-pending-sm:disabled,
+.btn-edit-sm:disabled,
+.btn-delete-sm:disabled,
 .btn-save-sm:disabled,
 .btn-cancel-sm:disabled,
 .btn-view-sm:disabled,

@@ -34,7 +34,7 @@
         </div>
         <div class="form-col input-col input-400">
           <div v-for="(url, idx) in notice.file_url" :key="url" style="margin-bottom:2px;">
-            <a :href="url" class="file-link" :download="getFileName(url)">{{ getFileName(url) }}</a>
+            <a @click.prevent="downloadFile(url)" class="file-link" style="cursor: pointer;">{{ getFileName(url) }}</a>
           </div>
         </div>
       </div>
@@ -83,6 +83,34 @@ function getFileName(url) {
     return decodedName.replace(/^[0-9]+_/, '');
   } catch {
     return url;
+  }
+}
+
+async function downloadFile(fileUrl) {
+  try {
+    const url = new URL(fileUrl);
+    // URL 경로에서 버킷 이름(예: /object/public/notices/) 부분을 제외하고 실제 파일 경로만 추출
+    const filePath = url.pathname.split('/').slice(6).join('/');
+    const fileName = getFileName(fileUrl);
+
+    const { data, error } = await supabase.storage
+      .from('notices') // 공지사항 파일이 저장된 버킷 이름
+      .download(filePath);
+      
+    if (error) throw error;
+
+    const blobUrl = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+
+  } catch (err) {
+    console.error('파일 다운로드 오류:', err);
+    alert('파일을 다운로드하는 중 오류가 발생했습니다.');
   }
 }
 

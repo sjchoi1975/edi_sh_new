@@ -28,8 +28,13 @@
 
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
-      <div class="data-card-header" style="flex-shrink: 0;">
+      <div class="data-card-header" style="flex-shrink: 0; justify-content: space-between;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
+        <div class="settlement-summary">
+          <span>공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
+          <span>부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
+          <span>합계 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
+        </div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
         </div>
@@ -93,6 +98,23 @@ const allDataForMonth = ref([]);
 const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
 const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
 const totalPaymentAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString('ko-KR', { maximumFractionDigits: 1 }));
+
+const settlementSummary = computed(() => {
+  const totalPrice = detailRows.value.reduce((sum, row) => {
+    // 반올림을 위해 parseFloat 사용 후 Number로 변환
+    const payment = parseFloat(row.payment_amount?.toString().replace(/,/g, '')) || 0;
+    return sum + payment;
+  }, 0);
+
+  const supplyPrice = Math.round(totalPrice / 1.1);
+  const vatPrice = Math.round(totalPrice - supplyPrice);
+  
+  return {
+    total_price: Math.round(totalPrice),
+    supply_price: supplyPrice,
+    vat_price: vatPrice,
+  };
+});
 
 const columnWidths = { no: '4%', client_name: '14%', prescription_month: '8%', product_name: '14%', insurance_code: '8%', price: '8%', prescription_qty: '8%', prescription_amount: '8%', commission_rate: '8%', payment_amount: '8%', remarks: '12%' };
 
@@ -227,4 +249,5 @@ function downloadExcel() {
     display: flex;
     gap: 8px;
 }
+
 </style>
