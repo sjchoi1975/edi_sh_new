@@ -115,16 +115,32 @@ async function loadDetailData() {
     if (error) throw error;
     
     // 2. 데이터 가공
-    detailRows.value = data.map(row => ({
+    let mappedData = data.map(row => ({
       ...row,
       price: row.price.toLocaleString(),
       prescription_qty: row.prescription_qty.toLocaleString(),
-      prescription_amount: row.prescription_amount.toLocaleString(),
+      prescription_amount: row.prescription_amount,
       commission_rate: `${(row.commission_rate * 100).toFixed(2)}%`,
       payment_amount: row.payment_amount.toLocaleString(),
     }));
 
-    // 3. 업체 정보 설정 (주소 필드 추가)
+    // 3. 데이터 정렬
+    mappedData.sort((a, b) => {
+      if (a.client_name !== b.client_name) {
+        return a.client_name.localeCompare(b.client_name, 'ko');
+      }
+      if (a.product_name_display !== b.product_name_display) {
+        return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+      }
+      return b.prescription_amount - a.prescription_amount;
+    });
+
+    detailRows.value = mappedData.map(row => ({
+      ...row,
+      prescription_amount: row.prescription_amount.toLocaleString()
+    }));
+
+    // 4. 업체 정보 설정 (주소 필드 추가)
     if (data.length > 0) {
       const { data: cInfo, error: cError } = await supabase
         .from('companies')

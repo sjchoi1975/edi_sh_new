@@ -179,13 +179,29 @@ function updateFilterOptions() {
 }
 
 function filterDetailRows() {
-  let filtered = allDataForMonth.value;
+  let filtered = [...allDataForMonth.value];
   if (selectedPrescriptionMonth.value) {
     filtered = filtered.filter(row => row.prescription_month === selectedPrescriptionMonth.value);
   }
   if (selectedClient.value) {
     filtered = filtered.filter(row => row.client_name === selectedClient.value);
   }
+
+  filtered.sort((a, b) => {
+    // 1. 병의원명 가나다순
+    const clientNameCompare = a.client_name.localeCompare(b.client_name, 'ko');
+    if (clientNameCompare !== 0) return clientNameCompare;
+
+    // 2. 제품명 가나다순
+    const productNameCompare = a.product_name_display.localeCompare(b.product_name_display, 'ko');
+    if (productNameCompare !== 0) return productNameCompare;
+
+    // 3. 처방수량 높은 순
+    const qtyA = Number(a.prescription_qty.replace(/,/g, '')) || 0;
+    const qtyB = Number(b.prescription_qty.replace(/,/g, '')) || 0;
+    return qtyB - qtyA;
+  });
+
   detailRows.value = filtered;
 }
 

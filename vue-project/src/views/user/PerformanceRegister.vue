@@ -491,7 +491,7 @@ const fetchClientList = async () => {
     .select('id, client_code, name, business_registration_number, address')
     .in('id', clientIds)
     .eq('status', 'active')
-    .order('name', { ascending: true })
+
   if (clientError || !clients) {
     loading.value = false
     return
@@ -552,10 +552,10 @@ const checkInputPeriod = async () => {
     .single()
   if (!error && data) {
     const now = new Date()
-    const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000) // 한국시간 보정
     const startDate = new Date(data.start_date)
     const endDate = new Date(data.end_date)
-    isInputPeriod.value = koreaNow >= startDate && koreaNow <= endDate
+    endDate.setHours(23, 59, 59, 999); // 종료일을 그날의 마지막 시간으로 설정
+    isInputPeriod.value = now >= startDate && now <= endDate
   } else {
     isInputPeriod.value = false
   }

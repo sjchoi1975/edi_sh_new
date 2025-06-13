@@ -41,17 +41,17 @@
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
         </Column>
-        <Column field="company_type" header="구분" :headerStyle="{ width: columnWidths.company_type }" />
-        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" />
-        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" />
-        <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" />
-        <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" />
-        <Column field="client_count" header="거래처 수" :headerStyle="{ width: columnWidths.client_count }" />
-        <Column field="prescription_count" header="처방건수" :headerStyle="{ width: columnWidths.prescription_count }" />
-        <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }">
+        <Column field="company_type" header="구분" :headerStyle="{ width: columnWidths.company_type }" :sortable="true"/>
+        <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true"/>
+        <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true"/>
+        <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true"/>
+        <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" :sortable="true"/>
+        <Column field="client_count" header="거래처 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
+        <Column field="prescription_count" header="처방건수" :headerStyle="{ width: columnWidths.prescription_count }" :sortable="true"/>
+        <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
             <template #body="slotProps">{{ slotProps.data.total_prescription_amount.toLocaleString() }}</template>
         </Column>
-        <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }">
+        <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }" :sortable="true">
             <template #body="slotProps">{{ slotProps.data.total_payment_amount.toLocaleString() }}</template>
         </Column>
         <Column header="상세" :headerStyle="{ width: columnWidths.detail }">
@@ -217,7 +217,12 @@ async function loadSettlementData() {
             return s;
         });
 
-        companySummary.value = finalSummary.sort((a,b) => a.company_name.localeCompare(b.company_name));
+        companySummary.value = finalSummary.sort((a,b) => {
+          if (b.total_payment_amount !== a.total_payment_amount) {
+            return b.total_payment_amount - a.total_payment_amount;
+          }
+          return a.company_name.localeCompare(b.company_name, 'ko');
+        });
         
     } catch (err) {
         console.error('정산 공유 데이터 로드 오류:', err);

@@ -305,10 +305,10 @@ async function loadPerformanceData() {
       query.eq('review_status', selectedReviewStatus.value);
     }
     
-    const { data, error } = await query.order('id');
+    const { data, error } = await query;
     if (error) throw error;
     
-    displayRows.value = data.map(row => {
+    let mappedData = data.map(row => {
       const payment_amount = Math.round((row.price * row.prescription_qty) * row.commission_rate);
       return {
         ...row,
@@ -320,6 +320,27 @@ async function loadPerformanceData() {
         created_date: formatDateTime(row.created_at),
       };
     });
+
+    const statusOrder = { '검수중': 1, '완료': 2 };
+    const actionOrder = { '추가': 2, '수정': 3, '삭제': 4 };
+
+    mappedData.sort((a, b) => {
+      const orderA_status = statusOrder[a.review_status] || 99;
+      const orderB_status = statusOrder[b.review_status] || 99;
+      if (orderA_status !== orderB_status) return orderA_status - orderB_status;
+
+      const orderA_action = actionOrder[a.review_action] || 1;
+      const orderB_action = actionOrder[b.review_action] || 1;
+      if (orderA_action !== orderB_action) return orderA_action - orderB_action;
+
+      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
+      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
+      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+
+      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
+    });
+
+    displayRows.value = mappedData;
 
     if (displayRows.value.length === 0) {
       alert('해당 조건에 맞는 데이터가 없습니다.');

@@ -78,7 +78,7 @@
               {{ slotProps.index + 1 }}
             </template>
           </Column>
-          <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :sortable="true" :frozen="true">
+          <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
               <span v-if="slotProps.data.review_status === '검수완료'" style="color: var(--primary-blue)">완료</span>
               <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">검수중</span>
@@ -438,9 +438,6 @@ async function fetchPerformanceRecords() {
       query = query.eq('client_id', selectedHospitalId.value);
     }
     
-    // 등록일자순으로 정렬
-    query = query.order('created_at', { ascending: false });
-    
     const { data, error } = await query;
     
     if (error) {
@@ -455,7 +452,7 @@ async function fetchPerformanceRecords() {
     }
     
     // 데이터 변환
-    rawRows.value = data.map(record => {
+    let mappedData = data.map(record => {
       const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
       let review_status = '신규';
       if (record.user_edit_status === '완료') review_status = '검수완료';
@@ -487,6 +484,20 @@ async function fetchPerformanceRecords() {
         assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || ''
       };
     });
+
+    // 데이터 정렬
+    const statusOrder = { '신규': 1, '검수중': 2, '검수완료': 3 };
+    mappedData.sort((a, b) => {
+      const orderA = statusOrder[a.review_status] || 99;
+      const orderB = statusOrder[b.review_status] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
+      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
+      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
+    });
+
+    rawRows.value = mappedData;
     
   } catch (err) {
     console.error('실적 데이터 조회 예외:', err);

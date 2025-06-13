@@ -304,7 +304,7 @@ async function loadAnalysisData() {
     const { data, error } = await query;
     if (error) throw error;
 
-    displayRows.value = data.map(row => {
+    let mappedData = data.map(row => {
         const wholesale_revenue = 0;
         const direct_revenue = 0;
         const total_revenue = 0;
@@ -323,6 +323,21 @@ async function loadAnalysisData() {
             absorption_rate
         };
     });
+
+    const actionOrder = { '추가': 1, '수정': 2, '삭제': 3 };
+    mappedData.sort((a, b) => {
+      const orderA_action = actionOrder[a.review_action] || 4;
+      const orderB_action = actionOrder[b.review_action] || 4;
+      if (orderA_action !== orderB_action) return orderA_action - orderB_action;
+
+      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
+      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
+      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+
+      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
+    });
+    
+    displayRows.value = mappedData;
 
   } catch (err) {
     console.error('분석 데이터 처리 오류:', err);

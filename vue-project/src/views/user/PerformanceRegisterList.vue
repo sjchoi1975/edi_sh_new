@@ -284,55 +284,8 @@ const sortOrder = ref(1) // 1: 오름차순, -1: 내림차순
 
 // 정렬된 데이터를 반환하는 computed 속성
 const sortedDisplayRows = computed(() => {
-  if (!sortField.value) return displayRows.value
-
-  const sorted = [...displayRows.value].sort((a, b) => {
-    let aVal = a[sortField.value]
-    let bVal = b[sortField.value]
-
-    // 숫자 필드 처리
-    if (sortField.value === 'prescription_qty') {
-      aVal = Number(aVal) || 0
-      bVal = Number(bVal) || 0
-    } else if (sortField.value === 'price') {
-      aVal = Number(aVal.toString().replace(/,/g, '')) || 0
-      bVal = Number(bVal.toString().replace(/,/g, '')) || 0
-    } else if (sortField.value === 'prescription_amount') {
-      aVal = Number(aVal.toString().replace(/,/g, '')) || 0
-      bVal = Number(bVal.toString().replace(/,/g, '')) || 0
-    } else {
-      // 문자열 필드 처리
-      aVal = (aVal || '').toString().toLowerCase()
-      bVal = (bVal || '').toString().toLowerCase()
-    }
-
-    if (aVal < bVal) return -1 * sortOrder.value
-    if (aVal > bVal) return 1 * sortOrder.value
-    return 0
-  })
-
-  return sorted
-})
-
-// 정렬 함수
-function sortBy(field) {
-  if (sortField.value === field) {
-    // 같은 필드를 클릭하면 정렬 순서 변경
-    sortOrder.value = sortOrder.value * -1
-  } else {
-    // 다른 필드를 클릭하면 해당 필드로 오름차순 정렬
-    sortField.value = field
-    sortOrder.value = 1
-  }
-}
-
-// 정렬 아이콘 반환 함수
-function getSortIcon(field) {
-  if (sortField.value !== field) return ''
-  return sortOrder.value === 1
-    ? ' <span class="sort-arrow">▲</span>'
-    : ' <span class="sort-arrow">▼</span>'
-}
+  return displayRows.value;
+});
 
 // 유틸리티 함수들
 function getPrescriptionMonth(settlementMonth, offset) {
@@ -1503,8 +1456,6 @@ async function fetchPerformanceRecords() {
     }
 
     const { data, error } = await query
-      .order('prescription_month', { ascending: false })
-      .order('created_at', { ascending: true })
 
     if (error) {
       console.error('실적 조회 오류:', error)
@@ -1515,34 +1466,47 @@ async function fetchPerformanceRecords() {
       return
     }
 
-    performanceRecords.value = data || []
+    if (!data || data.length === 0) {
+      displayRows.value = []
+      performanceRecords.value = []
+      originalData.value = []
+      return
+    }
 
-    // 화면 표시용 데이터 변환
-    let transformedData = []
-
-    if (performanceRecords.value.length > 0) {
-      transformedData = performanceRecords.value.map((record) => ({
+    const mappedData = data.map((record) => {
+      const prescriptionAmount =
+        (record.prescription_qty || 0) * (record.products?.price || 0)
+      return {
         id: record.id,
-        product_name_display: record.products?.product_name || '',
-        product_id: record.product_id,
-        insurance_code: record.products?.insurance_code || '',
-        price: record.products?.price ? Number(record.products.price).toLocaleString() : '',
-        prescription_qty: record.prescription_qty,
-        prescription_amount: record.products?.price
-          ? (record.prescription_qty * record.products.price).toLocaleString()
-          : '',
-        prescription_type: record.prescription_type,
         client_name: record.clients?.name || '',
         business_registration_number: record.clients?.business_registration_number || '',
         address: record.clients?.address || '',
-        prescription_month: record.prescription_month,
+        prescription_month: record.prescription_month || '',
+        product_name_display: record.products?.product_name || '',
+        product_id: record.product_id,
+        insurance_code: record.products?.insurance_code || '',
+        price: record.products?.price ? Number(record.products.price).toLocaleString() : '0',
+        prescription_qty: record.prescription_qty || 0,
+        prescription_amount: prescriptionAmount.toLocaleString(),
+        prescription_type: record.prescription_type || '',
         remarks: record.remarks || '',
         user_edit_status: record.user_edit_status || '대기',
-      }))
-    }
+      }
+    });
 
-    displayRows.value = transformedData
-    originalData.value = JSON.parse(JSON.stringify(transformedData))
+    mappedData.sort((a, b) => {
+      if (a.client_name !== b.client_name) {
+        return a.client_name.localeCompare(b.client_name, 'ko');
+      }
+      if (a.product_name_display !== b.product_name_display) {
+        return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+      }
+      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
+    });
+
+    displayRows.value = mappedData;
+    performanceRecords.value = mappedData;
+    originalData.value = JSON.parse(JSON.stringify(mappedData));
 
     // 변경사항 플래그 명시적으로 초기화
     hasChanges.value = false

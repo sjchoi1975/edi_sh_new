@@ -386,7 +386,6 @@ const fetchCompanyList = async () => {
       .eq('approval_status', 'approved')
       .eq('status', 'active')
       .eq('user_type', 'user')
-      .order('company_name', { ascending: true })
 
     console.log('Companies query result:', companiesData?.length || 0, 'companies')
     console.log('Companies error:', companiesError)
@@ -667,26 +666,23 @@ const fetchCompanyList = async () => {
 
     console.log('Final company results before sorting:', companyResults)
 
-    // 업체 정렬: 1)제출 거래처 많은 순 → 2)처방건수 많은 순 → 3)처방액 많은 순 → 4)업체명 가나다 순
+    // 업체 정렬: 1)신규 많은 순 → 2)검수중 많은 순 → 3)검수완료 많은 순 → 4)업체명 가나다 순
     companyResults.sort((a, b) => {
-      // 1) 제출 거래처 많은 순 (내림차순)
-      if (a.submitted_clients !== b.submitted_clients) {
-        return b.submitted_clients - a.submitted_clients
+      // 1) 신규(review_pending) 많은 순 (내림차순)
+      if (a.review_pending !== b.review_pending) {
+        return b.review_pending - a.review_pending;
       }
-
-      // 2) 처방건수 많은 순 (내림차순)
-      if (a.prescription_count !== b.prescription_count) {
-        return b.prescription_count - a.prescription_count
+      // 2) 검수중(review_in_progress) 많은 순 (내림차순)
+      if (a.review_in_progress !== b.review_in_progress) {
+        return b.review_in_progress - a.review_in_progress;
       }
-
-      // 3) 처방액 많은 순 (내림차순)
-      if (a.prescription_amount !== b.prescription_amount) {
-        return b.prescription_amount - a.prescription_amount
+      // 3) 검수완료(review_completed) 많은 순 (내림차순)
+      if (a.review_completed !== b.review_completed) {
+        return b.review_completed - a.review_completed;
       }
-
       // 4) 업체명 가나다 순 (오름차순)
-      return a.company_name.localeCompare(b.company_name, 'ko')
-    })
+      return a.company_name.localeCompare(b.company_name, 'ko');
+    });
 
     console.log('Final company results after sorting:', companyResults)
 
