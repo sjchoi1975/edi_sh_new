@@ -5,7 +5,7 @@
     </div>
 
     <!-- 필터 카드 -->
-    <div class="filter-card" style="flex-shrink: 0;">
+    <div class="filter-card" style="flex-shrink: 0;" :class="{ 'disabled-area': isAnyEditing }">
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>정산월</label>
@@ -51,17 +51,17 @@
            <button 
             class="btn-primary" 
             @click="loadPerformanceData" 
-            :disabled="loading"
+            :disabled="loading || isAnyEditing"
             style="margin-right: 1rem;"
           >
             실적 정보 불러오기
           </button>
-           <button class="btn-secondary" @click="selectAll">전체 선택</button>
-           <button class="btn-secondary" @click="unselectAll">전체 해제</button>
-           <button class="btn-primary" @click="changeReviewStatus" :disabled="selectedRows.length === 0">
+           <button class="btn-secondary" @click="selectAll" :disabled="isAnyEditing">전체 선택</button>
+           <button class="btn-secondary" @click="unselectAll" :disabled="isAnyEditing">전체 해제</button>
+           <button class="btn-primary" @click="changeReviewStatus" :disabled="selectedRows.length === 0 || isAnyEditing">
              검수 상태 변경 ({{ selectedRows.length }}건)
            </button>
-           <button class="btn-warning" @click="removeFromReview" :disabled="selectedRows.length === 0">
+           <button class="btn-warning" @click="removeFromReview" :disabled="selectedRows.length === 0 || isAnyEditing">
              검수 대상 제외 ({{ selectedRows.length }}건)
            </button>
         </div>
@@ -87,10 +87,10 @@
           
           <Column header="선택" :headerStyle="{ width: columnWidths.checkbox }" :frozen="true">
             <template #header>
-              <Checkbox v-model="selectAllChecked" @change="toggleSelectAll" :binary="true"/>
+              <Checkbox v-model="selectAllChecked" @change="toggleSelectAll" :binary="true" :disabled="isAnyEditing"/>
             </template>
             <template #body="slotProps">
-              <Checkbox :modelValue="!!selectedRowsMap[slotProps.data.id]" @update:modelValue="(value) => onRowSelectChange(slotProps.data, value)" :binary="true" :disabled="slotProps.data.review_action === '삭제'"/>
+              <Checkbox :modelValue="!!selectedRowsMap[slotProps.data.id]" @update:modelValue="(value) => onRowSelectChange(slotProps.data, value)" :binary="true" :disabled="slotProps.data.review_action === '삭제' || isAnyEditing"/>
             </template>
           </Column>
 
@@ -114,12 +114,12 @@
                   <button class="btn-cancel-sm" @click="cancelEdit(slotProps.data)" title="취소">✕</button>
                 </template>
                 <template v-else-if="slotProps.data.review_action === '삭제'">
-                  <button class="btn-restore-sm" @click="restoreRow(slotProps.data)" title="되돌리기">↶</button>
+                  <button class="btn-restore-sm" @click="restoreRow(slotProps.data)" title="되돌리기" :disabled="isAnyEditing">↶</button>
                 </template>
                 <template v-else>
-                  <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정" :disabled="slotProps.data.review_status === '완료'">✎</button>
-                  <button class="btn-delete-sm" @click="confirmDeleteRow(slotProps.data)" title="삭제" :disabled="slotProps.data.review_status === '완료'">－</button>
-                  <button class="btn-add-sm" @click="addRowBelow(slotProps.data)" title="추가">＋</button>
+                  <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정" :disabled="slotProps.data.review_status === '완료' || isAnyEditing">✎</button>
+                  <button class="btn-delete-sm" @click="confirmDeleteRow(slotProps.data)" title="삭제" :disabled="slotProps.data.review_status === '완료' || isAnyEditing">－</button>
+                  <button class="btn-add-sm" @click="addRowBelow(slotProps.data)" title="추가" :disabled="isAnyEditing">＋</button>
                 </template>
               </div>
             </template>
@@ -130,14 +130,57 @@
           
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true">
             <template #body="slotProps">
-              <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_month_modify" :options="availableMonths" optionLabel="settlement_month" optionValue="settlement_month" @change="handleEditCalculations(slotProps.data, 'month')" class="edit-mode-input" />
+              <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_month_modify" :options="availableMonths" optionLabel="settlement_month" optionValue="settlement_month" @change="handleEditCalculations(slotProps.data, 'month')" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_month', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_month')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_month')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_month')" />
               <span v-else>{{ slotProps.data.prescription_month }}</span>
             </template>
           </Column>
           <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true">
             <template #body="slotProps">
-              <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.product_id_modify" :options="slotProps.data.availableProducts" optionLabel="product_name" optionValue="id" @change="handleEditCalculations(slotProps.data, 'product')" filter class="edit-mode-input" placeholder="제품 선택"/>
-              <span v-else>{{ slotProps.data.product_name_display }}</span>
+              <template v-if="slotProps.data.isEditing">
+                <div class="product-input-container">
+                  <input
+                    v-model="slotProps.data.product_name_search"
+                    @input="handleProductNameInput(slotProps.data)"
+                    @keydown.enter.prevent="focusNextField(slotProps.data, 'product_name')"
+                    @keydown.right.prevent="focusNextField(slotProps.data, 'product_name')"
+                    @keydown.left.prevent="focusPrevField(slotProps.data, 'product_name')"
+                    @keydown.down.prevent="navigateProductSearchList('down', slotProps.data)"
+                    @keydown.up.prevent="navigateProductSearchList('up', slotProps.data)"
+                    @focus="handleProductNameFocus(slotProps.data)"
+                    @blur="setTimeout(() => hideProductSearchList(slotProps.data), 200)"
+                    autocomplete="off"
+                    class="edit-mode-input"
+                    :ref="el => setProductInputRef(slotProps.data.id, el)"
+                  />
+                  <button 
+                    type="button"
+                    @click="toggleProductDropdown(slotProps.data)"
+                    @mousedown.prevent
+                    class="dropdown-arrow-btn"
+                    tabindex="-1"
+                  >
+                    <span class="dropdown-arrow">▼</span>
+                  </button>
+                  <teleport to="body">
+                    <div v-if="slotProps.data.showProductSearchList && productDropdownStyle[slotProps.data.id]"
+                      class="product-search-list"
+                      :style="productDropdownStyle[slotProps.data.id]"
+                    >
+                      <div
+                        v-for="(product, idx) in slotProps.data.productSearchResults"
+                        :key="product.id"
+                        :class="['product-search-item', { selected: idx === slotProps.data.productSearchSelectedIndex }]"
+                        @mousedown.prevent="applySelectedProduct(product, slotProps.data)"
+                      >
+                        {{ product.product_name }} ({{ product.insurance_code }})
+                      </div>
+                    </div>
+                  </teleport>
+                </div>
+              </template>
+              <template v-else>
+                <span>{{ slotProps.data.product_name_display }}</span>
+              </template>
             </template>
           </Column>
           <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
@@ -149,7 +192,7 @@
           </Column>
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
              <template #body="slotProps">
-                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_qty_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" class="edit-mode-input" />
+                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_qty_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_qty', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_qty')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_qty')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_qty')" />
                 <span v-else>{{ slotProps.data.prescription_qty }}</span>
             </template>
           </Column>
@@ -161,13 +204,13 @@
           </Column>
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
              <template #body="slotProps">
-                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_type_modify" :options="prescriptionTypeOptions" class="edit-mode-input"/>
+                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_type_modify" :options="prescriptionTypeOptions" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_type', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_type')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_type')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_type')" />
                 <span v-else>{{ slotProps.data.prescription_type }}</span>
             </template>
           </Column>
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
              <template #body="slotProps">
-                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.commission_rate_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" :max="100" suffix=" %" :maxFractionDigits="1" class="edit-mode-input"/>
+                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.commission_rate_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" :max="100" suffix=" %" :maxFractionDigits="1" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'commission_rate', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'commission_rate')" @keydown.right.prevent="focusNextField(slotProps.data, 'commission_rate')" @keydown.left.prevent="focusPrevField(slotProps.data, 'commission_rate')" />
                 <span v-else>{{ slotProps.data.commission_rate }}</span>
             </template>
           </Column>
@@ -179,7 +222,7 @@
           </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
-                <InputText v-if="slotProps.data.isEditing" v-model="slotProps.data.remarks_modify" class="edit-mode-input"/>
+                <InputText v-if="slotProps.data.isEditing" v-model="slotProps.data.remarks_modify" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'remarks', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'remarks')" @keydown.right.prevent="focusNextField(slotProps.data, 'remarks')" @keydown.left.prevent="focusPrevField(slotProps.data, 'remarks')" />
                 <span v-else>{{ slotProps.data.remarks }}</span>
             </template>
           </Column>
@@ -192,7 +235,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, getCurrentInstance, onBeforeUnmount, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Checkbox from 'primevue/checkbox';
@@ -201,6 +245,8 @@ import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import { supabase } from '@/supabase';
+
+const router = useRouter();
 
 const columnWidths = {
   checkbox: '3%',
@@ -249,7 +295,6 @@ const reviewStatusOptions = [
 const statusOptions = ['전체', '대기', '검수중', '완료'];
 
 const prescriptionTypeOptions = [
-  '전체',
   'EDI',
   'ERP직거래자료',
   '매출자료',
@@ -263,6 +308,10 @@ const prescriptionTypeOptions = [
 const selectedRows = ref([]);
 const selectedRowsMap = ref({});
 const selectAllChecked = ref(false);
+
+const productInputRefs = ref({});
+const productDropdownStyle = ref({});
+const fieldRefs = ref({});
 
 // --- 초기화 ---
 onMounted(async () => {
@@ -494,6 +543,10 @@ function getUniqueProductsByMonth(month) {
 function startEdit(row) {
   if (row.review_status === '완료') return;
   row.originalData = JSON.parse(JSON.stringify(row));
+  row.product_name_search = row.product_name_display || '';
+  row.productSearchResults = [];
+  row.productSearchSelectedIndex = -1;
+  row.showProductSearchList = false;
   
   row.availableProducts = getUniqueProductsByMonth(row.prescription_month);
 
@@ -517,6 +570,9 @@ function startEdit(row) {
   row.payment_amount_modify = parseFloat(String(row.payment_amount).replace(/,/g, ''));
 
   row.isEditing = true;
+  nextTick(() => {
+    if (productInputRefs.value[row.id]) productInputRefs.value[row.id].focus();
+  });
 }
 
 function handleEditCalculations(row, changedField = '') {
@@ -678,6 +734,7 @@ function addRowBelow(currentRow) {
     client_name: currentRow.client_name,
     company_commission_grade: currentRow.company_commission_grade,
     prescription_month_modify: currentRow.prescription_month,
+    prescription_month: currentRow.prescription_month,
     prescription_type_modify: currentRow.prescription_type,
     
     product_id_modify: null,
@@ -699,6 +756,9 @@ function addRowBelow(currentRow) {
   if (currentIndex !== -1) {
     displayRows.value.splice(currentIndex + 1, 0, newRow);
   }
+  nextTick(() => {
+    if (productInputRefs.value[newRowId]) productInputRefs.value[newRowId].focus();
+  });
 }
 
 async function confirmDeleteRow(row) {
@@ -803,6 +863,154 @@ async function removeFromReview() {
     loading.value = false;
   }
 }
+
+const isAnyEditing = computed(() => displayRows.value.some(row => row.isEditing));
+let pendingRoute = null;
+
+// 메뉴 이동 시 경고창 처리
+router.beforeEach((to, from, next) => {
+  if (isAnyEditing.value) {
+    if (confirm('완료하지 않은 작업이 있습니다. 작업을 취소하고 다른 메뉴로 이동하시겠습니까?')) {
+      // 모든 편집 취소
+      displayRows.value.forEach(row => { if (row.isEditing) cancelEdit(row); });
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    next();
+  }
+});
+
+onBeforeUnmount(() => {
+  // 라우터 가드 해제(핫리로드 등 대비)
+  router.beforeEach(() => {});
+});
+
+function handleProductNameInput(row) {
+  const query = (row.product_name_search || '').toLowerCase();
+  row.productSearchResults = getUniqueProductsByMonth(row.prescription_month).filter(
+    p =>
+      (p.product_name && p.product_name.toLowerCase().includes(query)) ||
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
+  );
+  row.productSearchSelectedIndex = -1;
+  row.showProductSearchList = row.productSearchResults.length > 0;
+  if (row.showProductSearchList) updateProductDropdownPosition(row);
+}
+function navigateProductSearchList(direction, row) {
+  if (!row.showProductSearchList || row.productSearchResults.length === 0) return;
+  if (direction === 'down') {
+    row.productSearchSelectedIndex = (row.productSearchSelectedIndex + 1) % row.productSearchResults.length;
+  } else if (direction === 'up') {
+    row.productSearchSelectedIndex = (row.productSearchSelectedIndex - 1 + row.productSearchResults.length) % row.productSearchResults.length;
+  }
+}
+function applySelectedProduct(product, row) {
+  row.product_name_display = product.product_name;
+  row.product_id_modify = product.id;
+  row.insurance_code = product.insurance_code;
+  row.price_for_calc = product.price;
+  row.product_name_search = product.product_name;
+  row.showProductSearchList = false;
+}
+function applySelectedProductFromSearch(row) {
+  const idx = row.productSearchSelectedIndex;
+  if (row.showProductSearchList && idx !== -1 && row.productSearchResults[idx]) {
+    applySelectedProduct(row.productSearchResults[idx], row);
+  } else if (row.showProductSearchList && row.productSearchResults.length > 0) {
+    applySelectedProduct(row.productSearchResults[0], row);
+  }
+  row.showProductSearchList = false;
+}
+function handleProductNameFocus(row) {
+  if (row.productSearchResults && row.productSearchResults.length > 0) {
+    row.showProductSearchList = true;
+    updateProductDropdownPosition(row);
+  }
+}
+function hideProductSearchList(row) {
+  row.showProductSearchList = false;
+}
+
+function toggleProductDropdown(row) {
+  const allProducts = getUniqueProductsByMonth(row.prescription_month);
+  row.productSearchResults = allProducts;
+  row.productSearchSelectedIndex = -1;
+  row.showProductSearchList = allProducts.length > 0;
+  if (row.showProductSearchList) updateProductDropdownPosition(row);
+}
+
+function setProductInputRef(rowId, el) {
+  if (el) productInputRefs.value[rowId] = el;
+}
+
+function updateProductDropdownPosition(row) {
+  nextTick(() => {
+    const el = productInputRefs.value[row.id];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const dropdownHeight = 220;
+    const spaceBelow = windowHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const showAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
+    productDropdownStyle.value[row.id] = {
+      position: 'fixed',
+      left: rect.left + 'px',
+      top: showAbove ? (rect.top - dropdownHeight) + 'px' : rect.bottom + 'px',
+      width: rect.width + 'px',
+      zIndex: 99999,
+      maxHeight: showAbove ? Math.min(dropdownHeight, spaceAbove - 10) + 'px' : Math.min(dropdownHeight, spaceBelow - 10) + 'px',
+      overflowY: 'auto',
+    };
+  });
+}
+
+watch(() => displayRows.value.map(r => r.isEditing), () => {
+  displayRows.value.forEach(row => {
+    if (row.isEditing && row.showProductSearchList) updateProductDropdownPosition(row);
+  });
+});
+
+window.addEventListener('scroll', () => {
+  displayRows.value.forEach(row => {
+    if (row.isEditing && row.showProductSearchList) updateProductDropdownPosition(row);
+  });
+}, true);
+
+function setFieldRef(rowId, field, el) {
+  if (!fieldRefs.value[rowId]) fieldRefs.value[rowId] = {};
+  if (el) fieldRefs.value[rowId][field] = el;
+}
+function focusNextField(row, currentField) {
+  const order = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
+  const idx = order.indexOf(currentField);
+  if (idx !== -1) {
+    const next = order[(idx + 1) % order.length];
+    nextTick(() => {
+      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][next];
+      if (refEl) {
+        if (refEl.focus) refEl.focus();
+        else if (refEl.focusInput) refEl.focusInput();
+      }
+    });
+  }
+}
+function focusPrevField(row, currentField) {
+  const order = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
+  const idx = order.indexOf(currentField);
+  if (idx !== -1) {
+    const prev = order[(idx - 1 + order.length) % order.length];
+    nextTick(() => {
+      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][prev];
+      if (refEl) {
+        if (refEl.focus) refEl.focus();
+        else if (refEl.focusInput) refEl.focusInput();
+      }
+    });
+  }
+}
 </script>
 
 <style scoped>
@@ -812,7 +1020,22 @@ async function removeFromReview() {
 .data-card-buttons { display: flex; gap: 8px; }
 
 /* Edit mode styles */
-.edit-mode-input { width: 100%; }
+.edit-mode-input {
+  background: #fff !important;
+  border: 1px solid #d0d7de !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+.edit-mode-input.p-dropdown {
+  background: #fff !important;
+  border: 1px solid #d0d7de !important;
+  border-radius: 4px !important;
+}
+.edit-mode-input .p-inputtext {
+  background: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
 /* Row status styles */
 .admin-performance-review-table :deep(.added-row td) {
@@ -854,6 +1077,14 @@ async function removeFromReview() {
 
 .btn-restore-sm:hover { background-color: #218838; }
 
+.btn-restore-sm:disabled {
+  background: #e0e0e0 !important;
+  color: #aaa !important;
+  border: 1px solid #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
 .empty-data-message {
   display: flex;
   justify-content: center;
@@ -878,5 +1109,31 @@ async function removeFromReview() {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.disabled-area {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.product-input-container { position: relative; }
+.product-search-list {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ccc;
+  z-index: 99999;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.product-search-item {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.product-search-item.selected, .product-search-item:hover {
+  background: #e6f7ff;
 }
 </style>

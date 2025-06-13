@@ -56,7 +56,11 @@
           </template>
         </Column>
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true">
+          <template #body="slotProps">
+            {{ slotProps.data.price !== undefined && slotProps.data.price !== null ? slotProps.data.price.toLocaleString() : '' }}
+          </template>
+        </Column>
         <Column header="수수료율(%)" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
           <template #body="slotProps">
             {{ getCommissionRate(slotProps.data) }}
@@ -127,7 +131,7 @@ function getCommissionRate(product) {
   } else {
     rate = product.commission_rate_a || 0;
   }
-  return rate ? (rate * 100).toFixed(1) : '-';
+  return rate ? (rate * 100).toFixed(1) + '%' : '-';
 }
 
 function goToDetail(id) {

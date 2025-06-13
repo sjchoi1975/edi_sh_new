@@ -119,7 +119,7 @@
               step="0.01"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) : '-' }}</span>
+            <span v-else>{{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
         <Column header="수수료율 B" :headerStyle="{ width: columnWidths.commission_rate_b }" :sortable="true">
@@ -131,7 +131,7 @@
               step="0.01"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.commission_rate_b ? (slotProps.data.commission_rate_b * 100).toFixed(1) : '-' }}</span>
+            <span v-else>{{ slotProps.data.commission_rate_b ? (slotProps.data.commission_rate_b * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
         <Column
@@ -177,7 +177,7 @@
               type="number"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.unit_quantity }}</span>
+            <span v-else>{{ slotProps.data.unit_quantity !== undefined && slotProps.data.unit_quantity !== null ? slotProps.data.unit_quantity.toLocaleString() : '' }}</span>
           </template>
         </Column>
         <Column

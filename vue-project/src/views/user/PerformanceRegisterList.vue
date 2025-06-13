@@ -123,13 +123,21 @@
             header="약가"
             :headerStyle="{ width: columnWidths.price }"
             :sortable="true"
-          />
+          >
+            <template #body="slotProps">
+              {{ slotProps.data.price !== undefined && slotProps.data.price !== null ? slotProps.data.price.toLocaleString() : '' }}
+            </template>
+          </Column>
           <Column
             field="prescription_qty"
             header="처방수량"
             :headerStyle="{ width: columnWidths.prescription_qty }"
             :sortable="true"
-          />
+          >
+            <template #body="slotProps">
+              {{ slotProps.data.prescription_qty !== undefined && slotProps.data.prescription_qty !== null ? slotProps.data.prescription_qty.toLocaleString() : '' }}
+            </template>
+          </Column>
           <Column
             field="prescription_amount"
             header="처방액"
