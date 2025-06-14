@@ -1,7 +1,7 @@
 <template>
   <div class="login-root">
     <div class="login-right">
-      <div class="login-logo">신일제약 실적관리 시스템</div>
+      <div class="login-logo">(Dev)신일제약 실적관리 시스템</div>
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">아이디(이메일)</label>

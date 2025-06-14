@@ -76,8 +76,8 @@
           class="admin-performance-review-table"
           :rowClass="getRowClass"
           :pt="{
-            wrapper: { style: 'min-width: 2200px;' },
-            table: { style: 'min-width: 2200px;' }
+            wrapper: { style: 'min-width: 2400px;' },
+            table: { style: 'min-width: 2400px;' }
           }"
         >
           <template #empty>
@@ -125,35 +125,51 @@
             </template>
           </Column>
 
-          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" :frozen="true" />
-          <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true" />
+          <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" />
+          <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
           
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true">
             <template #body="slotProps">
-              <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_month_modify" :options="availableMonths" optionLabel="settlement_month" optionValue="settlement_month" @change="handleEditCalculations(slotProps.data, 'month')" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_month', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_month')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_month')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_month')" />
+              <select v-if="slotProps.data.isEditing"
+                      v-model="slotProps.data.prescription_month_modify"
+                      class="edit-mode-input"
+                      :ref="el => setFieldRef(slotProps.data.id, 'prescription_month', el)"
+                      @keydown.enter.prevent="handlePrescriptionMonthSelect(slotProps.data)"
+                      @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_month', $event)"
+                      @keydown.down.prevent="handlePrescriptionMonthDownKey(slotProps.data, $event)"
+                      @keydown.up.prevent="handlePrescriptionMonthUpKey(slotProps.data, $event)"
+                      @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_month', 'left')"
+                      @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_month', 'right')"
+                      @focus="handlePrescriptionMonthFocus(slotProps.data)"
+                      @change="handleEditCalculations(slotProps.data, 'month')"
+              >
+                <option v-for="opt in availableMonths" :key="opt.settlement_month" :value="opt.settlement_month">{{ opt.settlement_month }}</option>
+              </select>
               <span v-else>{{ slotProps.data.prescription_month }}</span>
             </template>
           </Column>
-          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true">
+          <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true"  :frozen="true">
             <template #body="slotProps">
               <template v-if="slotProps.data.isEditing">
                 <div class="product-input-container">
                   <input
                     v-model="slotProps.data.product_name_search"
-                    @input="handleProductNameInput(slotProps.data)"
-                    @keydown.enter.prevent="focusNextField(slotProps.data, 'product_name')"
-                    @keydown.right.prevent="focusNextField(slotProps.data, 'product_name')"
-                    @keydown.left.prevent="focusPrevField(slotProps.data, 'product_name')"
-                    @keydown.down.prevent="navigateProductSearchList('down', slotProps.data)"
-                    @keydown.up.prevent="navigateProductSearchList('up', slotProps.data)"
+                    @input="handleProductNameInput(slotProps.data, $event)"
+                    @keydown.enter.prevent="applySelectedProductFromSearch(slotProps.data)"
+                    @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'product_name', $event)"
+                    @keydown.down.prevent="handleProductNameDownKey(slotProps.data, $event)"
+                    @keydown.up.prevent="handleProductNameUpKey(slotProps.data, $event)"
+                    @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'product_name', 'left')"
+                    @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'product_name', 'right')"
                     @focus="handleProductNameFocus(slotProps.data)"
                     @blur="setTimeout(() => hideProductSearchList(slotProps.data), 200)"
                     autocomplete="off"
                     class="edit-mode-input"
+                    :class="cellClass(rowIdx, 'product_name')"
                     :ref="el => setProductInputRef(slotProps.data.id, el)"
                   />
                   <button 
-                    type="button"
+                    type="button" 
                     @click="toggleProductDropdown(slotProps.data)"
                     @mousedown.prevent
                     class="dropdown-arrow-btn"
@@ -164,7 +180,7 @@
                   <teleport to="body">
                     <div v-if="slotProps.data.showProductSearchList && productDropdownStyle[slotProps.data.id]"
                       class="product-search-list"
-                      :style="productDropdownStyle[slotProps.data.id]"
+                      :style="{ ...productDropdownStyle[slotProps.data.id], zIndex: 1002 }"
                     >
                       <div
                         v-for="(product, idx) in slotProps.data.productSearchResults"
@@ -191,9 +207,21 @@
             </template>
           </Column>
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
-             <template #body="slotProps">
-                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_qty_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_qty', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_qty')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_qty')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_qty')" />
-                <span v-else>{{ slotProps.data.prescription_qty }}</span>
+            <template #body="slotProps">
+              <input
+                v-if="slotProps.data.isEditing"
+                v-model="slotProps.data.prescription_qty_modify"
+                type="number"
+                class="edit-mode-input"
+                :class="cellClass(rowIdx, 'prescription_qty')"
+                :ref="el => setFieldRef(slotProps.data.id, 'prescription_qty', el)"
+                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'prescription_qty', $event)"
+                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_qty', $event)"
+                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_qty', 'left')"
+                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_qty', 'right')"
+                @change="handleEditCalculations(slotProps.data, 'qty')"
+              />
+              <span v-else>{{ Number(slotProps.data.prescription_qty).toLocaleString() }}</span>
             </template>
           </Column>
           <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
@@ -203,15 +231,42 @@
             </template>
           </Column>
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
-             <template #body="slotProps">
-                <Dropdown v-if="slotProps.data.isEditing" v-model="slotProps.data.prescription_type_modify" :options="prescriptionTypeOptions" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'prescription_type', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'prescription_type')" @keydown.right.prevent="focusNextField(slotProps.data, 'prescription_type')" @keydown.left.prevent="focusPrevField(slotProps.data, 'prescription_type')" />
-                <span v-else>{{ slotProps.data.prescription_type }}</span>
+            <template #body="slotProps">
+              <select
+                v-if="slotProps.data.isEditing"
+                v-model="slotProps.data.prescription_type_modify"
+                class="edit-mode-input"
+                :ref="el => setFieldRef(slotProps.data.id, 'prescription_type', el)"
+                @keydown.enter.prevent="handlePrescriptionTypeSelect(slotProps.data)"
+                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_type', $event)"
+                @keydown.down.prevent="handlePrescriptionTypeDownKey(slotProps.data, $event)"
+                @keydown.up.prevent="handlePrescriptionTypeUpKey(slotProps.data, $event)"
+                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_type', 'left')"
+                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_type', 'right')"
+                @focus="handlePrescriptionTypeFocus(slotProps.data)"
+              >
+                <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
+              </select>
+              <span v-else>{{ slotProps.data.prescription_type }}</span>
             </template>
           </Column>
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
-             <template #body="slotProps">
-                <InputNumber v-if="slotProps.data.isEditing" v-model="slotProps.data.commission_rate_modify" @update:modelValue="handleEditCalculations(slotProps.data)" :min="0" :max="100" suffix=" %" :maxFractionDigits="1" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'commission_rate', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'commission_rate')" @keydown.right.prevent="focusNextField(slotProps.data, 'commission_rate')" @keydown.left.prevent="focusPrevField(slotProps.data, 'commission_rate')" />
-                <span v-else>{{ slotProps.data.commission_rate }}</span>
+            <template #body="slotProps">
+              <input
+                v-if="slotProps.data.isEditing"
+                v-model="slotProps.data.commission_rate_modify"
+                type="number"
+                step="0.01"
+                class="edit-mode-input"
+                :class="cellClass(rowIdx, 'commission_rate')"
+                :ref="el => setFieldRef(slotProps.data.id, 'commission_rate', el)"
+                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'commission_rate', $event)"
+                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'commission_rate', $event)"
+                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'commission_rate', 'left')"
+                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'commission_rate', 'right')"
+                @change="handleEditCalculations(slotProps.data, 'rate')"
+              />
+              <span v-else>{{ String(slotProps.data.commission_rate).replace('%','') }}%</span>
             </template>
           </Column>
           <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
@@ -222,8 +277,18 @@
           </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
-                <InputText v-if="slotProps.data.isEditing" v-model="slotProps.data.remarks_modify" class="edit-mode-input" :ref="el => setFieldRef(slotProps.data.id, 'remarks', el)" @keydown.enter.prevent="focusNextField(slotProps.data, 'remarks')" @keydown.right.prevent="focusNextField(slotProps.data, 'remarks')" @keydown.left.prevent="focusPrevField(slotProps.data, 'remarks')" />
-                <span v-else>{{ slotProps.data.remarks }}</span>
+              <input
+                v-if="slotProps.data.isEditing"
+                v-model="slotProps.data.remarks_modify"
+                class="edit-mode-input"
+                :class="cellClass(rowIdx, 'remarks')"
+                :ref="el => setFieldRef(slotProps.data.id, 'remarks', el)"
+                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'remarks', $event)"
+                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'remarks', $event)"
+                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'remarks', 'left')"
+                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'remarks', 'right')"
+              />
+              <span v-else>{{ slotProps.data.remarks }}</span>
             </template>
           </Column>
           <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true" />
@@ -249,24 +314,24 @@ import { supabase } from '@/supabase';
 const router = useRouter();
 
 const columnWidths = {
-  checkbox: '3%',
-  review_status: '4%',
-  review_action: '4%',
-  actions: '6%',
-  company_name: '8%',
+  checkbox: '2.5%',
+  review_status: '2.5%',
+  review_action: '2.5%',
+  actions: '5%',
+  company_name: '7%',
   client_name: '10%',
-  prescription_month: '5%',
+  prescription_month: '4.5%',
   product_name_display: '12%',
-  insurance_code: '6%',
-  price: '5%',
-  prescription_qty: '5%',
-  prescription_amount: '6%',
-  prescription_type: '6%',
-  commission_rate: '5%',
-  payment_amount: '6%',
+  insurance_code: '4.5%',
+  price: '3.5%',
+  prescription_qty: '3.5%',
+  prescription_amount: '4%',
+  prescription_type: '5%',
+  commission_rate: '4%',
+  payment_amount: '4%',
   remarks: '10%',
-  created_date: '7%',
-  created_by: '8%'
+  created_date: '6%',
+  created_by: '7%'
 };
 
 // --- 상태 변수 ---
@@ -276,6 +341,9 @@ const availableMonths = ref([]);
 const companyOptions = ref([]);
 const hospitalOptions = ref([]);
 const allProducts = ref([]);
+
+// 현재 열려있는 드롭다운 추적
+const activeDropdown = ref({ rowId: null, type: null });
 
 // --- 필터 ---
 const selectedSettlementMonth = ref('');
@@ -313,10 +381,14 @@ const productInputRefs = ref({});
 const productDropdownStyle = ref({});
 const fieldRefs = ref({});
 
+// 1. currentCell 구조 추가
+const currentCell = ref({ row: null, col: null });
+
 // --- 초기화 ---
 onMounted(async () => {
   await fetchAvailableMonths();
   await fetchAllProducts();
+  document.addEventListener('click', handleGlobalClick);
 });
 
 // --- 데이터 조회 로직 ---
@@ -458,11 +530,17 @@ async function fetchAvailableMonths() {
 }
 
 async function fetchAllProducts() {
-    try {
-        const { data, error } = await supabase.from('products').select('*').order('product_name');
-        if (error) throw error;
-        allProducts.value = data;
-    } catch (e) { console.error('제품정보 로딩 오류', e)}
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, product_name, insurance_code, price, base_month, status, commission_rate_a, commission_rate_b')
+      .eq('status', 'active');
+    if (error) throw error;
+    allProducts.value = data;
+    console.log('[fetchAllProducts] 전체 active 제품:', data.length);
+  } catch (e) {
+    console.error('제품정보 로딩 오류', e);
+  }
 }
 
 async function fetchCompaniesForMonth() {
@@ -497,14 +575,11 @@ async function fetchClientsForMonth() {
     } catch (err) { console.error('해당 월의 병의원 조회 오류:', err); hospitalOptions.value = [{ id: 'ALL', name: '- 전체 -' }]; }
 }
 
-watch(selectedSettlementMonth, async (newMonth) => {
-  if (newMonth) { 
-    await fetchCompaniesForMonth(); 
-    updatePrescriptionOptions(); 
-    prescriptionOffset.value = 0;
+watch([selectedSettlementMonth, prescriptionOffset], async ([settle, offset]) => {
+  if (settle) {
+    await fetchAllProducts();
   }
 });
-watch(selectedCompanyId, async () => { await fetchClientsForMonth(); });
 
 // --- Helper Functions ---
 function getActionSeverity(action) { return action === '수정' ? 'info' : action === '추가' ? 'success' : action === '삭제' ? 'danger' : 'secondary'; }
@@ -531,12 +606,14 @@ function unselectAll() { selectAllChecked.value = false; toggleSelectAll(); }
 // --- Table Row Actions (No Reload) ---
 function getUniqueProductsByMonth(month) {
   const monthProducts = allProducts.value.filter(p => p.base_month === month);
+  console.log('[getUniqueProductsByMonth] 기준월:', month, '제품수:', monthProducts.length);
   const uniqueProducts = new Map();
   monthProducts.forEach(p => {
     if (!uniqueProducts.has(p.insurance_code)) {
       uniqueProducts.set(p.insurance_code, p);
     }
   });
+  console.log('[getUniqueProductsByMonth] 보험코드별 1개씩:', uniqueProducts.size, Array.from(uniqueProducts.values()).map(p => p.product_name + ' (' + p.insurance_code + ')'));
   return Array.from(uniqueProducts.values());
 }
 
@@ -885,19 +962,26 @@ router.beforeEach((to, from, next) => {
 onBeforeUnmount(() => {
   // 라우터 가드 해제(핫리로드 등 대비)
   router.beforeEach(() => {});
+  document.removeEventListener('click', handleGlobalClick);
 });
 
-function handleProductNameInput(row) {
-  const query = (row.product_name_search || '').toLowerCase();
-  row.productSearchResults = getUniqueProductsByMonth(row.prescription_month).filter(
+function handleProductNameInput(row, event) {
+  const query = (event && event.target && event.target.value ? event.target.value : row.product_name_search || '').toLowerCase();
+  row.product_name_search = event && event.target ? event.target.value : row.product_name_search;
+  const candidates = getUniqueProductsByMonth(row.prescription_month).filter(
     p =>
       (p.product_name && p.product_name.toLowerCase().includes(query)) ||
       (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
   );
+  row.productSearchResults = candidates;
   row.productSearchSelectedIndex = -1;
   row.showProductSearchList = row.productSearchResults.length > 0;
-  if (row.showProductSearchList) updateProductDropdownPosition(row);
+  if (row.showProductSearchList) {
+    activeDropdown.value = { rowId: row.id, type: 'product' };
+    updateProductDropdownPosition(row);
+  }
 }
+
 function navigateProductSearchList(direction, row) {
   if (!row.showProductSearchList || row.productSearchResults.length === 0) return;
   if (direction === 'down') {
@@ -906,6 +990,7 @@ function navigateProductSearchList(direction, row) {
     row.productSearchSelectedIndex = (row.productSearchSelectedIndex - 1 + row.productSearchResults.length) % row.productSearchResults.length;
   }
 }
+
 function applySelectedProduct(product, row) {
   row.product_name_display = product.product_name;
   row.product_id_modify = product.id;
@@ -913,32 +998,51 @@ function applySelectedProduct(product, row) {
   row.price_for_calc = product.price;
   row.product_name_search = product.product_name;
   row.showProductSearchList = false;
+  // 보험코드와 기준월로 제품을 찾아 수수료율 반영
+  const baseMonth = row.prescription_month_modify || row.prescription_month;
+  const commissionGrade = (row.company_commission_grade || 'a').toLowerCase();
+  const rateKey = `commission_rate_${commissionGrade}`;
+  const matchedProduct = allProducts.value.find(p => p.insurance_code === product.insurance_code && p.base_month === baseMonth);
+  console.log('[applySelectedProduct] 선택 제품:', product);
+  console.log('[applySelectedProduct] 기준월:', baseMonth, '회사등급:', commissionGrade, 'rateKey:', rateKey);
+  console.log('[applySelectedProduct] matchedProduct:', matchedProduct);
+  row.commission_rate_modify = matchedProduct && matchedProduct[rateKey] ? matchedProduct[rateKey] * 100 : 0;
+  console.log('[applySelectedProduct] 최종 수수료율:', row.commission_rate_modify);
+  activeDropdown.value = { rowId: null, type: null };
+  nextTick(() => {
+    focusNextField(row, 'product_name');
+  });
 }
-function applySelectedProductFromSearch(row) {
-  const idx = row.productSearchSelectedIndex;
-  if (row.showProductSearchList && idx !== -1 && row.productSearchResults[idx]) {
-    applySelectedProduct(row.productSearchResults[idx], row);
-  } else if (row.showProductSearchList && row.productSearchResults.length > 0) {
-    applySelectedProduct(row.productSearchResults[0], row);
-  }
-  row.showProductSearchList = false;
-}
-function handleProductNameFocus(row) {
-  if (row.productSearchResults && row.productSearchResults.length > 0) {
-    row.showProductSearchList = true;
-    updateProductDropdownPosition(row);
-  }
-}
+
 function hideProductSearchList(row) {
-  row.showProductSearchList = false;
+  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'product') {
+    row.showProductSearchList = false;
+    activeDropdown.value = { rowId: null, type: null };
+  }
 }
 
 function toggleProductDropdown(row) {
-  const allProducts = getUniqueProductsByMonth(row.prescription_month);
-  row.productSearchResults = allProducts;
-  row.productSearchSelectedIndex = -1;
-  row.showProductSearchList = allProducts.length > 0;
-  if (row.showProductSearchList) updateProductDropdownPosition(row);
+  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'product') {
+    row.showProductSearchList = false;
+    activeDropdown.value = { rowId: null, type: null };
+  } else {
+    // 다른 드롭다운이 열려있으면 닫기
+    if (activeDropdown.value.rowId) {
+      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
+      if (otherRow) {
+        otherRow.showProductSearchList = false;
+      }
+    }
+    
+    const allProducts = getUniqueProductsByMonth(row.prescription_month);
+    row.productSearchResults = allProducts;
+    row.productSearchSelectedIndex = -1;
+    row.showProductSearchList = allProducts.length > 0;
+    if (row.showProductSearchList) {
+      activeDropdown.value = { rowId: row.id, type: 'product' };
+      updateProductDropdownPosition(row);
+    }
+  }
 }
 
 function setProductInputRef(rowId, el) {
@@ -989,10 +1093,12 @@ function focusNextField(row, currentField) {
   if (idx !== -1) {
     const next = order[(idx + 1) % order.length];
     nextTick(() => {
+      setCurrentCell(row, next);
       const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][next];
       if (refEl) {
         if (refEl.focus) refEl.focus();
         else if (refEl.focusInput) refEl.focusInput();
+        else if (refEl.$el) refEl.$el.focus();
       }
     });
   }
@@ -1003,14 +1109,292 @@ function focusPrevField(row, currentField) {
   if (idx !== -1) {
     const prev = order[(idx - 1 + order.length) % order.length];
     nextTick(() => {
+      setCurrentCell(row, prev);
       const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][prev];
       if (refEl) {
         if (refEl.focus) refEl.focus();
         else if (refEl.focusInput) refEl.focusInput();
+        else if (refEl.$el) refEl.$el.focus();
       }
     });
   }
 }
+
+// 4. setCurrentCell 함수 추가
+function setCurrentCell(row, col) {
+  currentCell.value = { row: displayRows.value.findIndex(r => r.id === row.id), col };
+  // 셀 포커스 시 드롭다운 닫기
+  if (activeDropdown.value.rowId && activeDropdown.value.rowId !== row.id) {
+    const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
+    if (otherRow) {
+      otherRow.showProductSearchList = false;
+    }
+    activeDropdown.value = { rowId: null, type: null };
+  }
+}
+
+// 2. cellClass 함수 추가
+function cellClass(rowIdx, col) {
+  return currentCell.value.row === rowIdx && currentCell.value.col === col ? 'cell-focused' : '';
+}
+
+// 드롭다운 관련 함수 추가
+function togglePrescriptionMonthDropdown(row) {
+  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'prescription_month') {
+    activeDropdown.value = { rowId: null, type: null };
+  } else {
+    // 다른 드롭다운이 열려있으면 닫기
+    if (activeDropdown.value.rowId) {
+      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
+      if (otherRow) {
+        otherRow.showProductSearchList = false;
+      }
+    }
+    activeDropdown.value = { rowId: row.id, type: 'prescription_month' };
+    nextTick(() => {
+      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_month'];
+      if (refEl) {
+        refEl.focus();
+        refEl.click();
+      }
+    });
+  }
+}
+
+function togglePrescriptionTypeDropdown(row) {
+  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'prescription_type') {
+    activeDropdown.value = { rowId: null, type: null };
+  } else {
+    // 다른 드롭다운이 열려있으면 닫기
+    if (activeDropdown.value.rowId) {
+      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
+      if (otherRow) {
+        otherRow.showProductSearchList = false;
+      }
+    }
+    activeDropdown.value = { rowId: row.id, type: 'prescription_type' };
+    nextTick(() => {
+      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_type'];
+      if (refEl) {
+        refEl.focus();
+        refEl.click();
+      }
+    });
+  }
+}
+
+// 전역 클릭 이벤트 핸들러 수정
+function handleGlobalClick(event) {
+  // 드롭다운 영역 외 클릭 시 모든 드롭다운 닫기
+  if (!event.target.closest('.product-input-container') && 
+      !event.target.closest('.product-search-list') &&
+      !event.target.closest('select')) {
+    displayRows.value.forEach(row => {
+      if (row.showProductSearchList) {
+        row.showProductSearchList = false;
+      }
+    });
+    activeDropdown.value = { rowId: null, type: null };
+  }
+}
+
+function handleProductNameFocus(row) {
+  if (row.productSearchResults && row.productSearchResults.length > 0) {
+    row.showProductSearchList = true;
+    activeDropdown.value = { rowId: row.id, type: 'product' };
+    updateProductDropdownPosition(row);
+  }
+}
+
+function handleTabNavigation(row, currentField, event) {
+  const fields = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
+  const currentIndex = fields.indexOf(currentField);
+  let nextIndex;
+  
+  if (event.shiftKey) {
+    nextIndex = currentIndex > 0 ? currentIndex - 1 : fields.length - 1;
+  } else {
+    nextIndex = currentIndex < fields.length - 1 ? currentIndex + 1 : 0;
+  }
+  
+  const nextField = fields[nextIndex];
+  const nextRef = fieldRefs.value[row.id]?.[nextField];
+  
+  if (nextRef) {
+    // 드롭다운이 열려있으면 닫기
+    if (row.showProductSearchList) row.showProductSearchList = false;
+    if (row.showPrescriptionMonthDropdown) row.showPrescriptionMonthDropdown = false;
+    if (row.showPrescriptionTypeDropdown) row.showPrescriptionTypeDropdown = false;
+    
+    nextRef.focus();
+  }
+}
+
+function handlePrescriptionMonthSelect(row) {
+  if (row.showPrescriptionMonthDropdown) {
+    row.prescription_month_modify = availableMonths.value[row.prescriptionMonthSelectedIndex].settlement_month;
+    row.showPrescriptionMonthDropdown = false;
+    handleEditCalculations(row, 'month');
+    // 다음 셀로 이동
+    const nextField = 'product_name';
+    const nextRef = fieldRefs.value[row.id]?.[nextField];
+    if (nextRef) {
+      nextRef.focus();
+    }
+  }
+}
+
+function handlePrescriptionTypeSelect(row) {
+  if (row.showPrescriptionTypeDropdown) {
+    row.prescription_type_modify = prescriptionTypeOptions[row.prescriptionTypeSelectedIndex];
+    row.showPrescriptionTypeDropdown = false;
+    // 다음 셀로 이동
+    const nextField = 'commission_rate';
+    const nextRef = fieldRefs.value[row.id]?.[nextField];
+    if (nextRef) {
+      nextRef.focus();
+    }
+  }
+}
+
+function applySelectedProductFromSearch(row) {
+  if (row.showProductSearchList && row.productSearchResults.length > 0) {
+    const selectedProduct = row.productSearchResults[row.productSearchSelectedIndex];
+    // 콘솔 로그 추가
+    console.log('[applySelectedProductFromSearch] 선택 제품:', selectedProduct);
+    // 보험코드와 기준월로 제품을 찾아 수수료율 반영
+    const baseMonth = row.prescription_month_modify || row.prescription_month;
+    const commissionGrade = (row.company_commission_grade || 'a').toLowerCase();
+    const rateKey = `commission_rate_${commissionGrade}`;
+    const matchedProduct = allProducts.value.find(p => p.insurance_code === selectedProduct.insurance_code && p.base_month === baseMonth);
+    console.log('[applySelectedProductFromSearch] 기준월:', baseMonth, '회사등급:', commissionGrade, 'rateKey:', rateKey);
+    console.log('[applySelectedProductFromSearch] matchedProduct:', matchedProduct);
+    console.log('[applySelectedProductFromSearch] matchedProduct 전체:', JSON.stringify(matchedProduct));
+    row.commission_rate_modify = matchedProduct && matchedProduct[rateKey] ? matchedProduct[rateKey] * 100 : 0;
+    console.log('[applySelectedProductFromSearch] 최종 수수료율:', row.commission_rate_modify);
+    applySelectedProduct(selectedProduct, row);
+    row.showProductSearchList = false;
+    // 다음 셀로 이동
+    const nextField = 'prescription_qty';
+    const nextRef = fieldRefs.value[row.id]?.[nextField];
+    if (nextRef) {
+      nextRef.focus();
+    }
+  }
+}
+
+function handlePrescriptionMonthFocus(row) {
+  setCurrentCell(row, 'prescription_month');
+  activeDropdown.value = { rowId: row.id, type: 'prescription_month' };
+  nextTick(() => {
+    const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_month'];
+    if (refEl) {
+      refEl.click();
+    }
+  });
+}
+
+function handleArrowNavigation(row, currentField, direction) {
+  const fields = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
+  const currentIndex = fields.indexOf(currentField);
+  let nextIndex;
+
+  if (direction === 'left') {
+    nextIndex = currentIndex > 0 ? currentIndex - 1 : fields.length - 1;
+  } else {
+    nextIndex = currentIndex < fields.length - 1 ? currentIndex + 1 : 0;
+  }
+
+  const nextField = fields[nextIndex];
+  const nextRef = fieldRefs.value[row.id]?.[nextField];
+  
+  if (nextRef) {
+    // 드롭다운이 열려있으면 닫기
+    if (row.showProductSearchList) row.showProductSearchList = false;
+    if (row.showPrescriptionMonthDropdown) row.showPrescriptionMonthDropdown = false;
+    if (row.showPrescriptionTypeDropdown) row.showPrescriptionTypeDropdown = false;
+    
+    nextRef.focus();
+  }
+}
+
+function handlePrescriptionMonthDownKey(row, event) {
+  if (!row.showPrescriptionMonthDropdown) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
+    row.showPrescriptionMonthDropdown = true;
+    row.prescriptionMonthSelectedIndex = 0;
+  } else {
+    // 드롭다운이 열려있을 때는 다음 항목으로 이동
+    row.prescriptionMonthSelectedIndex = Math.min(
+      row.prescriptionMonthSelectedIndex + 1,
+      availableMonths.value.length - 1
+    );
+  }
+}
+
+function handlePrescriptionMonthUpKey(row, event) {
+  if (!row.showPrescriptionMonthDropdown) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
+    row.showPrescriptionMonthDropdown = true;
+    row.prescriptionMonthSelectedIndex = availableMonths.value.length - 1;
+  } else {
+    // 드롭다운이 열려있을 때는 이전 항목으로 이동
+    row.prescriptionMonthSelectedIndex = Math.max(row.prescriptionMonthSelectedIndex - 1, 0);
+  }
+}
+
+function handlePrescriptionTypeDownKey(row, event) {
+  if (!row.showPrescriptionTypeDropdown) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
+    row.showPrescriptionTypeDropdown = true;
+    row.prescriptionTypeSelectedIndex = 0;
+  } else {
+    // 드롭다운이 열려있을 때는 다음 항목으로 이동
+    row.prescriptionTypeSelectedIndex = Math.min(
+      row.prescriptionTypeSelectedIndex + 1,
+      prescriptionTypeOptions.length - 1
+    );
+  }
+}
+
+function handlePrescriptionTypeUpKey(row, event) {
+  if (!row.showPrescriptionTypeDropdown) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
+    row.showPrescriptionTypeDropdown = true;
+    row.prescriptionTypeSelectedIndex = prescriptionTypeOptions.length - 1;
+  } else {
+    // 드롭다운이 열려있을 때는 이전 항목으로 이동
+    row.prescriptionTypeSelectedIndex = Math.max(row.prescriptionTypeSelectedIndex - 1, 0);
+  }
+}
+
+const handleProductNameDownKey = (row, event) => {
+  if (!row.showProductSearchList) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
+    row.showProductSearchList = true;
+    row.productSearchSelectedIndex = 0;
+    updateProductDropdownPosition(row);
+  } else {
+    // 드롭다운이 열려있을 때는 다음 항목으로 이동
+    row.productSearchSelectedIndex = Math.min(
+      row.productSearchSelectedIndex + 1,
+      row.productSearchResults.length - 1
+    );
+  }
+};
+
+const handleProductNameUpKey = (row, event) => {
+  if (!row.showProductSearchList) {
+    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
+    row.showProductSearchList = true;
+    row.productSearchSelectedIndex = row.productSearchResults.length - 1;
+    updateProductDropdownPosition(row);
+  } else {
+    // 드롭다운이 열려있을 때는 이전 항목으로 이동
+    row.productSearchSelectedIndex = Math.max(row.productSearchSelectedIndex - 1, 0);
+  }
+};
+
 </script>
 
 <style scoped>
@@ -1025,12 +1409,21 @@ function focusPrevField(row, currentField) {
   border: 1px solid #d0d7de !important;
   border-radius: 4px !important;
   box-shadow: none !important;
+  transition: all 0.2s ease;
 }
+
+.edit-mode-input:focus {
+  border-color: #1976d2 !important;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2) !important;
+  outline: none !important;
+}
+
 .edit-mode-input.p-dropdown {
   background: #fff !important;
   border: 1px solid #d0d7de !important;
   border-radius: 4px !important;
 }
+
 .edit-mode-input .p-inputtext {
   background: #fff !important;
   border: none !important;
@@ -1041,9 +1434,11 @@ function focusPrevField(row, currentField) {
 .admin-performance-review-table :deep(.added-row td) {
   background-color: #e7f5ff !important;
 }
+
 .admin-performance-review-table :deep(.modified-row td) {
   background-color: #fffde7 !important;
 }
+
 .admin-performance-review-table :deep(.deleted-row td) {
   background-color: #fff5f5 !important;
 }
@@ -1057,6 +1452,105 @@ function focusPrevField(row, currentField) {
   text-decoration: none !important;
 }
 
+/* 포커스 스타일 */
+.cell-focused {
+  outline: 2px solid #1976d2 !important;
+  outline-offset: -2px !important;
+  z-index: 2;
+  background: #eaf4ff !important;
+  position: relative;
+}
+
+.cell-focused::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+  border-radius: 4px;
+}
+
+/* 드롭다운 스타일 */
+.product-input-container { 
+  position: relative; 
+  width: 100%;
+}
+
+.product-search-list {
+  position: absolute;
+  min-width: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 1002;
+}
+
+.product-search-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.product-search-item.selected, 
+.product-search-item:hover {
+  background: #e6f7ff;
+}
+
+/* 드롭다운 화살표 버튼 */
+.dropdown-arrow-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.dropdown-arrow-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  color: #666;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.dropdown-arrow-btn:hover .dropdown-arrow {
+  color: #1976d2;
+}
+
+/* select 요소 스타일 */
+select.edit-mode-input {
+  appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8.825L1.175 4 2.05 3.125 6 7.075 9.95 3.125 10.825 4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+}
+
+select.edit-mode-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231976d2' d='M6 8.825L1.175 4 2.05 3.125 6 7.075 9.95 3.125 10.825 4z'/%3E%3C/svg%3E");
+}
+
+/* 버튼 스타일 */
 .btn-restore-sm { 
   background-color: #28a745; 
   color: white; 
@@ -1073,9 +1567,12 @@ function focusPrevField(row, currentField) {
   display: inline-flex; 
   align-items: center; 
   justify-content: center; 
+  transition: background-color 0.2s;
 }
 
-.btn-restore-sm:hover { background-color: #218838; }
+.btn-restore-sm:hover { 
+  background-color: #218838; 
+}
 
 .btn-restore-sm:disabled {
   background: #e0e0e0 !important;
@@ -1085,55 +1582,8 @@ function focusPrevField(row, currentField) {
   opacity: 0.7;
 }
 
-.empty-data-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  font-size: 1.1rem;
-  color: #888;
-  margin-top: 2rem;
-}
-
-/* 체크박스 및 버튼 가운데 정렬 */
-.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
-.admin-performance-review-table .p-datatable-tbody td .p-button {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 체크박스 및 버튼 가운데 정렬 */
-.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
-.admin-performance-review-table .p-datatable-tbody td .p-button {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .disabled-area {
   pointer-events: none;
   opacity: 0.5;
-}
-
-.product-input-container { position: relative; }
-.product-search-list {
-  position: absolute;
-  left: 0;
-  top: 100%;
-  width: 100%;
-  background: #fff;
-  border: 1px solid #ccc;
-  z-index: 99999;
-  max-height: 220px;
-  overflow-y: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.product-search-item {
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.product-search-item.selected, .product-search-item:hover {
-  background: #e6f7ff;
 }
 </style>
