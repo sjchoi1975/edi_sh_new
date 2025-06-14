@@ -13,32 +13,26 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZW9scXl
 
 git
 
-PS C:\_D\edi_sh_new>
-
 cd /c/_D/edi_sh_new
+
+현재 연결 상태 확인
+git status
+On branch develop.. 이어야 함
+
+develop 브랜치에 푸쉬
 git add .
-git commit -m "실적관리 0531-1"
+git commit -m "20250614-0000"
+git push origin develop
+
+1. main 브랜치로 이동
+git checkout main
+
+2. develop 브랜치의 내용을 main에 병합
+git merge develop
+
+3. main 브랜치를 원격 저장소에 푸시
 git push origin main
 
 
-녹색(메뉴바 선택)
-#5fa56b
-
-링크 파란색
-#1976d2;
-
 ---------------------------------------------------------------------
-develop 브랜치 변경사항을 main 브랜치에 머지하는 명령어
-main 브랜치에 있는지 확인
-Apply to LoginView.vu...
-
-최신 상태로 업데이트
-Apply to LoginView.vu...
-
-develop 브랜치의 변경사항을 main에 머지
-Apply to LoginView.vu...
-
-머지 후 충돌 해결(필요시) → 저장/커밋
-머지된 main 브랜치를 원격 저장소에 푸시
-Apply to LoginView.vu...
 
