@@ -23,8 +23,13 @@ git checkout develop
 
 1. develop 브랜치에 푸쉬
 git add .
-git commit -m "20250614-0000"
+git commit -m "20250614-2110"
 git push origin develop
+
+
+git add planing/진행중메모.txt
+git commit -m "진행중메모.txt 작업 내용 저장"
+
 
 2. develop 브랜치에 푸쉬
 1) main 브랜치로 이동
