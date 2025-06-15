@@ -87,7 +87,7 @@ BEGIN
         -- 등록자 정보 처리
         CASE 
             WHEN ab.registered_by IS NULL THEN '관리자'
-            ELSE reg_c.company_name
+            ELSE ab.registered_by::text
         END AS created_by
         
     FROM analysis_base ab

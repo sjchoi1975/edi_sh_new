@@ -47,7 +47,7 @@
         <template #loading>업체별 실적을 불러오는 중입니다...</template>
 
         <!-- No 컬럼 -->
-        <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
+        <Column header="No" :headerStyle="{ width: columnWidthsMain.no, textAlign: 'center' }">
           <template #body="slotProps">
             {{ slotProps.index + 1 }}
           </template>
@@ -57,7 +57,7 @@
         <Column
           field="company_group"
           header="구분"
-          :headerStyle="{ width: columnWidths.company_group, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.company_group, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span style="font-weight: 400">{{ slotProps.data.company_group || '-' }}</span>
@@ -68,7 +68,7 @@
         <Column
           field="company_name"
           header="업체명"
-          :headerStyle="{ width: columnWidths.company_name, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.company_name, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span style="font-weight: 400">{{ slotProps.data.company_name }}</span>
@@ -78,20 +78,20 @@
         <Column
           field="business_registration_number"
           header="사업자등록번호"
-          :headerStyle="{ width: columnWidths.business_registration_number, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.business_registration_number, textAlign: 'center' }"
         />
 
         <Column
           field="representative_name"
           header="대표자"
-          :headerStyle="{ width: columnWidths.representative_name, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.representative_name, textAlign: 'center' }"
         />
 
         <!-- 관리자 컬럼 -->
         <Column
           field="assigned_pharmacist_contact"
           header="관리자"
-          :headerStyle="{ width: columnWidths.assigned_pharmacist_contact, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.assigned_pharmacist_contact, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span style="font-weight: 400">{{ slotProps.data.assigned_pharmacist_contact || '-' }}</span>
@@ -101,7 +101,7 @@
         <!-- 실적 정보 -->
         <Column
           header="총 병의원"
-          :headerStyle="{ width: columnWidths.total_clients, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.total_clients, textAlign: 'center' }"
         >
           <template #body="slotProps">
             {{ slotProps.data.total_clients ? slotProps.data.total_clients : 0 }}
@@ -110,7 +110,7 @@
 
         <Column
           header="제출 병의원"
-          :headerStyle="{ width: columnWidths.submitted_clients, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.submitted_clients, textAlign: 'center' }"
         >
           <template #body="slotProps">
             {{ slotProps.data.submitted_clients ? slotProps.data.submitted_clients : 0 }}
@@ -119,7 +119,7 @@
 
         <Column
           header="처방건수"
-          :headerStyle="{ width: columnWidths.prescription_count, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.prescription_count, textAlign: 'center' }"
         >
           <template #body="slotProps">
             {{ slotProps.data.prescription_count ? slotProps.data.prescription_count : 0 }}
@@ -128,7 +128,7 @@
 
         <Column
           header="검수완료"
-          :headerStyle="{ width: columnWidths.review_completed, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.review_completed, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span v-if="slotProps.data.review_completed > 0" style="color: var(--primary-blue); font-weight: 500;">
@@ -140,7 +140,7 @@
 
         <Column
           header="검수중"
-          :headerStyle="{ width: columnWidths.review_in_progress, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.review_in_progress, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span v-if="slotProps.data.review_in_progress > 0" style="color: var(--primary-color); font-weight: 500;">
@@ -152,7 +152,7 @@
 
         <Column
           header="신규"
-          :headerStyle="{ width: columnWidths.review_pending, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.review_pending, textAlign: 'center' }"
         >
           <template #body="slotProps">
             <span v-if="slotProps.data.review_pending > 0" style="color: var(--danger); font-weight: 500;">
@@ -165,7 +165,7 @@
         <Column
           field="prescription_amount"
           header="처방액"
-          :headerStyle="{ width: columnWidths.prescription_amount, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.prescription_amount, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'right' }"
         >
           <template #body="slotProps">
@@ -175,7 +175,7 @@
         <Column
           field="evidence_files"
           header="증빙 파일"
-          :headerStyle="{ width: columnWidths.evidence_files, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.evidence_files, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'center' }"
         >
           <template #body="slotProps">
@@ -184,7 +184,7 @@
         </Column>
         <Column
           header="파일 보기"
-          :headerStyle="{ width: columnWidths.file_view, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.file_view, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'center' }"
           :exportable="false"
         >
@@ -201,7 +201,7 @@
         <Column
           field="last_registered_at"
           header="최종 등록일시"
-          :headerStyle="{ width: columnWidths.last_registered_at, textAlign: 'center' }"
+          :headerStyle="{ width: columnWidthsMain.last_registered_at, textAlign: 'center' }"
           :bodyStyle="{ textAlign: 'center' }"
         >
           <template #body="slotProps">
@@ -241,55 +241,48 @@
         </div>
 
         <div v-else>
-          <table class="file-list-table" style="width: 100%; border-collapse: collapse">
-            <thead>
-              <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6">
-                <th
-                  style="
-                    width: 50%;
-                    padding: 12px;
-                    text-align: left;
-                    border-right: 1px solid #dee2e6;
-                  "
-                >
-                  병의원명
-                </th>
-                <th style="width: 50%; padding: 12px; text-align: left">파일명</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="file in companyFiles"
-                :key="file.id"
-                style="border-bottom: 1px solid #dee2e6"
-              >
-                <td
-                  style="
-                    width: 50%;
-                    padding: 12px;
-                    border-right: 1px solid #dee2e6;
-                    vertical-align: top;
-                  "
-                >
-                  {{ file.clients?.name || '미지정' }}
-                </td>
-                <td style="width: 50%; padding: 12px; vertical-align: top">
-                  <a href="#" @click.prevent="downloadFile(file)" class="file-link">
-                    {{ file.file_name }}
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <DataTable
+            :value="companyFiles" 
+            class="admin-performance_evidence_files_modal-table" 
+            scrollable
+            :scrollHeight="'400px'"
+            responsiveLayout="scroll"
+          >
+            <Column header="No" :style="{ width: columnWidthsModal.no }">
+              <template #body="slotProps">
+                {{ slotProps.index + 1 }}
+              </template>
+            </Column>
+            <Column field="clients.name" header="병의원명" :sortable="true" :style="{ width: columnWidthsModal.hospital }">
+              <template #body="slotProps">
+                {{ slotProps.data.clients?.name || '미지정' }}
+              </template>
+            </Column>
+            <Column field="file_name" header="파일명" :sortable="true" :style="{ width: columnWidthsModal.file }">
+              <template #body="slotProps">
+                <a href="#" class="file-link" @click.prevent="previewFile(slotProps.data)">{{ slotProps.data.file_name }}</a>
+              </template>
+            </Column>
+            <Column header="다운로드" :style="{ width: columnWidthsModal.download }">
+              <template #body="slotProps">
+                <button class="btn-download-sm" @click="downloadFile(slotProps.data, companyFiles.findIndex(f => f.id === slotProps.data.id))">다운로드</button>
+              </template>
+            </Column>
+            <Column field="uploaded_at" header="등록일시" :sortable="true" :style="{ width: columnWidthsModal.date }">
+              <template #body="slotProps">
+                {{ formatDateTime(slotProps.data.uploaded_at || slotProps.data.created_at) }}
+              </template>
+            </Column>
+          </DataTable>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button
-          class="btn-download"
-          @click="downloadAllFiles"
-          :disabled="companyFiles.length === 0"
-        >
+        <label style="display: flex; align-items: center; gap: 0.5rem; margin-right: 1rem;">
+          <input type="checkbox" v-model="renameFiles" style="width:16px; height:16px;" />
+          파일명 변경
+        </label>
+        <button class="btn-download" @click="downloadAllFiles" :disabled="companyFiles.length === 0">
           전체 다운로드
         </button>
         <button class="btn-close" @click="closeFileModal">닫기</button>
@@ -306,8 +299,11 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 
-const columnWidths = {
+// 메인 테이블 컬럼 너비
+const columnWidthsMain = {
   no: '4%',
   company_group: '6%',
   company_name: '12%',
@@ -326,6 +322,15 @@ const columnWidths = {
   last_registered_at: '8%',
 }
 
+// 증빙파일 미리보기 모달 컬럼 너비
+const columnWidthsModal = {
+  no: '6%',
+  hospital: '24%',
+  file: '52%',
+  download: '12%',
+  date: '16%'
+}
+
 // 반응형 데이터
 const availableMonths = ref([])
 const selectedSettlementMonth = ref('')
@@ -337,10 +342,23 @@ const showFileModal = ref(false)
 const selectedCompany = ref(null)
 const companyFiles = ref([])
 const fileLoading = ref(false)
+const renameFiles = ref(true)
 
 const formatNumber = (value) => {
   if (!value) return '0'
   return new Intl.NumberFormat('ko-KR').format(value)
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '-'
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
 // 정산월 목록 fetch
@@ -541,7 +559,7 @@ const fetchCompanyList = async () => {
           // 특정 업체 파일 조회 시도
           const { data: companyFiles, error: companyFilesError } = await supabase
             .from('performance_evidence_files')
-            .select('*')
+            .select('id')
             .eq('company_id', company.id)
             .eq('settlement_month', selectedSettlementMonth.value)
 
@@ -957,193 +975,88 @@ const fetchCompanyFiles = async (company) => {
   }
 }
 
-const downloadFile = async (file) => {
+// 개별 파일 다운로드 (파일명 포맷: 업체명_병의원명_번호.확장자, 옵션 적용)
+const downloadFile = async (file, idx = 0) => {
   try {
-    console.log('Downloading file:', file)
-
-    // Mock 파일인지 확인
-    if (file.id.startsWith('mock-')) {
-      console.log('Mock file download - showing alert instead')
-      alert(
-        `파일 다운로드: ${file.file_name}\n\n현재는 시연용 데이터입니다.\n실제 환경에서는 파일이 다운로드됩니다.`,
-      )
-      return
+    let downloadName = file.file_name
+    if (renameFiles.value) {
+      const ext = file.file_name.split('.').pop()
+      const num = String(idx + 1).padStart(2, '0')
+      const companyName = selectedCompany.value?.company_name || '업체'
+      const hospitalName = file.clients?.name || '병의원'
+      downloadName = `${companyName}_${hospitalName}_${num}.${ext}`
     }
-
-    // 실제 파일 다운로드 로직
-    let downloadPath = file.file_path
-
-    // file_path가 상대 경로인 경우 전체 경로로 변환
-    if (!downloadPath.startsWith('/')) {
-      downloadPath = `evidence-files/${downloadPath}`
-    }
-
-    console.log('Download path:', downloadPath)
-
     const { data, error } = await supabase.storage
       .from('performance-evidence')
-      .download(downloadPath)
-
-    if (error) {
-      console.error('파일 다운로드 오류:', error)
-
-      // 다른 버킷 이름들 시도
-      const bucketNames = ['evidence-files', 'performance_evidence', 'files']
-      let downloadSuccess = false
-
-      for (const bucketName of bucketNames) {
-        try {
-          console.log(`Trying bucket: ${bucketName}`)
-          const { data: retryData, error: retryError } = await supabase.storage
-            .from(bucketName)
-            .download(file.file_path)
-
-          if (!retryError && retryData) {
-            // 성공한 경우 파일 다운로드 진행
-            const url = URL.createObjectURL(retryData)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = file.file_name || `file_${file.id}`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-            downloadSuccess = true
-            break
-          }
-        } catch (bucketError) {
-          console.log(`Bucket ${bucketName} failed:`, bucketError)
-        }
-      }
-
-      if (!downloadSuccess) {
-        alert('파일 다운로드에 실패했습니다. 파일이 존재하지 않거나 접근 권한이 없습니다.')
-      }
+      .download(file.file_path)
+    if (error || !data) {
+      alert('파일 다운로드에 실패했습니다.')
       return
     }
-
-    if (!data) {
-      alert('파일 데이터를 가져올 수 없습니다.')
-      return
-    }
-
-    // 파일 다운로드
-    const url = URL.createObjectURL(data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = file.file_name || `file_${file.id}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    saveAs(data, downloadName)
   } catch (err) {
-    console.error('파일 다운로드 예외:', err)
-    alert('파일 다운로드에 실패했습니다.')
+    alert('파일 다운로드 중 오류가 발생했습니다.')
   }
 }
 
+// 전체 다운로드 (zip, 옵션 적용)
 const downloadAllFiles = async () => {
   if (companyFiles.value.length === 0) {
     alert('다운로드할 파일이 없습니다.')
     return
   }
-
-  if (!confirm(`총 ${companyFiles.value.length}개의 파일을 다운로드하시겠습니까?`)) {
+  if (!confirm(`총 ${companyFiles.value.length}개의 파일을 압축하여 다운로드하시겠습니까?`)) {
     return
   }
+  const zip = new JSZip()
+  const companyName = selectedCompany.value?.company_name || '업체'
+  let successCount = 0
+  for (let i = 0; i < companyFiles.value.length; i++) {
+    const file = companyFiles.value[i]
+    let fileName = file.file_name
+    if (renameFiles.value) {
+      const ext = file.file_name.split('.').pop()
+      const num = String(i + 1).padStart(2, '0')
+      const hospitalName = file.clients?.name || '병의원'
+      fileName = `${companyName}_${hospitalName}_${num}.${ext}`
+    }
+    const hospitalName = file.clients?.name || '병의원'
+    const downloadPath = `${companyName}/${hospitalName}/${fileName}`
+    try {
+      const { data, error } = await supabase.storage
+        .from('performance-evidence')
+        .download(file.file_path)
+      if (!error && data) {
+        zip.file(downloadPath, data)
+        successCount++
+      }
+    } catch (e) {
+      // 실패한 파일은 건너뜀
+    }
+  }
+  if (successCount === 0) {
+    alert('다운로드할 파일이 없습니다.')
+    return
+  }
+  zip.generateAsync({ type: 'blob' }).then((content) => {
+    const zipName = `${companyName}_증빙파일.zip`
+    saveAs(content, zipName)
+  })
+}
 
+// 파일명 클릭 시 새창 미리보기 (signedUrl)
+const previewFile = async (file) => {
   try {
-    let successCount = 0
-    let failCount = 0
-
-    // 파일을 순차적으로 다운로드 (브라우저 제한 방지)
-    for (let i = 0; i < companyFiles.value.length; i++) {
-      const file = companyFiles.value[i]
-
-      try {
-        console.log(`Downloading file ${i + 1}/${companyFiles.value.length}: ${file.file_name}`)
-
-        // 개별 파일 다운로드 (await 사용하여 순차 처리)
-        let downloadSuccess = false
-        let downloadPath = file.file_path
-
-        // file_path가 상대 경로인 경우 전체 경로로 변환
-        if (!downloadPath.startsWith('/')) {
-          downloadPath = `evidence-files/${downloadPath}`
-        }
-
-        // 기본 버킷에서 시도
-        const { data, error } = await supabase.storage
-          .from('performance-evidence')
-          .download(downloadPath)
-
-        if (!error && data) {
-          const url = URL.createObjectURL(data)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = file.file_name || `file_${file.id}`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(url)
-          downloadSuccess = true
-        } else {
-          // 다른 버킷들에서 시도
-          const bucketNames = ['evidence-files', 'performance_evidence', 'files']
-          for (const bucketName of bucketNames) {
-            try {
-              const { data: retryData, error: retryError } = await supabase.storage
-                .from(bucketName)
-                .download(file.file_path)
-
-              if (!retryError && retryData) {
-                const url = URL.createObjectURL(retryData)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = file.file_name || `file_${file.id}`
-                document.body.appendChild(a)
-                a.click()
-                document.body.removeChild(a)
-                URL.revokeObjectURL(url)
-                downloadSuccess = true
-                break
-              }
-            } catch (bucketError) {
-              // 무시하고 다음 버킷 시도
-            }
-          }
-        }
-
-        if (downloadSuccess) {
-          successCount++
-        } else {
-          failCount++
-          console.error(`Failed to download: ${file.file_name}`)
-        }
-
-        // 파일 간 간격 (브라우저 부하 방지)
-        if (i < companyFiles.value.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-        }
-      } catch (fileError) {
-        console.error(`Error downloading ${file.file_name}:`, fileError)
-        failCount++
-      }
+    const { data, error } = await supabase.storage
+      .from('performance-evidence')
+      .createSignedUrl(file.file_path, 60) // 60초 유효
+    if (error || !data?.signedUrl) {
+      alert('미리보기 URL 생성에 실패했습니다.' + (error?.message ? '\n' + error.message : ''))
+      return
     }
-
-    // 결과 알림
-    if (successCount > 0) {
-      if (failCount > 0) {
-        alert(`다운로드 완료: 성공 ${successCount}개, 실패 ${failCount}개`)
-      } else {
-        alert(`모든 파일(${successCount}개) 다운로드가 완료되었습니다.`)
-      }
-    } else {
-      alert('모든 파일 다운로드에 실패했습니다.')
-    }
+    window.open(data.signedUrl, '_blank')
   } catch (err) {
-    console.error('전체 파일 다운로드 오류:', err)
-    alert('전체 파일 다운로드 중 오류가 발생했습니다.')
+    alert('미리보기 중 오류가 발생했습니다.')
   }
 }
 

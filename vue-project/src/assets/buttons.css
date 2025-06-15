@@ -266,7 +266,8 @@
 .btn-view-sm,
 .btn-input-sm,
 .btn-detail,
-.btn-upload-sm {  
+.btn-upload-sm,
+.btn-download-sm {  
   padding: 0.15rem 0.4rem !important;
   margin: 0 0.2rem !important;
   font-size: var(--font-size-sm) !important;
@@ -311,11 +312,17 @@
 .btn-cancel-sm,
 .btn-view-sm,
 .btn-input-sm,
-.btn-upload-sm {
+.btn-upload-sm,
+.btn-download-sm {
   background: var(--gray-100) !important;
   color: var(--text-dark) !important;
   border-color: var(--gray-500) !important;
 }
+
+
+
+
+
 
 /* ========================================== */
 /* 5. 뱃지 스타일                             */
@@ -452,8 +459,9 @@
 .btn-cancel-sm:hover:not(:disabled),
 .btn-view-sm:hover:not(:disabled),
 .btn-input-sm:hover:not(:disabled),
-.btn-upload-sm:hover:not(:disabled) {
-  background: var(--gray-200) !important;
+.btn-upload-sm:hover:not(:disabled),
+.btn-download-sm:hover:not(:disabled) {
+  background: var(--gray-300) !important;
   border-color: var(--gray-500) !important;
 }
 

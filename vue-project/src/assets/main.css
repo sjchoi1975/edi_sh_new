@@ -389,43 +389,33 @@ select.input-editable {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  max-width: 1px !important;
-  height: 2.2rem !important;
+
 }
 
-/* 헤더 가운데 정렬 */
+/* 테이블 헤더 */
 .p-datatable .p-datatable-thead > tr > th,
-.p-datatable .p-datatable-tfoot > tr > td {
-  text-align: center !important;
-  vertical-align: middle !important;
+/* 테이블 바디 */
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.25rem 0.5rem !important;
+  color: var(--text-primary) !important;
+  border-right: 1px solid var(--border-secondary) !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-height: 1rem !important;
 }
 
 /* 테이블 헤더 */
 .p-datatable .p-datatable-thead > tr > th {
-  padding: 0rem 0.5rem !important;
   background: var(--bg-secondary) !important;
-  font-size: var(--font-size-md) !important;
-  font-weight: 400 !important;
-  color: var(--text-primary) !important;
-  border-right: 1px solid var(--border-secondary) !important;
   border-bottom: 2px solid var(--border-primary) !important;
   text-align: center !important;
-  white-space: normal !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  vertical-align: middle !important;  
 }
 
 /* 테이블 바디 */
 .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0rem 0.5rem !important;
-  font-size: var(--font-size-md) !important;
-  font-weight: 400 !important;
-  color: var(--text-primary) !important;
-  border-right: 1px solid var(--border-secondary) !important;
   border-bottom: 1px solid var(--border-secondary) !important;
-  white-space: normal !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
 }
 
 /* 테이블 행 호버 */
@@ -529,7 +519,7 @@ select.input-editable {
 .p-dialog-header {
   background: none !important;
   padding: 1.5rem 2rem 0.5rem 1rem !important;
-  border-radius: 4px !important;
+  border-radius: var(--border-radius) !important;
 }
 
 .p-dialog-title {
@@ -575,8 +565,8 @@ select.input-editable {
 /* 사용하는지??????????????????????????????????? */
 .modal-content {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius) !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 
@@ -1253,6 +1243,8 @@ select.input-editable {
 .admin-settlement-months-table .p-datatable-column-title,
 /* 관리자 업체별 등록 현황 테이블 헤더 */
 .admin-performance-companies-table .p-datatable-column-title,
+/* 관리자 업체별 등록 현황 - 증빙 파일 보기 모달 테이블 헤더 */
+.admin-performance_evidence_files_modal-table .p-datatable-column-title,
 /* 관리자 전체 등록 현황 테이블 헤더 */
 .admin-performance-whole-table .p-datatable-column-title,
 /* 관리자 실적 검수 테이블 헤더 */
@@ -1572,6 +1564,21 @@ select.input-editable {
 .admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(13)) {
   text-align: right !important;
 }
+
+
+/* 관리자 업체별 등록 현황 - 증빙 파일 보기 모달 테이블 바디 */
+/* --- 좌측 정렬 (병의원명, 파일명) --- */
+.admin-performance_evidence_files_modal-table .p-datatable-tbody > tr > td:nth-child(2),
+.admin-performance_evidence_files_modal-table .p-datatable-tbody > tr > td:nth-child(3) {
+  text-align: left !important;
+}
+/* --- 중앙 정렬 (No, 다운로드, 등록일시) --- */
+.admin-performance_evidence_files_modal-table .p-datatable-tbody > tr > td:nth-child(1),
+.admin-performance_evidence_files_modal-table .p-datatable-tbody > tr > td:nth-child(4),
+.admin-performance_evidence_files_modal-table .p-datatable-tbody > tr > td:nth-child(5) {
+  text-align: center !important;
+}
+
 
 /* ------ 관리자 전체 등록 현황 (AdminPerformanceWholeView.vue) ------ */
 /* --- 중앙 정렬 (No, 검수상태, 처방월, 보험코드, 처방구분, 등록일시, 관리자) --- */
@@ -2162,4 +2169,5 @@ select.input-editable {
 .product-search-dropdown li.selected .insurance-code {
   color: #fff !important; /* 또는 더 진한 색상 */
 }
+
 

@@ -72,8 +72,8 @@
           scrollHeight="calc(100vh - 220px)"
           class="absorption-analysis-table"
           :pt="{
-            wrapper: { style: 'min-width: 2200px;' },
-            table: { style: 'min-width: 2200px;' }
+            wrapper: { style: 'min-width: 2400px;' },
+            table: { style: 'min-width: 2400px;' }
           }"
         >
           <template #empty>
@@ -160,9 +160,9 @@ import * as XLSX from 'xlsx';
 const columnWidths = {
   review_action: '4%',
   company_name: '9%',
-  client_name: '16%',
+  client_name: '14%',
   prescription_month: '5%',
-  product_name_display: '16%',
+  product_name_display: '14%',
   insurance_code: '6%',
   price: '5%',
   prescription_qty: '6%',
@@ -170,10 +170,10 @@ const columnWidths = {
   prescription_type: '7%',
   wholesale_revenue: '7%',
   direct_revenue: '7%',
-  total_revenue: '8%',
+  total_revenue: '7%',
   absorption_rate: '6%',
   commission_rate: '6%',
-  payment_amount: '8%',
+  payment_amount: '7%',
   remarks: '10%',
   created_date: '9%',
   created_by: '9%'
