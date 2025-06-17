@@ -30,7 +30,7 @@
     </div>
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">전체 {{ filteredRevenues.length }} 건</div>
+        <div class="total-count-display">전체 {{ totalCount }} 건</div>
         <div class="action-buttons-group">
           <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
           <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
@@ -47,11 +47,14 @@
         </div>
       </div>
       <DataTable
-        :value="filteredRevenues"
+        :value="revenues"
         :loading="loading"
         paginator
-        :rows="50"
+        :rows="pageSize"
+        :totalRecords="totalCount"
         :rowsPerPageOptions="[20, 50, 100]"
+        :first="currentPageFirstIndex"
+        :lazy="true"
         scrollable
         scrollHeight="calc(100vh - 250px)"
         v-model:filters="filters"
@@ -62,7 +65,7 @@
           'product_name',
         ]"
         class="admin-direct-revenue-table"
-        v-model:first="currentPageFirstIndex"
+        @page="onPageChange"
       >
         <template #empty>
           <div v-if="!loading">등록된 매출이 없습니다.</div>
@@ -241,20 +244,38 @@ const fromMonth = ref('')
 const toMonth = ref('')
 const availableMonths = ref([])
 const currentPageFirstIndex = ref(0)
+const pageSize = ref(50) // 한 페이지에 보여줄 행 수
+const totalCount = ref(0) // 전체 데이터 개수
 
 function goCreate() {
   router.push('/admin/direct-revenue/create')
 }
 
+// 페이지 변경 핸들러
+const onPageChange = async (event) => {
+  currentPageFirstIndex.value = event.first
+  pageSize.value = event.rows
+  await fetchRevenues()
+}
+
 const fetchRevenues = async () => {
   loading.value = true;
   try {
+    // 전체 개수 조회
+    const { count } = await supabase
+      .from('direct_sales')
+      .select('*', { count: 'exact', head: true })
+    totalCount.value = count || 0
+
+    // 페이지별 데이터 조회
+    const from = currentPageFirstIndex.value
+    const to = from + pageSize.value - 1
     const { data, error } = await supabase
       .from('direct_sales')
       .select('*')
       .order('sales_date', { ascending: false })
+      .range(from, to)
     if (!error && data) {
-      // 각 행에 편집 상태와 원본 데이터 백업 추가
       revenues.value = data.map((item) => ({
         ...item,
         isEditing: false,
@@ -526,13 +547,13 @@ const handleFileUpload = async (event) => {
 
 // 엑셀 다운로드 (현재 목록)
 const downloadExcel = () => {
-  if (filteredRevenues.value.length === 0) {
+  if (revenues.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
   // 데이터 변환
-  const excelData = filteredRevenues.value.map((revenue) => ({
+  const excelData = revenues.value.map((revenue) => ({
     약국코드: revenue.pharmacy_code || '',
     약국명: revenue.pharmacy_name || '',
     사업자등록번호: revenue.business_registration_number || '',
