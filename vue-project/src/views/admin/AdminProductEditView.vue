@@ -36,18 +36,26 @@
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료율 A등급(%) <span class="required">*</span></label>
+          <label style="text-align: right;">수수료율 A</label>
         </div>
         <div class="form-col input-col">
-          <input v-model="commissionA" type="number" step="0.1" required />
+          <input v-model="commissionA" type="number" step="0.001" required />
         </div>
       </div>
       <div class="form-row">
         <div class="form-col label-col">
-          <label style="text-align: right;">수수료율 B등급(%) <span class="required">*</span></label>
+          <label style="text-align: right;">수수료율 B</label>
         </div>
         <div class="form-col input-col">
-          <input v-model="commissionB" type="number" step="0.1" required />
+          <input v-model="commissionB" type="number" step="0.001" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col label-col">
+          <label style="text-align: right;">수수료율 C</label>
+        </div>
+        <div class="form-col input-col">
+          <input v-model="commissionC" type="number" step="0.001" />
         </div>
       </div>
       <div class="form-row">
@@ -114,6 +122,7 @@ const insuranceCode = ref('');
 const price = ref('');
 const commissionA = ref('');
 const commissionB = ref('');
+const commissionC = ref('');
 const standardCode = ref('');
 const unitPackagingDesc = ref('');
 const unitQuantity = ref('');
@@ -133,6 +142,7 @@ onMounted(async () => {
     price.value = data.price;
     commissionA.value = data.commission_rate_a ? data.commission_rate_a * 100 : '';
     commissionB.value = data.commission_rate_b ? data.commission_rate_b * 100 : '';
+    commissionC.value = data.commission_rate_c ? data.commission_rate_c : '';
     standardCode.value = data.standard_code;
     unitPackagingDesc.value = data.unit_packaging_desc;
     unitQuantity.value = data.unit_quantity;
@@ -153,6 +163,7 @@ const handleSubmit = async () => {
     price: price.value === '' ? null : Number(price.value),
     commission_rate_a: commissionA.value === '' ? null : Number(commissionA.value) / 100,
     commission_rate_b: commissionB.value === '' ? null : Number(commissionB.value) / 100,
+    commission_rate_c: commissionC.value === '' ? null : Number(commissionC.value),
     standard_code: standardCode.value === '' ? null : standardCode.value,
     unit_packaging_desc: unitPackagingDesc.value,
     unit_quantity: unitQuantity.value === '' ? null : Number(unitQuantity.value),

@@ -116,10 +116,10 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_a"
               type="number"
-              step="0.01"
+              step="0.001"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.commission_rate_a ? (slotProps.data.commission_rate_a * 100).toFixed(1) + '%' : '-' }}</span>
+            <span v-else>{{ slotProps.data.commission_rate_a !== undefined && slotProps.data.commission_rate_a !== null ? (slotProps.data.commission_rate_a * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
         <Column header="수수료율 B" :headerStyle="{ width: columnWidths.commission_rate_b }" :sortable="true">
@@ -128,10 +128,22 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_b"
               type="number"
-              step="0.01"
+              step="0.001"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.commission_rate_b ? (slotProps.data.commission_rate_b * 100).toFixed(1) + '%' : '-' }}</span>
+            <span v-else>{{ slotProps.data.commission_rate_b !== undefined && slotProps.data.commission_rate_b !== null ? (slotProps.data.commission_rate_b * 100).toFixed(1) + '%' : '-' }}</span>
+          </template>
+        </Column>
+        <Column header="수수료율 C" :headerStyle="{ width: columnWidths.commission_rate_c }" :sortable="true">
+          <template #body="slotProps">
+            <input
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.commission_rate_c"
+              type="number"
+              step="0.001"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+            />
+            <span v-else>{{ slotProps.data.commission_rate_c !== undefined && slotProps.data.commission_rate_c !== null ? (slotProps.data.commission_rate_c * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
         <Column
@@ -244,6 +256,7 @@ const columnWidths = {
   price: '6%',
   commission_rate_a: '8%',
   commission_rate_b: '8%',
+  commission_rate_c: '8%',
   standard_code: '8%',
   unit_packaging_desc: '10%',
   unit_quantity: '8%',
@@ -533,6 +546,7 @@ const handleFileUpload = async (event) => {
         price: Number(row['약가']) || 0,
         commission_rate_a: Number(row['수수료A']) || 0,
         commission_rate_b: Number(row['수수료B']) || 0,
+        commission_rate_c: Number(row['수수료C']) || 0,
         standard_code: row['표준코드'] || '',
         unit_packaging_desc: row['단위포장형태'] || '',
         unit_quantity: Number(row['단위수량']) || 0,
@@ -648,6 +662,7 @@ const downloadExcel = () => {
     약가: product.price || 0,
     수수료A: product.commission_rate_a || 0,
     수수료B: product.commission_rate_b || 0,
+    수수료C: product.commission_rate_c || 0,
     표준코드: product.standard_code || '',
     단위포장형태: product.unit_packaging_desc || '',
     단위수량: product.unit_quantity || 0,
@@ -669,6 +684,7 @@ const downloadExcel = () => {
     { width: 10 }, // 약가
     { width: 10 }, // 수수료A
     { width: 10 }, // 수수료B
+    { width: 10 }, // 수수료C
     { width: 12 }, // 표준코드
     { width: 15 }, // 단위포장형태
     { width: 10 }, // 단위수량
@@ -754,6 +770,7 @@ const saveEdit = async (row) => {
       price: Number(row.price) || 0,
       commission_rate_a: Number(row.commission_rate_a) || 0,
       commission_rate_b: Number(row.commission_rate_b) || 0,
+      commission_rate_c: Number(row.commission_rate_c) || 0,
       standard_code: row.standard_code || '',
       unit_packaging_desc: row.unit_packaging_desc || '',
       unit_quantity: Number(row.unit_quantity) || 0,
