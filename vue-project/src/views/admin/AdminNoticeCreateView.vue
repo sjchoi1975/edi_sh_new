@@ -44,7 +44,7 @@
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goList">취소</button>
         <button class="btn-save" type="submit">등록</button>
       </div>

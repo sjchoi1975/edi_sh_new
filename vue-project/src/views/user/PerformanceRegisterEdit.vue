@@ -70,7 +70,7 @@
                       @keydown.up.prevent="navigateProductSearchList('up')"
                       @keydown="onArrowKey($event, rowIdx, 'product_name')"
                       @focus="handleProductNameFocus(rowIdx)"
-                      @blur="setTimeout(() => hideProductSearchList(rowIdx), 200)" 
+                      @blur="delayedHideProductSearchList(rowIdx)" 
                       :disabled="!isRowEditable(row)"
                       :class="[
                         cellClass(rowIdx, 'product_name'),
@@ -477,24 +477,25 @@ watch(prescriptionMonth, () => {
   }
 });
 async function fetchProducts() {
-  const { data, error } = await supabase.from('products').select('id, product_name, insurance_code, price').eq('status', 'active');
+  const { data, error } = await supabase.from('products').select('*').eq('status', 'active');
   if (!error && data) {
-    const uniqByInsurance = {};
+    const uniqByMonthAndInsurance = {};
     const noInsurance = [];
     data.forEach(p => {
+      const key = `${p.base_month}_${p.insurance_code || ''}`;
       if (p.insurance_code) {
-        if (!uniqByInsurance[p.insurance_code]) uniqByInsurance[p.insurance_code] = p;
+        if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
       } else {
         noInsurance.push(p);
       }
     });
-    products.value = [...Object.values(uniqByInsurance), ...noInsurance];
+    products.value = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
   }
 }
 
 // 제품 검색 관련 함수들
 function handleProductNameInput(rowIndex, event) {
-  if (!isInputEnabled.value) return; // Added .value
+  if (!isInputEnabled.value) return;
   const query = event.target.value.toLowerCase();
   inputRows.value[rowIndex].product_name_display = event.target.value;
   inputRows.value[rowIndex].product_id = null;
@@ -505,14 +506,22 @@ function handleProductNameInput(rowIndex, event) {
   if (query.length < 1) {
     productSearchForRow.value.show = false;
     productSearchForRow.value.results = [];
+    console.log('show:', productSearchForRow.value.show, 'results:', productSearchForRow.value.results);
     return;
   }
-  productSearchForRow.value.results = products.value.filter(p =>
-    (p.product_name && p.product_name.toLowerCase().includes(query)) ||
-    (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
+  // 처방월에 맞는 제품만 필터링
+  const month = inputRows.value[rowIndex].prescription_month;
+  productSearchForRow.value.results = products.value.filter(
+    p =>
+      p.base_month === month &&
+      (
+        (p.product_name && p.product_name.toLowerCase().includes(query)) ||
+        (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
+      )
   );
   productSearchForRow.value.selectedIndex = -1;
   productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
+  console.log('show:', productSearchForRow.value.show, 'results:', productSearchForRow.value.results);
 }
 
 function navigateProductSearchList(direction) {
@@ -566,6 +575,10 @@ function clickProductFromSearchList(product, rowIndex) {
   applySelectedProduct(product, rowIndex);
 }
 
+function delayedHideProductSearchList(rowIdx) {
+  setTimeout(() => hideProductSearchList(rowIdx), 200);
+}
+
 function hideProductSearchList(rowIndex) {
   if (productSearchForRow.value.activeRowIndex === rowIndex) {
     if (!inputRows.value[rowIndex].product_id) {
@@ -577,26 +590,22 @@ function hideProductSearchList(rowIndex) {
 }
 
 function toggleProductDropdown(rowIndex) {
-  if (!isInputEnabled.value) return; // Added .value
-  // 다른 행의 제품 검색이 열려있으면 차단
+  if (!isInputEnabled.value) return;
   if (isProductSearchOpen.value && productSearchForRow.value.activeRowIndex !== rowIndex) {
     return;
   }
-  
-  // 현재 드롭다운이 열려있으면 닫기
   if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIndex) {
     productSearchForRow.value.show = false;
     productSearchForRow.value.activeRowIndex = -1;
     return;
   }
-  
-  // 전체 제품 목록 표시
+  // 처방월에 맞는 제품만 필터링
+  const month = inputRows.value[rowIndex].prescription_month;
   productSearchForRow.value.activeRowIndex = rowIndex;
-  productSearchForRow.value.results = products.value;
+  productSearchForRow.value.results = products.value.filter(p => p.base_month === month);
   productSearchForRow.value.selectedIndex = -1;
   productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
-  
-  // 해당 행의 제품명 입력창에 포커스
+  console.log('show:', productSearchForRow.value.show, 'results:', productSearchForRow.value.results);
   nextTick(() => {
     focusField(rowIndex, 'product_name');
   });
@@ -1173,6 +1182,10 @@ const validRowCount = computed(() => getValidRows(inputRows.value).length);
 
 function goBackToList() {
   router.push('/performance/register');
+}
+
+if (typeof window !== 'undefined') {
+  window.products = products;
 }
 </script>
 

@@ -1,4 +1,4 @@
--- 기존 함수가 존재하면 삭제
+-- 기존 함수가 존재하면 삭제 (호환성을 위해 여러 시그니처로 삭제)
 DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
 DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month character varying);
 
@@ -14,10 +14,16 @@ AS $$
 BEGIN
     -- 1. 지정된 정산월에 해당하는 모든 '완료' 상태의 실적 데이터를 임시 테이블에 저장
     CREATE TEMP TABLE temp_performance_records AS
-    SELECT *
-    FROM public.v_review_details
+    SELECT 
+        absorption_analysis_id,
+        client_id,
+        product_id,
+        insurance_code,
+        prescription_month,
+        prescription_qty
+    FROM public.review_details_view
     WHERE settlement_month = p_settlement_month
-      AND review_status = '완료';
+      AND user_edit_status = '완료';
 
     -- 2. 제품의 보험코드와 표준코드를 매핑하는 임시 테이블 생성
     CREATE TEMP TABLE temp_product_codes AS
@@ -91,7 +97,7 @@ BEGIN
     RETURN QUERY
     WITH final_revenues AS (
         SELECT 
-            pr.id AS record_id,
+            pr.absorption_analysis_id AS record_id,
             -- 도매 매출 계산
             SUM(
                 COALESCE(ps.monthly_wholesale, 0) * 
@@ -123,7 +129,7 @@ BEGIN
             ON cpm.pharmacy_brn = tdb.pharmacy_brn
             AND pr.insurance_code = tdb.insurance_code
             AND pr.prescription_month = tdb.prescription_month
-        GROUP BY pr.id
+        GROUP BY pr.absorption_analysis_id
     )
     SELECT 
         fr.record_id, 

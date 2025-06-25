@@ -289,10 +289,10 @@ async function loadAnalysisData() {
   
   try {
     let query = supabase
-      .from('v_review_details')
+      .from('review_details_view')
       .select('*')
       .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('review_status', '완료');
+      .eq('user_edit_status', '완료');
     
     if (selectedCompanyId.value !== 'ALL') {
       query = query.eq('company_id', selectedCompanyId.value);

@@ -97,7 +97,7 @@
 .btn-select-none,
 .file-upload-label,
 .file-label {
-  padding: 0.25rem 1rem !important;
+  padding: 0.35rem 1rem !important;
   margin: 0 0.5rem !important;
   font-size: var(--font-size-base) !important;
   font-weight: 400 !important;
@@ -110,6 +110,30 @@
   transition: all 0.2s ease-in-out !important;
   box-shadow: var(--shadow-sm) !important;
 }
+
+
+
+.btn-restore-sm {
+  padding: 0.1rem 0.45rem !important;
+  margin: 0 0.5rem !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.btn-restore-sm {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+  color: var(--text-white) !important;
+}
+
 
 /* 기본 버튼 색상 스타일 */
 .btn-primary,

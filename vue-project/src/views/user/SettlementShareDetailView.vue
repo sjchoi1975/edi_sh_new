@@ -155,11 +155,11 @@ async function fetchAllDataForMonth() {
     return;
   }
   const { data, error } = await supabase
-    .from('v_review_details')
+    .from('review_details_view')
     .select('*')
     .eq('settlement_month', selectedMonth.value)
     .eq('company_id', companyId.value)
-    .eq('review_status', '완료');
+    .eq('user_edit_status', '완료');
   
   if (error) {
     allDataForMonth.value = [];

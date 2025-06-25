@@ -107,11 +107,11 @@ async function loadDetailData() {
   try {
     // 1. 상세 데이터 조회 (v_review_details 뷰 사용으로 변경)
     const { data, error } = await supabase
-      .from('v_review_details')
+      .from('review_details_view')
       .select('*')
       .eq('settlement_month', month.value)
       .eq('company_id', companyId.value)
-      .eq('review_status', '완료');
+      .eq('user_edit_status', '완료');
       
     if (error) throw error;
     
@@ -122,7 +122,7 @@ async function loadDetailData() {
       prescription_qty: row.prescription_qty.toLocaleString(),
       prescription_amount: row.prescription_amount,
       commission_rate: `${(row.commission_rate * 100).toFixed(2)}%`,
-      payment_amount: Math.round(row.payment_amount).toLocaleString(),
+      payment_amount: (row.payment_amount || 0).toLocaleString(),
     }));
 
     // 3. 데이터 정렬

@@ -140,9 +140,9 @@ watch(selectedMonth, async (newMonth) => {
 async function fetchAvailableMonths() {
     try {
         const { data, error } = await supabase
-            .from('v_review_details')
+            .from('review_details_view')
             .select('settlement_month', { distinct: true })
-            .eq('review_status', '완료');
+            .eq('user_edit_status', '완료');
             
         if (error) throw error;
         
@@ -170,10 +170,10 @@ async function loadSettlementData() {
     
     try {
         const { data: details, error: detailsError } = await supabase
-            .from('v_review_details')
+            .from('review_details_view')
             .select('*')
             .eq('settlement_month', selectedMonth.value)
-            .eq('review_status', '완료');
+            .eq('user_edit_status', '완료');
         
         if (detailsError) throw detailsError;
 
@@ -209,7 +209,7 @@ async function loadSettlementData() {
             summary.client_count.add(row.client_id);
             summary.prescription_count += 1;
             summary.total_prescription_amount += row.prescription_amount || 0;
-            summary.total_payment_amount += Math.round(row.payment_amount || 0);
+            summary.total_payment_amount += row.payment_amount || 0;
         });
         
         const finalSummary = Array.from(summaryMap.values()).map(s => {
