@@ -163,7 +163,7 @@
         </Column>
         <Column
           field="unit_packaging_desc"
-          header="단위/포장형태"
+          header="단위 / 포장형태"
           :headerStyle="{ width: columnWidths.unit_packaging_desc }"
           :sortable="true"
         >

@@ -173,11 +173,8 @@ onMounted(async () => {
       console.error('[App.vue] onMounted: Error in getSession()', error);
   }
 
-
+    
   supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log(`[App.vue] onAuthStateChange: Event: ${event}, Current Path: ${router.currentRoute.value.path}`, { session });
-    await nextTick(); // Vue 상태 업데이트 및 라우터 변경 감지를 위해 nextTick 사용
-
     setUserState(session?.user); // 이벤트 발생 시마다 사용자 상태 업데이트
 
     if (event === 'INITIAL_SESSION') {
@@ -188,19 +185,16 @@ onMounted(async () => {
       await handleRedirect(session); // 로그인 시 리디렉션
     } else if (event === 'SIGNED_OUT') {
       console.log('[App.vue] Event: SIGNED_OUT');
-      // setUserState(null); // 이미 위에서 호출됨
       await handleRedirect(null); // 로그아웃 시 리디렉션 (세션 없음)
     } else if (event === 'USER_UPDATED') {
-        console.log('[App.vue] Event: USER_UPDATED. User metadata might have changed.');
-        // 사용자 메타데이터(예: 역할)가 변경되었을 수 있으므로, 리디렉션 로직 재실행 고려
-        // 다만, 역할 변경이 즉각적인 페이지 이동을 강제해야 하는지는 정책에 따라 다름.
-        // 필요하다면 handleRedirect(session) 호출. 현재는 상태 업데이트만 함.
+      console.log('[App.vue] Event: USER_UPDATED. User metadata might have changed.');
+      // 필요하다면 handleRedirect(session) 호출
     } else if (event === 'PASSWORD_RECOVERY') {
-        console.log('[App.vue] Event: PASSWORD_RECOVERY. User may need to be redirected to a password reset page.');
-        // 필요한 경우 비밀번호 재설정 페이지로 리디렉션
+      console.log('[App.vue] Event: PASSWORD_RECOVERY. User may need to be redirected to a password reset page.');
+      // 필요한 경우 비밀번호 재설정 페이지로 리디렉션
     } else if (event === 'TOKEN_REFRESHED') {
-        console.log('[App.vue] Event: TOKEN_REFRESHED. Session token has been refreshed.');
-        // 특별한 조치 불필요. 세션은 계속 유효.
+      console.log('[App.vue] Event: TOKEN_REFRESHED. Session token has been refreshed.');
+      // 특별한 조치 불필요
     }
   });
 });
