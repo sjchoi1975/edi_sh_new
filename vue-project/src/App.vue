@@ -173,7 +173,7 @@ onMounted(async () => {
       console.error('[App.vue] onMounted: Error in getSession()', error);
   }
 
-  
+    
   supabase.auth.onAuthStateChange(async (event, session) => {
     setUserState(session?.user); // 이벤트 발생 시마다 사용자 상태 업데이트
 
