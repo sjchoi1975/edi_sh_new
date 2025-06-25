@@ -173,7 +173,7 @@ onMounted(async () => {
       console.error('[App.vue] onMounted: Error in getSession()', error);
   }
 
-
+  
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log(`[App.vue] onAuthStateChange: Event: ${event}, Current Path: ${router.currentRoute.value.path}`, { session });
     await nextTick(); // Vue 상태 업데이트 및 라우터 변경 감지를 위해 nextTick 사용
