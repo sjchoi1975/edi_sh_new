@@ -1654,15 +1654,15 @@ select.input-editable {
 
 /* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
 /* --- 중앙 정렬 (작업, 처방월, 보험코드, 처방구분, 흡수율, 수수료율, 등록일시) --- */
-.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(6), :nth-child(10), :nth-child(14), :nth-child(15), :nth-child(18)) {
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(5), :nth-child(7), :nth-child(11), :nth-child(15), :nth-child(16), :nth-child(19)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (업체명, 거래처, 제품명, 비고, 등록자) --- */
-.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(5), :nth-child(17), :nth-child(19)) {
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(6), :nth-child(18), :nth-child(20)) {
   text-align: left !important;
 }
 /* --- 우측 정렬 (약가, 처방수량, 처방액, 도매매출, 직거래매출, 합산액, 지급액) --- */
-.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(7), :nth-child(8), :nth-child(9), :nth-child(11), :nth-child(12), :nth-child(13), :nth-child(16)) {
+.absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(8), :nth-child(9), :nth-child(10), :nth-child(12), :nth-child(13), :nth-child(14), :nth-child(17)) {
   text-align: right !important;
 }
 

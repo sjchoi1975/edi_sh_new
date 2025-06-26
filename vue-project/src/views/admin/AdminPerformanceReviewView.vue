@@ -519,6 +519,8 @@ async function syncNewRecordsToAnalysis() {
     const recordsToInsert = newRecordIds.map(id => ({ 
       performance_record_id: id, 
       review_status: '검수중',
+      company_id_add: null,
+      client_id_add: null
     }));
 
     await supabase.from('absorption_analysis').insert(recordsToInsert).throwOnError();

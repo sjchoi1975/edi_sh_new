@@ -90,14 +90,14 @@ import { supabase } from '@/supabase';
 const columnWidths = {
   no: '4%',
   company_type: '8%',
-  company_name: '16%',
+  company_name: '14%',
   business_registration_number: '10%',
   representative_name: '8%',
   manager_name: '8%',
-  client_count: '8%',
-  prescription_count: '8%',
-  total_prescription_amount: '10%',
-  total_payment_amount: '10%',
+  client_count: '9%',
+  prescription_count: '9%',
+  total_prescription_amount: '9%',
+  total_payment_amount: '9%',
   detail: '6%',
   share: '6%'
 };
@@ -169,55 +169,13 @@ async function loadSettlementData() {
     shareChanges.value = {};
     
     try {
-        const { data: details, error: detailsError } = await supabase
-            .from('review_details_view')
-            .select('*')
-            .eq('settlement_month', selectedMonth.value)
-            .eq('user_edit_status', '완료');
-        
-        if (detailsError) throw detailsError;
-
-        const { data: shares, error: sharesError } = await supabase
-            .from('settlement_share')
-            .select('*')
-            .eq('settlement_month', selectedMonth.value);
-
-        if (sharesError) throw sharesError;
-        
-        const sharesMap = new Map(shares.map(s => [s.company_id, { is_shared: s.share_enabled, settlement_share_id: s.id }]));
-
-        const summaryMap = new Map();
-
-        details.forEach(row => {
-            if (!summaryMap.has(row.company_id)) {
-                summaryMap.set(row.company_id, {
-                    company_id: row.company_id,
-                    company_type: row.company_type,
-                    company_name: row.company_name,
-                    business_registration_number: row.business_registration_number,
-                    representative_name: row.representative_name,
-                    manager_name: row.manager_name,
-                    client_count: new Set(),
-                    prescription_count: 0,
-                    total_prescription_amount: 0,
-                    total_payment_amount: 0,
-                    is_shared: sharesMap.has(row.company_id) ? sharesMap.get(row.company_id).is_shared : false,
-                    settlement_share_id: sharesMap.has(row.company_id) ? sharesMap.get(row.company_id).settlement_share_id : null,
-                });
-            }
-            const summary = summaryMap.get(row.company_id);
-            summary.client_count.add(row.client_id);
-            summary.prescription_count += 1;
-            summary.total_prescription_amount += row.prescription_amount || 0;
-            summary.total_payment_amount += row.payment_amount || 0;
+        const { data: summaryData, error } = await supabase.rpc('get_settlement_summary_by_company', {
+            p_settlement_month: selectedMonth.value
         });
         
-        const finalSummary = Array.from(summaryMap.values()).map(s => {
-            s.client_count = s.client_count.size;
-            return s;
-        });
+        if (error) throw error;
 
-        companySummary.value = finalSummary.sort((a,b) => {
+        companySummary.value = summaryData.sort((a,b) => {
           if (b.total_payment_amount !== a.total_payment_amount) {
             return b.total_payment_amount - a.total_payment_amount;
           }

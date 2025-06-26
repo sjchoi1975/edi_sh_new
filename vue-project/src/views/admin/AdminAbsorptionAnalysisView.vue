@@ -87,6 +87,7 @@
             </template>
           </Column>
 
+          <Column field="company_type" header="구분" :headerStyle="{ width: columnWidths.company_type }" :sortable="true" :frozen="true" />
           <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true" :frozen="true" />
           <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" :frozen="true" />
           
@@ -127,8 +128,7 @@
 
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="3" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
-              <Column :colspan="1" footerClass="footer-cell" />
+              <Column footer="합계" :colspan="4" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
               <Column :colspan="1" footerClass="footer-cell" :frozen="true" />
               <Column :colspan="3" footerClass="footer-cell" />
               <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
@@ -159,12 +159,13 @@ import * as XLSX from 'xlsx';
 
 const columnWidths = {
   review_action: '4%',
-  company_name: '9%',
-  client_name: '14%',
-  prescription_month: '5%',
-  product_name_display: '14%',
-  insurance_code: '6%',
-  price: '5%',
+  company_type: '8%',
+  company_name: '12%',
+  client_name: '12%',
+  prescription_month: '6%',
+  product_name_display: '12%',
+  insurance_code: '8%',
+  price: '6%',
   prescription_qty: '6%',
   prescription_amount: '7%',
   prescription_type: '7%',
@@ -174,9 +175,9 @@ const columnWidths = {
   absorption_rate: '6%',
   commission_rate: '6%',
   payment_amount: '7%',
-  remarks: '10%',
+  remarks: '12%',
   created_date: '9%',
-  created_by: '9%'
+  created_by: '10%'
 };
 
 // --- 상태 변수 정의 ---
@@ -290,7 +291,7 @@ async function loadAnalysisData() {
   try {
     let query = supabase
       .from('review_details_view')
-      .select('*')
+      .select(`*`)
       .eq('settlement_month', selectedSettlementMonth.value)
       .eq('user_edit_status', '완료');
     
@@ -309,6 +310,31 @@ async function loadAnalysisData() {
     const { data, error } = await query;
     if (error) throw error;
 
+    const userIds = [...new Set(data.map(row => row.registered_by).filter(Boolean))];
+    const usersMap = new Map();
+
+    if (userIds.length > 0) {
+      // Create a map to store promises for each user name fetch
+      const userPromises = userIds.map(async (userId) => {
+        try {
+          const { data: userData, error: userError } = await supabase.rpc('get_user_name_by_id', { p_user_id: userId });
+          if (userError) throw userError;
+          return { id: userId, name: userData };
+        } catch (err) {
+          console.error(`Failed to fetch user name for ${userId}:`, err);
+          return { id: userId, name: '사용자 조회 실패' };
+        }
+      });
+
+      // Wait for all promises to resolve
+      const userResults = await Promise.all(userPromises);
+      
+      // Populate the usersMap
+      userResults.forEach(user => {
+        usersMap.set(user.id, user.name || '알 수 없음');
+      });
+    }
+
     let mappedData = data.map(row => {
         const wholesale_revenue = 0;
         const direct_revenue = 0;
@@ -317,6 +343,7 @@ async function loadAnalysisData() {
 
         return {
             ...row,
+            created_by: usersMap.get(row.registered_by) || 'N/A',
             price: row.price?.toLocaleString() || 0,
             prescription_amount: row.prescription_amount?.toLocaleString() || 0,
             commission_rate: `${(row.commission_rate * 100).toFixed(1)}%`,
@@ -335,6 +362,7 @@ async function loadAnalysisData() {
       const orderB_action = actionOrder[b.review_action] || 4;
       if (orderA_action !== orderB_action) return orderA_action - orderB_action;
 
+      if (a.company_type !== b.company_type) return a.company_type.localeCompare(b.company_type, 'ko');
       if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
       if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
       if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
@@ -450,6 +478,7 @@ function downloadExcel() {
   // 1. 데이터 준비 (엑셀 서식을 위해 숫자/날짜 타입으로 변환)
   const dataToExport = displayRows.value.map(row => ({
     '작업': row.review_action || '-',
+    '구분': row.company_type,
     '업체명': row.company_name,
     '병의원명': row.client_name,
     '처방월': row.prescription_month,
