@@ -19,7 +19,7 @@ const app = createApp(App);
 
 app.use(router);
 app.use(PrimeVue, {
-  theme: Aura, // 여기만 남기세요!
+  theme: Aura,
   ripple: true,
   inputStyle: 'filled',
 });

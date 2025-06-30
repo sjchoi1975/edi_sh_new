@@ -189,8 +189,8 @@
                   >추가</button>
                 </td>
                 <td style="width:8%;text-align:center;">
-                  <span :class="getStatusClass(row.user_edit_status || '대기중')">
-                    {{ getStatusLabel(row.user_edit_status) }}
+                  <span :class="getStatusClass(row.review_status || '대기')">
+                    {{ getStatusLabel(row.review_status) }}
                   </span>
                 </td>
               </tr>
@@ -245,12 +245,15 @@ const inputRows = ref([{
   prescription_qty: '', 
   prescription_amount: '', 
   prescription_type: 'EDI', 
-  remarks: '' 
+  remarks: '',
+  commission_rate_a: null,
+  commission_rate_b: null,
+  review_status: '대기',
 }]);
 
-// 편집 가능 여부 (user_edit_status에 따라 결정)
+// 편집 가능 여부 (review_status에 따라 결정)
 const isInputEnabled = ref(true);
-const userEditStatus = ref('대기');
+const reviewStatus = ref('대기');
 const statusMessage = ref('');
 const canSave = computed(() => {
   const currentValidRows = getValidRows(inputRows.value);
@@ -262,11 +265,14 @@ function getValidRows(rows) {
   return rows
     .filter(row => row.product_id && row.prescription_qty)
     .map(row => ({
+      id: row.id,
       prescription_month: row.prescription_month,
       product_id: row.product_id,
       prescription_qty: String(row.prescription_qty || '').replace(/,/g, ''),
       prescription_type: row.prescription_type,
-      remarks: row.remarks || ''
+      remarks: row.remarks || '',
+      commission_rate_a: row.commission_rate_a,
+      commission_rate_b: row.commission_rate_b
     }));
 }
 
@@ -390,12 +396,12 @@ function getStatusClass(status) {
 function getStatusLabel(status) {
   if (status === '완료') return '완료';
   if (status === '검수중') return '검수중';
-  return '대기중';
+  return '대기';
 }
 
 // 편집 상태 확인 및 메시지 설정
 function checkEditStatus() {
-  switch (userEditStatus.value) {
+  switch (reviewStatus.value) {
     case '대기':
       isInputEnabled.value = true;
       statusMessage.value = '';
@@ -425,7 +431,7 @@ async function checkPerformanceEditStatus() {
     // 해당 거래처의 실적 중 하나라도 검수중/완료 상태인지 확인
     const { data, error } = await supabase
       .from('performance_records')
-      .select('user_edit_status')
+      .select('review_status')
       .eq('settlement_month', selectedSettlementMonth.value)
       .eq('prescription_month', prescriptionMonth.value)
       .eq('client_id', clientId)
@@ -436,9 +442,9 @@ async function checkPerformanceEditStatus() {
     }
 
     if (data && data.length > 0) {
-      userEditStatus.value = data[0].user_edit_status || '대기중';
+      reviewStatus.value = data[0].review_status || '대기';
     } else {
-      userEditStatus.value = '대기중';
+      reviewStatus.value = '대기';
     }
 
     checkEditStatus();
@@ -549,6 +555,8 @@ function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].product_id = product.id;
   inputRows.value[rowIndex].insurance_code = product.insurance_code;
   inputRows.value[rowIndex].price = product.price ? Number(product.price).toLocaleString() : '';
+  inputRows.value[rowIndex].commission_rate_a = product.commission_rate_a;
+  inputRows.value[rowIndex].commission_rate_b = product.commission_rate_b;
   productSearchForRow.value.show = false;
   productSearchForRow.value.activeRowIndex = -1;
   nextTick(() => {
@@ -722,7 +730,9 @@ function addOrFocusNextRow(rowIdx) {
         prescription_amount: '', 
         prescription_type: 'EDI',
         remarks: '',
-        user_edit_status: '대기중',
+        commission_rate_a: null,
+        commission_rate_b: null,
+        review_status: '대기',
       });
     }
     // 다음 행의 제품명으로 이동
@@ -748,7 +758,9 @@ function addOrFocusNextRow(rowIdx) {
         prescription_amount: '', 
         prescription_type: 'EDI',
         remarks: '',
-        user_edit_status: '대기중',
+        commission_rate_a: null,
+        commission_rate_b: null,
+        review_status: '대기',
       });
     }
     // 다음 행의 제품명으로 이동
@@ -817,70 +829,111 @@ function cellClass(rowIdx, col) {
 
 // 실적 저장로직 - 기존 데이터를 삭제 후 새로 저장
 async function savePerformanceData() {
-  // clientId와 settlementMonth를 query에서 찾음
   const clientId = route.query.clientId;
   const settlementMonth = route.query.settlementMonth;
-  
   if (!settlementMonth || !clientId) {
     throw new Error('정산월이나 병원이 선택되지 않았습니다.');
   }
 
-  // 1. 행 분류
-  const completeRows = [];
-  inputRows.value.forEach((row, index) => {
-    const hasProduct = !!row.product_id;
-    const hasQty = !!row.prescription_qty;
-
-    if (hasProduct && hasQty) {
-      completeRows.push({ ...row, rowNumber: index + 1 });
-    }
-  });
-  // 2. 저장할 데이터가 없는 경우
-  if (completeRows.length === 0) {
-    throw new Error('저장할 실적 데이터가 없습니다.');
-  }
-
-  // 3. 현재 사용자 정보 가져오기
+  // 현재 사용자 정보 가져오기
   const { data: { session } } = await supabase.auth.getSession();
   const userUid = session?.user?.id;
   if (!userUid) {
     throw new Error('로그인 정보를 확인할 수 없습니다.');
   }
 
-  // 4. 사용자의 회사 정보 가져오기
-  const { data: myCompany } = await supabase.from('companies').select('id').eq('user_id', userUid).single();
+  const { data: myCompany } = await supabase.from('companies').select('id, default_commission_grade').eq('user_id', userUid).single();
   if (!myCompany) {
     throw new Error('회사 정보를 찾을 수 없습니다.');
   }
 
-  // 5. 기존 데이터 삭제 (해당 정산월 병원의 모든 실적)
-  await supabase
-    .from('performance_records')
-    .delete()
-    .eq('company_id', myCompany.id)
-    .eq('settlement_month', settlementMonth)
-    .eq('client_id', Number(clientId));
-  // 6. 새로운 데이터 준비
-  const performanceData = completeRows.map(row => ({
-    company_id: myCompany.id,
-    settlement_month: settlementMonth,
-    prescription_month: row.prescription_month,
-    client_id: Number(clientId),
-    product_id: row.product_id,
-    prescription_qty: parseInt(row.prescription_qty.toString().replace(/,/g, '')),
-    prescription_type: row.prescription_type || 'EDI',
-    remarks: row.remarks || null,
-    registered_by: userUid
-  }));
-  // 7. 새로운 데이터 저장
-  const { error } = await supabase
-    .from('performance_records')
-    .insert(performanceData);
-  if (error) {
-    throw new Error('실적 저장시 오류가 발생했습니다.');
+  const currentValidRows = getValidRows(inputRows.value);
+  const originalValidRows = originalRows.value; // 이제 getValidRows를 이미 통과한 상태
+
+  // 변경된 행, 추가된 행, 삭제된 행 식별
+  const rowsToUpdate = currentValidRows.filter(currentRow => {
+    if (!currentRow.id) return false;
+    const originalRow = originalValidRows.find(or => or.id === currentRow.id);
+    if (!originalRow) return false;
+    return (
+      currentRow.prescription_month !== originalRow.prescription_month ||
+      currentRow.product_id !== originalRow.product_id ||
+      currentRow.prescription_qty !== originalRow.prescription_qty ||
+      currentRow.prescription_type !== originalRow.prescription_type ||
+      currentRow.remarks !== originalRow.remarks
+    );
+  });
+
+  const rowsToInsert = currentValidRows.filter(currentRow => !currentRow.id);
+  const rowsToDelete = originalValidRows.filter(originalRow => !currentValidRows.some(cr => cr.id === originalRow.id));
+
+  // 1. INSERT
+  if (rowsToInsert.length > 0) {
+    const dataToInsert = rowsToInsert.map(row => {
+      const grade = myCompany.default_commission_grade;
+      let commissionRate = 0;
+      if (grade === 'A') {
+        commissionRate = row.commission_rate_a;
+      } else if (grade === 'B') {
+        commissionRate = row.commission_rate_b;
+      }
+
+      return {
+      company_id: myCompany.id,
+      settlement_month: settlementMonth,
+      prescription_month: row.prescription_month,
+      client_id: Number(clientId),
+      product_id: row.product_id,
+      prescription_qty: parseInt(row.prescription_qty),
+      prescription_type: row.prescription_type,
+      remarks: row.remarks,
+      registered_by: userUid,
+        review_status: '대기',
+        commission_rate: commissionRate
+      };
+    });
+    const { error } = await supabase.from('performance_records').insert(dataToInsert);
+    if (error) throw new Error(`실적 추가 중 오류: ${error.message}`);
   }
 
-  return completeRows.length;
+  // 2. UPDATE
+  if (rowsToUpdate.length > 0) {
+    const updatePromises = rowsToUpdate.map(row => {
+      const grade = myCompany.default_commission_grade;
+      let commissionRate = 0;
+      if (grade === 'A') {
+        commissionRate = row.commission_rate_a;
+      } else if (grade === 'B') {
+        commissionRate = row.commission_rate_b;
+      }
+      return supabase
+        .from('performance_records')
+        .update({
+          prescription_month: row.prescription_month,
+          product_id: row.product_id,
+          prescription_qty: parseInt(row.prescription_qty),
+          prescription_type: row.prescription_type,
+          remarks: row.remarks,
+          commission_rate: commissionRate
+        })
+        .eq('id', row.id)
+    });
+    const results = await Promise.all(updatePromises);
+    const firstError = results.find(res => res.error);
+    if (firstError) throw new Error(`실적 수정 중 오류: ${firstError.error.message}`);
+  }
+
+  // 3. DELETE
+  if (rowsToDelete.length > 0) {
+    const deletePromises = rowsToDelete.map(row => 
+      supabase.from('performance_records').delete().eq('id', row.id)
+    );
+    const results = await Promise.all(deletePromises);
+    const firstError = results.find(res => res.error);
+    if (firstError) throw new Error(`실적 삭제 중 오류: ${firstError.error.message}`);
+  }
+
+  return currentValidRows.length;
 }
 
 // 저장 버튼 클릭 핸들러 (기존 데이터 삭제 후 새로 저장)
@@ -955,12 +1008,7 @@ async function loadExistingData() {
       .from('performance_records')
       .select(`
         *,
-        products (
-          id,
-          product_name,
-          insurance_code,
-          price
-        )
+        products ( * )
      
       `)
       .eq('company_id', myCompany.id)
@@ -974,6 +1022,7 @@ async function loadExistingData() {
     if (data && data.length > 0) {
       // 기존 데이터를 inputRows에 설정
       inputRows.value = data.map(record => ({
+        id: record.id,
         prescription_month: record.prescription_month,
         product_name_display: record.products?.product_name || '',
         product_id: record.product_id,
@@ -985,7 +1034,9 @@ async function loadExistingData() {
           : '',
         prescription_type: record.prescription_type || 'EDI',
         remarks: record.remarks || '',
-        user_edit_status: record.user_edit_status || '대기중',
+        review_status: record.review_status || '대기',
+        commission_rate_a: record.products?.commission_rate_a,
+        commission_rate_b: record.products?.commission_rate_b,
       }));
       
       // *** MODIFICATION START ***
@@ -1016,8 +1067,9 @@ async function loadExistingData() {
         prescription_amount: '', 
         prescription_type: 'EDI', 
         remarks: '',
-        user_edit_status: '대기중',
- 
+        review_status: '대기',
+        commission_rate_a: null,
+        commission_rate_b: null,
       });
     }
   } catch (err) {
@@ -1040,7 +1092,7 @@ const totalAmount = computed(() => {
 function addRowBelow(idx) {
   inputRows.value.splice(idx + 1, 0, {
     prescription_month: getDefaultPrescriptionMonth(),
-    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', remarks: '', user_edit_status: '대기중',
+    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', remarks: '', review_status: '대기', commission_rate_a: null, commission_rate_b: null,
   });
   nextTick(() => focusField(idx + 1, 'product_name'));
 }
@@ -1113,13 +1165,13 @@ function handleGlobalClick(e) {
 }
 
 function isRowEditable(row) {
-  const status = row.user_edit_status;
-  return status === '대기' || status === '대기중' || !status;
+  const status = row.review_status;
+  return status === '대기' || !status;
 }
 
 // 검수중/완료 행이 하나라도 있으면 안내문구 표시
 const hasNonEditableRow = computed(() => inputRows.value.some(row => {
-  const status = row.user_edit_status || '대기중';
+  const status = row.review_status || '대기';
   return status === '완료' || status === '검수중';
 }));
 // 항상 마지막에 입력 가능한 빈 행이 1개 남아있도록 유지
@@ -1137,7 +1189,9 @@ watch(inputRows, (rows) => {
       prescription_amount: '',
       prescription_type: 'EDI',
       remarks: '',
-      user_edit_status: '대기중',
+      review_status: '대기',
+      commission_rate_a: null,
+      commission_rate_b: null,
     });
   }
 }, { deep: true });

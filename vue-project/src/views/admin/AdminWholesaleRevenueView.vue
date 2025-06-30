@@ -225,6 +225,13 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 
+console.log('supabase:', supabase);
+
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('userId:', user?.id);
+})();
+
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
@@ -352,12 +359,12 @@ const cancelEdit = (row) => {
 // 수정 저장
 const saveEdit = async (row) => {
   try {
-    // 필수 필드 검증 (매출액, 매출일자 제외)
     if (!row.business_registration_number || !row.standard_code) {
-      // 매출액, 매출일자 필수 검증 제거
       alert('사업자등록번호, 표준코드는 필수 항목입니다.')
       return
     }
+
+    const userId = await getCurrentUserId();
 
     const updateData = {
       pharmacy_code: row.pharmacy_code || '',
@@ -366,8 +373,9 @@ const saveEdit = async (row) => {
       address: row.address || '',
       standard_code: row.standard_code,
       product_name: row.product_name || '',
-      sales_amount: row.sales_amount ? Number(row.sales_amount) : null, // NULL 가능하도록 수정
-      sales_date: row.sales_date || null, // 빈 문자열이면 null로 처리
+      sales_amount: row.sales_amount ? Number(row.sales_amount) : null,
+      sales_date: row.sales_date || null,
+      updated_by: userId
     }
 
     const { error } = await supabase.from('wholesale_sales').update(updateData).eq('id', row.id)
@@ -377,10 +385,8 @@ const saveEdit = async (row) => {
       return
     }
 
-    // 편집 모드 종료
     row.isEditing = false
     row.originalData = { ...row }
-
     alert('수정되었습니다.')
   } catch (error) {
     console.error('수정 오류:', error)
@@ -474,6 +480,8 @@ const handleFileUpload = async (event) => {
     const uploadData = []
     const errors = []
 
+    const userId = await getCurrentUserId();
+
     jsonData.forEach((row, index) => {
       const rowNum = index + 2 // 엑셀 행 번호 (헤더 제외)
 
@@ -523,6 +531,7 @@ const handleFileUpload = async (event) => {
         product_name: row['제품명'] || '',
         sales_amount: salesAmount, // NULL 가능
         sales_date: salesDate, // NULL 가능
+        created_by: userId
       })
     })
 
@@ -615,6 +624,11 @@ async function deleteAllRevenues() {
   }
   revenues.value = []
   alert('모든 도매매출 데이터가 삭제되었습니다.')
+}
+
+async function getCurrentUserId() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id;
 }
 
 onMounted(() => {

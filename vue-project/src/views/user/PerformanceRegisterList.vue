@@ -157,17 +157,17 @@
             :sortable="true"
           />
           <Column
-            field="user_edit_status"
+            field="review_status"
             header="검수"
-            :headerStyle="{ width: columnWidths.user_edit_status }"
+            :headerStyle="{ width: columnWidths.review_status }"
             :sortable="true"
           >
             <template #body="slotProps">
               <span 
-                :class="getStatusClass(slotProps.data.user_edit_status)"
+                :class="getStatusClass(slotProps.data.review_status)"
                 style="font-size: var(--font-size-sm); font-weight: 400; padding: 2px 6px; border-radius: 4px;"
               >
-                {{ slotProps.data.user_edit_status }}
+                {{ slotProps.data.review_status }}
               </span>
             </template>
           </Column>
@@ -210,7 +210,7 @@ const columnWidths = {
   prescription_amount: '6%',
   prescription_type: '7%',
   remarks: '10%',
-  user_edit_status: '5%'
+  review_status: '5%'
 }
 
 // 반응형 데이터
@@ -1498,7 +1498,7 @@ async function fetchPerformanceRecords() {
         prescription_amount: prescriptionAmount.toLocaleString(),
         prescription_type: record.prescription_type || '',
         remarks: record.remarks || '',
-        user_edit_status: record.user_edit_status || '대기',
+        review_status: record.review_status || '대기',
       }
     });
 
@@ -1566,7 +1566,7 @@ function downloadExcel() {
       ? Number(row.prescription_amount.toString().replace(/,/g, ''))
       : 0,
     처방구분: row.prescription_type || '',
-    '확인(검수)': row.user_edit_status || '대기',
+    '확인(검수)': row.review_status || '대기',
     비고: row.remarks || '',
   }))
   console.log('엑셀 다운로드 - excelData:', excelData)

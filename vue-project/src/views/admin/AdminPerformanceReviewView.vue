@@ -33,9 +33,18 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>상태</label>
-          <select v-model="selectedReviewStatus" class="select_100px">
-            <option v-for="opt in reviewStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          <select v-model="selectedStatus" class="select_100px">
+            <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+          <button 
+            class="btn-primary" 
+            @click="loadPerformanceData" 
+            :disabled="loading || isAnyEditing"
+          >
+            불러오기
+          </button>
         </div>
       </div>
     </div>
@@ -45,22 +54,15 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div v-if="!loading && displayRows.length === 0" class="header-center-message">
-          필터 조건을 선택하고 '실적 정보 불러오기'를 클릭하세요.
+          필터 조건을 선택하고 '불러오기'를 클릭하세요.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
-           <button 
-            class="btn-primary" 
-            @click="loadPerformanceData" 
-            :disabled="loading || isAnyEditing"
-          >
-            실적 정보 불러오기
-          </button>
            <button class="btn-secondary" @click="selectAll" :disabled="isAnyEditing">전체 선택</button>
            <button class="btn-secondary" @click="unselectAll" :disabled="isAnyEditing">전체 해제</button>
-           <button class="btn-primary" @click="changeReviewStatus" :disabled="selectedRows.length === 0 || isAnyEditing">
+           <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
              검수 상태 변경 ({{ selectedRows.length }}건)
            </button>
-           <button class="btn-warning" @click="removeFromReview" :disabled="selectedRows.length === 0 || isAnyEditing">
+           <button class="btn-warning" @click="excludeFromReview" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
              검수 대상 제외 ({{ selectedRows.length }}건)
            </button>
         </div>
@@ -70,22 +72,25 @@
         <DataTable 
           :value="displayRows" 
           :loading="loading"
+          v-model:editingRows="editingRows"
+          editMode="row"
+          @row-edit-save="onRowEditSave"
+          :rowClass="getRowClass"
           scrollable 
           scrollHeight="calc(100vh - 220px)"
           class="admin-performance-review-table"
-          :rowClass="getRowClass"
-          :pt="{
-            wrapper: { style: 'min-width: 2400px;' },
-            table: { style: 'min-width: 2400px;' }
-          }"
           dataKey="id"
+          :pt="{
+            wrapper: { style: 'min-width: 2200px;' },
+            table: { style: 'min-width: 2200px;' }
+          }"
         >
           <template #empty>
             <div v-if="loading">데이터를 불러오는 중입니다.</div>
-            <div v-else>필터 조건을 선택하고 '실적 정보 불러오기'를 클릭하세요.</div>
+            <div v-else>필터 조건을 선택하고 '불러오기'를 클릭하세요.</div>
           </template>
           
-          <Column :headerStyle="{ width: columnWidths.checkbox }">
+          <Column :headerStyle="{ width: columnWidths.checkbox }" :frozen="true">
             <template #header>
               <span style="font-weight: 500 !important; text-align: center !important; margin-left: 10px !important;">선택</span>
             </template>
@@ -94,9 +99,9 @@
             </template>
           </Column>
 
-          <Column header="상태" field="user_edit_status" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
+          <Column header="상태" field="display_status" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
-              <Tag :value="slotProps.data.user_edit_status" :severity="slotProps.data.user_edit_status === '완료' ? 'success' : 'warning'"/>
+              <Tag :value="slotProps.data.display_status" :severity="getStatusSeverity(slotProps.data.display_status)"/>
             </template>
           </Column>
 
@@ -117,8 +122,8 @@
                   <button class="btn-restore-sm" @click="restoreRow(slotProps.data)" title="되돌리기" :disabled="isAnyEditing">↶</button>
                 </template>
                 <template v-else>
-                  <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정" :disabled="slotProps.data.user_edit_status === '완료' || isAnyEditing">✎</button>
-                  <button class="btn-delete-sm" @click="confirmDeleteRow(slotProps.data)" title="삭제" :disabled="slotProps.data.user_edit_status === '완료' || isAnyEditing">－</button>
+                  <button class="btn-edit-sm" @click="startEdit(slotProps.data)" title="수정" :disabled="slotProps.data.display_status === '완료' || isAnyEditing">✎</button>
+                  <button class="btn-delete-sm" @click="confirmDeleteRow(slotProps.data)" title="삭제" :disabled="slotProps.data.display_status === '완료' || isAnyEditing">－</button>
                   <button class="btn-add-sm" @click="addRowBelow(slotProps.data)" title="추가" :disabled="isAnyEditing">＋</button>
                 </template>
               </div>
@@ -133,15 +138,6 @@
               <select v-if="slotProps.data.isEditing"
                       v-model="slotProps.data.prescription_month_modify"
                       class="edit-mode-input"
-                      :ref="el => setFieldRef(slotProps.data.id, 'prescription_month', el)"
-                      @keydown.enter.prevent="handlePrescriptionMonthSelect(slotProps.data)"
-                      @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_month', $event)"
-                      @keydown.down.prevent="handlePrescriptionMonthDownKey(slotProps.data, $event)"
-                      @keydown.up.prevent="handlePrescriptionMonthUpKey(slotProps.data, $event)"
-                      @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_month', 'left')"
-                      @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_month', 'right')"
-                      @focus="handlePrescriptionMonthFocus(slotProps.data)"
-                      @change="handleEditCalculations(slotProps.data, 'month')"
               >
                 <option v-for="month in prescriptionMonthOptionsForEdit" :key="month" :value="month">{{ month }}</option>
               </select>
@@ -155,32 +151,16 @@
                   <input
                     v-model="slotProps.data.product_name_search"
                     @input="handleProductNameInput(slotProps.data, $event)"
-                    @keydown.enter.prevent="applySelectedProductFromSearch(slotProps.data)"
-                    @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'product_name', $event)"
-                    @keydown.down.prevent="handleProductNameDownKey(slotProps.data, $event)"
-                    @keydown.up.prevent="handleProductNameUpKey(slotProps.data, $event)"
-                    @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'product_name', 'left')"
-                    @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'product_name', 'right')"
                     @focus="handleProductNameFocus(slotProps.data)"
-                    @blur="setTimeout(() => hideProductSearchList(slotProps.data), 200)"
+                    @blur="delayedHideProductSearchList(slotProps.data)"
+                    :ref="el => setProductInputRef(slotProps.data.id, el)"
                     autocomplete="off"
                     class="edit-mode-input"
-                    :class="cellClass(rowIdx, 'product_name')"
-                    :ref="el => setProductInputRef(slotProps.data.id, el)"
                   />
-                  <button 
-                    type="button" 
-                    @click="toggleProductDropdown(slotProps.data)"
-                    @mousedown.prevent
-                    class="dropdown-arrow-btn"
-                    tabindex="-1"
-                  >
-                    <span class="dropdown-arrow">▼</span>
-                  </button>
                   <teleport to="body">
-                    <div v-if="slotProps.data.showProductSearchList && productDropdownStyle[slotProps.data.id]"
+                    <div v-if="slotProps.data.showProductSearchList"
                       class="product-search-list"
-                      :style="{ ...productDropdownStyle[slotProps.data.id], zIndex: 1002 }"
+                      :style="slotProps.data.productDropdownStyle"
                     >
                       <div
                         v-for="(product, idx) in slotProps.data.productSearchResults"
@@ -213,12 +193,6 @@
                 v-model="slotProps.data.prescription_qty_modify"
                 type="number"
                 class="edit-mode-input"
-                :class="cellClass(rowIdx, 'prescription_qty')"
-                :ref="el => setFieldRef(slotProps.data.id, 'prescription_qty', el)"
-                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'prescription_qty', $event)"
-                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_qty', $event)"
-                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_qty', 'left')"
-                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_qty', 'right')"
                 @change="handleEditCalculations(slotProps.data, 'qty')"
               />
               <span v-else>{{ Number(slotProps.data.prescription_qty).toLocaleString() }}</span>
@@ -236,14 +210,6 @@
                 v-if="slotProps.data.isEditing"
                 v-model="slotProps.data.prescription_type_modify"
                 class="edit-mode-input"
-                :ref="el => setFieldRef(slotProps.data.id, 'prescription_type', el)"
-                @keydown.enter.prevent="handlePrescriptionTypeSelect(slotProps.data)"
-                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'prescription_type', $event)"
-                @keydown.down.prevent="handlePrescriptionTypeDownKey(slotProps.data, $event)"
-                @keydown.up.prevent="handlePrescriptionTypeUpKey(slotProps.data, $event)"
-                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'prescription_type', 'left')"
-                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'prescription_type', 'right')"
-                @focus="handlePrescriptionTypeFocus(slotProps.data)"
               >
                 <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
               </select>
@@ -252,47 +218,38 @@
           </Column>
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true">
             <template #body="slotProps">
-              <input
-                v-if="slotProps.data.isEditing"
+              <input 
+                v-if="slotProps.data.isEditing" 
                 v-model="slotProps.data.commission_rate_modify"
-                type="number"
-                step="0.1"
+                type="number" 
                 class="edit-mode-input"
-                :class="cellClass(rowIdx, 'commission_rate')"
-                :ref="el => setFieldRef(slotProps.data.id, 'commission_rate', el)"
-                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'commission_rate', $event)"
-                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'commission_rate', $event)"
-                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'commission_rate', 'left')"
-                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'commission_rate', 'right')"
                 @change="handleEditCalculations(slotProps.data, 'rate')"
               />
-              <span v-else>{{ String(slotProps.data.commission_rate).replace('%','') }}%</span>
+              <span v-else>{{ slotProps.data.commission_rate ? `${(slotProps.data.commission_rate * 100).toFixed(1)}%` : '' }}</span>
             </template>
           </Column>
           <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
             <template #body="slotProps">
-                <span v-if="slotProps.data.isEditing">{{ slotProps.data.payment_amount_modify?.toLocaleString() }}</span>
-                <span v-else>{{ slotProps.data.payment_amount }}</span>
+              <span v-if="slotProps.data.isEditing">{{ slotProps.data.payment_amount_modify?.toLocaleString() }}</span>
+              <span v-else>{{ slotProps.data.payment_amount }}</span>
             </template>
           </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
-              <input
-                v-if="slotProps.data.isEditing"
+              <input 
+                v-if="slotProps.data.isEditing" 
                 v-model="slotProps.data.remarks_modify"
                 class="edit-mode-input"
-                :class="cellClass(rowIdx, 'remarks')"
-                :ref="el => setFieldRef(slotProps.data.id, 'remarks', el)"
-                @keydown.enter.prevent="handleTabNavigation(slotProps.data, 'remarks', $event)"
-                @keydown.tab.prevent="handleTabNavigation(slotProps.data, 'remarks', $event)"
-                @keydown.left.prevent="handleArrowNavigation(slotProps.data, 'remarks', 'left')"
-                @keydown.right.prevent="handleArrowNavigation(slotProps.data, 'remarks', 'right')"
               />
               <span v-else>{{ slotProps.data.remarks }}</span>
             </template>
           </Column>
-          <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true" />
-          <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
+          <Column field="created_at" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true">
+            <template #body="slotProps">
+              {{ formatDateTime(slotProps.data.created_at) }}
+            </template>
+          </Column>
+          <Column field="registered_by_name" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
         </DataTable>
       </div>
     </div>
@@ -300,19 +257,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, getCurrentInstance, onBeforeUnmount, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Checkbox from 'primevue/checkbox';
 import Tag from 'primevue/tag';
-import Dropdown from 'primevue/dropdown';
-import InputNumber from 'primevue/inputnumber';
-import InputText from 'primevue/inputtext';
-import { supabase } from '@/supabase';
+import { v4 as uuidv4 } from 'uuid';
+import { useToast } from "primevue/usetoast";
+import Toast from 'primevue/toast';
 
-const router = useRouter();
+// --- 초기화 ---
+const toast = useToast();
 
+// --- 고정 변수 ---
 const columnWidths = {
   checkbox: '2.5%',
   review_status: '2.5%',
@@ -320,1202 +278,808 @@ const columnWidths = {
   actions: '5%',
   company_name: '7%',
   client_name: '10%',
-  prescription_month: '4.5%',
-  product_name_display: '12%',
-  insurance_code: '4.5%',
+  prescription_month: '4%',
+  product_name_display: '10%', 
+  insurance_code: '4%', 
   price: '3.5%',
-  prescription_qty: '3.5%',
-  prescription_amount: '4%',
+  prescription_qty: '3.5%', 
+  prescription_amount: '4%', 
   prescription_type: '5%',
   commission_rate: '4%',
-  payment_amount: '4%',
-  remarks: '10%',
+  payment_amount: '4%', 
+  remarks: '8%',
   created_date: '6%',
   created_by: '7%'
 };
+const prescriptionTypeOptions = ['EDI', 'ERP직거래자료', '매출자료', '약국조제', '원내매출', '원외매출', '차감'];
 
-// --- 상태 변수 ---
-const loading = ref(false);
-const displayRows = ref([]);
+// --- 상태 관리: 필터 ---
 const availableMonths = ref([]);
-const companyOptions = ref([]);
-const hospitalOptions = ref([]);
-const allProducts = ref([]);
+const selectedSettlementMonth = ref('');
+const prescriptionOffset = ref(1);
+const selectedCompanyId = ref(null);
+const selectedHospitalId = ref(null);
+
+const statusOptions = ref([
+  { value: null, label: '전체' },
+  { value: '완료', label: '완료' },
+  { value: '검수중', label: '검수중' },
+  { value: '대기', label: '신규' },
+]);
+const selectedStatus = ref('대기');
+
+const monthlyPerformanceLinks = ref([]);
+const monthlyCompanies = ref([]);
+const monthlyHospitals = ref([]);
+
+// --- 상태 관리: 데이터 테이블 ---
+const loading = ref(false);
+const rows = ref([]);
+const originalRows = ref([]);
+const selectedRows = ref([]);
+const activeEditingRowId = ref(null);
+const products = ref([]);
+const productInputRefs = ref({});
+
+// --- Computed 속성 ---
+const isAnyEditing = computed(() => activeEditingRowId.value !== null);
+
+const displayRows = computed(() => {
+  return rows.value.map(row => ({
+    ...row,
+    isEditing: row.id === activeEditingRowId.value,
+    display_status: row.review_status === '대기' ? '신규' : row.review_status
+  }));
+});
+
+const prescriptionOptions = computed(() => {
+  if (!selectedSettlementMonth.value) return [];
+  return [1, 2, 3].map(offset => ({
+    value: offset,
+    month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
+  }));
+});
 
 const prescriptionMonthOptionsForEdit = computed(() => {
-  if (!selectedSettlementMonth.value) return [];
-  const options = [];
-  const [year, month] = selectedSettlementMonth.value.split('-').map(Number);
-  // 현재 월의 -1, -2, -3개월을 계산
-  for (let i = 1; i <= 3; i++) {
-    const d = new Date(year, month - 1 - i, 15); // 일을 15일로 설정하여 월 계산 오류 방지
-    options.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  }
-  return options;
+    if (!selectedSettlementMonth.value) return [];
+    // 처방월 옵션을 3개월로 제한
+    return [1, 2, 3].map(offset => getPrescriptionMonth(selectedSettlementMonth.value, offset));
 });
 
-// 현재 열려있는 드롭다운 추적
-const activeDropdown = ref({ rowId: null, type: null });
+const companyOptions = computed(() => {
+    return [{ id: null, company_name: '전체' }, ...monthlyCompanies.value];
+});
 
-// --- 필터 ---
-const selectedSettlementMonth = ref('');
-const selectedCompanyId = ref('ALL');
-const selectedHospitalId = ref('ALL');
-const prescriptionOffset = ref(0);
-const selectedReviewStatus = ref('신규');
+const hospitalOptions = computed(() => {
+    if (!selectedCompanyId.value) {
+        return [{ id: null, name: '전체' }, ...monthlyHospitals.value];
+    }
+    const relevantClientIds = monthlyPerformanceLinks.value
+        .filter(link => link.company_id === selectedCompanyId.value)
+        .map(link => link.client_id);
+    const filteredHospitals = monthlyHospitals.value.filter(hospital => relevantClientIds.includes(hospital.id));
+    return [{ id: null, name: '전체' }, ...filteredHospitals];
+});
 
-const prescriptionOptions = ref([]);
-const reviewStatusOptions = [
-  { label: '- 전체 -', value: 'ALL' },
-  { label: '완료', value: '완료' },
-  { label: '검수중', value: '검수중' },
-  { label: '신규', value: '신규' },
-];
+// --- Watchers ---
+watch(selectedSettlementMonth, async (newMonth) => {
+    if (newMonth) {
+        await fetchFilterOptions(newMonth);
+        selectedCompanyId.value = null;
+        selectedHospitalId.value = null;
+    }
+});
 
-const statusOptions = ['전체', '대기', '검수중', '완료'];
+watch(selectedCompanyId, () => {
+    selectedHospitalId.value = null;
+});
 
-const prescriptionTypeOptions = [
-  'EDI',
-  'ERP직거래자료',
-  '매출자료',
-  '약국조제',
-  '원내매출',
-  '원외매출',
-  '차감',
-];
-
-// --- 선택 관련 ---
-const selectedRows = ref([]); // PrimeVue DataTable의 v-model:selection에 연결
-const selectAllChecked = ref(false);
-
-const productInputRefs = ref({});
-const productDropdownStyle = ref({});
-const fieldRefs = ref({});
-
-// 1. currentCell 구조 추가
-const currentCell = ref({ row: null, col: null });
-
-// --- 초기화 ---
+// --- 라이프사이클 훅 ---
 onMounted(async () => {
+  console.log("1. onMounted 시작");
   await fetchAvailableMonths();
-  await fetchAllProducts();
-  document.addEventListener('click', handleGlobalClick);
+  if (availableMonths.value.length > 0) {
+    selectedSettlementMonth.value = availableMonths.value[0].settlement_month;
+    console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
+    await fetchFilterOptions(selectedSettlementMonth.value);
+  }
+  await fetchProducts();
+  console.log("7. onMounted 종료");
 });
 
-// --- 데이터 조회 로직 ---
+// --- 데이터 로딩 함수 ---
+async function fetchAvailableMonths() {
+  const { data, error } = await supabase.from('settlement_months').select('settlement_month').order('settlement_month', { ascending: false });
+  if (error) console.error('정산월 로딩 실패:', error);
+  else availableMonths.value = data;
+}
+
+async function fetchFilterOptions(settlementMonth) {
+    console.log(`3. fetchFilterOptions 시작: ${settlementMonth}월`);
+    loading.value = true;
+    const { data: performanceData, error: perfError } = await supabase
+        .from('performance_records')
+        .select('company_id, client_id')
+        .eq('settlement_month', settlementMonth);
+
+    if (perfError) {
+        console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
+        loading.value = false;
+        return;
+    }
+    console.log(`4. ${settlementMonth}월의 performance_records 데이터 ${performanceData.length}건 확인`);
+    
+    monthlyPerformanceLinks.value = performanceData;
+    const companyIds = [...new Set(performanceData.map(p => p.company_id).filter(id => id))];
+    const clientIds = [...new Set(performanceData.map(p => p.client_id).filter(id => id))];
+    console.log(`5. 고유 업체 ${companyIds.length}개, 고유 병원 ${clientIds.length}개 발견`);
+
+    if (companyIds.length > 0) {
+        const { data: companies, error: compError } = await supabase.from('companies').select('id, company_name').in('id', companyIds);
+        if (compError) console.error('업체 필터 로딩 실패:', compError);
+        else monthlyCompanies.value = companies;
+    } else {
+        monthlyCompanies.value = [];
+    }
+
+    if (clientIds.length > 0) {
+        const { data: clients, error: clientError } = await supabase.from('clients').select('id, name').in('id', clientIds);
+        if (clientError) console.error('병원 필터 로딩 실패:', clientError);
+        else monthlyHospitals.value = clients;
+    } else {
+        monthlyHospitals.value = [];
+    }
+    console.log(`6. 필터 옵션 로딩 완료: 업체 ${monthlyCompanies.value.length}개, 병원 ${monthlyHospitals.value.length}개`);
+    loading.value = false;
+}
+
+async function fetchProducts() {
+    const { data, error } = await supabase.from('products').select('*');
+    if (error) console.error('제품 목록 로딩 실패:', error);
+    else products.value = data;
+}
+
 async function loadPerformanceData() {
+  console.log("8. loadPerformanceData 시작");
   if (!selectedSettlementMonth.value) {
-    alert('정산월을 선택해야 합니다.');
+    toast.add({ severity: 'warn', summary: '알림', detail: '정산월을 선택해주세요.', life: 3000 });
     return;
   }
   loading.value = true;
-  displayRows.value = [];
+  rows.value = [];
+  originalRows.value = [];
+  selectedRows.value = [];
 
   try {
-    let query = supabase.from('review_details_view').select('*')
-      .eq('settlement_month', selectedSettlementMonth.value);
-
-    if (selectedCompanyId.value !== 'ALL') query.eq('company_id', selectedCompanyId.value);
-    if (selectedHospitalId.value !== 'ALL') query.eq('client_id', selectedHospitalId.value);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("로그인이 필요합니다.");
+    const adminUserId = user.id;
+    const currentTimestamp = new Date().toISOString();
     
-    const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
-    if (prescriptionOffset.value !== 0) {
-      query.eq('prescription_month', prescriptionMonth);
-    }
+    let idsToFetch = [];
+    let shouldFetchByIds = false;
 
-    if (selectedReviewStatus.value === '신규') {
-      const newRecordIds = await syncNewRecordsToAnalysis();
-      if (newRecordIds.length === 0) {
-        alert('처리할 신규 데이터가 없습니다.');
-        loading.value = false;
-        return;
+    // --- 데이터 처리 로직 ---
+    // 1. '신규' 선택 시: '대기' 상태인 데이터를 찾아 '검수중'으로 업데이트하고, 해당 데이터만 불러옵니다.
+    if (selectedStatus.value === '대기') {
+      console.log("처리 방식: 신규");
+      let findQuery = supabase.from('performance_records').select('id').eq('review_status', '대기');
+      if (selectedSettlementMonth.value) findQuery = findQuery.eq('settlement_month', selectedSettlementMonth.value);
+      if (selectedCompanyId.value) findQuery = findQuery.eq('company_id', selectedCompanyId.value);
+      if (selectedHospitalId.value) findQuery = findQuery.eq('client_id', selectedHospitalId.value);
+
+      const { data: pendingRecords, error: findError } = await findQuery;
+      if (findError) throw findError;
+
+      if (pendingRecords && pendingRecords.length > 0) {
+        idsToFetch = pendingRecords.map(r => r.id);
+        shouldFetchByIds = true;
+
+        console.log(`${idsToFetch.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
+        const { error: updateError } = await supabase
+          .from('performance_records')
+          .update({ review_status: '검수중', updated_at: currentTimestamp, updated_by: adminUserId })
+          .in('id', idsToFetch);
+        if (updateError) throw updateError;
       }
-      // 동기화 후 '검수중' 상태로 데이터를 다시 조회
-      query.in('performance_record_id', newRecordIds).eq('user_edit_status', '검수중');
+    } 
+    // 2. '전체' 선택 시: 필터에 맞는 모든 데이터를 대상으로 '대기' 상태인 것을 '검수중'으로 업데이트하고, 전체를 불러옵니다.
+    else if (!selectedStatus.value) { 
+      console.log("처리 방식: 전체");
+      let findQuery = supabase.from('performance_records').select('id').eq('review_status', '대기');
+      if (selectedSettlementMonth.value) findQuery = findQuery.eq('settlement_month', selectedSettlementMonth.value);
+      if (selectedCompanyId.value) findQuery = findQuery.eq('company_id', selectedCompanyId.value);
+      if (selectedHospitalId.value) findQuery = findQuery.eq('client_id', selectedHospitalId.value);
 
-    } else if (selectedReviewStatus.value === 'ALL') {
-      // '전체'일 경우, 먼저 신규 데이터를 동기화
-      await syncNewRecordsToAnalysis();
-    
-    } else {
-      // '완료' 또는 '검수중'
-      query.eq('user_edit_status', selectedReviewStatus.value);
+      const { data: pendingRecords, error: findError } = await findQuery;
+      if (findError) throw findError;
+      
+      if (pendingRecords && pendingRecords.length > 0) {
+          const idsToUpdate = pendingRecords.map(r => r.id);
+          console.log(`전체 데이터 중 ${idsToUpdate.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
+          const { error: updateError } = await supabase
+              .from('performance_records')
+              .update({ review_status: '검수중', updated_at: currentTimestamp, updated_by: adminUserId })
+              .in('id', idsToUpdate);
+          if (updateError) throw updateError;
+      }
     }
-    
-    const { data, error } = await query;
+    // 3. '검수중' 또는 '완료' 선택 시: 상태 변경 없이 데이터만 불러옵니다.
+
+    // --- 데이터 조회 로직 ---
+    console.log("데이터 조회 시작");
+    let query = supabase.from('performance_records').select(`
+      *,
+      companies ( company_name ),
+      clients ( name ),
+      products ( product_name, insurance_code, price )
+    `);
+
+    if (shouldFetchByIds) {
+      if (idsToFetch.length === 0) {
+          rows.value = [];
+          originalRows.value = [];
+          loading.value = false;
+          return;
+      }
+      query = query.in('id', idsToFetch);
+    } else {
+      query = query.eq('settlement_month', selectedSettlementMonth.value);
+      if (selectedCompanyId.value) query = query.eq('company_id', selectedCompanyId.value);
+      if (selectedHospitalId.value) query = query.eq('client_id', selectedHospitalId.value);
+      if (selectedStatus.value) query = query.eq('review_status', selectedStatus.value);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     
-    let mappedData = data.map(row => {
-      const payment_amount = Math.round((row.price * row.prescription_qty) * (row.commission_rate || 0));
-      return {
-        ...row,
-        id: row.absorption_analysis_id, // Ensure consistent ID for all operations
-        price: row.price?.toLocaleString() || 0,
-        prescription_qty: row.prescription_qty || 0,
-        prescription_amount: row.prescription_amount?.toLocaleString() || 0,
-        commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
-        payment_amount: payment_amount.toLocaleString(),
-        created_date: formatDateTime(row.created_at),
-      };
-    });
-
-    const statusOrder = { '검수중': 1, '완료': 2 };
-    const actionOrder = { '추가': 2, '수정': 3, '삭제': 4 };
-
-    mappedData.sort((a, b) => {
-      const orderA_status = statusOrder[a.user_edit_status] || 99;
-      const orderB_status = statusOrder[b.user_edit_status] || 99;
-      if (orderA_status !== orderB_status) return orderA_status - orderB_status;
-
-      const orderA_action = actionOrder[a.review_action] || 1;
-      const orderB_action = actionOrder[b.review_action] || 1;
-      if (orderA_action !== orderB_action) return orderA_action - orderB_action;
-
-      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
-      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
-      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
-
-      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
-    });
-
-    displayRows.value = mappedData;
-
-    if (displayRows.value.length === 0) {
-      alert('해당 조건에 맞는 데이터가 없습니다.');
+    if (!data || data.length === 0) {
+      rows.value = [];
+      originalRows.value = [];
+      loading.value = false;
+      return;
     }
 
+    const registrarIds = [...new Set(data.map(item => item.registered_by).filter(id => id))];
+    let registrarMap = new Map();
+
+    if (registrarIds.length > 0) {
+      const { data: registrars, error: registrarError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', registrarIds);
+      
+      if (registrarError) {
+        console.error("등록자 정보 조회 실패:", registrarError);
+      } else {
+        registrars.forEach(r => registrarMap.set(r.user_id, r.company_name));
+      }
+    }
+
+    console.log(`10. 최종 데이터 ${data.length}건 불러옴`);
+
+    // 데이터 가공: Join된 객체를 펼치고, 화면 표시에 필요한 값을 설정
+    rows.value = data.map(item => ({
+      ...item,
+      id: item.id,
+      company_name: item.companies?.company_name || 'N/A',
+      client_name: item.clients?.name || 'N/A',
+      product_name_display: item.products?.product_name || 'N/A',
+      insurance_code: item.products?.insurance_code || '',
+      price: item.products?.price ? item.products.price.toLocaleString() : 0,
+      prescription_amount: (item.prescription_qty * (item.products?.price || 0)).toLocaleString(),
+      payment_amount: Math.round((item.prescription_qty * (item.products?.price || 0)) * (item.commission_rate || 0)).toLocaleString(),
+      registered_by_name: registrarMap.get(item.registered_by) || '관리자',
+      display_status: item.review_status === '대기' ? '신규' : item.review_status,
+    }));
+    
+    originalRows.value = JSON.parse(JSON.stringify(rows.value));
+
   } catch (err) {
-    console.error('데이터 조회 오류:', err);
-    alert('데이터 조회 중 오류가 발생했습니다.');
-    displayRows.value = [];
+    console.error('데이터 처리 중 오류 발생:', err);
+    alert(`데이터를 처리하는 중 오류가 발생했습니다: ${err.message}`);
+    rows.value = [];
   } finally {
     loading.value = false;
     selectedRows.value = [];
+    console.log("11. loadPerformanceData 종료");
   }
 }
 
-async function syncNewRecordsToAnalysis() {
-    let query = supabase
+// --- 행 편집 관련 함수 ---
+function setProductInputRef(id, el) {
+  if (el) {
+    productInputRefs.value[id] = el;
+  }
+}
+
+function startEdit(rowData) {
+  if (isAnyEditing.value) return;
+
+  const originalRow = originalRows.value.find(r => r.id === rowData.id);
+  if (!originalRow) {
+    console.error("Original row not found for editing:", rowData.id);
+    return;
+  }
+
+  const index = rows.value.findIndex(r => r.id === rowData.id);
+  if (index !== -1) {
+    const editRow = {
+      ...JSON.parse(JSON.stringify(originalRow)),
+      isEditing: true,
+      product_id_modify: originalRow.product_id,
+      product_name_search: originalRow.product_name_display,
+      prescription_month_modify: originalRow.prescription_month,
+      prescription_qty_modify: originalRow.prescription_qty,
+      prescription_type_modify: originalRow.prescription_type,
+      commission_rate_modify: originalRow.commission_rate,
+      remarks_modify: originalRow.remarks,
+      price_for_calc: parseFloat(String(originalRow.price || '0').replace(/,/g, '')) || 0,
+      showProductSearchList: false,
+      productSearchResults: [],
+      productSearchSelectedIndex: -1,
+      productDropdownStyle: {},
+    };
+    rows.value[index] = editRow;
+    activeEditingRowId.value = rowData.id;
+
+    nextTick(() => {
+       handleProductNameFocus(editRow);
+    });
+  }
+}
+
+function cancelEdit(rowData) {
+  const originalRow = originalRows.value.find(r => r.id === rowData.id);
+  const index = rows.value.findIndex(r => r.id === rowData.id);
+  // 새로 추가 중이던 행(원본이 없는 행)을 취소하면 목록에서 제거
+  if (!originalRows.value.some(r => r.id === rowData.id)) {
+    rows.value.splice(index, 1);
+  } else if (index !== -1 && originalRow) {
+    rows.value[index] = JSON.parse(JSON.stringify(originalRow));
+  }
+  activeEditingRowId.value = null;
+}
+
+async function saveEdit(rowData) {
+  // 필수 값 검증
+  if (!rowData.product_id_modify || rowData.prescription_qty_modify === null || rowData.prescription_qty_modify === '') {
+    alert('제품명과 수량은 필수 입력 항목입니다.');
+    return;
+  }
+  
+  loading.value = true;
+  activeEditingRowId.value = null;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('로그인 정보가 유효하지 않습니다.');
+    const adminUserId = user.id;
+
+    const isNewRecord = !originalRows.value.some(r => r.id === rowData.id);
+    
+    let saveData = {
+      settlement_month: rowData.settlement_month,
+      company_id: rowData.company_id,
+      client_id: rowData.client_id,
+      product_id: rowData.product_id_modify,
+      prescription_month: rowData.prescription_month_modify,
+      prescription_qty: Number(rowData.prescription_qty_modify) || 0,
+      prescription_type: rowData.prescription_type_modify,
+      commission_rate: Number(rowData.commission_rate_modify) || 0,
+      remarks: rowData.remarks_modify,
+      review_status: '검수중', 
+      updated_at: new Date().toISOString(),
+      updated_by: adminUserId,
+    };
+
+    let error;
+
+    if (isNewRecord) {
+      // 추가 (INSERT)
+      saveData = {
+        ...saveData,
+        created_at: new Date().toISOString(),
+        registered_by: adminUserId,
+        review_action: '추가',
+      };
+      const { error: insertError } = await supabase.from('performance_records').insert(saveData);
+      error = insertError;
+    } else {
+      // 수정 (UPDATE)
+      saveData = {
+        ...saveData,
+        review_action: '수정',
+      };
+      const { error: updateError } = await supabase.from('performance_records').update(saveData).eq('id', rowData.id);
+      error = updateError;
+    }
+
+    if (error) throw error;
+
+    alert(`성공적으로 저장되었습니다.`);
+    await loadPerformanceData();
+  } catch (err) {
+    console.error('저장 실패:', err);
+    alert(`저장 중 오류가 발생했습니다: ${err.message}`);
+    // 실패 시, 편집모드로 되돌리거나 원본으로 복구하는 로직 추가 가능
+  } finally {
+    loading.value = false;
+  }
+}
+
+function addRowBelow(referenceRow) {
+  if (isAnyEditing.value) return;
+
+  const refIndex = rows.value.findIndex(r => r.id === referenceRow.id);
+  const newRow = {
+    id: uuidv4(),
+    isEditing: true,
+    review_action: '추가',
+    review_status: '검수중',
+    
+    // --- 복사되는 데이터 ---
+    settlement_month: referenceRow.settlement_month,
+    company_id: referenceRow.company_id,
+    company_name: referenceRow.company_name, // 화면 표시용
+    client_id: referenceRow.client_id,
+    client_name: referenceRow.client_name, // 화면 표시용
+
+    // --- 수정 가능한 데이터 (복사 후 수정) ---
+    prescription_month_modify: referenceRow.prescription_month,
+    prescription_type_modify: referenceRow.prescription_type,
+    
+    // --- 초기화되는 데이터 ---
+    product_id_modify: null,
+    product_name_display: '',
+    product_name_search: '',
+    insurance_code: '',
+    prescription_qty_modify: null,
+    commission_rate_modify: null,
+    remarks_modify: '',
+
+    // --- 계산을 위한 초기값 ---
+    price_for_calc: 0,
+    prescription_amount_modify: 0,
+    payment_amount_modify: 0,
+    
+    // --- UI 상태 ---
+    showProductSearchList: false,
+    productSearchResults: [],
+    productSearchSelectedIndex: -1,
+    productDropdownStyle: {}, // 드롭다운 위치 스타일
+  };
+
+  rows.value.splice(refIndex + 1, 0, newRow);
+  activeEditingRowId.value = newRow.id;
+  productInputRefs.value[newRow.id]?.focus();
+}
+
+const confirmDeleteRow = async (row) => {
+  if (isAnyEditing.value) return;
+
+  const confirmMessage = "선택한 행을 삭제하시겠습니까?\n실제 데이터는 삭제되지 않고, 흡수율 분석, 정산 대상에서만 제외됩니다.";
+  if (confirm(confirmMessage)) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userUid = session?.user?.id;
+
+      const { error } = await supabase
         .from('performance_records')
-        .select('id')
-        .eq('settlement_month', selectedSettlementMonth.value)
-        .eq('user_edit_status', '대기');
+        .update({ review_action: '삭제', updated_by: userUid, updated_at: new Date().toISOString() })
+        .eq('id', row.id);
+      
+      if (error) throw error;
+      
+      // 로컬 데이터 업데이트
+      const index = rows.value.findIndex(r => r.id === row.id);
+      if (index !== -1) {
+        rows.value[index].review_action = '삭제';
+      }
+      
+      alert("해당 항목이 삭제 처리되었습니다. 되돌리기를 하시면 다시 검수 완료가 가능합니다.");
 
-    if (selectedCompanyId.value !== 'ALL') {
-      query = query.eq('company_id', selectedCompanyId.value);
+    } catch (error) {
+      console.error('삭제 처리 중 오류:', error);
+      alert(`오류가 발생했습니다: ${error.message}`);
     }
-    if (selectedHospitalId.value !== 'ALL') {
-      query = query.eq('client_id', selectedHospitalId.value);
-    }
+  }
+};
 
-    const { data: waitingRecords, error } = await query;
+const restoreRow = async (row) => {
+  if (isAnyEditing.value) return;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userUid = session?.user?.id;
+
+    const { error } = await supabase
+      .from('performance_records')
+      .update({ review_action: null, updated_by: userUid, updated_at: new Date().toISOString() })
+      .eq('id', row.id);
     
     if (error) throw error;
-    if (!waitingRecords || waitingRecords.length === 0) {
-      return [];
+
+    const index = rows.value.findIndex(r => r.id === row.id);
+    if (index !== -1) {
+      rows.value[index].review_action = null;
     }
-
-    const newRecordIds = waitingRecords.map(r => r.id);
-    const recordsToInsert = newRecordIds.map(id => ({ 
-      performance_record_id: id, 
-      review_status: '검수중',
-      company_id_add: null,
-      client_id_add: null
-    }));
-
-    await supabase.from('absorption_analysis').insert(recordsToInsert).throwOnError();
-    await supabase.from('performance_records').update({ user_edit_status: '검수중' }).in('id', newRecordIds).throwOnError();
-
-    return newRecordIds;
-}
-
-// --- 필터 옵션 로딩 ---
-async function fetchAvailableMonths() {
-  try {
-    const { data, error } = await supabase.from('settlement_months').select('settlement_month').order('settlement_month', { ascending: false });
-    if (error) throw error;
-    availableMonths.value = data;
-    if (data.length > 0) {
-      selectedSettlementMonth.value = data[0].settlement_month;
-      await fetchCompaniesForMonth();
-      updatePrescriptionOptions();
-    }
-  } catch (err) { console.error('정산월 조회 오류:', err); }
-}
-
-async function fetchAllProducts() {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, product_name, insurance_code, price, base_month, status, commission_rate_a, commission_rate_b')
-      .eq('status', 'active');
-    if (error) throw error;
-    allProducts.value = data;
-  } catch (e) {
-    console.error('제품정보 로딩 오류', e);
+    alert('항목이 복원되었습니다.');
+  } catch(error) {
+    console.error('복원 중 오류:', error);
+    alert(`복원 중 오류가 발생했습니다: ${error.message}`);
   }
+};
+
+// --- 상단 버튼 액션 함수 ---
+function selectAll() {
+  selectedRows.value = displayRows.value.filter(record => record.review_action !== '삭제');
 }
 
-async function fetchCompaniesForMonth() {
-  if (!selectedSettlementMonth.value) { 
-    companyOptions.value = [{ id: 'ALL', company_name: '- 전체 -' }]; 
-    return; 
-  }
-  try {
-    const { data, error } = await supabase.rpc('get_companies_for_review_filters', { 
-      p_settlement_month: selectedSettlementMonth.value 
-    });
-    if (error) throw error;
-    companyOptions.value = [{ id: 'ALL', company_name: '- 전체 -' }, ...data];
-    selectedCompanyId.value = 'ALL';
-    await fetchClientsForMonth();
-  } catch (err) { 
-    console.error('해당 월의 업체 조회 오류:', err); 
-    companyOptions.value = [{ id: 'ALL', company_name: '- 전체 -' }]; 
-  }
-}
-
-async function fetchClientsForMonth() {
-    if (!selectedSettlementMonth.value) { 
-      hospitalOptions.value = [{ id: 'ALL', name: '- 전체 -' }]; 
-      return; 
-    }
-    try {
-        const { data, error } = await supabase.rpc('get_clients_for_review_filters', { 
-            p_settlement_month: selectedSettlementMonth.value,
-            p_company_id: selectedCompanyId.value === 'ALL' ? null : selectedCompanyId.value
-        });
-        if (error) throw error;
-        hospitalOptions.value = [{ id: 'ALL', name: '- 전체 -' }, ...data];
-        selectedHospitalId.value = 'ALL';
-    } catch (err) { 
-      console.error('해당 월의 병의원 조회 오류:', err); 
-      hospitalOptions.value = [{ id: 'ALL', name: '- 전체 -' }]; 
-    }
-}
-
-watch(selectedSettlementMonth, async (newMonth, oldMonth) => {
-  if (newMonth !== oldMonth) {
-    await fetchAllProducts();
-    updatePrescriptionOptions();
-  }
-});
-
-// --- Helper Functions ---
-function getActionSeverity(action) { return action === '수정' ? 'info' : action === '추가' ? 'success' : action === '삭제' ? 'danger' : 'secondary'; }
-function getRowClass(data) { return data.review_action === '삭제' ? 'deleted-row' : data.review_action === '추가' ? 'added-row' : data.review_action === '수정' ? 'modified-row' : ''; }
-function getPrescriptionMonth(settlementMonth, offset) { if (!settlementMonth || offset === null) return ''; let [y, m] = settlementMonth.split('-'); let month = parseInt(m, 10) - offset; let year = parseInt(y, 10); while (month <= 0) { month += 12; year -= 1; } return `${year}-${String(month).padStart(2, '0')}`; }
-function updatePrescriptionOptions() { 
-  prescriptionOptions.value = [
-    { value: 0, month: '- 전체 -' },
-    ...[1, 2, 3].map(offset => ({ 
-      value: offset, 
-      month: getPrescriptionMonth(selectedSettlementMonth.value, offset) 
-    }))
-  ];
-}
-function formatDateTime(dateTimeString) { if (!dateTimeString) return '-'; const date = new Date(dateTimeString); const kstOffset = 9 * 60 * 60 * 1000; const kstDate = new Date(date.getTime() + kstOffset); return kstDate.toISOString().slice(0, 16).replace('T', ' '); }
-
-// --- Table Row Selection ---
-function selectAll() { 
-  const selectableRows = displayRows.value.filter(row => row.review_action !== '삭제');
-  selectedRows.value = [...selectableRows];
-}
-function unselectAll() { 
+function unselectAll() {
   selectedRows.value = [];
 }
 
-// --- Table Row Actions (No Reload) ---
-function getUniqueProductsByMonth(month) {
-  const monthProducts = allProducts.value.filter(p => p.base_month === month);
-  const uniqueProducts = new Map();
-  monthProducts.forEach(p => {
-    if (!uniqueProducts.has(p.insurance_code)) {
-      uniqueProducts.set(p.insurance_code, p);
-    }
-  });
-  return Array.from(uniqueProducts.values());
-}
-
-function startEdit(row) {
-  if (row.user_edit_status === '완료') return;
-  row.originalData = JSON.parse(JSON.stringify(row));
-  
-  const currentProduct = allProducts.value.find(p => p.id === row.product_id);
-  
-  row.product_name_search = row.product_name_display || '';
-  row.product_id_modify = row.product_id; // Keep original product ID initially
-  row.productSearchResults = [];
-  row.productSearchSelectedIndex = -1;
-  row.showProductSearchList = false;
-  
-  row.availableProducts = getUniqueProductsByMonth(row.prescription_month);
-
-  // 수정모드 진입 시, 현재 제품이 해당 처방월의 대표제품 ID와 다를 수 있으므로 보험코드로 동기화
-  if (currentProduct) {
-    const representativeProduct = row.availableProducts.find(p => p.insurance_code === currentProduct.insurance_code);
-    row.product_id_modify = representativeProduct ? representativeProduct.id : row.product_id;
-  }
-  
-  row.prescription_month_modify = row.prescription_month;
-  row.prescription_qty_modify = parseFloat(String(row.prescription_qty).replace(/,/g, '')) || 0;
-  row.prescription_type_modify = row.prescription_type;
-  row.remarks_modify = row.remarks;
-  
-  row.commission_rate_modify = parseFloat(String(row.commission_rate).replace('%', '')) || 0;
-  
-  row.price_for_calc = currentProduct ? currentProduct.price : parseFloat(String(row.price).replace(/,/g, ''));
-  row.prescription_amount_modify = parseFloat(String(row.prescription_amount).replace(/,/g, ''));
-  row.payment_amount_modify = parseFloat(String(row.payment_amount).replace(/,/g, ''));
-
-  row.isEditing = true;
-  nextTick(() => {
-    if (productInputRefs.value[row.id]) productInputRefs.value[row.id].focus();
-  });
-}
-
-function handleEditCalculations(row, changedField = '') {
-  if (changedField === 'month') {
-    const currentProductInfo = allProducts.value.find(p => p.id === row.product_id_modify);
-    const currentInsuranceCode = currentProductInfo ? currentProductInfo.insurance_code : null;
-
-    row.availableProducts = getUniqueProductsByMonth(row.prescription_month_modify);
-    
-    if (currentInsuranceCode) {
-        const newRepresentativeProduct = row.availableProducts.find(p => p.insurance_code === currentInsuranceCode);
-        if (newRepresentativeProduct) {
-            row.product_id_modify = newRepresentativeProduct.id;
-        } else {
-            row.product_id_modify = null;
-        }
-    }
-  }
-
-  if (changedField === 'month' || changedField === 'product') {
-    if (row.product_id_modify) {
-        const product = allProducts.value.find(p => p.id === row.product_id_modify);
-        if (product) {
-            row.price_for_calc = product.price;
-            row.insurance_code = product.insurance_code;
-            const commissionGrade = (row.company_commission_grade || 'a').toLowerCase();
-            const rateKey = `commission_rate_${commissionGrade}`;
-            row.commission_rate_modify = (product[rateKey] || 0) * 100;
-        }
-    } else {
-        row.insurance_code = '';
-        row.price_for_calc = 0;
-        row.commission_rate_modify = 0;
-    }
-  }
-
-  const price = row.price_for_calc || 0;
-  const qty = row.prescription_qty_modify || 0;
-  const rate = (row.commission_rate_modify || 0) / 100;
-  
-  const prescriptionAmount = price * qty;
-  const paymentAmount = prescriptionAmount * rate;
-
-  row.prescription_amount_modify = Math.round(prescriptionAmount);
-  row.payment_amount_modify = Math.round(paymentAmount);
-}
-
-function cancelEdit(row) {
-    if (row.isNewRow) {
-        displayRows.value = displayRows.value.filter(r => r.id !== row.id);
-    } else {
-        const originalRow = row.originalData;
-        const index = displayRows.value.findIndex(r => r.id === originalRow.id);
-        if (index !== -1) {
-            displayRows.value.splice(index, 1, originalRow);
-        }
-    }
-}
-
-async function saveEdit(row) {
-    try {
-        if (row.isNewRow) {
-            const recordData = {
-                company_id_add: row.company_id,
-                client_id_add: row.client_id,
-                settlement_month_add: selectedSettlementMonth.value,
-                prescription_month_modify: row.prescription_month_modify,
-                product_id_modify: row.product_id_modify,
-                prescription_qty_modify: row.prescription_qty_modify,
-                prescription_type_modify: row.prescription_type_modify,
-                commission_rate_modify: (row.commission_rate_modify || 0) / 100,
-                remarks_modify: row.remarks_modify,
-                review_status: '검수중',
-                review_action: '추가',
-            };
-            const { data: insertedData, error } = await supabase.from('absorption_analysis').insert(recordData).select().single();
-            if (error) throw error;
-            
-            const { data: newRowData, error: fetchError } = await supabase.from('review_details_view').select('*').eq('absorption_analysis_id', insertedData.id).single();
-            if (fetchError) throw fetchError;
-            
-            const index = displayRows.value.findIndex(r => r.id === row.id);
-            if (index !== -1) {
-              const formattedData = {
-                ...newRowData,
-                id: newRowData.absorption_analysis_id, // Ensure new row also uses consistent ID
-                price: newRowData.price?.toLocaleString() || 0,
-                prescription_qty: newRowData.prescription_qty || 0,
-                prescription_amount: newRowData.prescription_amount?.toLocaleString() || 0,
-                commission_rate: `${((newRowData.commission_rate || 0) * 100).toFixed(1)}%`,
-                payment_amount: Math.round((newRowData.price * newRowData.prescription_qty) * (newRowData.commission_rate || 0)).toLocaleString(),
-                created_date: formatDateTime(newRowData.created_at),
-              };
-              displayRows.value.splice(index, 1, formattedData);
-            }
-        } else {
-            // Existing update logic
-            const recordData = {
-                prescription_month_modify: row.prescription_month_modify,
-                product_id_modify: row.product_id_modify,
-                prescription_qty_modify: row.prescription_qty_modify,
-                prescription_type_modify: row.prescription_type_modify,
-                commission_rate_modify: (row.commission_rate_modify || 0) / 100,
-                remarks_modify: row.remarks_modify,
-                review_action: '수정',
-            };
-
-            const { error } = await supabase.from('absorption_analysis').update(recordData).eq('id', row.id);
-            if (error) throw error;
-            
-            const finalProduct = allProducts.value.find(p => p.id === row.product_id_modify);
-
-            const updatedRowInPlace = {
-                ...row.originalData,
-                product_id: row.product_id_modify,
-                product_name_display: finalProduct ? finalProduct.product_name : '제품 없음',
-                insurance_code: finalProduct ? finalProduct.insurance_code : '',
-                price: (row.price_for_calc || 0).toLocaleString(),
-                prescription_month: row.prescription_month_modify,
-                prescription_qty: row.prescription_qty_modify,
-                prescription_type: row.prescription_type_modify,
-                commission_rate: `${(row.commission_rate_modify || 0).toFixed(1)}%`,
-                prescription_amount: (row.prescription_amount_modify || 0).toLocaleString(),
-                payment_amount: (row.payment_amount_modify || 0).toLocaleString(),
-                remarks: row.remarks_modify,
-                review_action: '수정',
-                isEditing: false,
-            };
-
-            const index = displayRows.value.findIndex(r => r.id === row.id);
-            if (index !== -1) {
-              displayRows.value.splice(index, 1, updatedRowInPlace);
-            }
-        }
-    } catch (err) {
-        console.error('저장 오류:', err);
-        alert('저장 중 오류가 발생했습니다.');
-        cancelEdit(row);
-    }
-}
-
-function addRowBelow(currentRow) {
-  const newRowId = `new_${Date.now()}`;
-  const newRow = {
-    id: newRowId,
-    isEditing: true,
-    isNewRow: true,
-    
-    company_id: currentRow.company_id,
-    company_name: currentRow.company_name,
-    client_id: currentRow.client_id,
-    client_name: currentRow.client_name,
-    company_commission_grade: currentRow.company_commission_grade,
-    prescription_month_modify: currentRow.prescription_month,
-    prescription_month: currentRow.prescription_month,
-    prescription_type_modify: currentRow.prescription_type,
-    
-    product_id_modify: null,
-    insurance_code: '',
-    price_for_calc: 0,
-    prescription_qty_modify: 0,
-    commission_rate_modify: 0,
-    remarks_modify: '',
-    prescription_amount_modify: 0,
-    payment_amount_modify: 0,
-    user_edit_status: '검수중',
-    review_action: '추가',
-    availableProducts: [], 
-  };
-  
-  newRow.availableProducts = getUniqueProductsByMonth(newRow.prescription_month_modify);
-
-  const currentIndex = displayRows.value.findIndex(r => r.id === currentRow.id);
-  if (currentIndex !== -1) {
-    displayRows.value.splice(currentIndex + 1, 0, newRow);
-  }
-  nextTick(() => {
-    if (productInputRefs.value[newRowId]) productInputRefs.value[newRowId].focus();
-  });
-}
-
-async function confirmDeleteRow(row) {
-    if (confirm('이 실적을 삭제 처리하시겠습니까? (목록에서만 삭제 처리됩니다)')) {
-        try {
-            const { error } = await supabase.from('absorption_analysis').update({ review_action: '삭제' }).eq('id', row.id);
-            if (error) throw error;
-            const index = displayRows.value.findIndex(r => r.id === row.id);
-            if (index !== -1) {
-                displayRows.value[index].review_action = '삭제';
-            }
-        } catch (err) {
-            console.error('삭제 처리 오류:', err);
-            alert(`삭제 처리 중 오류가 발생했습니다: ${err.message}`);
-        }
-    }
-}
-
-async function restoreRow(row) {
-    if (confirm('이 실적의 삭제를 취소하시겠습니까?')) {
-        try {
-            const { error } = await supabase.from('absorption_analysis').update({ review_action: null }).eq('id', row.id);
-            if (error) throw error;
-            const index = displayRows.value.findIndex(r => r.id === row.id);
-            if (index !== -1) {
-                displayRows.value[index].review_action = null;
-            }
-        } catch (err) {
-            console.error('삭제 취소 오류:', err);
-            alert(`삭제 취소 처리 중 오류가 발생했습니다: ${err.message}`);
-        }
-    }
-}
-
 async function changeReviewStatus() {
-  if (selectedRows.value.length === 0) return;
-  const reviewingRows = selectedRows.value.filter(r => r.user_edit_status === '검수중');
-  const completedRows = selectedRows.value.filter(r => r.user_edit_status === '완료');
-  if (!confirm('선택된 항목들의 검수 상태를 변경하시겠습니까?')) return;
-  loading.value = true;
-  
-  try {
-    const promises = [];
+  if (!selectedRows.value || selectedRows.value.length === 0) return;
 
-    // '검수중' -> '완료'로 변경
-    if (reviewingRows.length > 0) {
-      const absorptionIds = reviewingRows.map(r => r.id);
-      promises.push(supabase.from('absorption_analysis').update({ review_status: '완료' }).in('id', absorptionIds));
+  if (window.confirm(`선택된 ${selectedRows.value.length}개 항목의 검수 상태를 변경하시겠습니까? ('검수중' ↔ '완료')`)) {
+    loading.value = true;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다.");
+
+      const updates = selectedRows.value.map(record => {
+        const newStatus = record.review_status === '검수중' ? '완료' : '검수중';
+        return supabase
+          .from('performance_records')
+          .update({ 
+            review_status: newStatus, 
+            updated_by: user.id,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', record.id);
+      });
+
+      const results = await Promise.all(updates);
+      const errors = results.filter(res => res.error);
+
+      if (errors.length > 0) {
+        throw new Error(`다음 항목들의 상태 변경에 실패했습니다: ${errors.map(e=>e.error.message).join(', ')}`);
+      }
       
-      const performanceRecordIds = reviewingRows.map(r => r.performance_record_id).filter(Boolean);
-      if (performanceRecordIds.length > 0) {
-        promises.push(supabase.from('performance_records').update({ user_edit_status: '완료' }).in('id', performanceRecordIds));
-      }
+      alert(`${selectedRows.value.length}개 항목의 상태를 성공적으로 변경했습니다.`);
+      await loadPerformanceData(); // 데이터 새로고침
+    } catch (error) {
+      console.error('상태 변경 오류:', error);
+      alert(error.message);
+    } finally {
+      loading.value = false;
     }
-
-    // '완료' -> '검수중'으로 변경
-    if (completedRows.length > 0) {
-      const absorptionIds = completedRows.map(r => r.id);
-      promises.push(supabase.from('absorption_analysis').update({ review_status: '검수중' }).in('id', absorptionIds));
-
-      const performanceRecordIds = completedRows.map(r => r.performance_record_id).filter(Boolean);
-      if (performanceRecordIds.length > 0) {
-        promises.push(supabase.from('performance_records').update({ user_edit_status: '검수중' }).in('id', performanceRecordIds));
-      }
-    }
-
-    await Promise.all(promises);
-    alert('상태가 성공적으로 변경되었습니다.');
-
-    const reviewingIds = new Set(reviewingRows.map(r => r.id));
-    const completedIds = new Set(completedRows.map(r => r.id));
-
-    displayRows.value.forEach(row => {
-      if (reviewingIds.has(row.id)) {
-        row.user_edit_status = '완료';
-      } else if (completedIds.has(row.id)) {
-        row.user_edit_status = '검수중';
-      }
-    });
-    
-    selectedRows.value = [];
-
-  } catch (err) {
-    alert(`상태 변경 중 오류가 발생했습니다: ${err.message}`);
-    console.error(err);
-  } finally {
-    loading.value = false;
   }
 }
 
-async function removeFromReview() {
-  if (selectedRows.value.length === 0) return;
-  if (!confirm(`선택된 ${selectedRows.value.length}건을 검수 대상에서 제외하시겠습니까?`)) return;
-  loading.value = true;
+const excludeFromReview = async () => {
+  if (!selectedRows.value || selectedRows.value.length === 0) {
+    alert("제외할 항목을 선택해주세요.");
+    return;
+  }
+
+  const confirmMessage = `선택된 ${selectedRows.value.length}개 항목을 검수 대상에서 제외하시겠습니까? 해당 항목은 '대기' 상태로 돌아가며, 목록에서 사라집니다.`;
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
   try {
-    const idsToDelete = selectedRows.value.map(r => r.id).filter(Boolean);
-    const perfIdsToUpdate = selectedRows.value.map(r => r.performance_record_id).filter(Boolean);
-    
-    if (perfIdsToUpdate.length > 0) {
-      await supabase.from('performance_records').update({ user_edit_status: '대기' }).in('id', perfIdsToUpdate).throwOnError();
-    }
-    
-    if (idsToDelete.length > 0) {
-      await supabase.from('absorption_analysis').delete().in('id', idsToDelete).throwOnError();
-    }
-    
-    const idsToDeleteSet = new Set(idsToDelete);
-    displayRows.value = displayRows.value.filter(row => !idsToDeleteSet.has(row.id));
+    const { data: { session } } = await supabase.auth.getSession();
+    const userUid = session?.user?.id;
+
+    const updates = selectedRows.value.map(row => 
+      supabase
+        .from('performance_records')
+        .update({ review_status: '대기', review_action: null, updated_by: userUid, updated_at: new Date().toISOString() })
+        .eq('id', row.id)
+    );
+    const results = await Promise.all(updates);
+    const errorResult = results.find(res => res.error);
+    if (errorResult) throw errorResult.error;
+
+    // 로컬 데이터 업데이트: 목록에서 제거
+    const idsToRemove = new Set(selectedRows.value.map(r => r.id));
+    rows.value = rows.value.filter(row => !idsToRemove.has(row.id));
+
     selectedRows.value = [];
-    alert('선택한 항목들이 검수에서 제외되었습니다.');
-  } catch(err) {
-     alert(`검수 제외 처리 중 오류가 발생했습니다: ${err.message}`);
-     console.error(err);
-  } finally {
-    loading.value = false;
-  }
-}
+    alert('선택한 항목들이 검수 대상에서 제외되었습니다.');
 
-const isAnyEditing = computed(() => displayRows.value.some(row => row.isEditing));
-let pendingRoute = null;
-
-// 메뉴 이동 시 경고창 처리
-router.beforeEach((to, from, next) => {
-  if (isAnyEditing.value) {
-    if (confirm('완료하지 않은 작업이 있습니다. 작업을 취소하고 다른 메뉴로 이동하시겠습니까?')) {
-      // 모든 편집 취소
-      displayRows.value.forEach(row => { if (row.isEditing) cancelEdit(row); });
-      next();
-    } else {
-      next(false);
-    }
-  } else {
-    next();
-  }
-});
-
-onBeforeUnmount(() => {
-  // 라우터 가드 해제(핫리로드 등 대비)
-  router.beforeEach(() => {});
-  document.removeEventListener('click', handleGlobalClick);
-});
-
-function handleProductNameInput(row, event) {
-  const query = (event && event.target && event.target.value ? event.target.value : row.product_name_search || '').toLowerCase();
-  row.product_name_search = event && event.target ? event.target.value : row.product_name_search;
-  const candidates = getUniqueProductsByMonth(row.prescription_month).filter(
-    p =>
-      (p.product_name && p.product_name.toLowerCase().includes(query)) ||
-      (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
-  );
-  row.productSearchResults = candidates;
-  row.productSearchSelectedIndex = -1;
-  row.showProductSearchList = row.productSearchResults.length > 0;
-  if (row.showProductSearchList) {
-    activeDropdown.value = { rowId: row.id, type: 'product' };
-    updateProductDropdownPosition(row);
-  }
-}
-
-function navigateProductSearchList(direction, row) {
-  if (!row.showProductSearchList || row.productSearchResults.length === 0) return;
-  if (direction === 'down') {
-    row.productSearchSelectedIndex = (row.productSearchSelectedIndex + 1) % row.productSearchResults.length;
-  } else if (direction === 'up') {
-    row.productSearchSelectedIndex = (row.productSearchSelectedIndex - 1 + row.productSearchResults.length) % row.productSearchResults.length;
-  }
-}
-
-function applySelectedProduct(product, row) {
-  row.product_name_display = product.product_name;
-  row.product_id_modify = product.id;
-  row.insurance_code = product.insurance_code;
-  row.price_for_calc = product.price;
-  row.product_name_search = product.product_name;
-  row.showProductSearchList = false;
-  // 보험코드와 기준월로 제품을 찾아 수수료율 반영
-  const baseMonth = row.prescription_month_modify || row.prescription_month;
-  const commissionGrade = (row.company_commission_grade || 'a').toLowerCase();
-  const rateKey = `commission_rate_${commissionGrade}`;
-  const matchedProduct = allProducts.value.find(p => p.insurance_code === product.insurance_code && p.base_month === baseMonth);
-  row.commission_rate_modify = matchedProduct && matchedProduct[rateKey] ? matchedProduct[rateKey] * 100 : 0;
-  activeDropdown.value = { rowId: null, type: null };
-  nextTick(() => {
-    focusNextField(row, 'product_name');
-  });
-}
-
-function hideProductSearchList(row) {
-  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'product') {
-    row.showProductSearchList = false;
-    activeDropdown.value = { rowId: null, type: null };
-  }
-}
-
-function toggleProductDropdown(row) {
-  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'product') {
-    row.showProductSearchList = false;
-    activeDropdown.value = { rowId: null, type: null };
-  } else {
-    // 다른 드롭다운이 열려있으면 닫기
-    if (activeDropdown.value.rowId) {
-      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
-      if (otherRow) {
-        otherRow.showProductSearchList = false;
-      }
-    }
-    
-    const allProducts = getUniqueProductsByMonth(row.prescription_month);
-    row.productSearchResults = allProducts;
-    row.productSearchSelectedIndex = -1;
-    row.showProductSearchList = allProducts.length > 0;
-    if (row.showProductSearchList) {
-      activeDropdown.value = { rowId: row.id, type: 'product' };
-      updateProductDropdownPosition(row);
-    }
-  }
-}
-
-function setProductInputRef(rowId, el) {
-  if (el) productInputRefs.value[rowId] = el;
-}
-
-function updateProductDropdownPosition(row) {
-  nextTick(() => {
-    const el = productInputRefs.value[row.id];
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    const dropdownHeight = 220;
-    const spaceBelow = windowHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const showAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
-    productDropdownStyle.value[row.id] = {
-      position: 'fixed',
-      left: rect.left + 'px',
-      top: showAbove ? (rect.top - dropdownHeight) + 'px' : rect.bottom + 'px',
-      width: rect.width + 'px',
-      zIndex: 99999,
-      maxHeight: showAbove ? Math.min(dropdownHeight, spaceAbove - 10) + 'px' : Math.min(dropdownHeight, spaceBelow - 10) + 'px',
-      overflowY: 'auto',
-    };
-  });
-}
-
-watch(() => displayRows.value.map(r => r.isEditing), () => {
-  displayRows.value.forEach(row => {
-    if (row.isEditing && row.showProductSearchList) updateProductDropdownPosition(row);
-  });
-});
-
-window.addEventListener('scroll', () => {
-  displayRows.value.forEach(row => {
-    if (row.isEditing && row.showProductSearchList) updateProductDropdownPosition(row);
-  });
-}, true);
-
-function setFieldRef(rowId, field, el) {
-  if (!fieldRefs.value[rowId]) fieldRefs.value[rowId] = {};
-  if (el) fieldRefs.value[rowId][field] = el;
-}
-function focusNextField(row, currentField) {
-  const order = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
-  const idx = order.indexOf(currentField);
-  if (idx !== -1) {
-    const next = order[(idx + 1) % order.length];
-    nextTick(() => {
-      setCurrentCell(row, next);
-      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][next];
-      if (refEl) {
-        if (refEl.focus) refEl.focus();
-        else if (refEl.focusInput) refEl.focusInput();
-        else if (refEl.$el) refEl.$el.focus();
-      }
-    });
-  }
-}
-function focusPrevField(row, currentField) {
-  const order = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
-  const idx = order.indexOf(currentField);
-  if (idx !== -1) {
-    const prev = order[(idx - 1 + order.length) % order.length];
-    nextTick(() => {
-      setCurrentCell(row, prev);
-      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id][prev];
-      if (refEl) {
-        if (refEl.focus) refEl.focus();
-        else if (refEl.focusInput) refEl.focusInput();
-        else if (refEl.$el) refEl.$el.focus();
-      }
-    });
-  }
-}
-
-// 4. setCurrentCell 함수 추가
-function setCurrentCell(row, col) {
-  currentCell.value = { row: displayRows.value.findIndex(r => r.id === row.id), col };
-  // 셀 포커스 시 드롭다운 닫기
-  if (activeDropdown.value.rowId && activeDropdown.value.rowId !== row.id) {
-    const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
-    if (otherRow) {
-      otherRow.showProductSearchList = false;
-    }
-    activeDropdown.value = { rowId: null, type: null };
-  }
-}
-
-// 2. cellClass 함수 추가
-function cellClass(rowIdx, col) {
-  return currentCell.value.row === rowIdx && currentCell.value.col === col ? 'cell-focused' : '';
-}
-
-// 드롭다운 관련 함수 추가
-function togglePrescriptionMonthDropdown(row) {
-  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'prescription_month') {
-    activeDropdown.value = { rowId: null, type: null };
-  } else {
-    // 다른 드롭다운이 열려있으면 닫기
-    if (activeDropdown.value.rowId) {
-      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
-      if (otherRow) {
-        otherRow.showProductSearchList = false;
-      }
-    }
-    activeDropdown.value = { rowId: row.id, type: 'prescription_month' };
-    nextTick(() => {
-      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_month'];
-      if (refEl) {
-        refEl.focus();
-        refEl.click();
-      }
-    });
-  }
-}
-
-function togglePrescriptionTypeDropdown(row) {
-  if (activeDropdown.value.rowId === row.id && activeDropdown.value.type === 'prescription_type') {
-    activeDropdown.value = { rowId: null, type: null };
-  } else {
-    // 다른 드롭다운이 열려있으면 닫기
-    if (activeDropdown.value.rowId) {
-      const otherRow = displayRows.value.find(r => r.id === activeDropdown.value.rowId);
-      if (otherRow) {
-        otherRow.showProductSearchList = false;
-      }
-    }
-    activeDropdown.value = { rowId: row.id, type: 'prescription_type' };
-    nextTick(() => {
-      const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_type'];
-      if (refEl) {
-        refEl.focus();
-        refEl.click();
-      }
-    });
-  }
-}
-
-// 전역 클릭 이벤트 핸들러 수정
-function handleGlobalClick(event) {
-  // 드롭다운 영역 외 클릭 시 모든 드롭다운 닫기
-  if (!event.target.closest('.product-input-container') && 
-      !event.target.closest('.product-search-list') &&
-      !event.target.closest('select')) {
-    displayRows.value.forEach(row => {
-      if (row.showProductSearchList) {
-        row.showProductSearchList = false;
-      }
-    });
-    activeDropdown.value = { rowId: null, type: null };
-  }
-}
-
-function handleProductNameFocus(row) {
-  if (row.productSearchResults && row.productSearchResults.length > 0) {
-    row.showProductSearchList = true;
-    activeDropdown.value = { rowId: row.id, type: 'product' };
-    updateProductDropdownPosition(row);
-  }
-}
-
-function handleTabNavigation(row, currentField, event) {
-  const fields = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
-  const currentIndex = fields.indexOf(currentField);
-  let nextIndex;
-  
-  if (event.shiftKey) {
-    nextIndex = currentIndex > 0 ? currentIndex - 1 : fields.length - 1;
-  } else {
-    nextIndex = currentIndex < fields.length - 1 ? currentIndex + 1 : 0;
-  }
-  
-  const nextField = fields[nextIndex];
-  const nextRef = fieldRefs.value[row.id]?.[nextField];
-  
-  if (nextRef) {
-    // 드롭다운이 열려있으면 닫기
-    if (row.showProductSearchList) row.showProductSearchList = false;
-    if (row.showPrescriptionMonthDropdown) row.showPrescriptionMonthDropdown = false;
-    if (row.showPrescriptionTypeDropdown) row.showPrescriptionTypeDropdown = false;
-    
-    nextRef.focus();
-  }
-}
-
-function handlePrescriptionMonthSelect(row) {
-  if (row.showPrescriptionMonthDropdown) {
-    row.prescription_month_modify = availableMonths.value[row.prescriptionMonthSelectedIndex].settlement_month;
-    row.showPrescriptionMonthDropdown = false;
-    handleEditCalculations(row, 'month');
-    // 다음 셀로 이동
-    const nextField = 'product_name';
-    const nextRef = fieldRefs.value[row.id]?.[nextField];
-    if (nextRef) {
-      nextRef.focus();
-    }
-  }
-}
-
-function handlePrescriptionTypeSelect(row) {
-  if (row.showPrescriptionTypeDropdown) {
-    row.prescription_type_modify = prescriptionTypeOptions[row.prescriptionTypeSelectedIndex];
-    row.showPrescriptionTypeDropdown = false;
-    // 다음 셀로 이동
-    const nextField = 'commission_rate';
-    const nextRef = fieldRefs.value[row.id]?.[nextField];
-    if (nextRef) {
-      nextRef.focus();
-    }
-  }
-}
-
-function applySelectedProductFromSearch(row) {
-  if (row.showProductSearchList && row.productSearchResults.length > 0) {
-    const selectedProduct = row.productSearchResults[row.productSearchSelectedIndex];
-    // 콘솔 로그 추가
-    // 보험코드와 기준월로 제품을 찾아 수수료율 반영
-    const baseMonth = row.prescription_month_modify || row.prescription_month;
-    const commissionGrade = (row.company_commission_grade || 'a').toLowerCase();
-    const rateKey = `commission_rate_${commissionGrade}`;
-    const matchedProduct = allProducts.value.find(p => p.insurance_code === selectedProduct.insurance_code && p.base_month === baseMonth);
-    row.commission_rate_modify = matchedProduct && matchedProduct[rateKey] ? matchedProduct[rateKey] * 100 : 0;
-    applySelectedProduct(selectedProduct, row);
-    row.showProductSearchList = false;
-    // 다음 셀로 이동
-    const nextField = 'prescription_qty';
-    const nextRef = fieldRefs.value[row.id]?.[nextField];
-    if (nextRef) {
-      nextRef.focus();
-    }
-  }
-}
-
-function handlePrescriptionMonthFocus(row) {
-  setCurrentCell(row, 'prescription_month');
-  activeDropdown.value = { rowId: row.id, type: 'prescription_month' };
-  nextTick(() => {
-    const refEl = fieldRefs.value[row.id] && fieldRefs.value[row.id]['prescription_month'];
-    if (refEl) {
-      refEl.click();
-    }
-  });
-}
-
-function handleArrowNavigation(row, currentField, direction) {
-  const fields = ['product_name', 'prescription_qty', 'prescription_type', 'commission_rate', 'remarks', 'prescription_month'];
-  const currentIndex = fields.indexOf(currentField);
-  let nextIndex;
-
-  if (direction === 'left') {
-    nextIndex = currentIndex > 0 ? currentIndex - 1 : fields.length - 1;
-  } else {
-    nextIndex = currentIndex < fields.length - 1 ? currentIndex + 1 : 0;
-  }
-
-  const nextField = fields[nextIndex];
-  const nextRef = fieldRefs.value[row.id]?.[nextField];
-  
-  if (nextRef) {
-    // 드롭다운이 열려있으면 닫기
-    if (row.showProductSearchList) row.showProductSearchList = false;
-    if (row.showPrescriptionMonthDropdown) row.showPrescriptionMonthDropdown = false;
-    if (row.showPrescriptionTypeDropdown) row.showPrescriptionTypeDropdown = false;
-    
-    nextRef.focus();
-  }
-}
-
-function handlePrescriptionMonthDownKey(row, event) {
-  if (!row.showPrescriptionMonthDropdown) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
-    row.showPrescriptionMonthDropdown = true;
-    row.prescriptionMonthSelectedIndex = 0;
-  } else {
-    // 드롭다운이 열려있을 때는 다음 항목으로 이동
-    row.prescriptionMonthSelectedIndex = Math.min(
-      row.prescriptionMonthSelectedIndex + 1,
-      availableMonths.value.length - 1
-    );
-  }
-}
-
-function handlePrescriptionMonthUpKey(row, event) {
-  if (!row.showPrescriptionMonthDropdown) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
-    row.showPrescriptionMonthDropdown = true;
-    row.prescriptionMonthSelectedIndex = availableMonths.value.length - 1;
-  } else {
-    // 드롭다운이 열려있을 때는 이전 항목으로 이동
-    row.prescriptionMonthSelectedIndex = Math.max(row.prescriptionMonthSelectedIndex - 1, 0);
-  }
-}
-
-function handlePrescriptionTypeDownKey(row, event) {
-  if (!row.showPrescriptionTypeDropdown) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
-    row.showPrescriptionTypeDropdown = true;
-    row.prescriptionTypeSelectedIndex = 0;
-  } else {
-    // 드롭다운이 열려있을 때는 다음 항목으로 이동
-    row.prescriptionTypeSelectedIndex = Math.min(
-      row.prescriptionTypeSelectedIndex + 1,
-      prescriptionTypeOptions.length - 1
-    );
-  }
-}
-
-function handlePrescriptionTypeUpKey(row, event) {
-  if (!row.showPrescriptionTypeDropdown) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
-    row.showPrescriptionTypeDropdown = true;
-    row.prescriptionTypeSelectedIndex = prescriptionTypeOptions.length - 1;
-  } else {
-    // 드롭다운이 열려있을 때는 이전 항목으로 이동
-    row.prescriptionTypeSelectedIndex = Math.max(row.prescriptionTypeSelectedIndex - 1, 0);
-  }
-}
-
-const handleProductNameDownKey = (row, event) => {
-  if (!row.showProductSearchList) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 첫 번째 항목 선택
-    row.showProductSearchList = true;
-    row.productSearchSelectedIndex = 0;
-    updateProductDropdownPosition(row);
-  } else {
-    // 드롭다운이 열려있을 때는 다음 항목으로 이동
-    row.productSearchSelectedIndex = Math.min(
-      row.productSearchSelectedIndex + 1,
-      row.productSearchResults.length - 1
-    );
+  } catch (error) {
+    console.error('검수 제외 처리 중 오류:', error);
+    alert(`오류가 발생했습니다: ${error.message}`);
   }
 };
 
-const handleProductNameUpKey = (row, event) => {
-  if (!row.showProductSearchList) {
-    // 드롭다운이 닫혀있을 때는 드롭다운을 열고 마지막 항목 선택
-    row.showProductSearchList = true;
-    row.productSearchSelectedIndex = row.productSearchResults.length - 1;
-    updateProductDropdownPosition(row);
-  } else {
-    // 드롭다운이 열려있을 때는 이전 항목으로 이동
-    row.productSearchSelectedIndex = Math.max(row.productSearchSelectedIndex - 1, 0);
+// --- 유틸리티 함수 ---
+function handleEditCalculations(rowData, field) {
+  // 간단한 제품 검색 및 가격/수수료율 업데이트
+  if (field === 'product') {
+      const product = products.value.find(p => p.id === rowData.product_id_modify);
+      if (product) {
+          rowData.price_for_calc = product.price;
+          rowData.commission_rate_modify = product.commission_rate_a; // 기본 A 등급
+      }
   }
-};
+  // 처방액, 지급액 계산
+  const qty = Number(rowData.prescription_qty_modify) || 0;
+  const price = Number(rowData.price_for_calc) || 0;
+  const rate = Number(rowData.commission_rate_modify) || 0;
+  rowData.prescription_amount_modify = qty * price;
+  rowData.payment_amount_modify = Math.round(rowData.prescription_amount_modify * rate);
+}
 
+function handleProductNameInput(rowData, event) {
+  const reactiveRow = rows.value.find(r => r.id === rowData.id);
+  if (!reactiveRow) return;
+
+  reactiveRow.product_name_search = event.target.value;
+  const searchTerm = event.target.value.toLowerCase();
+  reactiveRow.showProductSearchList = true;
+
+  const sourceList = reactiveRow.availableProducts || [];
+
+  if (!searchTerm) {
+    reactiveRow.productSearchResults = sourceList;
+  } else {
+    reactiveRow.productSearchResults = sourceList.filter(p =>
+      p.product_name.toLowerCase().includes(searchTerm) ||
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(searchTerm))
+    );
+  }
+  updateProductDropdownPosition(reactiveRow);
+}
+
+async function applySelectedProduct(product, rowData) {
+    const reactiveRow = rows.value.find(r => r.id === rowData.id);
+    if (!reactiveRow) return;
+
+    reactiveRow.product_id_modify = product.id;
+    reactiveRow.product_name_search = product.product_name;
+    reactiveRow.product_name_display = product.product_name;
+    reactiveRow.insurance_code = product.insurance_code;
+    reactiveRow.price_for_calc = product.price;
+
+    const { data: company, error } = await supabase.from('companies').select('grade').eq('id', reactiveRow.company_id).single();
+    if(error && error.code !== 'PGRST116') { // PGRST116: 'exact-single-row-not-found'
+        console.error('회사 등급 조회 오류:', error);
+    }
+    const companyGrade = company?.grade || 'A';
+    const rate = product[`commission_rate_${companyGrade.toLowerCase()}`] ?? product.commission_rate_a ?? 0;
+    reactiveRow.commission_rate_modify = rate;
+    
+    reactiveRow.showProductSearchList = false;
+    handleEditCalculations(reactiveRow, 'product');
+}
+
+function getRowClass(data) {
+  return [
+    { 'editing-row': data.isEditing },
+    { 'added-row': data.review_action === '추가' },
+    { 'modified-row': data.review_action === '수정' },
+    { 'deleted-row': data.review_action === '삭제' }
+  ];
+}
+
+function getActionSeverity(action) {
+    if (action === '수정') return 'info';
+    if (action === '추가') return 'success';
+    if (action === '삭제') return 'danger';
+    return 'secondary';
+}
+
+function getStatusSeverity(status) {
+    if (status === '완료') return 'success';
+    if (status === '검수중') return 'warning';
+    if (status === '신규') return 'info';
+    return 'secondary';
+}
+
+function getPrescriptionMonth(settlementMonth, offset) {
+  if (!settlementMonth) return '';
+  const [y, m] = settlementMonth.split('-');
+  let mm = parseInt(m, 10) - offset;
+  let yy = parseInt(y, 10);
+  while (mm <= 0) { mm += 12; yy -= 1; }
+  return `${yy}-${String(mm).padStart(2, '0')}`;
+}
+
+function formatDateTime(dateTimeString) {
+    if (!dateTimeString) return '';
+    const date = new Date(dateTimeString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// --- 제품 검색 관련 함수 ---
+function handleProductNameFocus(rowData) {
+  const reactiveRow = rows.value.find(r => r.id === rowData.id);
+  if (!reactiveRow) return;
+
+  const prescriptionMonth = reactiveRow.prescription_month_modify || reactiveRow.prescription_month;
+  const filteredList = getFilteredProductList(prescriptionMonth);
+  
+  reactiveRow.availableProducts = filteredList;
+  reactiveRow.productSearchResults = filteredList;
+  reactiveRow.showProductSearchList = true;
+  updateProductDropdownPosition(reactiveRow);
+}
+
+function delayedHideProductSearchList(rowData) {
+  const reactiveRow = rows.value.find(r => r.id === rowData.id);
+  if (!reactiveRow) return;
+  
+  setTimeout(() => {
+    reactiveRow.showProductSearchList = false;
+  }, 200);
+}
+
+function updateProductDropdownPosition(rowData) {
+  const reactiveRow = rows.value.find(r => r.id === rowData.id);
+  if (!reactiveRow) return;
+
+  nextTick(() => {
+    const inputEl = productInputRefs.value[reactiveRow.id];
+    if (inputEl) {
+      const rect = inputEl.getBoundingClientRect();
+      reactiveRow.productDropdownStyle = {
+        position: 'fixed',
+        top: `${rect.bottom}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        zIndex: 1000
+      };
+    }
+  });
+}
+
+// --- 제품 검색 헬퍼 ---
+function getFilteredProductList(prescriptionMonth) {
+  if (!prescriptionMonth || !products.value || products.value.length === 0) {
+    return [];
+  }
+
+  const filteredByMonth = products.value.filter(p => p.base_month === prescriptionMonth);
+  
+  const uniqueProductsMap = new Map();
+  filteredByMonth.forEach(product => {
+    if (product.insurance_code && !uniqueProductsMap.has(product.insurance_code)) {
+      uniqueProductsMap.set(product.insurance_code, product);
+    }
+  });
+
+  return Array.from(uniqueProductsMap.values());
+}
 </script>
 
 <style scoped>
-/* 기본 select 스타일 추가 */
-
-.performance-review-view { padding: 0px; }
-.data-card-buttons { display: flex; gap: 8px; }
-
-/* Edit mode styles */
-.edit-mode-input {
-  background: #fff !important;
-  border: 1px solid #d0d7de !important;
-  border-radius: 4px !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.edit-mode-input:focus {
-  border-color: #1976d2 !important;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2) !important;
-  outline: none !important;
-}
-
-/* Row status styles */
-.admin-performance-review-table :deep(.added-row td) {
-  background-color: #e7f5ff !important;
-}
-
-.admin-performance-review-table :deep(.modified-row td) {
-  background-color: #fffde7 !important;
-}
-
-.admin-performance-review-table :deep(.deleted-row td) {
-  background-color: #fff5f5 !important;
-}
-
-.admin-performance-review-table :deep(.deleted-row td:nth-child(n+5)) {
-    color: #aaa !important;
-    text-decoration: line-through;
-}
-
-.admin-performance-review-table :deep(.deleted-row td:nth-child(4)) {
-  text-decoration: none !important;
-}
-
-/* 포커스 스타일 */
-.cell-focused {
-  outline: 2px solid #1976d2 !important;
-  outline-offset: -2px !important;
-  z-index: 2;
-  background: #eaf4ff !important;
-  position: relative;
-}
-
-/* Product Search Dropdown */
-.product-input-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.dropdown-arrow-btn {
-  position: absolute;
-  right: 1px;
-  top: 50%;
-  transform: translateY(-50%);
-  height: calc(100% - 2px);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.dropdown-arrow {
-  color: #555;
-  font-size: 10px;
-}
+/* ... 다른 스타일들 ... */
 
 .product-search-list {
   position: absolute;
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 4px;
-  max-height: 220px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  max-height: 200px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .product-search-item {
   padding: 8px 12px;
   cursor: pointer;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  justify-content: space-between;
 }
 
 .product-search-item:hover {
@@ -1523,7 +1087,52 @@ const handleProductNameUpKey = (row, event) => {
 }
 
 .product-search-item.selected {
-  background-color: #1976d2;
-  color: white;
+  background-color: #e0e0e0;
+}
+
+.product-search-item .product-name {
+  font-weight: 500;
+}
+
+.product-search-item .insurance-code {
+  color: #666;
+  font-size: 0.9em;
+}
+
+:deep(.row-added .p-frozen-column),
+:deep(.row-added td) {
+  background-color: #e3f2fd !important; /* 아주 연한 파란색 */
+}
+
+:deep(.row-modified .p-frozen-column),
+:deep(.row-modified td) {
+  background-color: #fffde7 !important; /* 아주 연한 노란색 */
+}
+
+:deep(.row-deleted .p-frozen-column),
+:deep(.row-deleted td) {
+  background-color: #ffebee !important; /* 아주 연한 붉은색 */
+}
+
+:deep(.p-datatable-tfoot > tr > td) {
+    background: #f8f9fa !important;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.p-highlight) {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+}
+
+/* 기존 배경색 규칙을 삭제하고 아래의 더 구체적인 규칙으로 대체합니다. */
+:deep(.p-datatable .p-datatable-tbody > tr.added-row > td) {
+  background-color: #e3f2fd !important; /* 아주 연한 파란색 */
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.modified-row > td) {
+  background-color: #fffde7 !important; /* 아주 연한 노란색 */
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.deleted-row > td) {
+  background-color: #ffebee !important; /* 아주 연한 붉은색 */
 }
 </style>

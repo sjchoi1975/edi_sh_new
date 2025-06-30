@@ -79,6 +79,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
+console.log('supabase:', supabase);
+
 const pharmacyCode = ref('');
 const pharmacyName = ref('');
 const businessNumber = ref('');
@@ -89,11 +91,18 @@ const salesAmount = ref('');
 const salesDate = ref('');
 const router = useRouter();
 
+(async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('userId:', user?.id);
+})();
+
 const handleSubmit = async () => {
   if (!businessNumber.value || !standardCode.value || !salesAmount.value || !salesDate.value) {
     alert('필수 항목을 모두 입력하세요.');
     return;
   }
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
   const dataToInsert = {
     pharmacy_code: pharmacyCode.value,
     pharmacy_name: pharmacyName.value,
@@ -102,7 +111,9 @@ const handleSubmit = async () => {
     standard_code: standardCode.value,
     product_name: productName.value,
     sales_amount: salesAmount.value === '' ? null : Number(salesAmount.value),
-    sales_date: salesDate.value
+    sales_date: salesDate.value,
+    created_by: userId,
+    updated_by: userId
   };
   const { error } = await supabase.from('wholesale_sales').insert([dataToInsert]);
   if (error) {

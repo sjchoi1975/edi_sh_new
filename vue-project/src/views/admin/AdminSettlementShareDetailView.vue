@@ -105,25 +105,41 @@ async function loadDetailData() {
   if (!month.value || !companyId.value) return;
   loading.value = true;
   try {
-    // 1. 상세 데이터 조회 (v_review_details 뷰 사용으로 변경)
+    // 1. 상세 데이터 조회 (products 테이블에서 price 포함)
     const { data, error } = await supabase
-      .from('review_details_view')
-      .select('*')
+      .from('performance_records_absorption')
+      .select(`
+        *,
+        clients ( name ),
+        products ( product_name, insurance_code, price )
+      `)
       .eq('settlement_month', month.value)
-      .eq('company_id', companyId.value)
-      .eq('user_edit_status', '완료');
+      .eq('company_id', companyId.value);
       
     if (error) throw error;
+    if (!data) {
+        detailRows.value = [];
+        loading.value = false;
+        return;
+    }
     
-    // 2. 데이터 가공
-    let mappedData = data.map(row => ({
-      ...row,
-      price: row.price.toLocaleString(),
-      prescription_qty: row.prescription_qty.toLocaleString(),
-      prescription_amount: row.prescription_amount,
-      commission_rate: `${(row.commission_rate * 100).toFixed(2)}%`,
-      payment_amount: (row.payment_amount || 0).toLocaleString(),
-    }));
+    // 2. 데이터 가공 (약가, 처방액, 지급액 계산)
+    let mappedData = data.map(row => {
+      const price = row.products?.price || 0;
+      const prescriptionAmount = (row.prescription_qty || 0) * price;
+      const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
+      
+      return {
+        ...row,
+        client_name: row.clients?.name || 'N/A',
+        product_name_display: row.products?.product_name || 'N/A',
+        insurance_code: row.products?.insurance_code || 'N/A',
+        price: price,
+        prescription_amount: prescriptionAmount,
+        payment_amount: paymentAmount,
+        commission_rate: `${((row.commission_rate || 0) * 100).toFixed(2)}%`,
+      };
+    });
 
     // 3. 데이터 정렬
     mappedData.sort((a, b) => {
@@ -133,15 +149,22 @@ async function loadDetailData() {
       if (a.product_name_display !== b.product_name_display) {
         return a.product_name_display.localeCompare(b.product_name_display, 'ko');
       }
-      return b.prescription_amount - a.prescription_amount;
+      return (b.prescription_amount || 0) - (a.prescription_amount || 0);
     });
 
-    detailRows.value = mappedData.map(row => ({
-      ...row,
-      prescription_amount: row.prescription_amount.toLocaleString()
-    }));
+    // 4. 화면 표시용으로 최종 포맷팅
+    detailRows.value = mappedData.map((row, index) => {
+      const formattedRow = {
+        ...row,
+        price: (row.price || 0).toLocaleString(),
+        prescription_qty: (row.prescription_qty || 0).toLocaleString(),
+        prescription_amount: (row.prescription_amount || 0).toLocaleString(),
+        payment_amount: (row.payment_amount || 0).toLocaleString()
+      };
+      return formattedRow;
+    });
 
-    // 4. 업체 정보 설정 (주소 필드 추가)
+    // 5. 업체 정보 설정
     if (data.length > 0) {
       const { data: cInfo, error: cError } = await supabase
         .from('companies')

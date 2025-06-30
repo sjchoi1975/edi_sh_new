@@ -435,8 +435,12 @@ const fetchCompanyList = async () => {
       .from('performance_records')
       .select(
         `
-        *,
-        products!inner(price)
+        id, 
+        company_id, 
+        client_id, 
+        review_status, 
+        prescription_qty,
+        products ( price )
       `,
       )
       .eq('settlement_month', selectedSettlementMonth.value)
@@ -502,15 +506,18 @@ const fetchCompanyList = async () => {
         )
 
         // 검수 상태별 건수 조회
-        const reviewCompleted = companyPerformances.filter(p => p.user_edit_status === '완료').length;
-        const reviewInProgress = companyPerformances.filter(p => p.user_edit_status === '검수중').length;
-        const reviewPending = companyPerformances.filter(p => p.user_edit_status === '대기').length;
+        const statusCounts = companyPerformances.reduce(
+          (acc, record) => {
+            const status = record.review_status || '대기';
+            if (status === '완료') acc.completed++;
+            else if (status === '검수중') acc.inProgress++;
+            else if (status === '대기') acc.pending++;
+            return acc;
+          },
+          { completed: 0, inProgress: 0, pending: 0 },
+        );
 
-        console.log(`Company ${company.company_name} - Calculated Review Status:`, {
-          completed: reviewCompleted,
-          in_progress: reviewInProgress,
-          pending: reviewPending
-        });
+        console.log(`Company ${company.company_name} - Calculated Review Status:`, statusCounts);
 
         console.log(`Company ${company.company_name} - Calculated:`, {
           submitted_clients: submittedClients,
@@ -634,9 +641,9 @@ const fetchCompanyList = async () => {
           total_clients: totalClientCount || 0,
           submitted_clients: submittedClients,
           prescription_count: prescriptionCount,
-          review_completed: reviewCompleted,
-          review_in_progress: reviewInProgress,
-          review_pending: reviewPending,
+          review_completed: statusCounts.completed,
+          review_in_progress: statusCounts.inProgress,
+          review_pending: statusCounts.pending,
           prescription_amount: prescriptionAmount,
           evidence_files: evidenceFileCount || 0,
           last_registered_at: lastRegisteredAt,
@@ -652,9 +659,9 @@ const fetchCompanyList = async () => {
           total_clients: totalClientCount || 0,
           submitted_clients: submittedClients,
           prescription_count: prescriptionCount,
-          review_completed: reviewCompleted,
-          review_in_progress: reviewInProgress,
-          review_pending: reviewPending,
+          review_completed: statusCounts.completed,
+          review_in_progress: statusCounts.inProgress,
+          review_pending: statusCounts.pending,
           prescription_amount: prescriptionAmount,
           evidence_files: evidenceFileCount || 0,
           last_registered_at: lastRegisteredAt,

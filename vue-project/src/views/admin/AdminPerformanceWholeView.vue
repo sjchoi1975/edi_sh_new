@@ -80,9 +80,9 @@
           </Column>
           <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
-              <span v-if="slotProps.data.review_status === '검수완료'" style="color: var(--primary-blue)">완료</span>
+              <span v-if="slotProps.data.review_status === '완료'" style="color: var(--primary-blue)">완료</span>
               <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">검수중</span>
-              <span v-else-if="slotProps.data.review_status === '신규'" style="color: var(--danger)">신규</span>
+              <span v-else-if="slotProps.data.review_status === '대기'" style="color: var(--danger)">신규</span>
               <span v-else>-</span>
             </template>
           </Column>
@@ -187,12 +187,7 @@ const rawRows = ref([]);
 const displayRows = computed(() => {
   let rows = rawRows.value;
   if (selectedReviewStatus.value) {
-    rows = rows.filter(row => {
-      if (selectedReviewStatus.value === '완료') return row.review_status === '검수완료';
-      if (selectedReviewStatus.value === '검수중') return row.review_status === '검수중';
-      if (selectedReviewStatus.value === '대기') return row.review_status === '신규';
-      return true;
-    });
+    rows = rows.filter(row => row.review_status === selectedReviewStatus.value);
   }
   return rows;
 });
@@ -413,36 +408,50 @@ async function fetchHospitals() {
 async function fetchPerformanceRecords() {
   if (!selectedSettlementMonth.value) {
     rawRows.value = [];
+    performanceRecords.value = [];
+    return;
+  }
+
+  // prescriptionOffset이 0이면 전체 처방월 조회
+  if (prescriptionOffset.value !== 0 && !prescriptionMonth.value) {
+    rawRows.value = [];
+    performanceRecords.value = [];
     return;
   }
   
   loading.value = true;
+  
   try {
     let query = supabase
       .from('performance_records')
       .select(`
         *,
-        companies!inner(company_name, company_group, assigned_pharmacist_contact),
-        clients!inner(name),
-        products!inner(product_name, insurance_code, price)
+        companies!inner(company_name, company_group, representative_name, assigned_pharmacist_contact),
+        products!inner(product_name, insurance_code, price),
+        clients!inner(name)
       `)
       .eq('settlement_month', selectedSettlementMonth.value);
-    
+      
     // 처방월 필터링 (0이 아닐 때만)
-    if (prescriptionOffset.value !== 0 && prescriptionMonth.value) {
+    if (prescriptionOffset.value !== 0) {
       query = query.eq('prescription_month', prescriptionMonth.value);
     }
     
-    // 업체가 선택된 경우
+    // 업체 필터링
     if (selectedCompanyId.value) {
       query = query.eq('company_id', selectedCompanyId.value);
     }
     
-    // 병의원이 선택된 경우
+    // 병의원 필터링
     if (selectedHospitalId.value) {
       query = query.eq('client_id', selectedHospitalId.value);
     }
     
+    // 검수 상태 필터링
+    if (selectedReviewStatus.value) {
+      query = query.eq('review_status', selectedReviewStatus.value);
+    }
+
     const { data, error } = await query;
     
     if (error) {
@@ -455,38 +464,43 @@ async function fetchPerformanceRecords() {
       rawRows.value = [];
       return;
     }
+
+    const registrarIds = [...new Set(data.map(item => item.registered_by).filter(id => id))];
+    let registrarMap = new Map();
+
+    if (registrarIds.length > 0) {
+      const { data: registrars, error: registrarError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', registrarIds);
+      
+      if (registrarError) {
+        console.error("등록자 정보 조회 실패:", registrarError);
+      } else {
+        registrars.forEach(r => registrarMap.set(r.user_id, r.company_name));
+      }
+    }
     
     // 데이터 변환
     let mappedData = data.map(record => {
       const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
-      let review_status = '신규';
-      if (record.user_edit_status === '완료') review_status = '검수완료';
-      else if (record.user_edit_status === '검수중') review_status = '검수중';
       return {
         id: record.id,
-        review_status,
+        review_status: record.review_status || '대기',
         company_group: record.companies?.company_group || '',
         company_name: record.companies?.company_name || '',
         client_name: record.clients?.name || '',
         prescription_month: record.prescription_month || '',
         product_name_display: record.products?.product_name || '',
         insurance_code: record.products?.insurance_code || '',
-        price: record.products?.price ? record.products.price.toLocaleString() : '0',
-        prescription_qty: record.prescription_qty || 0,
+        price: record.products?.price ? Number(record.products.price).toLocaleString() : '0',
+        prescription_qty: record.prescription_qty ? Number(record.prescription_qty).toLocaleString() : '0',
         prescription_amount: prescriptionAmount.toLocaleString(),
         prescription_type: record.prescription_type || '',
         remarks: record.remarks || '',
-        created_date: record.created_at ? (() => {
-          const date = new Date(record.created_at)
-          const year = date.getFullYear()
-          const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
-          const hours = String(date.getHours()).padStart(2, '0')
-          const minutes = String(date.getMinutes()).padStart(2, '0')
-          return `${year}-${month}-${day} ${hours}:${minutes}`
-        })() : '',
-        created_by: record.companies?.company_name || '',
-        assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || ''
+        created_date: new Date(record.created_at).toISOString().slice(0, 16).replace('T', ' '),
+        created_by: registrarMap.get(record.registered_by) || '관리자',
+        assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || '',
       };
     });
 
@@ -543,12 +557,13 @@ const downloadExcel = () => {
     '보험코드': row.insurance_code || '',
     '약가': row.price || '',
     '처방수량': row.prescription_qty || 0,
-    '처방액': Number(row.prescription_amount.replace(/,/g, '')) || 0,
+    '처방액': row.prescription_amount ? Number(row.prescription_amount.toString().replace(/,/g, '')) : 0,
     '처방구분': row.prescription_type || '',
     '비고': row.remarks || '',
-    '등록일시': row.created_date || '',
-    '등록자': row.created_by || '',
-    '관리자': row.assigned_pharmacist_contact || ''
+    '확인(검수)': row.review_status || '대기',
+    등록일시: row.created_date,
+    등록자: row.created_by,
+    관리자: row.assigned_pharmacist_contact
   }));
 
   // 합계 행 추가
@@ -566,9 +581,10 @@ const downloadExcel = () => {
     '처방액': Number(totalAmount.value.replace(/,/g, '')) || 0,
     '처방구분': '',
     '비고': '',
-    '등록일시': '',
-    '등록자': '',
-    '관리자': ''
+    '확인(검수)': '',
+    등록일시: '',
+    등록자: '',
+    관리자: ''
   });
 
   // 워크북 생성

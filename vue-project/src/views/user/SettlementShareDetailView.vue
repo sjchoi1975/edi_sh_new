@@ -154,26 +154,55 @@ async function fetchAllDataForMonth() {
     allDataForMonth.value = [];
     return;
   }
-  const { data, error } = await supabase
-    .from('review_details_view')
-    .select('*')
+  
+  // 1. settlement_share 테이블에서 공유 여부 확인
+  const { data: shareData, error: shareError } = await supabase
+    .from('settlement_share')
+    .select('share_enabled')
     .eq('settlement_month', selectedMonth.value)
     .eq('company_id', companyId.value)
-    .eq('user_edit_status', '완료');
+    .single();
+
+  // 공유되지 않았거나 오류 발생 시, 빈 화면 처리
+  if (shareError || !shareData || !shareData.share_enabled) {
+    allDataForMonth.value = [];
+    updateFilterOptions();
+    filterDetailRows();
+    return;
+  }
+
+  // 2. 공유된 경우에만 performance_records_absorption 데이터 조회
+  const { data, error } = await supabase
+    .from('performance_records_absorption')
+    .select(`
+      *,
+      clients ( name ),
+      products ( product_name, insurance_code, price )
+    `)
+    .eq('settlement_month', selectedMonth.value)
+    .eq('company_id', companyId.value);
   
   if (error) {
     allDataForMonth.value = [];
     return;
   }
   
-  allDataForMonth.value = data.map(row => ({
-    ...row,
-    price: row.price?.toLocaleString() || '',
-    prescription_qty: row.prescription_qty?.toLocaleString() || '',
-    prescription_amount: row.prescription_amount?.toLocaleString() || '',
-    payment_amount: Math.round(row.payment_amount || 0).toLocaleString(),
-    commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
-  }));
+  allDataForMonth.value = data.map(row => {
+    const price = row.products?.price || 0;
+    const prescriptionAmount = (row.prescription_qty || 0) * price;
+    const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
+    
+    return {
+      ...row,
+      client_name: row.clients?.name || 'N/A',
+      product_name_display: row.products?.product_name || 'N/A',
+      insurance_code: row.products?.insurance_code || 'N/A',
+      price: price,
+      prescription_amount: prescriptionAmount,
+      payment_amount: paymentAmount,
+      commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
+    };
+  });
   
   updateFilterOptions();
   filterDetailRows();
@@ -208,12 +237,18 @@ function filterDetailRows() {
     if (productNameCompare !== 0) return productNameCompare;
 
     // 3. 처방수량 높은 순
-    const qtyA = Number(a.prescription_qty.replace(/,/g, '')) || 0;
-    const qtyB = Number(b.prescription_qty.replace(/,/g, '')) || 0;
+    const qtyA = Number(a.prescription_qty.toString().replace(/,/g, '')) || 0;
+    const qtyB = Number(b.prescription_qty.toString().replace(/,/g, '')) || 0;
     return qtyB - qtyA;
   });
 
-  detailRows.value = filtered;
+  detailRows.value = filtered.map(row => ({
+    ...row,
+    price: (row.price || 0).toLocaleString(),
+    prescription_qty: (row.prescription_qty || 0).toLocaleString(),
+    prescription_amount: (row.prescription_amount || 0).toLocaleString(),
+    payment_amount: (row.payment_amount || 0).toLocaleString()
+  }));
 }
 
 watch(selectedMonth, async () => {

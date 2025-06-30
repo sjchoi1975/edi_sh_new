@@ -1,8 +1,10 @@
--- 기존 함수가 존재하면 삭제 (호환성을 위해 여러 시그니처로 삭제)
-DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
-DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month character varying);
+-- 설명: 흡수율 분석을 실행하고, 각 실적별로 연결된 도매/직거래 매출액을 계산하는 함수입니다.
+--      최신 review_details_view를 사용하도록 로직을 전면 수정합니다.
 
--- 새로운 함수 정의
+-- 1. 기존 함수가 존재하면 삭제
+DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
+
+-- 2. 새로운 함수 정의
 CREATE OR REPLACE FUNCTION public.calculate_absorption_rates(p_settlement_month text)
 RETURNS TABLE(
     analysis_id bigint, 
@@ -12,138 +14,85 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- 1. 지정된 정산월에 해당하는 모든 '완료' 상태의 실적 데이터를 임시 테이블에 저장
-    CREATE TEMP TABLE temp_performance_records AS
-    SELECT 
-        absorption_analysis_id,
-        client_id,
-        product_id,
-        insurance_code,
-        prescription_month,
-        prescription_qty
-    FROM public.review_details_view
-    WHERE settlement_month = p_settlement_month
-      AND user_edit_status = '완료';
-
-    -- 2. 제품의 보험코드와 표준코드를 매핑하는 임시 테이블 생성
-    CREATE TEMP TABLE temp_product_codes AS
-    SELECT DISTINCT insurance_code, TRIM(standard_code) AS standard_code
-    FROM public.products
-    WHERE standard_code IS NOT NULL;
-
-    -- 3. 각 약국별, 제품별, 월별 매출(도매/직거래) 집계
-    CREATE TEMP TABLE temp_pharmacy_sales AS
-    SELECT
-        business_registration_number,
-        insurance_code,
-        sales_month,
-        SUM(monthly_wholesale) AS monthly_wholesale,
-        SUM(monthly_direct) AS monthly_direct
-    FROM
-        (
-            SELECT
-                TRIM(ws.business_registration_number) AS business_registration_number,
-                pc.insurance_code,
-                TO_CHAR(ws.sales_date, 'YYYY-MM') AS sales_month,
-                ws.sales_amount AS monthly_wholesale,
-                0 AS monthly_direct
-            FROM
-                public.wholesale_sales ws
-                JOIN temp_product_codes pc ON TRIM(ws.standard_code) = pc.standard_code
-            UNION ALL
-            SELECT
-                TRIM(ds.business_registration_number) AS business_registration_number,
-                pc.insurance_code,
-                TO_CHAR(ds.sales_date, 'YYYY-MM') AS sales_month,
-                0 AS monthly_wholesale,
-                ds.sales_amount AS monthly_direct
-            FROM
-                public.direct_sales ds
-                JOIN temp_product_codes pc ON TRIM(ds.standard_code) = pc.standard_code
-        ) AS combined_sales
-    GROUP BY
-        business_registration_number,
-        insurance_code,
-        sales_month;
-
-    -- 4. 각 병원(client)에 연결된 문전약국 목록 생성
-    CREATE TEMP TABLE temp_client_pharmacy_map AS
-    SELECT 
-        cpm.client_id,
-        TRIM(p.business_registration_number) AS pharmacy_brn
-    FROM public.client_pharmacy_assignments cpm
-    JOIN public.pharmacies p ON cpm.pharmacy_id = p.id;
-
-    -- 5. 약국별로 연결된 병원 수 계산
-    CREATE TEMP TABLE temp_pharmacy_hospital_count AS
-    SELECT
-        pharmacy_brn,
-        COUNT(DISTINCT client_id) as hospital_count
-    FROM temp_client_pharmacy_map
-    GROUP BY pharmacy_brn;
-
-    -- 6. 각 약국-제품-월별로 총 처방 수량 계산 (매출 분배 기준)
-    CREATE TEMP TABLE temp_distribution_base AS
-    SELECT
-        cpm.pharmacy_brn,
-        pr.insurance_code,
-        pr.prescription_month,
-        SUM(pr.prescription_qty) AS total_qty_for_distribution
-    FROM temp_performance_records pr
-    JOIN temp_client_pharmacy_map cpm ON pr.client_id = cpm.client_id
-    GROUP BY cpm.pharmacy_brn, pr.insurance_code, pr.prescription_month;
-
-    -- 7. 최종 결과 계산
     RETURN QUERY
-    WITH final_revenues AS (
+    WITH 
+    -- 1. 선택된 정산월에 해당하는 '완료' 상태의 모든 실적 데이터를 review_details_view에서 가져옴
+    performance_base AS (
         SELECT 
-            pr.absorption_analysis_id AS record_id,
-            -- 도매 매출 계산
-            SUM(
-                COALESCE(ps.monthly_wholesale, 0) * 
-                (CASE 
-                    WHEN phc.hospital_count > 1 THEN (pr.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
-                    ELSE 1 
-                END)
-            ) AS calculated_wholesale,
-            -- 직거래 매출 계산
-            SUM(
-                COALESCE(ps.monthly_direct, 0) *
-                (CASE 
-                    WHEN phc.hospital_count > 1 THEN (pr.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
-                    ELSE 1 
-                END)
-            ) AS calculated_direct
-        FROM temp_performance_records pr
-        -- 병원에 연결된 약국 정보 조인
-        JOIN temp_client_pharmacy_map cpm ON pr.client_id = cpm.client_id
-        -- 약국의 병원 연결 수 정보 조인
-        JOIN temp_pharmacy_hospital_count phc ON cpm.pharmacy_brn = phc.pharmacy_brn
-        -- 약국의 월별 매출 정보 조인
-        LEFT JOIN temp_pharmacy_sales ps 
-            ON cpm.pharmacy_brn = ps.business_registration_number
-            AND pr.insurance_code = ps.insurance_code
-            AND pr.prescription_month = ps.sales_month
-        -- 매출 분배 기준(총 수량) 조인
-        LEFT JOIN temp_distribution_base tdb
-            ON cpm.pharmacy_brn = tdb.pharmacy_brn
-            AND pr.insurance_code = tdb.insurance_code
-            AND pr.prescription_month = tdb.prescription_month
-        GROUP BY pr.absorption_analysis_id
+            rdv.absorption_analysis_id,
+            rdv.client_id,
+            rdv.product_id,
+            p.insurance_code,
+            p.standard_code, -- 도매/직거래 매출 매칭을 위한 표준코드
+            rdv.prescription_month,
+            rdv.prescription_qty
+        FROM public.review_details_view rdv
+        JOIN products p ON rdv.product_id = p.id
+        WHERE rdv.settlement_month = p_settlement_month AND rdv.review_status = '완료'
+    ),
+    -- 2. 병원-약국 매핑 정보
+    client_pharmacy_map AS (
+        SELECT cpa.client_id, cpa.pharmacy_id, p.business_registration_number AS pharmacy_brn
+        FROM client_pharmacy_assignments cpa
+        JOIN pharmacies p ON cpa.pharmacy_id = p.id
+    ),
+    -- 3. 약국별로 연결된 병원 수 계산 (매출 분배 로직에 사용)
+    pharmacy_hospital_count AS (
+        SELECT pharmacy_id, COUNT(client_id) AS hospital_count
+        FROM client_pharmacy_map
+        GROUP BY pharmacy_id
+    ),
+    -- 4. 약국-제품-월별 총 처방수량 계산 (매출 분배 기준)
+    distribution_base AS (
+        SELECT
+            cpm.pharmacy_brn,
+            pb.standard_code,
+            pb.prescription_month,
+            SUM(pb.prescription_qty) AS total_qty_for_distribution
+        FROM performance_base pb
+        JOIN client_pharmacy_map cpm ON pb.client_id = cpm.client_id
+        WHERE pb.standard_code IS NOT NULL
+        GROUP BY cpm.pharmacy_brn, pb.standard_code, pb.prescription_month
     )
+    -- 5. 최종 결과 계산
     SELECT 
-        fr.record_id, 
-        ROUND(fr.calculated_wholesale, 0)::numeric, 
-        ROUND(fr.calculated_direct, 0)::numeric
-    FROM final_revenues fr;
-
-    -- 임시 테이블 삭제
-    DROP TABLE temp_performance_records;
-    DROP TABLE temp_product_codes;
-    DROP TABLE temp_pharmacy_sales;
-    DROP TABLE temp_client_pharmacy_map;
-    DROP TABLE temp_pharmacy_hospital_count;
-    DROP TABLE temp_distribution_base;
-
+        pb.absorption_analysis_id AS record_id,
+        -- 도매 매출 계산
+        SUM(
+            COALESCE(ws.sales_amount, 0) * 
+            (CASE 
+                WHEN phc.hospital_count > 1 THEN (pb.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
+                ELSE 1 
+            END)
+        ) AS calculated_wholesale,
+        -- 직거래 매출 계산
+        SUM(
+            COALESCE(ds.sales_amount, 0) *
+            (CASE 
+                WHEN phc.hospital_count > 1 THEN (pb.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
+                ELSE 1 
+            END)
+        ) AS calculated_direct
+    FROM performance_base pb
+    -- 병원에 연결된 약국 정보 조인
+    JOIN client_pharmacy_map cpm ON pb.client_id = cpm.client_id
+    -- 약국의 병원 연결 수 정보 조인
+    JOIN pharmacy_hospital_count phc ON cpm.pharmacy_id = phc.id
+    -- 도매 매출 정보 조인
+    LEFT JOIN wholesale_sales ws 
+        ON cpm.pharmacy_brn = ws.business_registration_number
+        AND pb.standard_code = ws.product_code
+        AND pb.prescription_month = ws.sales_month
+    -- 직거래 매출 정보 조인
+    LEFT JOIN direct_sales ds 
+        ON cpm.pharmacy_brn = ds.business_registration_number
+        AND pb.standard_code = ds.product_code
+        AND pb.prescription_month = ds.sales_month
+    -- 매출 분배 기준(총 수량) 조인
+    LEFT JOIN distribution_base tdb
+        ON cpm.pharmacy_brn = tdb.pharmacy_brn
+        AND pb.standard_code = tdb.standard_code
+        AND pb.prescription_month = tdb.prescription_month
+    GROUP BY pb.absorption_analysis_id;
 END;
 $$; 

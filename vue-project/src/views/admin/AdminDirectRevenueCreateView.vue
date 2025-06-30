@@ -95,6 +95,8 @@ const handleSubmit = async () => {
     alert('필수 항목을 모두 입력하세요.');
     return;
   }
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
   const dataToInsert = {
     pharmacy_code: pharmacyCode.value,
     pharmacy_name: pharmacyName.value,
@@ -103,7 +105,9 @@ const handleSubmit = async () => {
     standard_code: standardCode.value,
     product_name: productName.value,
     sales_amount: salesAmount.value === '' ? null : Number(salesAmount.value),
-    sales_date: salesDate.value
+    sales_date: salesDate.value,
+    created_by: userId,
+    updated_by: null
   };
   const { error } = await supabase.from('direct_sales').insert([dataToInsert]);
   if (error) {

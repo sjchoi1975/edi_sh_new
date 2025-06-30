@@ -355,6 +355,7 @@ const saveEdit = async (row) => {
       return
     }
 
+    const userId = await getCurrentUserId();
     const updateData = {
       pharmacy_code: row.pharmacy_code || '',
       pharmacy_name: row.pharmacy_name || '',
@@ -364,6 +365,7 @@ const saveEdit = async (row) => {
       product_name: row.product_name || '',
       sales_amount: row.sales_amount ? Number(row.sales_amount) : null, // NULL 가능하도록 수정
       sales_date: row.sales_date || null, // 빈 문자열이면 null로 처리
+      updated_by: userId,
     }
 
     const { error } = await supabase.from('direct_sales').update(updateData).eq('id', row.id)
@@ -469,6 +471,7 @@ const handleFileUpload = async (event) => {
     // 데이터 변환 및 검증
     const uploadData = []
     const errors = []
+    const userId = await getCurrentUserId();
 
     jsonData.forEach((row, index) => {
       const rowNum = index + 2 // 엑셀 행 번호 (헤더 제외)
@@ -519,6 +522,8 @@ const handleFileUpload = async (event) => {
         product_name: row['제품명'] || '',
         sales_amount: salesAmount, // NULL 가능
         sales_date: salesDate, // NULL 가능
+        created_by: userId,
+        updated_by: userId,
       })
     })
 
@@ -611,6 +616,11 @@ async function deleteAllRevenues() {
   }
   revenues.value = []
   alert('모든 직거래매출 데이터가 삭제되었습니다.')
+}
+
+async function getCurrentUserId() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id;
 }
 
 onMounted(() => {

@@ -41,18 +41,18 @@
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
         </Column>
-        <Column field="company_type" header="구분" :headerStyle="{ width: columnWidths.company_type }" :sortable="true"/>
+        <Column field="company_group" header="구분" :headerStyle="{ width: columnWidths.company_group }" :sortable="true"/>
         <Column field="company_name" header="업체명" :headerStyle="{ width: columnWidths.company_name }" :sortable="true"/>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true"/>
         <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true"/>
         <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" :sortable="true"/>
         <Column field="client_count" header="병의원 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
-        <Column field="prescription_count" header="처방건수" :headerStyle="{ width: columnWidths.prescription_count }" :sortable="true"/>
+        <Column field="total_records" header="처방건수" :headerStyle="{ width: columnWidths.total_records }" :sortable="true"/>
         <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
-            <template #body="slotProps">{{ slotProps.data.total_prescription_amount.toLocaleString() }}</template>
+            <template #body="slotProps">{{ (slotProps.data.total_prescription_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }" :sortable="true">
-            <template #body="slotProps">{{ slotProps.data.total_payment_amount.toLocaleString() }}</template>
+            <template #body="slotProps">{{ (slotProps.data.total_payment_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column header="상세" :headerStyle="{ width: columnWidths.detail }">
           <template #body="slotProps">
@@ -61,7 +61,7 @@
         </Column>
         <Column header="공유" :headerStyle="{ width: columnWidths.share }">
           <template #body="slotProps">
-            <input type="checkbox" v-model="slotProps.data.is_shared" @change="onShareChange(slotProps.data)" class="share-checkbox" />
+            <input type="checkbox" v-model="slotProps.data.is_shared" @change="onShareChange(slotProps.data, slotProps.data.is_shared)" class="share-checkbox" />
           </template>
         </Column>
         <ColumnGroup type="footer">
@@ -89,13 +89,13 @@ import { supabase } from '@/supabase';
 
 const columnWidths = {
   no: '4%',
-  company_type: '8%',
+  company_group: '8%',
   company_name: '14%',
   business_registration_number: '10%',
   representative_name: '8%',
   manager_name: '8%',
   client_count: '9%',
-  prescription_count: '9%',
+  total_records: '9%',
   total_prescription_amount: '9%',
   total_payment_amount: '9%',
   detail: '6%',
@@ -140,13 +140,14 @@ watch(selectedMonth, async (newMonth) => {
 async function fetchAvailableMonths() {
     try {
         const { data, error } = await supabase
-            .from('review_details_view')
-            .select('settlement_month', { distinct: true })
-            .eq('user_edit_status', '완료');
+            .from('performance_records_absorption')
+            .select('settlement_month');
             
         if (error) throw error;
         
-        const months = data.map(item => ({ settlement_month: item.settlement_month }));
+        // 월 목록에서 중복 제거
+        const uniqueMonths = [...new Set(data.map(item => item.settlement_month))];
+        const months = uniqueMonths.map(month => ({ settlement_month: month }));
         months.sort((a, b) => b.settlement_month.localeCompare(a.settlement_month));
         
         availableMonths.value = months;
@@ -164,102 +165,151 @@ async function fetchAvailableMonths() {
 }
 
 async function loadSettlementData() {
-    if (!selectedMonth.value) return;
-    loading.value = true;
-    shareChanges.value = {};
-    
-    try {
-        const { data: summaryData, error } = await supabase.rpc('get_settlement_summary_by_company', {
-            p_settlement_month: selectedMonth.value
-        });
-        
-        if (error) throw error;
+  if (!selectedMonth.value) return;
+  loading.value = true;
+  shareChanges.value = {};
 
-        companySummary.value = summaryData.sort((a,b) => {
-          if (b.total_payment_amount !== a.total_payment_amount) {
-            return b.total_payment_amount - a.total_payment_amount;
-          }
-          return a.company_name.localeCompare(b.company_name, 'ko');
+  try {
+    // 1. performance_records_absorption에서 해당 월의 모든 데이터를 가져옵니다.
+    const { data: records, error: recordsError } = await supabase
+      .from('performance_records_absorption')
+      .select(`
+        *,
+        company:companies(*),
+        product:products(price)
+      `)
+      .eq('settlement_month', selectedMonth.value);
+
+    if (recordsError) throw recordsError;
+
+    // 2. 회사별로 데이터를 집계합니다.
+    const summaryMap = new Map();
+    for (const record of records) {
+      if (!record.company) continue;
+
+      const companyId = record.company.id;
+      if (!summaryMap.has(companyId)) {
+        summaryMap.set(companyId, {
+          company_id: companyId,
+          company_group: record.company.company_group,
+          company_name: record.company.company_name,
+          business_registration_number: record.company.business_registration_number,
+          representative_name: record.company.representative_name,
+          manager_name: record.company.assigned_pharmacist_contact,
+          client_count: new Set(),
+          total_records: 0,
+          total_prescription_amount: 0,
+          total_payment_amount: 0,
+          is_shared: false, // 기본값
+          settlement_share_id: null // 기본값
         });
-        
-    } catch (err) {
-        console.error('정산 공유 데이터 로드 오류:', err);
-        alert('데이터를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-        loading.value = false;
+      }
+
+      const summary = summaryMap.get(companyId);
+      summary.client_count.add(record.client_id);
+      summary.total_records += 1;
+
+      const prescriptionAmount = (record.prescription_qty || 0) * (record.product?.price || 0);
+      const paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0));
+
+      summary.total_prescription_amount += prescriptionAmount;
+      summary.total_payment_amount += paymentAmount;
     }
+
+    // 3. 공유 상태를 별도로 조회하여 병합합니다.
+    const companyIds = Array.from(summaryMap.keys());
+    if (companyIds.length > 0) {
+      const { data: shares, error: sharesError } = await supabase
+        .from('settlement_share')
+        .select('*')
+        .eq('settlement_month', selectedMonth.value)
+        .in('company_id', companyIds);
+
+      if (sharesError) throw sharesError;
+
+      for (const share of shares) {
+        if (summaryMap.has(share.company_id)) {
+          const summary = summaryMap.get(share.company_id);
+          summary.is_shared = share.share_enabled;
+          summary.settlement_share_id = share.id;
+        }
+      }
+    }
+
+    // 4. 최종 데이터를 생성하고 정렬합니다.
+    const finalSummary = Array.from(summaryMap.values()).map(s => {
+      s.client_count = s.client_count.size;
+      return s;
+    });
+
+    companySummary.value = finalSummary.sort((a,b) => {
+      if (b.total_payment_amount !== a.total_payment_amount) {
+        return b.total_payment_amount - a.total_payment_amount;
+      }
+      return a.company_name.localeCompare(b.company_name, 'ko');
+    });
+
+  } catch (err) {
+      console.error('정산 공유 데이터 로드 오류:', err);
+      alert('데이터를 불러오는 중 오류가 발생했습니다.');
+  } finally {
+      loading.value = false;
+  }
 }
 
-function onShareChange(companyData) {
-    shareChanges.value[companyData.company_id] = {
-      is_shared: companyData.is_shared,
-      id: companyData.settlement_share_id
-    };
+function onShareChange(companyData, isChecked) {
+  // 1. 화면에 보이는 데이터(companySummary)의 is_shared 값을 직접 변경합니다.
+  const itemInSummary = companySummary.value.find(item => item.company_id === companyData.company_id);
+  if (itemInSummary) {
+    itemInSummary.is_shared = isChecked;
+  }
+
+  // 2. 변경된 내역을 shareChanges에 별도로 기록합니다.
+  shareChanges.value[companyData.company_id] = {
+    is_shared: isChecked,
+    id: companyData.settlement_share_id
+  };
 }
 
 // 전체 공유/해제
 function toggleAllShares(share) {
   companySummary.value.forEach(company => {
     company.is_shared = share;
-    onShareChange(company);
+    onShareChange(company, share);
   });
 }
 
 async function saveShareStatus() {
-    if (Object.keys(shareChanges.value).length === 0) {
-        alert('변경사항이 없습니다.');
-        return;
-    }
+  if (Object.keys(shareChanges.value).length === 0) {
+    alert('변경사항이 없습니다.');
+    return;
+  }
+  loading.value = true;
+  
+  const dataToUpsert = Object.entries(shareChanges.value).map(([companyId, change]) => ({
+    settlement_month: selectedMonth.value,
+    company_id: companyId,
+    share_enabled: change.is_shared,
+  }));
 
-    loading.value = true;
+  try {
+    const { error } = await supabase
+      .from('settlement_share')
+      .upsert(dataToUpsert, { onConflict: 'settlement_month, company_id' });
+
+    if (error) throw error;
     
-    const recordsToInsert = [];
-    const recordsToUpdate = [];
+    shareChanges.value = {};
+    alert('공유 상태가 성공적으로 저장되었습니다.');
+    // 데이터를 다시 불러와 화면을 최신 상태로 유지합니다.
+    await loadSettlementData();
 
-    for (const companyId in shareChanges.value) {
-        const change = shareChanges.value[companyId];
-        if (change.id) { // ID가 있으면 업데이트
-            recordsToUpdate.push({
-                id: change.id,
-                share_enabled: change.is_shared
-            });
-        } else { // ID가 없으면 삽입
-            recordsToInsert.push({
-                settlement_month: selectedMonth.value,
-                company_id: companyId,
-                share_enabled: change.is_shared,
-            });
-        }
-    }
-
-    try {
-        const promises = [];
-        if (recordsToInsert.length > 0) {
-            promises.push(supabase.from('settlement_share').insert(recordsToInsert));
-        }
-        if (recordsToUpdate.length > 0) {
-            const updatePromises = recordsToUpdate.map(record => 
-                supabase.from('settlement_share').update({ share_enabled: record.share_enabled }).eq('id', record.id)
-            );
-            promises.push(...updatePromises);
-        }
-
-        const results = await Promise.all(promises);
-        
-        results.forEach(res => {
-            if (res.error) throw res.error;
-        });
-
-        shareChanges.value = {};
-        alert('공유 상태가 성공적으로 저장되었습니다.');
-        await loadSettlementData();
-
-    } catch (err) {
-        console.error('공유 상태 저장 오류:', err);
-        alert('공유 상태 저장 중 오류가 발생했습니다.');
-    } finally {
-        loading.value = false;
-    }
+  } catch (err) {
+    console.error('공유 상태 저장 오류:', err);
+    alert(`공유 상태 저장 중 오류가 발생했습니다: ${err.message}`);
+  } finally {
+    loading.value = false;
+  }
 }
 
 function goDetail(companyData) {
