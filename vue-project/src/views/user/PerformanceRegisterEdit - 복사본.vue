@@ -827,29 +827,6 @@ function cellClass(rowIdx, col) {
   return currentCell.value.row === rowIdx && currentCell.value.col === col ? 'cell-focused' : '';
 }
 
-// 회사-거래처 매핑에서 수수료율 등급 조회 함수
-async function getCommissionGradeForClientCompany(companyId, clientId) {
-  const { data, error } = await supabase
-    .from('client_company_assignments')
-    .select('modified_commission_grade, company_default_commission_grade')
-    .eq('company_id', companyId)
-    .eq('client_id', clientId)
-    .single();
-  
-  if (error || !data) {
-    // 매핑 정보가 없으면 회사의 기본 등급 사용
-    const { data: company } = await supabase
-      .from('companies')
-      .select('default_commission_grade')
-      .eq('id', companyId)
-      .single();
-    return company?.default_commission_grade || 'A';
-  }
-  
-  // modified_commission_grade가 있으면 우선 사용, 없으면 company_default_commission_grade 사용
-  return data.modified_commission_grade || data.company_default_commission_grade || 'A';
-}
-
 // 실적 저장로직 - 기존 데이터를 삭제 후 새로 저장
 async function savePerformanceData() {
   const clientId = route.query.clientId;
@@ -892,8 +869,8 @@ async function savePerformanceData() {
 
   // 1. INSERT
   if (rowsToInsert.length > 0) {
-    const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
     const dataToInsert = rowsToInsert.map(row => {
+      const grade = myCompany.default_commission_grade;
       let commissionRate = 0;
       if (grade === 'A') {
         commissionRate = row.commission_rate_a;
@@ -921,8 +898,8 @@ async function savePerformanceData() {
 
   // 2. UPDATE
   if (rowsToUpdate.length > 0) {
-    const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
     const updatePromises = rowsToUpdate.map(row => {
+      const grade = myCompany.default_commission_grade;
       let commissionRate = 0;
       if (grade === 'A') {
         commissionRate = row.commission_rate_a;

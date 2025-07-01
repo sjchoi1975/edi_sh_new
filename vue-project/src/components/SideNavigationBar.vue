@@ -68,6 +68,7 @@ const adminMenuTree = [
   { label: '병의원 관리', icon: 'pi pi-building', children: [
     { label: '병의원 목록', path: '/admin/clients' },
     { label: '담당업체 지정', path: '/admin/clients/assign-companies' },
+    { label: '수수료 등급 설정', path: '/admin/clients/commission-grades' },
     { label: '문전약국 지정', path: '/admin/clients/assign-pharmacies' }
   ]},
   { label: '문전약국 관리', icon: 'pi pi-home', children: [

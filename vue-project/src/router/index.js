@@ -157,6 +157,12 @@ const router = createRouter({
       meta: { menu: '병의원 관리', submenu: '담당업체 지정', requiresAuth: true, isAdmin: true },
     },
     {
+      path: '/admin/clients/commission-grades',
+      name: 'AdminClientsCommissionGrades',
+      component: () => import('@/views/admin/AdminClientsCommissionGradesView.vue'),
+      meta: { menu: '병의원 관리', submenu: '수수료 등급 설정', requiresAuth: true, isAdmin: true },
+    },
+    {
       path: '/admin/clients/assign-pharmacies',
       name: 'AdminClientsAssignPharmacies',
       component: () => import('@/views/admin/AdminClientsAssignPharmaciesView.vue'),

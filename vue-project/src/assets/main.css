@@ -1199,60 +1199,81 @@ select.input-editable {
 
 /* 이용자 공지사항 목록 테이블 헤더 */
 .notices-table .p-datatable-column-title,
+
 /* 이용자 제품 목록 테이블 헤더 */
 .products-table .p-datatable-column-title,
+
 /* 이용자 거래처 목록 테이블 헤더 */
 .clients-table .p-datatable-column-title,
+
 /* 이용자 실적 등록 테이블 헤더 */
 .performance-register-table .p-datatable-column-title,
+
 /* 이용자 실적 등록 - 입력 테이블 헤더 */
 .performance-edit-table .p-datatable-column-title,
+
 /* 이용자 실적 등록 현황 테이블 헤더 */
 .performance-list-table .p-datatable-column-title,
+
 /* 이용자 정산내역서 테이블 헤더 */
 .user-settlement-detail-table .p-datatable-column-title,
 
 
 /* 관리자 공지사항 목록 테이블 헤더 */
 .admin-notices-table .p-datatable-column-title,
+
 /* 관리자 승인 업체 테이블 헤더 */
 .admin-companies-approved-table .p-datatable-column-title,
+
 /* 관리자 미승인 업체 테이블 헤더 */
 .admin-companies-pending-table .p-datatable-column-title, 
+
 /* 관리자 제품 테이블 헤더 */
 .admin-products-table .p-datatable-column-title,
+
 /* 관리자 거래처 테이블 헤더 */
 .admin-clients-table .p-datatable-column-title,
-/* 관리자 문전약국 테이블 헤더 */
-.admin-pharmacies-table .p-datatable-column-title, 
-/* 관리자 도매매출 테이블 헤더 */
-.admin-wholesale-revenue-table .p-datatable-column-title,
-/* 관리자 직거래매출 테이블 헤더 */
-.admin-direct-revenue-table .p-datatable-column-title, 
+
 /* 관리자 담당업체 지정 테이블 헤더 */
 .admin-assign-companies-table .p-datatable-column-title,
+
+/* 관리자 수수료 등급 설정 테이블 헤더 */
+.admin-commission-grades-table .p-datatable-column-title,
+
 /* 관리자 문전약국 지정 테이블 헤더 */
 .admin-assign-pharmacies-table .p-datatable-column-title,
+
 /* 관리자 문전약국 테이블 헤더 */
 .admin-pharmacies-table .p-datatable-column-title,
+
 /* 관리자 도매매출 테이블 헤더 */
 .admin-wholesale-revenue-table .p-datatable-column-title,
+
 /* 관리자 직거래매출 테이블 헤더 */
 .admin-direct-revenue-table .p-datatable-column-title,
+
+
 /* 관리자 정산월관리 테이블 헤더 */
 .admin-settlement-months-table .p-datatable-column-title,
+
 /* 관리자 업체별 등록 현황 테이블 헤더 */
 .admin-performance-companies-table .p-datatable-column-title,
+
 /* 관리자 업체별 등록 현황 - 증빙 파일 보기 모달 테이블 헤더 */
 .admin-performance_evidence_files_modal-table .p-datatable-column-title,
+
 /* 관리자 전체 등록 현황 테이블 헤더 */
 .admin-performance-whole-table .p-datatable-column-title,
+
 /* 관리자 실적 검수 테이블 헤더 */
 .admin-performance-review-table .p-datatable-column-title,
+
 /* 관리자 흡수율 분석 테이블 헤더 */
 .absorption-analysis-table .p-datatable-column-title,
+
 /* 관리자 정산내역서 공유 테이블 헤더 */
 .admin-settlement-share-table .p-datatable-column-title,
+
 /* 관리자 정산내역서 상세 테이블 헤더 */
 .admin-settlement-share-detail-table .p-datatable-column-title {
   text-align: center !important;
@@ -1419,6 +1440,7 @@ select.input-editable {
   text-align: left !important;
 }
 
+
 /* ------ 관리자 승인 업체 (AdminCompaniesApprovedView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 수수료 등급, 관리자, 승인 처리) --- */
 .admin-companies-approved-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(10)) {
@@ -1429,6 +1451,7 @@ select.input-editable {
   text-align: left !important;
 }
 
+
 /* ------ 관리자 미승인 업체 (AdminCompaniesPendingView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 수수료 등급, 관리자, 승인 처리) --- */
 .admin-companies-pending-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(10)) {
@@ -1438,6 +1461,7 @@ select.input-editable {
 .admin-companies-pending-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(3), :nth-child(6), :nth-child(9)) {
   text-align: left !important;
 }
+
 
 /* ------ 관리자 제품 목록 (AdminProductsView.vue) ------ */
 /* --- 중앙 정렬 (No, 보험코드, 수수료A, 수수료B, 표준코드, 단위/포장형태, 단위수량, 등록일자, 상태, 작업) --- */
@@ -1453,6 +1477,7 @@ select.input-editable {
   text-align: right !important;
 }
 
+
 /* ------ 관리자 거래처 목록 (AdminClientsView.vue) ------ */
 /* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 등록일자, 상태, 작업) --- */
 .admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(10)) {
@@ -1462,6 +1487,7 @@ select.input-editable {
 .admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
   text-align: left !important;
 }
+
 
 /* ------ 관리자 담당업체 지정 (AdminClientsAssignCompaniesView.vue) ------ */
 /* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 업체 사업자등록번호, 작업) --- */
@@ -1473,15 +1499,6 @@ select.input-editable {
   text-align: left !important;
 }
 
-/* ------ 관리자 문전약국 지정 (AdminClientsAssignPharmaciesView.vue) ------ */
-/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 약국 사업자등록번호, 작업) --- */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9)) {
-  text-align: center !important;
-}
-/* --- 좌측 정렬 (병의원명, 주소, 약국명) --- */
-.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(8)) {
-  text-align: left !important;
-}
 
 /* ------ 관리자 담당업체 지정 모달 (AdminClientsAssignCompaniesView.vue) ------ */
 /* --- 중앙 정렬 (체크박스, 사업자등록번호, 대표자명) --- */
@@ -1493,6 +1510,29 @@ select.input-editable {
   text-align: left !important;
 }
 
+
+/* ------ 관리자 수수료 등급 설정 (AdminClientsCommissionGradesView.vue) ------ */
+/* --- 중앙 정렬 (No, 병의원코드, 사업자등록번호, 사업자등록번호, 기본 수수료 등급, 변경 수수료 등급) --- */
+.admin-commission-grades-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(10)) {
+  text-align: center !important;
+}
+/* --- 좌측 정렬 (병의원명, 주소, 업체명) --- */
+.admin-commission-grades-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
+  text-align: left !important;
+}
+
+
+/* ------ 관리자 문전약국 지정 (AdminClientsAssignPharmaciesView.vue) ------ */
+/* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 약국 사업자등록번호, 작업) --- */
+.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9)) {
+  text-align: center !important;
+}
+/* --- 좌측 정렬 (병의원명, 주소, 약국명) --- */
+.admin-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(8)) {
+  text-align: left !important;
+}
+
+
 /* ------ 관리자 문전약국 지정 모달 (AdminClientsAssignPharmaciesView.vue) ------ */
 /* --- 중앙 정렬 (체크박스, 사업자등록번호) --- */
 .modal-assign-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3)) {
@@ -1503,6 +1543,7 @@ select.input-editable {
   text-align: left !important;
 }
 
+
 /* ------ 관리자 문전약국 목록 (AdminPharmaciesView.vue) ------ */
 /* --- 중앙 정렬 (No, 약국코드, 사업자등록번호, 등록일자, 상태, 작업) --- */
 .admin-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(7), :nth-child(8), :nth-child(9)) {
@@ -1512,6 +1553,7 @@ select.input-editable {
 .admin-pharmacies-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(5), :nth-child(6)) {
   text-align: left !important;
 }
+
 
 /* ------ 관리자 도매매출 목록 (AdminWholesaleRevenueView.vue) ------ */
 /* --- 중앙 정렬 (No, 약국코드, 사업자번호, 표준코드, 매출일자, 작업) --- */
@@ -1527,6 +1569,7 @@ select.input-editable {
   text-align: right !important;
 }
 
+
 /* ------ 관리자 직거래매출 목록 (AdminDirectRevenueView.vue) ------ */
 /* --- 중앙 정렬 (No, 약국코드, 사업자번호, 표준코드, 매출일자, 작업) --- */
 .admin-direct-revenue-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(6), :nth-child(9), :nth-child(10)) {
@@ -1541,6 +1584,7 @@ select.input-editable {
   text-align: right !important;
 }
 
+
 /* ------ 관리자 정산월관리 목록 (AdminSettlementMonthsView.vue) ------ */
 /* --- 중앙 정렬 (No, 정산월, 실적입력 시작일, 실적입력 종료일, 상태) --- */
 .admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(7)) {
@@ -1550,6 +1594,7 @@ select.input-editable {
 .admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6)) {
   text-align: left !important;
 }
+
 
 /* ------ 관리자 업체별 등록 현황 (AdminPerformanceCompaniesView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 총 거래처, 제출 거래처, 처방건수, 검수완료, 검수중, 검수미진행, 증빙 파일, 파일 보기, 최종 등록일시) --- */
@@ -1598,6 +1643,7 @@ select.input-editable {
 .admin-performance-review-table .p-datatable-tbody > tr > td {
   background-color: #ffffff !important;
 }
+
 
 /* ------ 실적 검수 테이블 ------ */
 /* --- 중앙 정렬 (체크박스, 검수상태, 검수구분, 액션, 처방월, 보험코드, 처방구분, 수수료율, 등록일시) --- */
@@ -1652,6 +1698,7 @@ select.input-editable {
   align-items: center !important;
 }
 
+
 /* ------ 관리자 흡수율 분석 (AdminAbsorptionAnalysis.vue) ------ */
 /* --- 중앙 정렬 (작업, 처방월, 보험코드, 처방구분, 흡수율, 수수료율, 등록일시) --- */
 .absorption-analysis-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(5), :nth-child(7), :nth-child(11), :nth-child(15), :nth-child(16), :nth-child(19)) {
@@ -1666,6 +1713,7 @@ select.input-editable {
   text-align: right !important;
 }
 
+
 /* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 거래처수, 처방건수, 상세, 공유) --- */
 .admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(11), :nth-child(12)) {
@@ -1679,6 +1727,7 @@ select.input-editable {
 .admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(9), :nth-child(10)) {
   text-align: right !important;
 }
+
 
 /* ------ 관리자 정산내역서 상세 (AdminSettlementShareDetailView.vue) ------ */
 /* --- 중앙 정렬 (No, 처방월, 보험코드, 수수료율) --- */
