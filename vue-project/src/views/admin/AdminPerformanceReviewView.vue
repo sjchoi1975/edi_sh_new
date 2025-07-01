@@ -897,13 +897,44 @@ const excludeFromReview = async () => {
 };
 
 // --- 유틸리티 함수 ---
-function handleEditCalculations(rowData, field) {
+// 회사-거래처 매핑에서 수수료율 등급 조회 함수
+async function getCommissionGradeForClientCompany(companyId, clientId) {
+  const { data, error } = await supabase
+    .from('client_company_assignments')
+    .select('modified_commission_grade, company_default_commission_grade')
+    .eq('company_id', companyId)
+    .eq('client_id', clientId)
+    .single();
+  
+  if (error || !data) {
+    // 매핑 정보가 없으면 회사의 기본 등급 사용
+    const { data: company } = await supabase
+      .from('companies')
+      .select('default_commission_grade')
+      .eq('id', companyId)
+      .single();
+    return company?.default_commission_grade || 'A';
+  }
+  
+  // modified_commission_grade가 있으면 우선 사용, 없으면 company_default_commission_grade 사용
+  return data.modified_commission_grade || data.company_default_commission_grade || 'A';
+}
+
+async function handleEditCalculations(rowData, field) {
   // 간단한 제품 검색 및 가격/수수료율 업데이트
   if (field === 'product') {
       const product = products.value.find(p => p.id === rowData.product_id_modify);
       if (product) {
           rowData.price_for_calc = product.price;
-          rowData.commission_rate_modify = product.commission_rate_a; // 기본 A 등급
+          // 회사-거래처 매핑에서 수수료율 등급 조회
+          const grade = await getCommissionGradeForClientCompany(rowData.company_id, rowData.client_id);
+          let commissionRate = 0;
+          if (grade === 'A') {
+            commissionRate = product.commission_rate_a;
+          } else if (grade === 'B') {
+            commissionRate = product.commission_rate_b;
+          }
+          rowData.commission_rate_modify = commissionRate;
       }
   }
   // 처방액, 지급액 계산
@@ -945,13 +976,15 @@ async function applySelectedProduct(product, rowData) {
     reactiveRow.insurance_code = product.insurance_code;
     reactiveRow.price_for_calc = product.price;
 
-    const { data: company, error } = await supabase.from('companies').select('grade').eq('id', reactiveRow.company_id).single();
-    if(error && error.code !== 'PGRST116') { // PGRST116: 'exact-single-row-not-found'
-        console.error('회사 등급 조회 오류:', error);
+    // 회사-거래처 매핑에서 수수료율 등급 조회
+    const grade = await getCommissionGradeForClientCompany(reactiveRow.company_id, reactiveRow.client_id);
+    let commissionRate = 0;
+    if (grade === 'A') {
+      commissionRate = product.commission_rate_a;
+    } else if (grade === 'B') {
+      commissionRate = product.commission_rate_b;
     }
-    const companyGrade = company?.grade || 'A';
-    const rate = product[`commission_rate_${companyGrade.toLowerCase()}`] ?? product.commission_rate_a ?? 0;
-    reactiveRow.commission_rate_modify = rate;
+    reactiveRow.commission_rate_modify = commissionRate;
     
     reactiveRow.showProductSearchList = false;
     handleEditCalculations(reactiveRow, 'product');
