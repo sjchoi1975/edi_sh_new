@@ -555,79 +555,51 @@ const downloadExcel = () => {
     '처방월': row.prescription_month || '',
     '제품명': row.product_name_display || '',
     '보험코드': row.insurance_code || '',
-    '약가': row.price || '',
-    '처방수량': row.prescription_qty || 0,
-    '처방액': row.prescription_amount ? Number(row.prescription_amount.toString().replace(/,/g, '')) : 0,
+    '약가': Number(String(row.price).replace(/,/g, '')) || 0,
+    '처방수량': Number(row.prescription_qty) || 0,
+    '처방액': Number(String(row.prescription_amount).replace(/,/g, '')) || 0,
     '처방구분': row.prescription_type || '',
     '비고': row.remarks || '',
     '확인(검수)': row.review_status || '대기',
-    등록일시: row.created_date,
-    등록자: row.created_by,
-    관리자: row.assigned_pharmacist_contact
+    '등록일시': new Date(row.created_date),
+    '등록자': row.created_by,
+    '관리자': row.assigned_pharmacist_contact
   }));
 
   // 합계 행 추가
   excelData.push({
-    'No': '',
-    '검수상태': '',
-    '구분': '',
-    '업체명': '',
-    '병의원명': '',
-    '처방월': '',
-    '제품명': '',
-    '보험코드': '',
-    '약가': '합계',
-    '처방수량': Number(totalQty.value.replace(/,/g, '')) || 0,
-    '처방액': Number(totalAmount.value.replace(/,/g, '')) || 0,
-    '처방구분': '',
-    '비고': '',
-    '확인(검수)': '',
-    등록일시: '',
-    등록자: '',
-    관리자: ''
+    'No': '합계',
+    '처방수량': Number(totalQty.value.replace(/,/g, '')),
+    '처방액': Number(totalAmount.value.replace(/,/g, ''))
   });
 
   // 워크북 생성
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(excelData);
 
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 6 },   // No
-    { width: 10 },  // 검수상태
-    { width: 10 },  // 구분
-    { width: 15 },  // 업체명
-    { width: 20 },  // 병의원명
-    { width: 10 },  // 처방월
-    { width: 20 },  // 제품명
-    { width: 12 },  // 보험코드
-    { width: 10 },  // 약가
-    { width: 12 },  // 처방수량
-    { width: 15 },  // 처방액
-    { width: 10 },  // 처방구분
-    { width: 15 },  // 비고
-    { width: 12 },  // 등록일시
-    { width: 10 },  // 등록자
-    { width: 10 }   // 관리자
-  ];
-
   // 숫자 형식 지정 (천 단위 구분)
+  const numberFormat = '#,##0';
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let row = 1; row <= range.e.r; row++) {
-    // 약가 컬럼 (H열)
-    const priceCell = XLSX.utils.encode_cell({ r: row, c: 7 });
-    if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
-      ws[priceCell].z = '#,##0';
+    // 약가 컬럼 (I열)
+    const priceCell = ws[XLSX.utils.encode_cell({ r: row, c: 8 })];
+    if (priceCell && typeof priceCell.v === 'number') {
+      priceCell.z = numberFormat;
     }
-    // 처방수량 컬럼 (I열)
-    const qtyCell = XLSX.utils.encode_cell({ r: row, c: 8 });
-    if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
-      ws[qtyCell].z = '#,##0';
+    // 처방수량 컬럼 (J열)
+    const qtyCell = ws[XLSX.utils.encode_cell({ r: row, c: 9 })];
+    if (qtyCell && typeof qtyCell.v === 'number') {
+      qtyCell.z = numberFormat;
     }
-    // 처방액 컬럼 (J열)
-    const amountCell = XLSX.utils.encode_cell({ r: row, c: 9 });
-    if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
-      ws[amountCell].z = '#,##0';
+    // 처방액 컬럼 (K열)
+    const amountCell = ws[XLSX.utils.encode_cell({ r: row, c: 10 })];
+    if (amountCell && typeof amountCell.v === 'number') {
+      amountCell.z = numberFormat;
+    }
+     // 등록일시 컬럼 (O열)
+    const dateCell = ws[XLSX.utils.encode_cell({ r: row, c: 14 })];
+    if (dateCell && dateCell.t === 'd') {
+      dateCell.z = 'yyyy-mm-dd hh:mm';
     }
   }
 
@@ -635,9 +607,8 @@ const downloadExcel = () => {
 
   // 파일명 생성
   const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  const timeStr = today.toTimeString().slice(0, 8).replace(/:/g, '');
-  const fileName = `전체_등록현황_${selectedSettlementMonth.value || dateStr}_${timeStr}.xlsx`;
+  const dateStr = today.toISOString().slice(0, 10);
+  const fileName = `전체_등록현황_${selectedSettlementMonth.value || dateStr}.xlsx`;
 
   // 다운로드
   XLSX.writeFile(wb, fileName);
@@ -650,26 +621,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 기존 스타일 유지 */
+.performance-register-view { padding: 0px; }
+.data-card-buttons { display: flex; gap: 8px; }
 
-/* 테이블 틀고정 중첩 현상 해결 - 바디에만 흰색 적용 */
-.admin-performance-whole-table :deep(.p-datatable-tbody) {
-  background-color: white !important;
+/* 셀 배경색을 흰색으로 지정 */
+:deep(.p-datatable-tbody > tr > td) {
+  background: #ffffff !important;
 }
 
-.admin-performance-whole-table :deep(.p-datatable-tbody tr td) {
-  background-color: white !important;
-}
-
-.admin-performance-whole-table :deep(.p-datatable-tbody .p-datatable-frozen-column) {
-  background-color: white !important;
-  border-right: 1px solid #e5e7eb !important;
-}
-
-.admin-performance-whole-table :deep(.p-datatable-tbody tr:hover td) {
-  background-color: #f8f9fa !important;
-}
-
-.admin-performance-whole-table :deep(.p-datatable-tbody tr:hover .p-datatable-frozen-column) {
-  background-color: #f8f9fa !important;
+/* 푸터 셀 스타일 */
+:deep(.p-datatable-tfoot > tr > td) {
+    background: #f8f9fa !important;
+    font-weight: bold;
 }
 </style>

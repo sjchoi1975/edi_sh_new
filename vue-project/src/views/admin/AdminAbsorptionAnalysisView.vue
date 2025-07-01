@@ -122,7 +122,7 @@
           </Column>
           <Column field="direct_revenue" header="직거래매출" :headerStyle="{ width: columnWidths.direct_revenue }" :sortable="true">
              <template #body="slotProps">
-              {{ slotProps.data.direct_revenue.toLocaleString() }}
+              {{ Math.floor(slotProps.data.direct_revenue || 0).toLocaleString() }}
             </template>
           </Column>
           <Column field="total_revenue" header="합산액" :headerStyle="{ width: columnWidths.total_revenue }" :sortable="true">
@@ -246,7 +246,7 @@ const totalWholesaleRevenue = computed(() => {
 
 const totalDirectRevenue = computed(() => {
   const total = displayRows.value.reduce((sum, row) => sum + (row.direct_revenue || 0), 0);
-  return total.toLocaleString();
+  return Math.floor(total).toLocaleString();
 });
 
 const totalCombinedRevenue = computed(() => {
@@ -596,81 +596,86 @@ function formatDateTime(dateTimeString) {
   return kstDate.toISOString().slice(0, 16).replace('T', ' ');
 }
 
-function downloadExcel() {
+async function downloadExcel() {
   if (displayRows.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
 
-  // 1. 데이터 준비 (엑셀 서식을 위해 숫자/날짜 타입으로 변환)
-  const dataToExport = displayRows.value.map(row => ({
-    '작업': row.review_action || '-',
-    '구분': row.company_type,
-    '업체명': row.company_name,
-    '병의원명': row.client_name,
-    '처방월': row.prescription_month,
-    '제품명': row.product_name_display,
-    '보험코드': row.insurance_code,
-    '약가': Number(String(row.price).replace(/,/g, '')),
-    '수량': row.prescription_qty,
-    '처방액': Number(String(row.prescription_amount).replace(/,/g, '')),
-    '처방구분': row.prescription_type,
-    '도매매출': row.wholesale_revenue,
-    '직거래매출': row.direct_revenue,
-    '합산액': row.total_revenue,
-    '흡수율(%)': Number(row.absorption_rate) / 100, // 백분율로 표시하기 위해 100으로 나눔
-    '수수료율(%)': Number(String(row.commission_rate).replace('%', '')) / 100,
-    '지급액': Number(String(row.payment_amount).replace(/,/g, '')),
-    '비고': row.remarks,
-    '최초등록일시': new Date(row.created_at), // Date 객체로 변환
-    '등록자': row.created_by,
-  }));
-
-  // 합계 행 추가
-  dataToExport.push({
-    '작업': '합계',
-    '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
-    '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
-    '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
-    '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
-    '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
-  });
-
-  // 2. 워크북 및 워크시트 생성
-  const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-  // 3. 셀 서식 지정
-  const range = XLSX.utils.decode_range(worksheet['!ref']);
-  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-    const numberFormat = '#,##0';
-    const percentFormat = '0%';
+  try {
+    // 1. 등록자 UUID -> company_name 매핑을 위한 companies 조회
+    const { data: companies, error } = await supabase
+      .from('companies')
+      .select('user_id, company_name');
     
-    // G: 약가
-    worksheet[XLSX.utils.encode_cell({c: 6, r: R})].z = numberFormat;
-    // H: 수량
-    worksheet[XLSX.utils.encode_cell({c: 7, r: R})].z = numberFormat;
-    // I: 처방액
-    worksheet[XLSX.utils.encode_cell({c: 8, r: R})].z = numberFormat;
-    // K: 도매매출
-    worksheet[XLSX.utils.encode_cell({c: 10, r: R})].z = numberFormat;
-    // L: 직거래매출
-    worksheet[XLSX.utils.encode_cell({c: 11, r: R})].z = numberFormat;
-    // M: 합산액
-    worksheet[XLSX.utils.encode_cell({c: 12, r: R})].z = numberFormat;
-    // N: 흡수율(%)
-    worksheet[XLSX.utils.encode_cell({c: 13, r: R})].z = '0.00%';
-    // O: 수수료율(%)
-    worksheet[XLSX.utils.encode_cell({c: 14, r: R})].z = percentFormat;
-    // P: 지급액
-    worksheet[XLSX.utils.encode_cell({c: 15, r: R})].z = '#,##0.0';
-    // R: 최초등록일시
-    worksheet[XLSX.utils.encode_cell({c: 17, r: R})].z = 'yyyy-mm-dd hh:mm';
-  }
+    if (error) throw error;
+    
+    // UUID -> company_name 매핑 객체 생성
+    const userCompanyMap = {};
+    companies.forEach(company => {
+      if (company.user_id) {
+        userCompanyMap[company.user_id] = company.company_name;
+      }
+    });
 
-  // 4. 워크북 생성 및 파일 다운로드
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, '흡수율 분석');
-  XLSX.writeFile(workbook, '흡수율_분석_데이터.xlsx');
+    // 2. 데이터 변환
+    const dataToExport = displayRows.value.map(row => ({
+      '작업': row.review_action || '-',
+      '구분': row.company_type,
+      '업체명': row.company_name,
+      '병의원명': row.client_name,
+      '처방월': row.prescription_month,
+      '제품명': row.product_name_display,
+      '보험코드': row.insurance_code,
+      '약가': Math.round(Number(String(row.price).replace(/,/g, '')) || 0),
+      '수량': Math.round(row.prescription_qty || 0),
+      '처방액': Math.round(Number(String(row.prescription_amount).replace(/,/g, '')) || 0),
+      '처방구분': row.prescription_type,
+      '도매매출': Math.round(row.wholesale_revenue || 0),
+      '직거래매출': Math.round(row.direct_revenue || 0),
+      '합산액': Math.round(row.total_revenue || 0),
+      '흡수율': parseFloat(row.absorption_rate) / 100 || 0,
+      '수수료율': parseFloat(String(row.commission_rate).replace('%', '')) / 100 || 0,
+      '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
+      '비고': row.remarks,
+      '등록일시': row.created_date,
+      '등록자': userCompanyMap[row.registered_by] || row.registered_by || '-'
+    }));
+
+    // 3. 워크시트 생성
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 4. 셀 서식 지정
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      // 숫자 컬럼들 (천 단위 콤마, 소수점 없음)
+      const numberCols = [7, 8, 9, 11, 12, 13, 16]; // 약가, 수량, 처방액, 도매매출, 직거래매출, 합산액, 지급액
+      numberCols.forEach(col => {
+        const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
+        if (cell && typeof cell.v === 'number') {
+          cell.z = '#,##0';
+        }
+      });
+
+      // 백분율 컬럼들 (소수점 1자리)
+      const percentCols = [14, 15]; // 흡수율, 수수료율
+      percentCols.forEach(col => {
+        const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
+        if (cell && typeof cell.v === 'number') {
+          cell.z = '0.0%';
+        }
+      });
+    }
+
+    // 5. 파일 다운로드
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '흡수율 분석');
+    XLSX.writeFile(workbook, '흡수율_분석_데이터.xlsx');
+
+  } catch (err) {
+    console.error('엑셀 다운로드 오류:', err);
+    alert('엑셀 다운로드 중 오류가 발생했습니다.');
+  }
 }
 
 const deleteAnalysisData = async () => {
