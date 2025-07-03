@@ -319,6 +319,8 @@ const productSearchForRow = ref({
 const productInputRefs = ref({});
 const productDropdownStyle = ref({});
 
+const productsByMonth = ref({}); // { '2025-06': [...], '2025-05': [...], ... }
+
 function setProductInputRef(rowIdx, el) {
   if (el) productInputRefs.value[rowIdx] = el;
 }
@@ -534,13 +536,11 @@ function handleProductNameInput(rowIndex, event) {
   }
   // 처방월에 맞는 제품만 필터링
   const month = inputRows.value[rowIndex].prescription_month;
-  productSearchForRow.value.results = products.value.filter(
+  const productList = productsByMonth.value[month] || [];
+  productSearchForRow.value.results = productList.filter(
     p =>
-      p.base_month === month &&
-      (
-        (p.product_name && p.product_name.toLowerCase().includes(query)) ||
-        (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
-      )
+      (p.product_name && p.product_name.toLowerCase().includes(query)) ||
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(query))
   );
   productSearchForRow.value.selectedIndex = -1;
   productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
@@ -627,7 +627,7 @@ function toggleProductDropdown(rowIndex) {
   // 처방월에 맞는 제품만 필터링
   const month = inputRows.value[rowIndex].prescription_month;
   productSearchForRow.value.activeRowIndex = rowIndex;
-  productSearchForRow.value.results = products.value.filter(p => p.base_month === month);
+  productSearchForRow.value.results = productsByMonth.value[month] || [];
   productSearchForRow.value.selectedIndex = -1;
   productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
   console.log('show:', productSearchForRow.value.show, 'results:', productSearchForRow.value.results);
@@ -1258,6 +1258,12 @@ onMounted(async () => {
   }
   document.addEventListener('keydown', handleGlobalKeydown);
   document.addEventListener('click', handleGlobalClick);
+
+  // 최초 1행의 처방월 값
+  const firstMonth = inputRows.value[0].prescription_month;
+  if (firstMonth) {
+    await fetchProductsForMonth(firstMonth);
+  }
 });
 
 onUnmounted(() => {
@@ -1281,6 +1287,46 @@ function goBackToList() {
 if (typeof window !== 'undefined') {
   window.products = products;
 }
+
+async function fetchProductsForMonth(month) {
+  // 이미 불러온 월이면 캐시 사용
+  if (productsByMonth.value[month]) return;
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .eq('base_month', month)
+    .range(0, 2999); // 필요시 더 크게
+
+  if (!error && data) {
+    const uniqByMonthAndInsurance = {};
+    const noInsurance = [];
+    data.forEach(p => {
+      const key = `${p.base_month}_${p.insurance_code || ''}`;
+      if (p.insurance_code) {
+        if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
+      } else {
+        noInsurance.push(p);
+      }
+    });
+    productsByMonth.value[month] = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
+  } else {
+    productsByMonth.value[month] = []; // 에러 시 빈 배열
+  }
+}
+
+watch(
+  () => inputRows.value.map(row => row.prescription_month),
+  async (months) => {
+    // 중복 없이 월별로 fetch
+    const uniqueMonths = [...new Set(months.filter(Boolean))];
+    for (const month of uniqueMonths) {
+      await fetchProductsForMonth(month);
+    }
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped>
