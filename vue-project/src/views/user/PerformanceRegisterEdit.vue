@@ -477,13 +477,29 @@ watch(prescriptionOffset, (val) => {
   checkPerformanceEditStatus();
 });
 // 처방월이 변경되면 편집 상태 재확인
-watch(prescriptionMonth, () => {
-  if (prescriptionMonth.value) {
+watch(prescriptionMonth, (val) => {
+  console.log('처방월 변경 감지:', val);
+  if (val) {
+    fetchProducts(val);
     checkPerformanceEditStatus();
   }
 });
-async function fetchProducts() {
-  const { data, error } = await supabase.from('products').select('*').eq('status', 'active');
+watch(
+  () => inputRows.value[0].prescription_month,
+  (val) => {
+    if (val) {
+      fetchProducts(val);
+    }
+  }
+);
+async function fetchProducts(prescriptionMonth) {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .eq('base_month', prescriptionMonth)
+    .range(0, 2999);
+
   if (!error && data) {
     const uniqByMonthAndInsurance = {};
     const noInsurance = [];
@@ -496,6 +512,7 @@ async function fetchProducts() {
       }
     });
     products.value = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
+    console.log('불러온 제품 개수:', data.length, '처방월:', prescriptionMonth);
   }
 }
 
@@ -1225,7 +1242,7 @@ onMounted(async () => {
     prescriptionOffset.value = 1;
     prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, 1);
   }
-  await fetchProducts();
+  await fetchProducts(prescriptionMonth.value);
   await loadExistingData(); // 기존 실적 데이터 불러오기
   // 편집 상태 확인
   await checkPerformanceEditStatus();
