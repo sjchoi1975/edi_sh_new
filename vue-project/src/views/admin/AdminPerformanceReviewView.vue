@@ -383,7 +383,9 @@ onMounted(async () => {
     console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
     await fetchFilterOptions(selectedSettlementMonth.value);
   }
-  await fetchProducts();
+  // 실제 선택된 처방월 값으로 fetchProducts 호출
+  const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+  await fetchProducts(prescriptionMonth);
   console.log("7. onMounted 종료");
 });
 
@@ -433,10 +435,14 @@ async function fetchFilterOptions(settlementMonth) {
     loading.value = false;
 }
 
-async function fetchProducts() {
-    const { data, error } = await supabase.from('products').select('*');
+async function fetchProducts(prescriptionMonth) {
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('base_month', prescriptionMonth);
     if (error) console.error('제품 목록 로딩 실패:', error);
     else products.value = data;
+    console.log('products.value 전체:', products.value.length, products.value);
 }
 
 async function loadPerformanceData() {
@@ -1082,6 +1088,7 @@ function getFilteredProductList(prescriptionMonth) {
   }
 
   const filteredByMonth = products.value.filter(p => p.base_month === prescriptionMonth);
+  console.log(`[제품 검색] 처방월 ${prescriptionMonth} 기준 전체 제품 수:`, filteredByMonth.length);
   
   const uniqueProductsMap = new Map();
   filteredByMonth.forEach(product => {
@@ -1090,7 +1097,10 @@ function getFilteredProductList(prescriptionMonth) {
     }
   });
 
-  return Array.from(uniqueProductsMap.values());
+  const uniqueProducts = Array.from(uniqueProductsMap.values());
+  console.log(`[제품 검색] 처방월 ${prescriptionMonth} 기준 보험코드 유니크 제품 수:`, uniqueProducts.length);
+  
+  return uniqueProducts;
 }
 </script>
 

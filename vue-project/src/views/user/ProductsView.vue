@@ -143,7 +143,7 @@ const fetchProducts = async () => {
     .from('products')
     .select('*')
     .eq('status', 'active')
-    .order('base_month', { ascending: false });
+    .range(0, 2999);
   if (!error && data) {
     products.value = data;
     // 중복 없이 기준월만 추출

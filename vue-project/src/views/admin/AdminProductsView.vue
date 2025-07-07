@@ -332,7 +332,8 @@ const fetchProducts = async () => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*', { count: 'exact' })
+      .range(0, 2999)
       .order('base_month', { ascending: false });
     if (!error && data) {
       products.value = data;
