@@ -494,8 +494,8 @@ async function fetchPerformanceRecords() {
         product_name_display: record.products?.product_name || '',
         insurance_code: record.products?.insurance_code || '',
         price: record.products?.price ? Number(record.products.price).toLocaleString() : '0',
-        prescription_qty: record.prescription_qty ? Number(record.prescription_qty).toLocaleString() : '0',
-        prescription_amount: prescriptionAmount.toLocaleString(),
+        prescription_qty: record.prescription_qty ? Number(record.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0.0',
+        prescription_amount: Math.round(prescriptionAmount).toLocaleString(),
         prescription_type: record.prescription_type || '',
         remarks: record.remarks || '',
         created_date: new Date(record.created_at).toISOString().slice(0, 16).replace('T', ' '),
@@ -528,14 +528,16 @@ async function fetchPerformanceRecords() {
 
 // 합계 계산
 const totalQty = computed(() => {
-  return displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0).toLocaleString();
+  const sum = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty.toString().replace(/,/g, '')) || 0), 0);
+  return sum.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });
 
 const totalAmount = computed(() => {
-  return displayRows.value.reduce((sum, row) => {
-    const amount = Number(row.prescription_amount.replace(/,/g, '')) || 0;
+  const sum = displayRows.value.reduce((sum, row) => {
+    const amount = Number(row.prescription_amount.toString().replace(/,/g, '')) || 0;
     return sum + amount;
-  }, 0).toLocaleString();
+  }, 0);
+  return sum.toLocaleString();
 });
 
 // 엑셀 다운로드

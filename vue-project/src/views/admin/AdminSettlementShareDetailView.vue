@@ -41,11 +41,19 @@
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
         <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name_display }" :sortable="true" />
         <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
-        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
-        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
-        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
+        <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" >
+          <template #body="slotProps">{{ isNaN(Number(slotProps.data.price)) ? '0' : Math.round(Number(slotProps.data.price)).toLocaleString() }}</template>
+        </Column>
+        <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" >
+          <template #body="slotProps">{{ isNaN(Number(slotProps.data.prescription_qty)) ? '0.0' : Number(slotProps.data.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</template>
+        </Column>
+        <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" >
+          <template #body="slotProps">{{ isNaN(Number(slotProps.data.prescription_amount)) ? '0' : Math.round(Number(slotProps.data.prescription_amount)).toLocaleString() }}</template>
+        </Column>
         <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
-        <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" />
+        <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" >
+          <template #body="slotProps">{{ isNaN(Number(slotProps.data.payment_amount)) ? '0' : Math.round(Number(slotProps.data.payment_amount)).toLocaleString() }}</template>
+        </Column>
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
         <ColumnGroup type="footer">
             <Row>
@@ -125,9 +133,11 @@ async function loadDetailData() {
     
     // 2. 데이터 가공 (약가, 처방액, 지급액 계산)
     let mappedData = data.map(row => {
-      const price = row.products?.price || 0;
-      const prescriptionAmount = (row.prescription_qty || 0) * price;
-      const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
+      // 데이터 매핑 시
+      const qty = row.prescription_qty ?? 0;
+      const price = row.products?.price ?? 0;
+      const prescriptionAmount = qty * price;
+      const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate ?? 0));
       
       return {
         ...row,
@@ -154,12 +164,18 @@ async function loadDetailData() {
 
     // 4. 화면 표시용으로 최종 포맷팅
     detailRows.value = mappedData.map((row, index) => {
+      // 데이터 매핑 시
+      const qty = row.prescription_qty ?? 0;
+      const price = row.products?.price ?? 0;
+      const prescriptionAmount = qty * price;
+      const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate ?? 0));
+
       const formattedRow = {
         ...row,
-        price: (row.price || 0).toLocaleString(),
-        prescription_qty: (row.prescription_qty || 0).toLocaleString(),
-        prescription_amount: (row.prescription_amount || 0).toLocaleString(),
-        payment_amount: (row.payment_amount || 0).toLocaleString()
+        price: Math.round(price).toLocaleString(),
+        prescription_qty: qty.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+        prescription_amount: Math.round(prescriptionAmount).toLocaleString(),
+        payment_amount: Math.round(paymentAmount).toLocaleString()
       };
       return formattedRow;
     });
@@ -186,18 +202,21 @@ async function loadDetailData() {
 
 // 합계 계산
 const totalQty = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + Number(String(row.prescription_qty).replace(/,/g, '')), 0).toLocaleString();
+  const sum = detailRows.value.reduce((sum, row) => sum + (row.prescription_qty ?? 0), 0);
+  return sum.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });
 const totalPrescriptionAmount = computed(() => {
-  return detailRows.value.reduce((sum, row) => sum + Number(String(row.prescription_amount).replace(/,/g, '')), 0).toLocaleString();
+  const sum = detailRows.value.reduce((sum, row) => sum + (row.prescription_amount ?? 0), 0);
+  return Math.round(sum).toLocaleString();
 });
 const totalPaymentAmount = computed(() => {
-  return Math.round(detailRows.value.reduce((sum, row) => sum + Number(String(row.payment_amount).replace(/,/g, '')), 0)).toLocaleString();
+  const sum = detailRows.value.reduce((sum, row) => sum + (row.payment_amount ?? 0), 0);
+  return Math.round(sum).toLocaleString();
 });
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
-    return sum + (parseFloat(row.payment_amount?.toString().replace(/,/g, '')) || 0);
+    return sum + (parseFloat(String(row.payment_amount).replace(/,/g, '')) || 0);
   }, 0);
 
   const supplyPrice = Math.round(totalPrice / 1.1);

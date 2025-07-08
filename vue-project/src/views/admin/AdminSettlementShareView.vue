@@ -49,10 +49,10 @@
         <Column field="client_count" header="병의원 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
         <Column field="total_records" header="처방건수" :headerStyle="{ width: columnWidths.total_records }" :sortable="true"/>
         <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
-            <template #body="slotProps">{{ (slotProps.data.total_prescription_amount || 0).toLocaleString() }}</template>
+            <template #body="slotProps">{{ Math.round(slotProps.data.total_prescription_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }" :sortable="true">
-            <template #body="slotProps">{{ (slotProps.data.total_payment_amount || 0).toLocaleString() }}</template>
+            <template #body="slotProps">{{ Math.round(slotProps.data.total_payment_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column header="상세" :headerStyle="{ width: columnWidths.detail }">
           <template #body="slotProps">
@@ -115,13 +115,13 @@ const shareChanges = ref({}); // 공유 상태 변경 사항 추적
 
 // --- 계산된 속성 (합계) ---
 const totalPrescriptionAmount = computed(() => {
-    const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_prescription_amount || 0), 0);
-    return total.toLocaleString();
+  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_prescription_amount || 0), 0);
+  return Math.round(total).toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
-    const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_payment_amount || 0), 0);
-    return Math.round(total).toLocaleString();
+  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_payment_amount || 0), 0);
+  return Math.round(total).toLocaleString();
 });
 
 

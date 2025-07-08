@@ -169,7 +169,11 @@
           :bodyStyle="{ textAlign: 'right' }"
         >
           <template #body="slotProps">
-            {{ formatNumber(slotProps.data.prescription_amount) }}
+            {{
+              slotProps.data.prescription_amount !== undefined && slotProps.data.prescription_amount !== null
+                ? Math.round(Number(String(slotProps.data.prescription_amount).replace(/,/g, ''))).toLocaleString('ko-KR', { maximumFractionDigits: 0 })
+                : '0'
+            }}
           </template>
         </Column>
         <Column
@@ -217,7 +221,7 @@
             <Column :footer="totalReviewCompleted.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="totalReviewInProgress.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="totalReviewPending.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="Math.round(Number(totalPrescriptionAmount)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>
         </ColumnGroup>
@@ -307,16 +311,16 @@ const columnWidthsMain = {
   no: '4%',
   company_group: '6%',
   company_name: '12%',
-  business_registration_number: '8%',
-  representative_name: '5.5%',
-  assigned_pharmacist_contact: '5.5%',
+  business_registration_number: '6.5%',
+  representative_name: '6.5%',
+  assigned_pharmacist_contact: '6.5%',
   total_clients: '5.5%',
   submitted_clients: '5.5%',
   prescription_count: '5.5%',
   review_completed: '5.5%',
   review_in_progress: '5.5%',
   review_pending: '5.5%',
-  prescription_amount: '7%',
+  prescription_amount: '6.5%',
   evidence_files: '5.5%',
   file_view: '5.5%',
   last_registered_at: '8%',

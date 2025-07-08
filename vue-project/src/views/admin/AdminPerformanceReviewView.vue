@@ -195,7 +195,7 @@
                 class="edit-mode-input"
                 @change="handleEditCalculations(slotProps.data, 'qty')"
               />
-              <span v-else>{{ Number(slotProps.data.prescription_qty).toLocaleString() }}</span>
+              <span v-else>{{ Number(slotProps.data.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</span>
             </template>
           </Column>
           <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
@@ -572,8 +572,8 @@ async function loadPerformanceData() {
       client_name: item.clients?.name || 'N/A',
       product_name_display: item.products?.product_name || 'N/A',
       insurance_code: item.products?.insurance_code || '',
-      price: item.products?.price ? item.products.price.toLocaleString() : 0,
-      prescription_amount: (item.prescription_qty * (item.products?.price || 0)).toLocaleString(),
+      price: item.products?.price ? Math.round(item.products.price).toLocaleString() : '0',
+      prescription_amount: Math.round(item.prescription_qty * (item.products?.price || 0)).toLocaleString(),
       payment_amount: Math.round((item.prescription_qty * (item.products?.price || 0)) * (item.commission_rate || 0)).toLocaleString(),
       registered_by_name: registrarMap.get(item.registered_by) || '관리자',
       display_status: item.review_status === '대기' ? '신규' : item.review_status,

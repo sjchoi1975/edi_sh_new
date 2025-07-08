@@ -109,7 +109,7 @@
           <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
             <template #body="slotProps">
-              {{ (slotProps.data.prescription_qty || 0).toLocaleString() }}
+              {{ Number(slotProps.data.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
             </template>
           </Column>
           <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
@@ -264,8 +264,8 @@ const canLoadAnalysisData = computed(() => hasAnalysisData.value);
 
 // --- Computed 속성 (합계 계산) ---
 const totalQuantity = computed(() => {
-  const total = displayRows.value.reduce((sum, row) => sum + (row.prescription_qty || 0), 0);
-  return total.toLocaleString();
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  return total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });
 
 const averageAbsorptionRate = computed(() => {
@@ -458,9 +458,9 @@ async function loadAnalysisData() {
             client_name: row.client?.name || 'N/A',
             product_name_display: row.product?.product_name || 'N/A',
             insurance_code: row.product?.insurance_code || 'N/A',
-            price: row.product?.price?.toLocaleString() || '0',
-            prescription_amount: prescriptionAmount.toLocaleString(),
-            payment_amount: paymentAmount.toLocaleString(),
+            price: row.product?.price ? Math.round(row.product.price).toLocaleString() : '0',
+            prescription_amount: Math.round((row.prescription_qty || 0) * (row.product?.price || 0)).toLocaleString(),
+            payment_amount: Math.round(Math.round((row.prescription_qty || 0) * (row.product?.price || 0)) * (row.commission_rate || 0)).toLocaleString(),
             commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
             absorption_rate: ((row.absorption_rate || 0) * 100).toFixed(1),
             created_date: formatDateTime(row.created_at),
