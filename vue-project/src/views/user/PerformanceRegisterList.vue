@@ -135,7 +135,7 @@
             :sortable="true"
           >
             <template #body="slotProps">
-              {{ slotProps.data.prescription_qty !== undefined && slotProps.data.prescription_qty !== null ? slotProps.data.prescription_qty.toLocaleString() : '' }}
+              {{ slotProps.data.prescription_qty !== undefined && slotProps.data.prescription_qty !== null ? Number(slotProps.data.prescription_qty).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '' }}
             </template>
           </Column>
           <Column
@@ -143,7 +143,15 @@
             header="처방액"
             :headerStyle="{ width: columnWidths.prescription_amount }"
             :sortable="true"
-          />
+          >
+            <template #body="slotProps">
+              {{
+                slotProps.data.prescription_amount !== undefined && slotProps.data.prescription_amount !== null
+                  ? Math.round(Number(String(slotProps.data.prescription_amount).replace(/,/g, ''))).toLocaleString('ko-KR', { maximumFractionDigits: 0 })
+                  : '0'
+              }}
+            </template>
+          </Column>
           <Column
             field="prescription_type"
             header="처방구분"
@@ -1035,12 +1043,14 @@ function onPrescriptionTypeKeydown(e, rowIdx) {
 }
 
 function onQtyInput(rowIdx) {
-  const qty = Number(displayRows.value[rowIdx].prescription_qty.toString().replace(/,/g, ''))
-  const price = Number(displayRows.value[rowIdx].price.toString().replace(/,/g, ''))
-  if (!isNaN(qty) && !isNaN(price) && price > 0) {
-    displayRows.value[rowIdx].prescription_amount = (qty * price).toLocaleString()
+  let qty = Number(displayRows.value[rowIdx].prescription_qty?.toString().replace(/,/g, ''))
+  let price = Number(displayRows.value[rowIdx].price?.toString().replace(/,/g, ''))
+  if (isNaN(qty)) qty = 0
+  if (isNaN(price)) price = 0
+  if (price > 0) {
+    displayRows.value[rowIdx].prescription_amount = Math.round(qty * price)
   } else {
-    displayRows.value[rowIdx].prescription_amount = ''
+    displayRows.value[rowIdx].prescription_amount = 0
   }
 }
 
@@ -1127,7 +1137,7 @@ const totalQty = computed(() => {
     (sum, row) => sum + (Number(row.prescription_qty) || 0),
     0,
   )
-  return total.toLocaleString()
+  return total.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 })
 const totalAmount = computed(() => {
   return sortedDisplayRows.value
@@ -1135,7 +1145,7 @@ const totalAmount = computed(() => {
       (sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0),
       0,
     )
-    .toLocaleString()
+    .toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 })
 
 // 행 추가/삭제

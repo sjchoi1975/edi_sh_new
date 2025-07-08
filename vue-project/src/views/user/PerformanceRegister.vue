@@ -111,7 +111,7 @@
             <template #body="slotProps">
               {{
                 slotProps.data.total_prescription_amount
-                  ? formatNumber(slotProps.data.total_prescription_amount)
+                  ? Number(slotProps.data.total_prescription_amount).toLocaleString('ko-KR', { maximumFractionDigits: 0 })
                   : '-'
               }}
             </template>
@@ -186,7 +186,7 @@
             <Row>
               <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalPerformanceCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-              <Column :footer="formatNumber(totalPrescriptionAmount)" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="Number(totalPrescriptionAmount).toLocaleString('ko-KR', { maximumFractionDigits: 0 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :colspan="2" footerClass="footer-cell" />
               <Column :footer="totalEvidenceFilesCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :colspan="2" footerClass="footer-cell" />
@@ -426,8 +426,9 @@ const viewModalData = ref([])
 const viewModalClient = ref(null)
 
 const formatNumber = (value) => {
-  if (!value) return '0'
-  return new Intl.NumberFormat('ko-KR').format(value)
+  if (value === null || value === undefined) return '0'
+  // 소수점 한자리까지 반올림해서 표기
+  return Number(value).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
 
 // 정산월 목록 fetch
@@ -520,7 +521,7 @@ const fetchClientList = async () => {
     const perfRows = perfData?.filter((p) => p.client_id === client.id) || []
     const performance_count = perfRows.length
     const total_prescription_amount = perfRows.reduce(
-      (sum, p) => sum + (p.prescription_qty || 0) * (p.products?.price || 0),
+      (sum, p) => sum + Math.round((p.prescription_qty || 0) * (p.products?.price || 0)),
       0,
     )
     const evidence_files_count = evidenceCounts[client.id] || 0

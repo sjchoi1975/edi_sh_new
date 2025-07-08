@@ -924,7 +924,7 @@ async function savePerformanceData() {
       prescription_month: row.prescription_month,
       client_id: Number(clientId),
       product_id: row.product_id,
-      prescription_qty: parseInt(row.prescription_qty),
+      prescription_qty: Number(row.prescription_qty),
       prescription_type: row.prescription_type,
       remarks: row.remarks,
       registered_by: userUid,
@@ -951,7 +951,7 @@ async function savePerformanceData() {
         .update({
           prescription_month: row.prescription_month,
           product_id: row.product_id,
-          prescription_qty: parseInt(row.prescription_qty),
+          prescription_qty: Number(row.prescription_qty),
           prescription_type: row.prescription_type,
           remarks: row.remarks,
           commission_rate: commissionRate
