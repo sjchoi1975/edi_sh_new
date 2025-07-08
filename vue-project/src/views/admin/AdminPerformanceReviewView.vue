@@ -90,15 +90,6 @@
             <div v-else>필터 조건을 선택하고 '불러오기'를 클릭하세요.</div>
           </template>
           
-          <Column :headerStyle="{ width: columnWidths.checkbox }" :frozen="true">
-            <template #header>
-              <span style="font-weight: 500 !important; text-align: center !important; margin-left: 10px !important;">선택</span>
-            </template>
-            <template #body="slotProps">
-              <Checkbox v-model="selectedRows" :value="slotProps.data" :disabled="slotProps.data.review_action === '삭제'" />
-            </template>
-          </Column>
-
           <Column header="상태" field="display_status" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
               <Tag :value="slotProps.data.display_status" :severity="getStatusSeverity(slotProps.data.display_status)"/>
@@ -204,6 +195,16 @@
               <span v-else>{{ slotProps.data.prescription_amount }}</span>
             </template>
           </Column>
+
+          <Column :headerStyle="{ width: columnWidths.checkbox }" :frozen="false">
+            <template #header>
+              <span style="font-weight: 500 !important; text-align: center !important; margin-left: 10px !important;">선택</span>
+            </template>
+            <template #body="slotProps">
+              <Checkbox v-model="selectedRows" :value="slotProps.data" :disabled="slotProps.data.review_action === '삭제'" />
+            </template>
+          </Column>
+
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true">
             <template #body="slotProps">
               <select
