@@ -1647,15 +1647,15 @@ select.input-editable {
 
 /* ------ 실적 검수 테이블 ------ */
 /* --- 중앙 정렬 (체크박스, 검수상태, 검수구분, 액션, 처방월, 보험코드, 처방구분, 수수료율, 등록일시) --- */
-.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(7), :nth-child(9), :nth-child(13), :nth-child(14), :nth-child(17)) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(6), :nth-child(8), :nth-child(12), :nth-child(13), :nth-child(14), :nth-child(17)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (업체명, 거래처명, 제품명, 비고, 등록자) --- */
-.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6), :nth-child(8), :nth-child(16), :nth-child(18)) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(4), :nth-child(5), :nth-child(7), :nth-child(16), :nth-child(18)) {
   text-align: left !important;
 }
 /* --- 우측 정렬 (약가, 처방수량, 처방액, 지급액) --- */
-.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(10), :nth-child(11), :nth-child(12), :nth-child(15)) {
+.admin-performance-review-table .p-datatable-tbody > tr > td:is(:nth-child(9), :nth-child(10), :nth-child(11), :nth-child(15)) {
   text-align: right !important;
 }
 

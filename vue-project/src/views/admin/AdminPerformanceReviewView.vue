@@ -62,6 +62,9 @@
            <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
              검수 상태 변경 ({{ selectedRows.length }}건)
            </button>
+           <button class="btn-primary" @click="openPrescriptionTypeModal" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
+             처방구분변경 ({{ selectedRows.length }}건)
+           </button>
            <button class="btn-warning" @click="excludeFromReview" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
              검수 대상 제외 ({{ selectedRows.length }}건)
            </button>
@@ -252,6 +255,18 @@
           </Column>
           <Column field="registered_by_name" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
         </DataTable>
+      </div>
+    </div>
+  </div>
+  <div v-if="showPrescriptionTypeModal" class="modal-mask" style="position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="background: #fff; border-radius: 8px; padding: 32px 24px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15);">
+      <div style="font-size: 1.1em; margin-bottom: 16px;">처방구분을 일괄변경하시겠습니까?</div>
+      <select v-model="selectedPrescriptionType" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
+        <option v-for="type in prescriptionTypeOptionsForBulk" :key="type" :value="type">{{ type }}</option>
+      </select>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn-primary" @click="handleBulkPrescriptionTypeUpdate">확인</button>
+        <button class="btn-secondary" @click="closePrescriptionTypeModal">취소</button>
       </div>
     </div>
   </div>
@@ -1102,6 +1117,47 @@ function getFilteredProductList(prescriptionMonth) {
   console.log(`[제품 검색] 처방월 ${prescriptionMonth} 기준 보험코드 유니크 제품 수:`, uniqueProducts.length);
   
   return uniqueProducts;
+}
+
+const showPrescriptionTypeModal = ref(false);
+const selectedPrescriptionType = ref('EDI');
+const prescriptionTypeOptionsForBulk = [
+  'EDI',
+  'ERP직거래자료',
+  '매출자료',
+  '약국조제',
+  '원내매출',
+  '원외매출',
+  '차감'
+];
+function openPrescriptionTypeModal() {
+  selectedPrescriptionType.value = 'EDI';
+  showPrescriptionTypeModal.value = true;
+}
+function closePrescriptionTypeModal() {
+  showPrescriptionTypeModal.value = false;
+}
+
+async function handleBulkPrescriptionTypeUpdate() {
+  if (!selectedRows.value || selectedRows.value.length === 0) return;
+  const ids = selectedRows.value.map(row => row.id);
+  const newType = selectedPrescriptionType.value;
+  try {
+    const { error } = await supabase
+      .from('performance_records')
+      .update({ prescription_type: newType, review_action: '수정' })
+      .in('id', ids);
+    if (error) {
+      alert('처방구분 변경 실패: ' + error.message);
+    } else {
+      alert('처방구분이 성공적으로 변경되었습니다.');
+      await loadPerformanceData();
+    }
+  } catch (e) {
+    alert('처방구분 변경 중 오류 발생: ' + e.message);
+  } finally {
+    showPrescriptionTypeModal.value = false;
+  }
 }
 </script>
 
