@@ -461,15 +461,15 @@ async function fetchPerformanceRecords() {
       const { data, error } = await query
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('실적 데이터 조회 오류:', error);
-        rawRows.value = [];
+    
+    if (error) {
+      console.error('실적 데이터 조회 오류:', error);
+      rawRows.value = [];
         loading.value = false;
-        return;
-      }
-      
-      if (!data || data.length === 0) {
+      return;
+    }
+    
+    if (!data || data.length === 0) {
         break;
       }
       

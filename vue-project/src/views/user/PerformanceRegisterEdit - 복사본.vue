@@ -403,14 +403,6 @@ function getStatusLabel(status) {
 
 // 편집 상태 확인 및 메시지 설정
 function checkEditStatus() {
-  // 관리자는 항상 편집 가능
-  if (isAdminUser.value) {
-    isInputEnabled.value = true;
-    statusMessage.value = '';
-    return;
-  }
-  
-  // 일반 사용자는 상태에 따라 편집 제한
   switch (reviewStatus.value) {
     case '대기':
       isInputEnabled.value = true;
@@ -1248,12 +1240,12 @@ const isAdminUser = ref(false);
 function isRowEditable(row) {
   const status = row.review_status;
   
-  // 관리자는 모든 상태 편집 가능
+  // 관리자인 경우 모든 상태를 '대기'로 간주 (편집 가능)
   if (isAdminUser.value) {
-    return true;
+    return true; // 모든 상태를 대기로 간주
   }
   
-  // 일반 사용자는 '대기' 상태만 편집 가능
+  // 일반 사용자는 '대기' 상태이거나 상태가 없을 때만 편집 가능
   return status === '대기' || !status;
 }
 

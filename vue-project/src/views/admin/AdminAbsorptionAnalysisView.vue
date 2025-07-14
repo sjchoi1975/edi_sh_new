@@ -332,16 +332,16 @@ async function fetchCompaniesForMonth() {
     const batchSize = 1000;
     
     while (true) {
-      const { data, error } = await supabase
-        .from('performance_records')
-        .select('company_id, companies ( company_name, company_group )')
-        .eq('settlement_month', selectedSettlementMonth.value)
-        .eq('review_status', '완료')
+    const { data, error } = await supabase
+      .from('performance_records')
+      .select('company_id, companies ( company_name, company_group )')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('review_status', '완료')
         .not('company_id', 'is', null)
         .range(from, from + batchSize - 1);
 
-      if (error) throw error;
-      
+    if (error) throw error;
+    
       if (!data || data.length === 0) {
         break;
       }
@@ -393,8 +393,8 @@ async function fetchClientsForMonth(companyId = null) {
           const { data, error } = await query
             .range(from, from + batchSize - 1);
 
-          if (error) throw error;
-          
+        if (error) throw error;
+
           if (!data || data.length === 0) {
             break;
           }
@@ -497,8 +497,8 @@ async function loadAnalysisData() {
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      
+    if (error) throw error;
+
       if (!data || data.length === 0) {
         break;
       }

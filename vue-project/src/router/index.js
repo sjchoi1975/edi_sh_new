@@ -223,6 +223,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
+      path: '/admin/performance/register',
+      name: 'AdminPerformanceRegister',
+      component: () => import('@/views/admin/AdminPerformanceRegisterView.vue'),
+      meta: { menu: '실적 관리', submenu: '실적 등록', requiresAuth: true, isAdmin: true },
+    },
+    {
       path: '/admin/performance/companies',
       name: 'AdminPerformanceCompanies',
       component: () => import('@/views/admin/AdminPerformanceCompaniesView.vue'),

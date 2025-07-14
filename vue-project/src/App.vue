@@ -100,7 +100,8 @@ const adminMenuTree = [
   { label: '문전약국 관리', children: [ { label: '문전약국 목록', path: '/admin/pharmacies' } ] },
   { label: '매출 관리', children: [ { label: '도매매출 목록', path: '/admin/wholesale-revenue' }, { label: '직거래매출 목록', path: '/admin/direct-revenue' } ] },
   { label: '실적 관리', children: [ 
-    { label: '정산월 관리', path: '/admin/settlement-months' }, 
+    { label: '정산월 관리', path: '/admin/settlement-months' },
+    { label: '실적 등록', path: '/admin/performance/register' },
     { label: '업체별 등록 현황', path: '/admin/performance/companies' },
     { label: '전체 등록 현황', path: '/admin/performance/whole' }
   ] },

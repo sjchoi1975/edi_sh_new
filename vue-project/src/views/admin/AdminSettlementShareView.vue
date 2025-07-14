@@ -177,17 +177,17 @@ async function loadSettlementData() {
     const batchSize = 1000;
     
     while (true) {
-      const { data: records, error: recordsError } = await supabase
-        .from('performance_records_absorption')
-        .select(`
-          *,
-          company:companies(*),
-          product:products(price)
-        `)
+    const { data: records, error: recordsError } = await supabase
+      .from('performance_records_absorption')
+      .select(`
+        *,
+        company:companies(*),
+        product:products(price)
+      `)
         .eq('settlement_month', selectedMonth.value)
         .range(from, from + batchSize - 1);
 
-      if (recordsError) throw recordsError;
+    if (recordsError) throw recordsError;
       
       if (!records || records.length === 0) {
         break;

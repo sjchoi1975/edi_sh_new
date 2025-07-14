@@ -422,17 +422,17 @@ async function fetchFilterOptions(settlementMonth) {
     const batchSize = 1000;
     
     while (true) {
-    const { data: performanceData, error: perfError } = await supabase
-        .from('performance_records')
-        .select('company_id, client_id')
+        const { data: performanceData, error: perfError } = await supabase
+            .from('performance_records')
+            .select('company_id, client_id')
             .eq('settlement_month', settlementMonth)
             .range(from, from + batchSize - 1);
 
-    if (perfError) {
-        console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
-        loading.value = false;
-        return;
-    }
+        if (perfError) {
+            console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
+            loading.value = false;
+            return;
+        }
 
         if (!performanceData || performanceData.length === 0) {
             break;
@@ -585,9 +585,9 @@ async function loadPerformanceData() {
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
       
-    if (error) throw error;
-    
-    if (!data || data.length === 0) {
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
         break;
       }
       

@@ -442,29 +442,29 @@ const fetchCompanyList = async () => {
     const batchSize = 1000;
     
     while (true) {
-      const { data: performanceData, error: performanceError } = await supabase
-        .from('performance_records')
-        .select(
-          `
-          id, 
-          company_id, 
-          client_id, 
-          review_status, 
-          prescription_qty,
-          products ( price )
-        `,
-        )
-        .eq('settlement_month', selectedSettlementMonth.value)
+    const { data: performanceData, error: performanceError } = await supabase
+      .from('performance_records')
+      .select(
+        `
+        id, 
+        company_id, 
+        client_id, 
+        review_status, 
+        prescription_qty,
+        products ( price )
+      `,
+      )
+      .eq('settlement_month', selectedSettlementMonth.value)
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
 
       console.log(`배치 ${Math.floor(from/batchSize) + 1}: ${performanceData?.length || 0}건 조회`);
 
-      if (performanceError) {
-        console.error('실적 데이터 조회 오류:', performanceError)
-        loading.value = false
-        return
-      }
+    if (performanceError) {
+      console.error('실적 데이터 조회 오류:', performanceError)
+      loading.value = false
+      return
+    }
 
       if (!performanceData || performanceData.length === 0) {
         break;

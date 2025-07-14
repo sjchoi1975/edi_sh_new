@@ -120,19 +120,19 @@ async function loadDetailData() {
     const batchSize = 1000;
     
     while (true) {
-      const { data, error } = await supabase
-        .from('performance_records_absorption')
-        .select(`
-          *,
-          clients ( name ),
-          products ( product_name, insurance_code, price )
-        `)
-        .eq('settlement_month', month.value)
+    const { data, error } = await supabase
+      .from('performance_records_absorption')
+      .select(`
+        *,
+        clients ( name ),
+        products ( product_name, insurance_code, price )
+      `)
+      .eq('settlement_month', month.value)
         .eq('company_id', companyId.value)
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
-        
-      if (error) throw error;
+      
+    if (error) throw error;
       
       if (!data || data.length === 0) {
         break;

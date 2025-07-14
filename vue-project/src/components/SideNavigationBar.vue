@@ -80,6 +80,7 @@ const adminMenuTree = [
   ]},
   { label: '실적 관리', icon: 'pi pi-pencil', children: [
     { label: '정산월 관리', path: '/admin/settlement-months' },
+    { label: '실적 등록', path: '/admin/performance/register' },
     { label: '업체별 등록 현황', path: '/admin/performance/companies' },
     { label: '전체 등록 현황', path: '/admin/performance/whole' }
   ]},
