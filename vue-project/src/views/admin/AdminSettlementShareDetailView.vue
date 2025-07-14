@@ -114,25 +114,48 @@ async function loadDetailData() {
   loading.value = true;
   try {
     // 1. 상세 데이터 조회 (products 테이블에서 price 포함)
-    const { data, error } = await supabase
-      .from('performance_records_absorption')
-      .select(`
-        *,
-        clients ( name ),
-        products ( product_name, insurance_code, price )
-      `)
-      .eq('settlement_month', month.value)
-      .eq('company_id', companyId.value);
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+      const { data, error } = await supabase
+        .from('performance_records_absorption')
+        .select(`
+          *,
+          clients ( name ),
+          products ( product_name, insurance_code, price )
+        `)
+        .eq('settlement_month', month.value)
+        .eq('company_id', companyId.value)
+        .range(from, from + batchSize - 1)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-    if (error) throw error;
-    if (!data) {
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
+    
+    if (!allData || allData.length === 0) {
         detailRows.value = [];
         loading.value = false;
         return;
     }
     
     // 2. 데이터 가공 (약가, 처방액, 지급액 계산)
-    let mappedData = data.map(row => {
+    let mappedData = allData.map(row => {
       // 데이터 매핑 시
       const qty = row.prescription_qty ?? 0;
       const price = row.products?.price ?? 0;
@@ -181,7 +204,7 @@ async function loadDetailData() {
     });
 
     // 5. 업체 정보 설정
-    if (data.length > 0) {
+    if (allData.length > 0) { // Use allData for company info
       const { data: cInfo, error: cError } = await supabase
         .from('companies')
         .select('company_name, business_registration_number, representative_name, business_address')

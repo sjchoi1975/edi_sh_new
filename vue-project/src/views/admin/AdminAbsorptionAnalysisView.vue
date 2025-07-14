@@ -326,16 +326,37 @@ async function fetchCompaniesForMonth() {
     return;
   }
   try {
-    const { data, error } = await supabase
-      .from('performance_records')
-      .select('company_id, companies ( company_name, company_group )')
-      .eq('settlement_month', selectedSettlementMonth.value)
-      .eq('review_status', '완료')
-      .not('company_id', 'is', null);
-
-    if (error) throw error;
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
     
-    const uniqueCompanies = Array.from(new Map(data.map(item => [item.company_id, { id: item.company_id, company_name: item.companies.company_name, company_group: item.companies.company_group }])).values());
+    while (true) {
+      const { data, error } = await supabase
+        .from('performance_records')
+        .select('company_id, companies ( company_name, company_group )')
+        .eq('settlement_month', selectedSettlementMonth.value)
+        .eq('review_status', '완료')
+        .not('company_id', 'is', null)
+        .range(from, from + batchSize - 1);
+
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
+    
+    const uniqueCompanies = Array.from(new Map(allData.map(item => [item.company_id, { id: item.company_id, company_name: item.companies.company_name, company_group: item.companies.company_group }])).values());
     const sortedCompanies = uniqueCompanies.sort((a, b) => a.company_name.localeCompare(b.company_name));
     companyOptions.value = [{ id: 'ALL', company_name: '- 전체 -' }, ...sortedCompanies];
     selectedCompanyId.value = 'ALL';
@@ -363,10 +384,32 @@ async function fetchClientsForMonth(companyId = null) {
             query = query.eq('company_id', finalCompanyId);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
+        // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+        let allData = [];
+        let from = 0;
+        const batchSize = 1000;
+        
+        while (true) {
+          const { data, error } = await query
+            .range(from, from + batchSize - 1);
 
-        const uniqueClients = Array.from(new Map(data.map(item => [item.client_id, { id: item.client_id, name: item.clients.name }])).values());
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+            break;
+          }
+          
+          allData = allData.concat(data);
+          
+          // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+          if (data.length < batchSize) {
+            break;
+          }
+          
+          from += batchSize;
+        }
+
+        const uniqueClients = Array.from(new Map(allData.map(item => [item.client_id, { id: item.client_id, name: item.clients.name }])).values());
         const sortedClients = uniqueClients.sort((a, b) => a.name.localeCompare(b.name));
         hospitalOptions.value = [{ id: 'ALL', name: '- 전체 -' }, ...sortedClients];
         selectedHospitalId.value = 'ALL';
@@ -444,10 +487,33 @@ async function loadAnalysisData() {
       query = query.eq('prescription_month', prescriptionMonth);
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+      const { data, error } = await query
+        .range(from, from + batchSize - 1)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
 
-    let mappedData = data.map(row => {
+    let mappedData = allData.map(row => {
         const prescriptionAmount = (row.prescription_qty || 0) * (row.product?.price || 0);
         const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
 

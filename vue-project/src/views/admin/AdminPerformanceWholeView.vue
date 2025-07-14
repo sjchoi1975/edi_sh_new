@@ -452,20 +452,44 @@ async function fetchPerformanceRecords() {
       query = query.eq('review_status', selectedReviewStatus.value);
     }
 
-    const { data, error } = await query;
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
     
-    if (error) {
-      console.error('실적 데이터 조회 오류:', error);
-      rawRows.value = [];
-      return;
+    while (true) {
+      const { data, error } = await query
+        .range(from, from + batchSize - 1)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('실적 데이터 조회 오류:', error);
+        rawRows.value = [];
+        loading.value = false;
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
     }
     
-    if (!data || data.length === 0) {
+    if (allData.length === 0) {
       rawRows.value = [];
+      loading.value = false;
       return;
     }
 
-    const registrarIds = [...new Set(data.map(item => item.registered_by).filter(id => id))];
+    const registrarIds = [...new Set(allData.map(item => item.registered_by).filter(id => id))];
     let registrarMap = new Map();
 
     if (registrarIds.length > 0) {
@@ -482,7 +506,7 @@ async function fetchPerformanceRecords() {
     }
     
     // 데이터 변환
-    let mappedData = data.map(record => {
+    let mappedData = allData.map(record => {
       const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
       return {
         id: record.id,

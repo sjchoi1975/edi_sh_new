@@ -171,20 +171,41 @@ async function loadSettlementData() {
 
   try {
     // 1. performance_records_absorption에서 해당 월의 모든 데이터를 가져옵니다.
-    const { data: records, error: recordsError } = await supabase
-      .from('performance_records_absorption')
-      .select(`
-        *,
-        company:companies(*),
-        product:products(price)
-      `)
-      .eq('settlement_month', selectedMonth.value);
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allRecords = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+      const { data: records, error: recordsError } = await supabase
+        .from('performance_records_absorption')
+        .select(`
+          *,
+          company:companies(*),
+          product:products(price)
+        `)
+        .eq('settlement_month', selectedMonth.value)
+        .range(from, from + batchSize - 1);
 
-    if (recordsError) throw recordsError;
+      if (recordsError) throw recordsError;
+      
+      if (!records || records.length === 0) {
+        break;
+      }
+      
+      allRecords = allRecords.concat(records);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (records.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
 
     // 2. 회사별로 데이터를 집계합니다.
     const summaryMap = new Map();
-    for (const record of records) {
+    for (const record of allRecords) {
       if (!record.company) continue;
 
       const companyId = record.company.id;

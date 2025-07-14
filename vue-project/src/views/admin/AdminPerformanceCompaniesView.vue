@@ -215,12 +215,12 @@
         <ColumnGroup type="footer">
           <Row>
             <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalSubmittedClients.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalPrescriptionCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewCompleted.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewInProgress.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewPending.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalSubmittedClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalPrescriptionCount.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewCompleted.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewInProgress.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalReviewPending.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="Math.round(Number(totalPrescriptionAmount)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>
@@ -435,35 +435,59 @@ const fetchCompanyList = async () => {
 
     // 2. 실적 데이터 조회
     console.log('=== 실적 데이터 조회 시작 ===')
-    const { data: performanceData, error: performanceError } = await supabase
-      .from('performance_records')
-      .select(
-        `
-        id, 
-        company_id, 
-        client_id, 
-        review_status, 
-        prescription_qty,
-        products ( price )
-      `,
-      )
-      .eq('settlement_month', selectedSettlementMonth.value)
+    
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allPerformanceData = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+      const { data: performanceData, error: performanceError } = await supabase
+        .from('performance_records')
+        .select(
+          `
+          id, 
+          company_id, 
+          client_id, 
+          review_status, 
+          prescription_qty,
+          products ( price )
+        `,
+        )
+        .eq('settlement_month', selectedSettlementMonth.value)
+        .range(from, from + batchSize - 1)
+        .order('created_at', { ascending: false });
 
-    console.log('Performance data query result:', {
-      settlement_month: selectedSettlementMonth.value,
-      total_records: performanceData?.length || 0,
-      error: performanceError,
-      sample_record: performanceData?.[0],
-    })
+      console.log(`배치 ${Math.floor(from/batchSize) + 1}: ${performanceData?.length || 0}건 조회`);
 
-    if (performanceError) {
-      console.error('실적 데이터 조회 오류:', performanceError)
-      loading.value = false
-      return
+      if (performanceError) {
+        console.error('실적 데이터 조회 오류:', performanceError)
+        loading.value = false
+        return
+      }
+
+      if (!performanceData || performanceData.length === 0) {
+        break;
+      }
+
+      allPerformanceData = allPerformanceData.concat(performanceData);
+
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (performanceData.length < batchSize) {
+        break;
+      }
+
+      from += batchSize;
     }
 
+    console.log({
+      settlement_month: selectedSettlementMonth.value,
+      total_records: allPerformanceData?.length || 0,
+      sample_record: allPerformanceData?.[0],
+    })
+
     console.log('Available companies data:', companiesData.length)
-    console.log('Performance data:', performanceData?.length || 0)
+    console.log('Performance data:', allPerformanceData?.length || 0)
 
     // 3. 각 업체별로 데이터 집계
     const companyResults = []
@@ -488,7 +512,7 @@ const fetchCompanyList = async () => {
 
         // 해당 업체의 실적 데이터 필터링
         const companyPerformances =
-          performanceData?.filter((p) => p.company_id === company.id) || []
+          allPerformanceData?.filter((p) => p.company_id === company.id) || []
 
         console.log(
           `Company ${company.company_name} - Performance records:`,

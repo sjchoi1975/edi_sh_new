@@ -415,21 +415,44 @@ async function fetchAvailableMonths() {
 async function fetchFilterOptions(settlementMonth) {
     console.log(`3. fetchFilterOptions 시작: ${settlementMonth}월`);
     loading.value = true;
-    const { data: performanceData, error: perfError } = await supabase
-        .from('performance_records')
-        .select('company_id, client_id')
-        .eq('settlement_month', settlementMonth);
-
-    if (perfError) {
-        console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
-        loading.value = false;
-        return;
-    }
-    console.log(`4. ${settlementMonth}월의 performance_records 데이터 ${performanceData.length}건 확인`);
     
-    monthlyPerformanceLinks.value = performanceData;
-    const companyIds = [...new Set(performanceData.map(p => p.company_id).filter(id => id))];
-    const clientIds = [...new Set(performanceData.map(p => p.client_id).filter(id => id))];
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allPerformanceData = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+        const { data: performanceData, error: perfError } = await supabase
+            .from('performance_records')
+            .select('company_id, client_id')
+            .eq('settlement_month', settlementMonth)
+            .range(from, from + batchSize - 1);
+
+        if (perfError) {
+            console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
+            loading.value = false;
+            return;
+        }
+
+        if (!performanceData || performanceData.length === 0) {
+            break;
+        }
+
+        allPerformanceData = allPerformanceData.concat(performanceData);
+
+        // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+        if (performanceData.length < batchSize) {
+            break;
+        }
+
+        from += batchSize;
+    }
+
+    console.log(`4. ${settlementMonth}월의 performance_records 데이터 ${allPerformanceData.length}건 확인`);
+    
+    monthlyPerformanceLinks.value = allPerformanceData;
+    const companyIds = [...new Set(allPerformanceData.map(p => p.company_id).filter(id => id))];
+    const clientIds = [...new Set(allPerformanceData.map(p => p.client_id).filter(id => id))];
     console.log(`5. 고유 업체 ${companyIds.length}개, 고유 병원 ${clientIds.length}개 발견`);
 
     if (companyIds.length > 0) {
@@ -552,17 +575,40 @@ async function loadPerformanceData() {
       if (selectedStatus.value) query = query.eq('review_status', selectedStatus.value);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
-    if (error) throw error;
+    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    let allData = [];
+    let from = 0;
+    const batchSize = 1000;
     
-    if (!data || data.length === 0) {
+    while (true) {
+      const { data, error } = await query
+        .range(from, from + batchSize - 1)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allData = allData.concat(data);
+      
+      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
+    
+    if (!allData || allData.length === 0) {
       rows.value = [];
       originalRows.value = [];
       loading.value = false;
       return;
     }
 
-    const registrarIds = [...new Set(data.map(item => item.registered_by).filter(id => id))];
+    const registrarIds = [...new Set(allData.map(item => item.registered_by).filter(id => id))];
     let registrarMap = new Map();
 
     if (registrarIds.length > 0) {
@@ -578,10 +624,10 @@ async function loadPerformanceData() {
       }
     }
 
-    console.log(`10. 최종 데이터 ${data.length}건 불러옴`);
+    console.log(`10. 최종 데이터 ${allData.length}건 불러옴`);
 
     // 데이터 가공: Join된 객체를 펼치고, 화면 표시에 필요한 값을 설정
-    rows.value = data.map(item => ({
+    rows.value = allData.map(item => ({
       ...item,
       id: item.id,
       company_name: item.companies?.company_name || 'N/A',
