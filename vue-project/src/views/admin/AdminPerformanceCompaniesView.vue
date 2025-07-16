@@ -107,7 +107,7 @@
             {{ slotProps.data.total_clients ? slotProps.data.total_clients : 0 }}
           </template>
         </Column>
-
+        
         <Column
           header="제출 병의원"
           :headerStyle="{ width: columnWidthsMain.submitted_clients, textAlign: 'center' }"
@@ -122,7 +122,7 @@
           :headerStyle="{ width: columnWidthsMain.prescription_count, textAlign: 'center' }"
         >
           <template #body="slotProps">
-            {{ slotProps.data.prescription_count ? slotProps.data.prescription_count : 0 }}
+            {{ slotProps.data.prescription_count ? Number(slotProps.data.prescription_count).toLocaleString() : '0' }}
           </template>
         </Column>
 
@@ -215,12 +215,12 @@
         <ColumnGroup type="footer">
           <Row>
             <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalSubmittedClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalPrescriptionCount.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewCompleted.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewInProgress.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalReviewPending.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="totalSubmittedClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="Number(totalPrescriptionCount).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="totalReviewCompleted.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="totalReviewInProgress.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="totalReviewPending.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="Math.round(Number(totalPrescriptionAmount)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="3" footerClass="footer-cell" />
           </Row>

@@ -1598,7 +1598,7 @@ select.input-editable {
 
 /* ------ 관리자 업체별 등록 현황 (AdminPerformanceCompaniesView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 총 거래처, 제출 거래처, 처방건수, 검수완료, 검수중, 검수미진행, 증빙 파일, 파일 보기, 최종 등록일시) --- */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12), :nth-child(14), :nth-child(15), :nth-child(16)) {
+.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(14), :nth-child(15), :nth-child(16)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (구분, 업체명) --- */
@@ -1606,7 +1606,7 @@ select.input-editable {
   text-align: left !important;
 }
 /* --- 우측 정렬 (처방액) --- */
-.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(13)) {
+.admin-performance-companies-table .p-datatable-tbody > tr > td:is(:nth-child(7), :nth-child(8), :nth-child(9), :nth-child(10), :nth-child(11), :nth-child(12), :nth-child(13)) {
   text-align: right !important;
 }
 
@@ -1716,7 +1716,7 @@ select.input-editable {
 
 /* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 거래처수, 처방건수, 상세, 공유) --- */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(11), :nth-child(12)) {
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(11), :nth-child(12)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (구분, 업체명) --- */
@@ -1724,7 +1724,7 @@ select.input-editable {
   text-align: left !important;
 }
 /* --- 우측 정렬 (총 처방액, 총 지급액) --- */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(9), :nth-child(10)) {
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(8), :nth-child(9), :nth-child(10)) {
   text-align: right !important;
 }
 

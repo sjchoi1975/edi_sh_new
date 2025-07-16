@@ -54,8 +54,12 @@
           <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
           <Column field="product_name_display" header="제품명" :headerStyle="{ width: columnWidths.product_name }" :sortable="true" />
           <Column field="insurance_code" header="보험코드" :headerStyle="{ width: columnWidths.insurance_code }" :sortable="true" />
-          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
-          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true" />
+          <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true">
+            <template #body="slotProps">{{ Math.round(slotProps.data._raw_price || 0).toLocaleString() }}</template>
+          </Column>
+          <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
+            <template #body="slotProps">{{ (slotProps.data._raw_qty || 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</template>
+          </Column>
           <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
           <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" />
@@ -95,15 +99,13 @@ const selectedClient = ref('');
 const detailRows = ref([]);
 const allDataForMonth = ref([]);
 
-const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
-const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount?.toString().replace(/,/g, '')) || 0), 0).toLocaleString());
-const totalPaymentAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (Number(row.payment_amount?.toString().replace(/,/g, '')) || 0), 0)).toLocaleString());
+const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+const totalPrescriptionAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0)).toLocaleString());
+const totalPaymentAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount || 0), 0)).toLocaleString());
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
-    // 반올림을 위해 parseFloat 사용 후 Number로 변환
-    const payment = parseFloat(row.payment_amount?.toString().replace(/,/g, '')) || 0;
-    return sum + payment;
+    return sum + (row._raw_payment_amount || 0);
   }, 0);
 
   const supplyPrice = Math.round(totalPrice / 1.1);
@@ -189,7 +191,8 @@ async function fetchAllDataForMonth() {
   
   allDataForMonth.value = data.map(row => {
     const price = row.products?.price || 0;
-    const prescriptionAmount = (row.prescription_qty || 0) * price;
+    const qty = row.prescription_qty || 0;
+    const prescriptionAmount = qty * price;
     const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
     
     return {
@@ -198,9 +201,15 @@ async function fetchAllDataForMonth() {
       product_name_display: row.products?.product_name || 'N/A',
       insurance_code: row.products?.insurance_code || 'N/A',
       price: price,
+      prescription_qty: qty,
       prescription_amount: prescriptionAmount,
       payment_amount: paymentAmount,
       commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
+      // 원본 숫자 데이터 보존
+      _raw_price: price,
+      _raw_qty: qty,
+      _raw_prescription_amount: prescriptionAmount,
+      _raw_payment_amount: paymentAmount,
     };
   });
   
@@ -237,17 +246,17 @@ function filterDetailRows() {
     if (productNameCompare !== 0) return productNameCompare;
 
     // 3. 처방수량 높은 순
-    const qtyA = Number(a.prescription_qty.toString().replace(/,/g, '')) || 0;
-    const qtyB = Number(b.prescription_qty.toString().replace(/,/g, '')) || 0;
+    const qtyA = a._raw_qty || 0;
+    const qtyB = b._raw_qty || 0;
     return qtyB - qtyA;
   });
 
   detailRows.value = filtered.map(row => ({
     ...row,
     price: (row.price || 0).toLocaleString(),
-    prescription_qty: (row.prescription_qty || 0).toLocaleString(),
-    prescription_amount: (row.prescription_amount || 0).toLocaleString(),
-    payment_amount: (row.payment_amount || 0).toLocaleString()
+    prescription_qty: (row.prescription_qty || 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    prescription_amount: Math.round(row.prescription_amount || 0).toLocaleString(),
+    payment_amount: Math.round(row.payment_amount || 0).toLocaleString()
   }));
 }
 

@@ -254,6 +254,28 @@
             </template>
           </Column>
           <Column field="registered_by_name" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
+
+          <ColumnGroup type="footer">
+            <Row>
+              <Column footer="합계" :colspan="3" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" :frozen="true" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column :footer="totalQuantity" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+
+              <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+            </Row>
+          </ColumnGroup>
         </DataTable>
       </div>
     </div>
@@ -277,6 +299,8 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
 import Checkbox from 'primevue/checkbox';
 import Tag from 'primevue/tag';
 import { v4 as uuidv4 } from 'uuid';
@@ -309,10 +333,26 @@ const columnWidths = {
 };
 const prescriptionTypeOptions = ['EDI', 'ERP직거래자료', '매출자료', '약국조제', '원내매출', '원외매출', '차감'];
 
-// --- 상태 관리: 필터 ---
+// --- 합계 계산 ---
+const totalQuantity = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  return total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+});
+
+const totalPrescriptionAmount = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalPaymentAmount = computed(() => {
+  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
+
+// --- 기존 데이터 및 필터 변수들 ---
 const availableMonths = ref([]);
 const selectedSettlementMonth = ref('');
-const prescriptionOffset = ref(1);
+const prescriptionOffset = ref(null);
 const selectedCompanyId = ref(null);
 const selectedHospitalId = ref(null);
 
@@ -341,7 +381,15 @@ const productInputRefs = ref({});
 const isAnyEditing = computed(() => activeEditingRowId.value !== null);
 
 const displayRows = computed(() => {
-  return rows.value.map(row => ({
+  let filteredRows = rows.value;
+  
+  // 처방월 필터 적용
+  if (prescriptionOffset.value !== null) {
+    const targetPrescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+    filteredRows = filteredRows.filter(row => row.prescription_month === targetPrescriptionMonth);
+  }
+  
+  return filteredRows.map(row => ({
     ...row,
     isEditing: row.id === activeEditingRowId.value,
     display_status: row.review_status === '대기' ? '신규' : row.review_status
@@ -349,11 +397,14 @@ const displayRows = computed(() => {
 });
 
 const prescriptionOptions = computed(() => {
-  if (!selectedSettlementMonth.value) return [];
-  return [1, 2, 3].map(offset => ({
-    value: offset,
-    month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
-  }));
+  if (!selectedSettlementMonth.value) return [{ value: null, month: '전체' }];
+  return [
+    { value: null, month: '전체' },
+    ...[1, 2, 3].map(offset => ({
+      value: offset,
+      month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
+    }))
+  ];
 });
 
 const prescriptionMonthOptionsForEdit = computed(() => {
@@ -1280,5 +1331,10 @@ async function handleBulkPrescriptionTypeUpdate() {
 
 :deep(.p-datatable .p-datatable-tbody > tr.deleted-row > td) {
   background-color: #ffebee !important; /* 아주 연한 붉은색 */
+}
+
+:deep(.p-datatable-tfoot > tr > td) {
+    background: #f8f9fa !important;
+    font-weight: bold;
 }
 </style>

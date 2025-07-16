@@ -47,7 +47,9 @@
         <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true"/>
         <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" :sortable="true"/>
         <Column field="client_count" header="병의원 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
-        <Column field="total_records" header="처방건수" :headerStyle="{ width: columnWidths.total_records }" :sortable="true"/>
+        <Column field="total_records" header="처방건수" :headerStyle="{ width: columnWidths.total_records }" :sortable="true">
+            <template #body="slotProps">{{ slotProps.data.total_records ? Number(slotProps.data.total_records).toLocaleString() : '0' }}</template>
+        </Column>
         <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
             <template #body="slotProps">{{ Math.round(slotProps.data.total_prescription_amount || 0).toLocaleString() }}</template>
         </Column>
