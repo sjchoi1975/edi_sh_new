@@ -793,7 +793,8 @@ async function downloadExcel() {
     });
 
     // 2. 데이터 변환
-    const dataToExport = displayRows.value.map(row => ({
+    const dataToExport = displayRows.value.map((row, index) => ({
+      'No': index + 1,
       '작업': row.review_action || '-',
       '구분': row.company_type,
       '업체명': row.company_name,
@@ -802,7 +803,7 @@ async function downloadExcel() {
       '제품명': row.product_name_display,
       '보험코드': row.insurance_code,
       '약가': Math.round(Number(String(row.price).replace(/,/g, '')) || 0),
-      '수량': Math.round(row.prescription_qty || 0),
+      '수량': Number(row.prescription_qty) || 0,
       '처방액': Math.round(Number(String(row.prescription_amount).replace(/,/g, '')) || 0),
       '처방구분': row.prescription_type,
       '도매매출': Math.round(row.wholesale_revenue || 0),
@@ -816,6 +817,31 @@ async function downloadExcel() {
       '등록자': userCompanyMap[row.registered_by] || row.registered_by || '-'
     }));
 
+    // 합계 행 추가
+    dataToExport.push({
+      'No': '합계',
+      '작업': '',
+      '구분': '',
+      '업체명': '',
+      '병의원명': '',
+      '처방월': '',
+      '제품명': '',
+      '보험코드': '',
+      '약가': '',
+      '수량': Number(totalQuantity.value.replace(/,/g, '')),
+      '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
+      '처방구분': '',
+      '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
+      '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
+      '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
+      '흡수율': '',
+      '수수료율': '',
+      '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
+      '비고': '',
+      '등록일시': '',
+      '등록자': ''
+    });
+
     // 3. 워크시트 생성
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
 
@@ -823,7 +849,7 @@ async function downloadExcel() {
     const range = XLSX.utils.decode_range(worksheet['!ref']);
     for (let R = range.s.r + 1; R <= range.e.r; ++R) {
       // 숫자 컬럼들 (천 단위 콤마, 소수점 없음)
-      const numberCols = [7, 8, 9, 11, 12, 13, 16]; // 약가, 수량, 처방액, 도매매출, 직거래매출, 합산액, 지급액
+      const numberCols = [8, 10, 12, 13, 14, 17]; // 약가, 처방액, 도매매출, 직거래매출, 합산액, 지급액
       numberCols.forEach(col => {
         const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
         if (cell && typeof cell.v === 'number') {
@@ -831,8 +857,14 @@ async function downloadExcel() {
         }
       });
 
+      // 수량 컬럼 (소수점 1자리)
+      const qtyCell = worksheet[XLSX.utils.encode_cell({c: 9, r: R})];
+      if (qtyCell && typeof qtyCell.v === 'number') {
+        qtyCell.z = '#,##0.0';
+      }
+
       // 백분율 컬럼들 (소수점 1자리)
-      const percentCols = [14, 15]; // 흡수율, 수수료율
+      const percentCols = [15, 16]; // 흡수율, 수수료율
       percentCols.forEach(col => {
         const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
         if (cell && typeof cell.v === 'number') {

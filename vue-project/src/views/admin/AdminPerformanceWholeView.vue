@@ -593,7 +593,7 @@ const downloadExcel = () => {
     '제품명': row.product_name_display || '',
     '보험코드': row.insurance_code || '',
     '약가': Number(String(row.price).replace(/,/g, '')) || 0,
-    '처방수량': Number(row.prescription_qty) || 0,
+    '처방수량': Number(String(row.prescription_qty).replace(/,/g, '')) || 0,
     '처방액': Number(String(row.prescription_amount).replace(/,/g, '')) || 0,
     '처방구분': row.prescription_type || '',
     '비고': row.remarks || '',
@@ -616,6 +616,7 @@ const downloadExcel = () => {
 
   // 숫자 형식 지정 (천 단위 구분)
   const numberFormat = '#,##0';
+  const numberFormatDecimal = '#,##0.0'; // 소수점 한 자리
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let row = 1; row <= range.e.r; row++) {
     // 약가 컬럼 (I열)
@@ -623,10 +624,10 @@ const downloadExcel = () => {
     if (priceCell && typeof priceCell.v === 'number') {
       priceCell.z = numberFormat;
     }
-    // 처방수량 컬럼 (J열)
+    // 처방수량 컬럼 (J열) - 소수점 한 자리 표시
     const qtyCell = ws[XLSX.utils.encode_cell({ r: row, c: 9 })];
     if (qtyCell && typeof qtyCell.v === 'number') {
-      qtyCell.z = numberFormat;
+      qtyCell.z = numberFormatDecimal;
     }
     // 처방액 컬럼 (K열)
     const amountCell = ws[XLSX.utils.encode_cell({ r: row, c: 10 })];

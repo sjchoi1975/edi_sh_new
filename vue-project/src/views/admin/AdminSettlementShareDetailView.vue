@@ -270,31 +270,79 @@ function downloadExcel() {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
-  const excelData = detailRows.value.map(row => ({
+  
+  // No 컬럼과 함께 데이터 생성
+  const excelData = detailRows.value.map((row, index) => ({
+    'No': index + 1,
     '병의원명': row.client_name,
     '처방월': row.prescription_month,
     '제품명': row.product_name_display,
     '보험코드': row.insurance_code,
-    '약가': Number(String(row.price).replace(/,/g, '')),
-    '처방수량': Number(String(row.prescription_qty).replace(/,/g, '')),
-    '처방액': Number(String(row.prescription_amount).replace(/,/g, '')),
-    '수수료율(%)': Number(String(row.commission_rate).replace('%', '')) / 100,
-    '지급액': Number(String(row.payment_amount).replace(/,/g, '')),
+    '약가': row._raw_price || 0,
+    '처방수량': row._raw_qty || 0,
+    '처방액': row._raw_prescription_amount || 0,
+    '수수료율': Number(String(row.commission_rate).replace('%', '')) / 100,
+    '지급액': row._raw_payment_amount || 0,
     '비고': row.remarks || '',
   }));
+
+  // 합계 행 추가
+  excelData.push({
+    'No': '합계',
+    '병의원명': '',
+    '처방월': '',
+    '제품명': '',
+    '보험코드': '',
+    '약가': '',
+    '처방수량': Number(totalQty.value.replace(/,/g, '')),
+    '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
+    '수수료율': '',
+    '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
+    '비고': '',
+  });
+
   const ws = XLSX.utils.json_to_sheet(excelData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '정산내역서상세');
 
-  ws['!cols'] = [ { wch: 20 }, { wch: 10 }, { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 20 }];
+  // 컬럼 너비 설정 (No 컬럼 추가로 인해 컬럼 수 증가)
+  ws['!cols'] = [ 
+    { wch: 5 },   // No
+    { wch: 20 },  // 병의원명
+    { wch: 10 },  // 처방월
+    { wch: 25 },  // 제품명
+    { wch: 12 },  // 보험코드
+    { wch: 10 },  // 약가
+    { wch: 10 },  // 처방수량
+    { wch: 12 },  // 처방액
+    { wch: 10 },  // 수수료율
+    { wch: 12 },  // 지급액
+    { wch: 20 }   // 비고
+  ];
   
+  // 셀 서식 지정
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-    ws[XLSX.utils.encode_cell({c: 4, r: R})].z = '#,##0';
-    ws[XLSX.utils.encode_cell({c: 5, r: R})].z = '#,##0';
-    ws[XLSX.utils.encode_cell({c: 6, r: R})].z = '#,##0';
-    ws[XLSX.utils.encode_cell({c: 7, r: R})].z = '0.00%';
-    ws[XLSX.utils.encode_cell({c: 8, r: R})].z = '#,##0.0';
+    // 숫자 컬럼들 (천 단위 콤마, 소수점 없음)
+    const numberCols = [5, 7, 9]; // 약가, 처방액, 지급액
+    numberCols.forEach(col => {
+      const cell = ws[XLSX.utils.encode_cell({c: col, r: R})];
+      if (cell && typeof cell.v === 'number') {
+        cell.z = '#,##0';
+      }
+    });
+
+    // 처방수량 컬럼 (소수점 1자리)
+    const qtyCell = ws[XLSX.utils.encode_cell({c: 6, r: R})];
+    if (qtyCell && typeof qtyCell.v === 'number') {
+      qtyCell.z = '#,##0.0';
+    }
+
+    // 수수료율 컬럼 (백분율)
+    const rateCell = ws[XLSX.utils.encode_cell({c: 8, r: R})];
+    if (rateCell && typeof rateCell.v === 'number') {
+      rateCell.z = '0.0%';
+    }
   }
 
   const today = new Date().toISOString().split('T')[0];
