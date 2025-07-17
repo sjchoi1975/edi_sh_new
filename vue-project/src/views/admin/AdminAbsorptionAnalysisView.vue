@@ -80,9 +80,13 @@
         <DataTable 
           :value="displayRows" 
           :loading="loading"
+          paginator
+          :rows="100"
+          :rowsPerPageOptions="[100, 200, 500, 1000]"
           scrollable 
-          scrollHeight="calc(100vh - 220px)"
+          scrollHeight="calc(100vh - 240px)"
           class="absorption-analysis-table"
+          v-model:first="currentPageFirstIndex"
           :pt="{
             wrapper: { style: 'min-width: 2400px;' },
             table: { style: 'min-width: 2400px;' }
@@ -92,6 +96,10 @@
             <div v-if="loading">데이터를 불러오는 중입니다.</div>
             <div v-else></div>
           </template>
+          
+          <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
+            <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
+          </Column>
           
           <Column header="작업" field="review_action" :headerStyle="{ width: columnWidths.review_action }" :frozen="true">
             <template #body="slotProps">
@@ -144,7 +152,7 @@
 
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="4" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
+              <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" :frozen="true" />
               <Column footer="" footerClass="footer-cell" />
@@ -182,25 +190,26 @@ import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
+  no: '4%',
   review_action: '4%',
   company_type: '8%',
-  company_name: '12%',
+  company_name: '10%',
   client_name: '12%',
   prescription_month: '6%',
   product_name_display: '12%',
   insurance_code: '8%',
-  price: '6%',
-  prescription_qty: '6%',
+  price: '5%',
+  prescription_qty: '7%',
   prescription_amount: '7%',
-  prescription_type: '7%',
-  wholesale_revenue: '7%',
+  prescription_type: '6%',
+  wholesale_revenue: '6%',
   direct_revenue: '7%',
   total_revenue: '7%',
-  absorption_rate: '6%',
-  commission_rate: '6%',
+  absorption_rate: '5%',
+  commission_rate: '5%',
   payment_amount: '7%',
   remarks: '12%',
-  created_date: '9%',
+  created_date: '8%',
   created_by: '10%'
 };
 
@@ -211,6 +220,7 @@ const availableMonths = ref([]);
 const companyOptions = ref([]);
 const hospitalOptions = ref([]);
 const prescriptionOptions = ref([]);
+const currentPageFirstIndex = ref(0);
 
 // 필터 선택값
 const selectedSettlementMonth = ref('');

@@ -31,9 +31,9 @@
       <div class="data-card-header" style="flex-shrink: 0; justify-content: space-between;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="settlement-summary">
-          <span>공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
-          <span>부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
-          <span>합계 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">합계액 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
         </div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>

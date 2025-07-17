@@ -63,10 +63,14 @@
           scrollHeight="calc(100vh - 220px)"
           scrollDirection="both"
           class="admin-performance-whole-table"
+          :paginator="true"
+          :rows="100"
+          :rowsPerPageOptions="[100, 200, 500, 1000]"
           :pt="{
             wrapper: { style: 'min-width: 2200px;' },
             table: { style: 'min-width: 2200px;' }
           }"
+          @page="onPageChange"
         >
           <template #empty>
             <div v-if="!loading">등록된 실적이 없습니다.</div>
@@ -75,7 +79,7 @@
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
             <template #body="slotProps">
-              {{ slotProps.index + 1 }}
+              {{ slotProps.index + currentPageFirstIndex + 1 }}
             </template>
           </Column>
           <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
@@ -118,8 +122,7 @@
           </Column>
           <ColumnGroup type="footer">
             <Row>
-              <Column :colspan="2" footerClass="footer-cell" :frozen="true" />
-              <Column :colspan="1" footerClass="footer-cell" />
+              <Column :colspan="3" footerClass="footer-cell" :frozen="true" />
               <Column footer="합계" :colspan="2" footerClass="footer-cell" footerStyle="text-align:center !important;" :frozen="true" />
               <Column :colspan="1" footerClass="footer-cell" />
               <Column :colspan="1" footerClass="footer-cell" :frozen="true" />
@@ -145,22 +148,22 @@ import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
 
 const columnWidths = {
-  no: '4%',
-  review_status: '5%',
-  company_group: '8%',
-  company_name: '10%',
-  client_name: '14%',
-  prescription_month: '7%',
-  product_name_display: '14%',
-  insurance_code: '7%',
-  price: '6%',
-  prescription_qty: '7%',
-  prescription_amount: '7%',
-  prescription_type: '8%',
-  remarks: '12%',
-  created_date: '10%',
-  created_by: '9%',
-  assigned_pharmacist_contact: '6%'
+  no: '3%',
+  review_status: '4%',
+  company_group: '7%',
+  company_name: '9%',
+  client_name: '13%',
+  prescription_month: '6%',
+  product_name_display: '13%',
+  insurance_code: '6%',
+  price: '5%',
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '7%',
+  remarks: '11%',
+  created_date: '9%',
+  created_by: '8%',
+  assigned_pharmacist_contact: '5%'
 };
 
 // 반응형 데이터
@@ -172,6 +175,9 @@ const prescriptionOffset = ref(0); // 0: 전체, 1: -1M, 2: -2M, 3: -3M
 const prescriptionOptions = ref([]);
 const loading = ref(false);
 const selectedReviewStatus = ref('');
+
+// 페이지네이션 관련
+const currentPageFirstIndex = ref(0);
 
 // 업체 관련
 const selectedCompanyId = ref(''); // 선택된 업체 ID
@@ -563,6 +569,11 @@ const totalAmount = computed(() => {
   }, 0);
   return sum.toLocaleString();
 });
+
+// 페이지네이션 이벤트 핸들러
+function onPageChange(event) {
+  currentPageFirstIndex.value = event.first;
+}
 
 // 엑셀 다운로드
 const downloadExcel = () => {

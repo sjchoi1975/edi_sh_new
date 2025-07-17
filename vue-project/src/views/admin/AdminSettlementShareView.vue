@@ -68,8 +68,10 @@
         </Column>
         <ColumnGroup type="footer">
           <Row>
-            <Column footer="합계" :colspan="8" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalPrescriptionAmount"footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalClientCount" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalRecordsCount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :colspan="2" footerClass="footer-cell" />
           </Row>
@@ -116,6 +118,16 @@ const companySummary = ref([]);
 const shareChanges = ref({}); // 공유 상태 변경 사항 추적
 
 // --- 계산된 속성 (합계) ---
+const totalClientCount = computed(() => {
+  const total = companySummary.value.reduce((sum, item) => sum + Number(item.client_count || 0), 0);
+  return total.toLocaleString();
+});
+
+const totalRecordsCount = computed(() => {
+  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_records || 0), 0);
+  return total.toLocaleString();
+});
+
 const totalPrescriptionAmount = computed(() => {
   const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_prescription_amount || 0), 0);
   return Math.round(total).toLocaleString();

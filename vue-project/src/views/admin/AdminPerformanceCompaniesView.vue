@@ -217,7 +217,7 @@
             <Column footer="합계" :colspan="6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
             <Column :footer="totalClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalSubmittedClients.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-            <Column :footer="Number(totalPrescriptionCount).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="Number(totalPrescriptionCount).toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalReviewCompleted.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalReviewInProgress.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalReviewPending.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />

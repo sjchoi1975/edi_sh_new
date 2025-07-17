@@ -15,9 +15,9 @@
       <div class="data-card-header" style="flex-shrink: 0; justify-content: space-between;">
         <div class="total-count-display">전체 {{ detailRows.length }} 건</div>
         <div class="settlement-summary">
-          <span>공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
-          <span>부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
-          <span>합계 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">공급가 : {{ settlementSummary.supply_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">부가세 : {{ settlementSummary.vat_price?.toLocaleString() }}원</span>
+          <span style="font-weight: 600;">합계액 : {{ settlementSummary.total_price?.toLocaleString() }}원</span>
         </div>
         <div class="action-buttons-group">
           <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
@@ -27,15 +27,19 @@
       <DataTable 
         :value="detailRows" 
         :loading="loading"
+        paginator
+        :rows="100"
+        :rowsPerPageOptions="[100, 200, 500, 1000]"
         scrollable 
-        scrollHeight="calc(100vh - 220px)"
-        class="admin-settlement-share-detail-table">
+        scrollHeight="calc(100vh - 240px)"
+        class="admin-settlement-share-detail-table"
+        v-model:first="currentPageFirstIndex">
         <template #empty>
           <div v-if="!loading">조회된 데이터가 없습니다.</div>
         </template>
         <template #loading>정산 상세 데이터를 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
-          <template #body="slotProps">{{ slotProps.index + 1 }}</template>
+          <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
         <Column field="client_name" header="병의원명" :headerStyle="{ width: columnWidths.client_name }" :sortable="true" />
         <Column field="prescription_month" header="처방월" :headerStyle="{ width: columnWidths.prescription_month }" :sortable="true" />
@@ -90,6 +94,9 @@ const companyId = ref(route.query.company_id);
 const companyInfo = ref({});
 const detailRows = ref([]);
 const loading = ref(false);
+const currentPageFirstIndex = ref(0);
+
+
 
 const columnWidths = {
   no: '4%',
@@ -113,26 +120,25 @@ async function loadDetailData() {
   if (!month.value || !companyId.value) return;
   loading.value = true;
   try {
-    // 1. 상세 데이터 조회 (products 테이블에서 price 포함)
-    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    // 전체 데이터 조회 (클라이언트 사이드 페이지네이션)
     let allData = [];
     let from = 0;
     const batchSize = 1000;
     
     while (true) {
-    const { data, error } = await supabase
-      .from('performance_records_absorption')
-      .select(`
-        *,
-        clients ( name ),
-        products ( product_name, insurance_code, price )
-      `)
-      .eq('settlement_month', month.value)
+      const { data, error } = await supabase
+        .from('performance_records_absorption')
+        .select(`
+          *,
+          clients ( name ),
+          products ( product_name, insurance_code, price )
+        `)
+        .eq('settlement_month', month.value)
         .eq('company_id', companyId.value)
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
       
-    if (error) throw error;
+      if (error) throw error;
       
       if (!data || data.length === 0) {
         break;
@@ -140,7 +146,6 @@ async function loadDetailData() {
       
       allData = allData.concat(data);
       
-      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
       if (data.length < batchSize) {
         break;
       }
@@ -154,7 +159,7 @@ async function loadDetailData() {
         return;
     }
     
-    // 2. 데이터 가공 (약가, 처방액, 지급액 계산)
+    // 데이터 가공 (약가, 처방액, 지급액 계산)
     let mappedData = allData.map(row => {
       // 데이터 매핑 시
       const qty = row.prescription_qty ?? 0;
@@ -172,7 +177,7 @@ async function loadDetailData() {
         prescription_qty: qty,
         prescription_amount: prescriptionAmount,
         payment_amount: paymentAmount,
-        commission_rate: `${((commissionRate || 0) * 100).toFixed(2)}%`,
+        commission_rate: `${((commissionRate || 0) * 100).toFixed(1)}%`,
         // 합계 계산용 원본 숫자값 보존
         _raw_price: price,
         _raw_qty: qty,
@@ -181,7 +186,7 @@ async function loadDetailData() {
       };
     });
 
-    // 3. 데이터 정렬
+    // 4. 데이터 정렬
     mappedData.sort((a, b) => {
       if (a.client_name !== b.client_name) {
         return a.client_name.localeCompare(b.client_name, 'ko');
@@ -192,7 +197,7 @@ async function loadDetailData() {
       return (b.prescription_amount || 0) - (a.prescription_amount || 0);
     });
 
-    // 4. 화면 표시용으로 최종 포맷팅
+    // 5. 화면 표시용으로 최종 포맷팅
     detailRows.value = mappedData.map((row, index) => {
       const formattedRow = {
         ...row,
@@ -205,8 +210,8 @@ async function loadDetailData() {
       return formattedRow;
     });
 
-    // 5. 업체 정보 설정
-    if (allData.length > 0) { // Use allData for company info
+    // 업체 정보 설정
+    if (allData.length > 0) {
       const { data: cInfo, error: cError } = await supabase
         .from('companies')
         .select('company_name, business_registration_number, representative_name, business_address')
@@ -225,7 +230,7 @@ async function loadDetailData() {
   }
 }
 
-// 합계 계산
+// 합계 계산 (전체 데이터 기준)
 const totalQty = computed(() => {
   const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_qty ?? 0), 0);
   return sum.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -257,6 +262,8 @@ const settlementSummary = computed(() => {
 function goBack() {
   router.push('/admin/settlement-share');
 }
+
+
 
 function downloadExcel() {
   if (detailRows.value.length === 0) {

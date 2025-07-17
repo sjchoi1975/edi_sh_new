@@ -79,10 +79,14 @@
           editMode="row"
           @row-edit-save="onRowEditSave"
           :rowClass="getRowClass"
+          paginator
+          :rows="100"
+          :rowsPerPageOptions="[100, 200, 500, 1000]"
           scrollable 
-          scrollHeight="calc(100vh - 220px)"
+          scrollHeight="calc(100vh - 240px)"
           class="admin-performance-review-table"
           dataKey="id"
+          v-model:first="currentPageFirstIndex"
           :pt="{
             wrapper: { style: 'min-width: 2200px;' },
             table: { style: 'min-width: 2200px;' }
@@ -92,6 +96,10 @@
             <div v-if="loading">데이터를 불러오는 중입니다.</div>
             <div v-else>필터 조건을 선택하고 '불러오기'를 클릭하세요.</div>
           </template>
+          
+          <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
+            <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
+          </Column>
           
           <Column header="상태" field="display_status" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
@@ -257,7 +265,7 @@
 
           <ColumnGroup type="footer">
             <Row>
-              <Column footer="합계" :colspan="3" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
+              <Column footer="합계" :colspan="4" footerClass="footer-cell" footerStyle="text-align:center;" :frozen="true" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
@@ -312,24 +320,25 @@ const toast = useToast();
 
 // --- 고정 변수 ---
 const columnWidths = {
-  checkbox: '2.5%',
-  review_status: '2.5%',
-  review_action: '2.5%',
-  actions: '5%',
-  company_name: '7%',
-  client_name: '10%',
-  prescription_month: '4%',
-  product_name_display: '10%', 
-  insurance_code: '4%', 
-  price: '3.5%',
-  prescription_qty: '3.5%', 
-  prescription_amount: '4%', 
-  prescription_type: '5%',
-  commission_rate: '4%',
-  payment_amount: '4%', 
-  remarks: '8%',
-  created_date: '6%',
-  created_by: '7%'
+  no: '4%',
+  review_status: '4%',
+  review_action: '4%',
+  actions: '8%',
+  company_name: '12%',
+  client_name: '12%',
+  prescription_month: '5%',
+  product_name_display: '12%', 
+  insurance_code: '8%', 
+  price: '5%',
+  prescription_qty: '7%', 
+  prescription_amount: '7%', 
+  checkbox: '4%',
+  prescription_type: '7%',
+  commission_rate: '5%',
+  payment_amount: '7%', 
+  remarks: '10%',
+  created_date: '8%',
+  created_by: '10%'
 };
 const prescriptionTypeOptions = ['EDI', 'ERP직거래자료', '매출자료', '약국조제', '원내매출', '원외매출', '차감'];
 
@@ -376,6 +385,7 @@ const selectedRows = ref([]);
 const activeEditingRowId = ref(null);
 const products = ref([]);
 const productInputRefs = ref({});
+const currentPageFirstIndex = ref(0);
 
 // --- Computed 속성 ---
 const isAnyEditing = computed(() => activeEditingRowId.value !== null);
