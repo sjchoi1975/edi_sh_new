@@ -44,24 +44,16 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
          <div v-if="!loading && displayRows.length === 0" class="header-center-message">
-          분석 데이터를 불러오거나 흡수율 분석을 실행하세요.
+          흡수율 분석을 실행하세요.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
           <button 
             class="btn-delete" 
-            @click="deleteAnalysisData" 
+            @click="deleteFilteredAnalysisData" 
             :disabled="displayRows.length === 0 || loading"
             style="margin-right: 1rem;"
           >
             분석 데이터 삭제
-          </button>
-          <button 
-            class="btn-primary" 
-            @click="loadAnalysisData" 
-            :disabled="!canLoadAnalysisData"
-            style="margin-right: 1rem;"
-          >
-            분석 데이터 불러오기
           </button>
            <button 
              class="btn-add" 
@@ -88,8 +80,8 @@
           class="absorption-analysis-table"
           v-model:first="currentPageFirstIndex"
           :pt="{
-            wrapper: { style: 'min-width: 2400px;' },
-            table: { style: 'min-width: 2400px;' }
+            wrapper: { style: 'min-width: 2600px;' },
+            table: { style: 'min-width: 2600px;' }
           }"
         >
           <template #empty>
@@ -192,17 +184,17 @@ import * as XLSX from 'xlsx';
 const columnWidths = {
   no: '4%',
   review_action: '4%',
-  company_type: '8%',
+  company_type: '7%',
   company_name: '10%',
-  client_name: '12%',
+  client_name: '14%',
   prescription_month: '6%',
-  product_name_display: '12%',
-  insurance_code: '8%',
-  price: '5%',
+  product_name_display: '14%',
+  insurance_code: '7%',
+  price: '6%',
   prescription_qty: '7%',
   prescription_amount: '7%',
-  prescription_type: '6%',
-  wholesale_revenue: '6%',
+  prescription_type: '7%',
+  wholesale_revenue: '7%',
   direct_revenue: '7%',
   total_revenue: '7%',
   absorption_rate: '5%',
@@ -229,7 +221,6 @@ const selectedHospitalId = ref('ALL');
 const prescriptionOffset = ref(0);
 
 // 새로운 상태 변수들
-const hasAnalysisData = ref(false);
 const hasCompletedData = ref(false);
 const changes = ref({
   added_count: 0,
@@ -270,7 +261,6 @@ const totalPaymentAmount = computed(() => {
 });
 
 // --- Computed 속성 (버튼 활성화 로직) ---
-const canLoadAnalysisData = computed(() => hasAnalysisData.value);
 
 // --- Computed 속성 (합계 계산) ---
 const totalQuantity = computed(() => {
@@ -434,7 +424,7 @@ const checkAnalysisStatus = async () => {
   if (!selectedSettlementMonth.value) return;
   loading.value = true;
   try {
-    // 1. 분석할 원본 데이터(완료 상태)가 있는지 확인
+    // 분석할 원본 데이터(완료 상태)가 있는지 확인
     const { count: completedCount, error: completedError } = await supabase
       .from('performance_records')
       .select('id', { count: 'exact', head: true })
@@ -443,18 +433,9 @@ const checkAnalysisStatus = async () => {
     if (completedError) throw completedError;
     hasCompletedData.value = (completedCount || 0) > 0;
 
-    // 2. 이미 분석된 결과 데이터가 있는지 확인
-    const { count: analysisCount, error: analysisError } = await supabase
-      .from('performance_records_absorption')
-      .select('id', { count: 'exact', head: true })
-      .eq('settlement_month', selectedSettlementMonth.value);
-    if (analysisError) throw analysisError;
-    hasAnalysisData.value = (analysisCount || 0) > 0;
-
   } catch (err) {
     console.error('분석 상태 확인 중 오류:', err);
     hasCompletedData.value = false;
-    hasAnalysisData.value = false;
   } finally {
     loading.value = false;
   }
@@ -464,12 +445,8 @@ const checkAnalysisStatus = async () => {
 watch(selectedSettlementMonth, checkAnalysisStatus, { immediate: true });
 
 // --- 핵심 데이터 처리 함수 ---
-async function loadAnalysisData() {
-  if (!selectedSettlementMonth.value) { alert('정산월을 선택해야 합니다.'); return; }
-  if (!hasAnalysisData.value) {
-    alert('불러올 분석 데이터가 없습니다. 먼저 흡수율 분석을 실행해주세요.');
-    return;
-  }
+async function loadAbsorptionAnalysisResults() {
+  if (!selectedSettlementMonth.value) return;
   
   loading.value = true;
   displayRows.value = [];
@@ -507,7 +484,7 @@ async function loadAnalysisData() {
         .range(from, from + batchSize - 1)
         .order('created_at', { ascending: false });
       
-    if (error) throw error;
+      if (error) throw error;
 
       if (!data || data.length === 0) {
         break;
@@ -560,8 +537,8 @@ async function loadAnalysisData() {
     displayRows.value = mappedData;
 
   } catch (err) {
-    console.error('분석 데이터 처리 오류:', err);
-    alert(`분석 데이터 처리 중 오류가 발생했습니다: ${err.message}`);
+    console.error('분석 결과 데이터 로딩 오류:', err);
+    alert(`분석 결과 데이터 로딩 중 오류가 발생했습니다: ${err.message}`);
   } finally {
     loading.value = false;
   }
@@ -575,6 +552,7 @@ watch(selectedSettlementMonth, async (newMonth) => {
     updatePrescriptionOptions();
     prescriptionOffset.value = 0;
     await checkAnalysisStatus();
+    await loadAbsorptionAnalysisResults();
   }
 });
 
@@ -588,6 +566,25 @@ watch(selectedCompanyId, async (newCompanyId) => {
       selectedHospitalId.value = 'ALL';
     }
   }
+  
+  // 분석 데이터가 있으면 필터링된 결과 로딩
+  if (selectedSettlementMonth.value) {
+    await loadAbsorptionAnalysisResults();
+  }
+});
+
+watch(selectedHospitalId, async () => {
+  // 분석 데이터가 있으면 필터링된 결과 로딩
+  if (selectedSettlementMonth.value) {
+    await loadAbsorptionAnalysisResults();
+  }
+});
+
+watch(prescriptionOffset, async () => {
+  // 분석 데이터가 있으면 필터링된 결과 로딩
+  if (selectedSettlementMonth.value) {
+    await loadAbsorptionAnalysisResults();
+  }
 });
 
 // --- 유틸리티 함수 ---
@@ -597,26 +594,127 @@ const calculateAbsorptionRates = async () => {
     return;
   }
 
-  if (!confirm(`'${selectedSettlementMonth.value}'월의 흡수율 분석을 시작합니다.\n\n1단계: 분석 데이터 생성\n2단계: 흡수율 계산`)) {
+  // 필터 조건 확인 메시지
+  const companyName = selectedCompanyId.value === 'ALL' ? '전체' : companyOptions.value.find(c => c.id === selectedCompanyId.value)?.company_name;
+  const hospitalName = selectedHospitalId.value === 'ALL' ? '전체' : hospitalOptions.value.find(h => h.id === selectedHospitalId.value)?.name;
+  const prescriptionMonthText = prescriptionOffset.value === 0 ? '전체' : getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+
+  if (!confirm(`'${selectedSettlementMonth.value}'월의 흡수율 분석을 시작합니다.\n\n조건: ${companyName} / ${hospitalName} / ${prescriptionMonthText}\n\n1단계: 필터 조건에 맞는 분석 데이터 생성\n2단계: 흡수율 계산`)) {
     return;
   }
 
   loading.value = true;
   try {
-    // 1단계: 원본 데이터 복사
-    console.log(`1단계 시작: ${selectedSettlementMonth.value} 데이터 복사`);
-    const { error: step1Error } = await supabase.rpc('run_absorption_analysis_step1', {
-      p_settlement_month: selectedSettlementMonth.value
-    });
-    if (step1Error) {
-      console.error('1단계 오류:', step1Error);
-      throw new Error(`1단계(데이터 복사) 실패: ${step1Error.message}`);
-    }
-    console.log('1단계 완료.');
-    alert('1단계(데이터 복사)가 완료되었습니다. 2단계(흡수율 계산)를 시작합니다.');
+    // 1단계: 필터 조건에 맞는 원본 데이터 복사
+    console.log(`1단계 시작: ${selectedSettlementMonth.value} 필터링된 데이터 복사`);
     
-    // 2단계: 흡수율 계산
-    console.log(`2단계 시작: ${selectedSettlementMonth.value} 흡수율 계산`);
+    // 먼저 기존 분석 데이터에서 해당 조건의 데이터 삭제
+    let deleteQuery = supabase
+      .from('performance_records_absorption')
+      .delete()
+      .eq('settlement_month', selectedSettlementMonth.value);
+    
+    if (selectedCompanyId.value !== 'ALL') {
+      deleteQuery = deleteQuery.eq('company_id', selectedCompanyId.value);
+    }
+    if (selectedHospitalId.value !== 'ALL') {
+      deleteQuery = deleteQuery.eq('client_id', selectedHospitalId.value);
+    }
+    if (prescriptionOffset.value !== 0) {
+      const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+      deleteQuery = deleteQuery.eq('prescription_month', prescriptionMonth);
+    }
+
+    const { error: deleteError } = await deleteQuery;
+    if (deleteError) {
+      console.warn('기존 분석 데이터 삭제 중 오류 (무시):', deleteError);
+    }
+
+    // 필터 조건에 맞는 performance_records 데이터 조회
+    let sourceQuery = supabase
+      .from('performance_records')
+      .select('*')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('review_status', '완료');
+    
+    if (selectedCompanyId.value !== 'ALL') {
+      sourceQuery = sourceQuery.eq('company_id', selectedCompanyId.value);
+    }
+    if (selectedHospitalId.value !== 'ALL') {
+      sourceQuery = sourceQuery.eq('client_id', selectedHospitalId.value);
+    }
+    if (prescriptionOffset.value !== 0) {
+      const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+      sourceQuery = sourceQuery.eq('prescription_month', prescriptionMonth);
+    }
+
+    // === 전체 데이터 조회 (1,000건 제한 해결) ===
+    let allSourceData = [];
+    let from = 0;
+    const batchSize = 1000;
+    
+    while (true) {
+      const { data, error } = await sourceQuery
+        .range(from, from + batchSize - 1);
+      
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allSourceData = allSourceData.concat(data);
+      
+      if (data.length < batchSize) {
+        break;
+      }
+      
+      from += batchSize;
+    }
+
+    if (allSourceData.length === 0) {
+      alert('필터 조건에 맞는 완료된 실적 데이터가 없습니다.');
+      return;
+    }
+
+    console.log(`${allSourceData.length}건의 실적 데이터를 분석용 테이블로 복사`);
+
+    // performance_records_absorption에 데이터 복사 (올바른 컬럼만 포함)
+    const insertBatchSize = 1000;
+    let insertedCount = 0;
+    
+    for (let i = 0; i < allSourceData.length; i += insertBatchSize) {
+      const batchData = allSourceData.slice(i, i + insertBatchSize);
+      
+      const { error: insertError } = await supabase
+        .from('performance_records_absorption')
+        .upsert(batchData.map(record => ({
+          id: record.id, // 원본 performance_records의 id 사용
+          settlement_month: record.settlement_month,
+          company_id: record.company_id,
+          client_id: record.client_id,
+          product_id: record.product_id,
+          prescription_month: record.prescription_month,
+          prescription_qty: record.prescription_qty,
+          prescription_type: record.prescription_type,
+          commission_rate: record.commission_rate,
+          remarks: record.remarks,
+          registered_by: record.registered_by,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })), { onConflict: 'id' });
+
+      if (insertError) throw insertError;
+      
+      insertedCount += batchData.length;
+      console.log(`${insertedCount}/${allSourceData.length}건 복사 완료`);
+    }
+
+    console.log('1단계 완료.');
+    alert('1단계(필터링된 데이터 복사)가 완료되었습니다. 2단계(흡수율 계산)를 시작합니다.');
+    
+    // 2단계: 흡수율 계산 (복사된 데이터에 대해서만)
+    console.log(`2단계 시작: 복사된 ${insertedCount}건 데이터의 흡수율 계산`);
     const { error: step2Error } = await supabase.rpc('calculate_absorption_rates_for_month', {
       p_settlement_month: selectedSettlementMonth.value
     });
@@ -626,9 +724,9 @@ const calculateAbsorptionRates = async () => {
     }
     console.log('2단계 완료.');
 
-    alert('흡수율 분석이 완료되었습니다. 분석된 데이터를 불러옵니다.');
+    alert(`흡수율 분석이 완료되었습니다. (${insertedCount}건 처리)`);
     await checkAnalysisStatus();
-    await loadAnalysisData();
+    await loadAbsorptionAnalysisResults();
 
   } catch (err) {
     console.error('흡수율 분석 실행 오류:', JSON.stringify(err, null, 2));
@@ -754,34 +852,96 @@ async function downloadExcel() {
   }
 }
 
-const deleteAnalysisData = async () => {
+async function deleteFilteredAnalysisData() {
   if (!selectedSettlementMonth.value) {
-    alert('정산월을 먼저 선택해주세요.');
+    alert('정산월을 선택해주세요.');
     return;
   }
 
-  if (confirm(`'${selectedSettlementMonth.value}'월의 분석 데이터를 모두 삭제하시겠습니까?`)) {
-    loading.value = true;
-    try {
-      const { error } = await supabase
-        .from('performance_records_absorption')
-        .delete()
-        .eq('settlement_month', selectedSettlementMonth.value);
-
-      if (error) throw error;
-
-      alert('분석 데이터가 성공적으로 삭제되었습니다.');
-      displayRows.value = [];
-      await checkAnalysisStatus(); // 상태 다시 체크
-
-    } catch (err) {
-      console.error('분석 데이터 삭제 중 오류:', err);
-      alert('분석 데이터 삭제 중 오류가 발생했습니다.');
-    } finally {
-      loading.value = false;
-    }
+  if (!confirm(`'${selectedSettlementMonth.value}'월의 현재 필터 조건(${selectedCompanyId.value === 'ALL' ? '전체' : companyOptions.value.find(c => c.id === selectedCompanyId.value)?.company_name}, ${selectedHospitalId.value === 'ALL' ? '전체' : hospitalOptions.value.find(h => h.id === selectedHospitalId.value)?.name}, ${prescriptionOffset.value === 0 ? '전체' : getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value)})에 해당하는 흡수율 분석 데이터를 삭제하시겠습니까?`)) {
+    return;
   }
-};
+
+     loading.value = true;
+   try {
+     // === 전체 데이터 조회 (1,000건 제한 해결) ===
+     let allIds = [];
+     let from = 0;
+     const batchSize = 1000;
+     
+     while (true) {
+       let query = supabase
+         .from('performance_records_absorption')
+         .select('id')
+         .eq('settlement_month', selectedSettlementMonth.value);
+       
+       if (selectedCompanyId.value !== 'ALL') {
+         query = query.eq('company_id', selectedCompanyId.value);
+       }
+       if (selectedHospitalId.value !== 'ALL') {
+         query = query.eq('client_id', selectedHospitalId.value);
+       }
+       
+       if (prescriptionOffset.value !== 0) {
+         const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+         query = query.eq('prescription_month', prescriptionMonth);
+       }
+
+       const { data, error } = await query
+         .range(from, from + batchSize - 1);
+       
+       if (error) throw error;
+
+       if (!data || data.length === 0) {
+         break;
+       }
+       
+       allIds = allIds.concat(data.map(item => item.id));
+       
+       // 가져온 데이터가 batchSize보다 적으면 마지막 배치
+       if (data.length < batchSize) {
+         break;
+       }
+       
+       from += batchSize;
+     }
+
+     if (allIds.length === 0) {
+       alert('삭제할 흡수율 분석 데이터가 없습니다.');
+       return;
+     }
+
+     console.log(`총 ${allIds.length}건의 데이터를 삭제합니다.`);
+
+     // === 배치 단위로 삭제 (Supabase 삭제 제한 대응) ===
+     const deleteBatchSize = 1000;
+     let deletedCount = 0;
+     
+     for (let i = 0; i < allIds.length; i += deleteBatchSize) {
+       const batchIds = allIds.slice(i, i + deleteBatchSize);
+       
+       const { error: deleteError } = await supabase
+         .from('performance_records_absorption')
+         .delete()
+         .in('id', batchIds);
+
+       if (deleteError) throw deleteError;
+       
+       deletedCount += batchIds.length;
+       console.log(`${deletedCount}/${allIds.length}건 삭제 완료`);
+     }
+
+     alert(`흡수율 분석 데이터 ${deletedCount}건이 삭제되었습니다.`);
+     await loadAbsorptionAnalysisResults();
+
+  } catch (err) {
+    console.error('흡수율 분석 데이터 삭제 오류:', err);
+    alert(`흡수율 분석 데이터 삭제 중 오류가 발생했습니다: ${err.message}`);
+  } finally {
+    loading.value = false;
+  }
+}
+
 </script>
 
 <style scoped>
