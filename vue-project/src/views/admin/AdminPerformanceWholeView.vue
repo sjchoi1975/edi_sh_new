@@ -84,9 +84,9 @@
           </Column>
           <Column header="검수" :headerStyle="{ width: columnWidths.review_status }" :frozen="true">
             <template #body="slotProps">
-              <span v-if="slotProps.data.review_status === '완료'" style="color: var(--primary-blue)">완료</span>
-              <span v-else-if="slotProps.data.review_status === '검수중'" style="color: var(--primary-color)">검수중</span>
-              <span v-else-if="slotProps.data.review_status === '대기'" style="color: var(--danger)">신규</span>
+              <span v-if="slotProps.data.review_status === '완료'" class="status-completed">완료</span>
+              <span v-else-if="slotProps.data.review_status === '검수중'" class="status-reviewing">검수중</span>
+              <span v-else-if="slotProps.data.review_status === '대기'" class="status-pending">신규</span>
               <span v-else>-</span>
             </template>
           </Column>
@@ -122,7 +122,8 @@
           </Column>
           <ColumnGroup type="footer">
             <Row>
-              <Column :colspan="3" footerClass="footer-cell" :frozen="true" />
+              <Column :colspan="2" footerClass="footer-cell" :frozen="true" />
+              <Column :colspan="1" footerClass="footer-cell" />
               <Column footer="합계" :colspan="2" footerClass="footer-cell" footerStyle="text-align:center !important;" :frozen="true" />
               <Column :colspan="1" footerClass="footer-cell" />
               <Column :colspan="1" footerClass="footer-cell" :frozen="true" />
@@ -535,7 +536,7 @@ async function fetchPerformanceRecords() {
     });
 
     // 데이터 정렬
-    const statusOrder = { '신규': 1, '검수중': 2, '검수완료': 3 };
+    const statusOrder = { '대기': 1, '검수중': 2, '완료': 3 };
     mappedData.sort((a, b) => {
       const orderA = statusOrder[a.review_status] || 99;
       const orderB = statusOrder[b.review_status] || 99;

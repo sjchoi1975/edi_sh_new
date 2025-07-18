@@ -758,7 +758,7 @@ const totalPrescriptionCount = computed(() =>
   companyList.value.reduce((sum, c) => sum + (c.prescription_count || 0), 0),
 )
 const totalPrescriptionAmount = computed(() =>
-  companyList.value.reduce((sum, c) => sum + (c.prescription_amount || 0), 0),
+  companyList.value.reduce((sum, c) => sum + Math.round(c.prescription_amount || 0), 0),
 )
 const totalReviewCompleted = computed(() =>
   companyList.value.reduce((sum, c) => sum + (c.review_completed || 0), 0),
@@ -841,10 +841,45 @@ const downloadExcel = () => {
   // 숫자 형식 지정 (천 단위 구분)
   const range = XLSX.utils.decode_range(ws['!ref'])
   for (let row = 1; row <= range.e.r; row++) {
-    // 처방액 컬럼 (M열)
+    // 총 병의원 컬럼 (G열, 인덱스 6)
+    const totalClientsCell = XLSX.utils.encode_cell({ r: row, c: 6 })
+    if (ws[totalClientsCell] && typeof ws[totalClientsCell].v === 'number') {
+      ws[totalClientsCell].z = '#,##0'
+    }
+    // 제출 병의원 컬럼 (H열, 인덱스 7)
+    const submittedClientsCell = XLSX.utils.encode_cell({ r: row, c: 7 })
+    if (ws[submittedClientsCell] && typeof ws[submittedClientsCell].v === 'number') {
+      ws[submittedClientsCell].z = '#,##0'
+    }
+    // 처방건수 컬럼 (I열, 인덱스 8)
+    const prescriptionCountCell = XLSX.utils.encode_cell({ r: row, c: 8 })
+    if (ws[prescriptionCountCell] && typeof ws[prescriptionCountCell].v === 'number') {
+      ws[prescriptionCountCell].z = '#,##0'
+    }
+    // 검수완료 컬럼 (J열, 인덱스 9)
+    const reviewCompletedCell = XLSX.utils.encode_cell({ r: row, c: 9 })
+    if (ws[reviewCompletedCell] && typeof ws[reviewCompletedCell].v === 'number') {
+      ws[reviewCompletedCell].z = '#,##0'
+    }
+    // 검수중 컬럼 (K열, 인덱스 10)
+    const reviewInProgressCell = XLSX.utils.encode_cell({ r: row, c: 10 })
+    if (ws[reviewInProgressCell] && typeof ws[reviewInProgressCell].v === 'number') {
+      ws[reviewInProgressCell].z = '#,##0'
+    }
+    // 신규 컬럼 (L열, 인덱스 11)
+    const reviewPendingCell = XLSX.utils.encode_cell({ r: row, c: 11 })
+    if (ws[reviewPendingCell] && typeof ws[reviewPendingCell].v === 'number') {
+      ws[reviewPendingCell].z = '#,##0'
+    }
+    // 처방액 컬럼 (M열, 인덱스 12)
     const prescriptionAmountCell = XLSX.utils.encode_cell({ r: row, c: 12 })
     if (ws[prescriptionAmountCell] && typeof ws[prescriptionAmountCell].v === 'number') {
       ws[prescriptionAmountCell].z = '#,##0'
+    }
+    // 증빙 파일 컬럼 (N열, 인덱스 13)
+    const evidenceFilesCell = XLSX.utils.encode_cell({ r: row, c: 13 })
+    if (ws[evidenceFilesCell] && typeof ws[evidenceFilesCell].v === 'number') {
+      ws[evidenceFilesCell].z = '#,##0'
     }
   }
 

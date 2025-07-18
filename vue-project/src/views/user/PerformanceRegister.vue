@@ -56,8 +56,11 @@
           />
           <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
             <template #body="slotProps">
-              <span
+              <a 
+                href="#" 
+                class="text-link"
                 :title="slotProps.data.name"
+                @click.prevent="goToClientDetail(slotProps.data.id)"
                 style="
                   display: block;
                   width: 100%;
@@ -68,7 +71,7 @@
                 "
               >
                 {{ slotProps.data.name }}
-              </span>
+              </a>
             </template>
           </Column>
           <Column
@@ -348,13 +351,14 @@
                 style="
                   display: flex;
                   font-weight: bold;
-                  padding: 0.75rem 0;
+                  padding: 0.5rem 0;
+                  border-top: 1px solid #ddd;
                   border-bottom: 1px solid #bbb;
-                  margin-bottom: 0.5rem;
                 "
               >
                 <div style="flex: 1; text-align: center">제품명</div>
                 <div style="width: 100px; text-align: center">처방수량</div>
+                <div style="width: 100px; text-align: center">처방액</div>
               </div>
               <!-- 테이블 데이터 -->
               <div
@@ -365,8 +369,30 @@
                 <div style="flex: 1; text-align: left; padding-left: 1rem">
                   {{ record.product_name }}
                 </div>
-                <div style="width: 100px; text-align: right; padding-right: 2rem">
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
                   {{ formatNumber(record.prescription_qty) }}
+                </div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ Number(record.prescription_amount || 0).toLocaleString() }}
+                </div>
+              </div>
+              <!-- 합계 행 -->
+              <div
+                style="
+                  display: flex;
+                  padding: 0.5rem 0;
+                  border-top: 1px solid #ddd;
+                  border-bottom: 1px solid #bbb;
+                  font-weight: bold;
+                  background-color: #f8f9fa;
+                "
+              >
+                <div style="flex: 1; text-align: center">합계</div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ formatNumber(viewModalTotalQty) }}
+                </div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ Number(viewModalTotalAmount).toLocaleString() }}
                 </div>
               </div>
             </div>
@@ -573,6 +599,15 @@ const totalEvidenceFilesCount = computed(() =>
   clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0),
 )
 
+// 조회 모달 합계 계산
+const viewModalTotalQty = computed(() => {
+  return viewModalData.value.reduce((sum, record) => sum + (record.prescription_qty || 0), 0)
+})
+
+const viewModalTotalAmount = computed(() => {
+  return viewModalData.value.reduce((sum, record) => sum + (record.prescription_amount || 0), 0)
+})
+
 const viewDetails = (client) => {
   if (!selectedSettlementMonth.value) {
     alert('정산월을 선택해주세요.')
@@ -608,7 +643,8 @@ async function fetchViewModalData(clientId) {
         `
         prescription_qty,
         products (
-          product_name
+          product_name,
+          price
         )
       `,
       )
@@ -617,10 +653,17 @@ async function fetchViewModalData(clientId) {
       .eq('client_id', clientId)
 
     if (!error && data) {
-      viewModalData.value = data.map((record) => ({
-        product_name: record.products?.product_name || '',
-        prescription_qty: record.prescription_qty || 0,
-      }))
+      viewModalData.value = data.map((record) => {
+        const qty = record.prescription_qty || 0
+        const price = record.products?.price || 0
+        const amount = Math.round(qty * price)
+        
+        return {
+          product_name: record.products?.product_name || '',
+          prescription_qty: qty,
+          prescription_amount: amount,
+        }
+      })
     }
   } catch (err) {
     console.error('조회 데이터 로드 오류:', err)
@@ -822,6 +865,15 @@ onMounted(async () => {
   await checkInputPeriod()
   await fetchClientList()
 })
+
+// 병의원 상세 화면으로 이동
+function goToClientDetail(clientId) {
+  router.push({
+    name: 'user-client-detail',
+    params: { id: clientId },
+    query: { from: 'performance-register' }
+  })
+}
 
 // 엑셀 다운로드 함수
 function downloadExcel() {

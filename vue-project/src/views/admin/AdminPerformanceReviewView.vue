@@ -435,7 +435,7 @@ const hospitalOptions = computed(() => {
         .filter(link => link.company_id === selectedCompanyId.value)
         .map(link => link.client_id);
     const filteredHospitals = monthlyHospitals.value.filter(hospital => relevantClientIds.includes(hospital.id));
-    return [{ id: null, name: '전체' }, ...filteredHospitals];
+    return [{ id: null, name: '전체' }, ...filteredHospitals.sort((a, b) => a.name.localeCompare(b.name, 'ko'))];
 });
 
 // --- Watchers ---
@@ -519,7 +519,7 @@ async function fetchFilterOptions(settlementMonth) {
     if (companyIds.length > 0) {
         const { data: companies, error: compError } = await supabase.from('companies').select('id, company_name').in('id', companyIds);
         if (compError) console.error('업체 필터 로딩 실패:', compError);
-        else monthlyCompanies.value = companies;
+        else monthlyCompanies.value = companies.sort((a, b) => a.company_name.localeCompare(b.company_name, 'ko'));
     } else {
         monthlyCompanies.value = [];
     }
@@ -527,7 +527,7 @@ async function fetchFilterOptions(settlementMonth) {
     if (clientIds.length > 0) {
         const { data: clients, error: clientError } = await supabase.from('clients').select('id, name').in('id', clientIds);
         if (clientError) console.error('병원 필터 로딩 실패:', clientError);
-        else monthlyHospitals.value = clients;
+        else monthlyHospitals.value = clients.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
     } else {
         monthlyHospitals.value = [];
     }
@@ -688,19 +688,24 @@ async function loadPerformanceData() {
     console.log(`10. 최종 데이터 ${allData.length}건 불러옴`);
 
     // 데이터 가공: Join된 객체를 펼치고, 화면 표시에 필요한 값을 설정
-    rows.value = allData.map(item => ({
-      ...item,
-      id: item.id,
-      company_name: item.companies?.company_name || 'N/A',
-      client_name: item.clients?.name || 'N/A',
-      product_name_display: item.products?.product_name || 'N/A',
-      insurance_code: item.products?.insurance_code || '',
-      price: item.products?.price ? Math.round(item.products.price).toLocaleString() : '0',
-      prescription_amount: Math.round(item.prescription_qty * (item.products?.price || 0)).toLocaleString(),
-      payment_amount: Math.round((item.prescription_qty * (item.products?.price || 0)) * (item.commission_rate || 0)).toLocaleString(),
-      registered_by_name: registrarMap.get(item.registered_by) || '관리자',
-      display_status: item.review_status === '대기' ? '신규' : item.review_status,
-    }));
+    rows.value = allData.map(item => {
+      const prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
+      const paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+      
+      return {
+        ...item,
+        id: item.id,
+        company_name: item.companies?.company_name || 'N/A',
+        client_name: item.clients?.name || 'N/A',
+        product_name_display: item.products?.product_name || 'N/A',
+        insurance_code: item.products?.insurance_code || '',
+        price: item.products?.price ? Math.round(item.products.price).toLocaleString() : '0',
+        prescription_amount: prescriptionAmount.toLocaleString(),
+        payment_amount: paymentAmount.toLocaleString(),
+        registered_by_name: registrarMap.get(item.registered_by) || '관리자',
+        display_status: item.review_status === '대기' ? '신규' : item.review_status,
+      };
+    });
     
     originalRows.value = JSON.parse(JSON.stringify(rows.value));
 
@@ -1070,8 +1075,9 @@ async function handleEditCalculations(rowData, field) {
   const qty = Number(rowData.prescription_qty_modify) || 0;
   const price = Number(rowData.price_for_calc) || 0;
   const rate = Number(rowData.commission_rate_modify) || 0;
-  rowData.prescription_amount_modify = qty * price;
-  rowData.payment_amount_modify = Math.round(rowData.prescription_amount_modify * rate);
+  const prescriptionAmount = Math.round(qty * price);
+  rowData.prescription_amount_modify = prescriptionAmount;
+  rowData.payment_amount_modify = Math.round(prescriptionAmount * rate);
 }
 
 function handleProductNameInput(rowData, event) {

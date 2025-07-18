@@ -100,8 +100,8 @@ const detailRows = ref([]);
 const allDataForMonth = ref([]);
 
 const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
-const totalPrescriptionAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0)).toLocaleString());
-const totalPaymentAmount = computed(() => Math.round(detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount || 0), 0)).toLocaleString());
+const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0).toLocaleString());
+const totalPaymentAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount || 0), 0).toLocaleString());
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
@@ -112,7 +112,7 @@ const settlementSummary = computed(() => {
   const vatPrice = Math.round(totalPrice - supplyPrice);
   
   return {
-    total_price: Math.round(totalPrice),
+    total_price: totalPrice,
     supply_price: supplyPrice,
     vat_price: vatPrice,
   };
@@ -192,7 +192,7 @@ async function fetchAllDataForMonth() {
   allDataForMonth.value = data.map(row => {
     const price = row.products?.price || 0;
     const qty = row.prescription_qty || 0;
-    const prescriptionAmount = qty * price;
+    const prescriptionAmount = Math.round(qty * price);
     const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
     
     return {
@@ -290,7 +290,11 @@ function downloadExcel() {
     '비고': row.remarks || '',
   }));
 
-  // 합계 행 추가
+  // 합계 행 추가 (반올림된 개별 값들의 합계)
+  const totalQtySum = detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0);
+  const totalPrescriptionAmountSum = detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0);
+  const totalPaymentAmountSum = detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount || 0), 0);
+  
   excelData.push({
     'No': '합계',
     '병의원명': '',
@@ -298,10 +302,10 @@ function downloadExcel() {
     '제품명': '',
     '보험코드': '',
     '약가': '',
-    '처방수량': Number(totalQty.value.replace(/,/g, '')),
-    '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
+    '처방수량': totalQtySum,
+    '처방액': totalPrescriptionAmountSum,
     '수수료율': '',
-    '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
+    '지급액': totalPaymentAmountSum,
     '비고': '',
   });
 

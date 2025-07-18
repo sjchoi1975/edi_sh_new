@@ -26,6 +26,7 @@
           <table>
             <thead>
               <tr>
+
                 <th style="width:10%;">처방월</th>
                 <th style="width:5%;">No</th>
                 <th style="width:22%;">제품명</th>
@@ -932,6 +933,10 @@ async function savePerformanceData() {
   // 1. INSERT
   if (rowsToInsert.length > 0) {
     const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
+    
+    // 관리자가 입력하는 경우 바로 완료 상태로 저장
+    const reviewStatus = (route.query.companyId && isAdminUser.value) ? '완료' : '대기';
+    
     const       dataToInsert = rowsToInsert.map(row => {
       let commissionRate = 0;
       if (grade === 'A') {
@@ -950,7 +955,7 @@ async function savePerformanceData() {
       prescription_type: row.prescription_type,
       remarks: row.remarks,
       registered_by: currentUserUid, // 실제 등록한 사용자 ID (관리자 또는 일반사용자)
-        review_status: '대기',
+        review_status: reviewStatus,
         commission_rate: commissionRate
       };
     });
@@ -961,6 +966,10 @@ async function savePerformanceData() {
   // 2. UPDATE
   if (rowsToUpdate.length > 0) {
     const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
+    
+    // 관리자가 입력하는 경우 바로 완료 상태로 저장
+    const reviewStatus = (route.query.companyId && isAdminUser.value) ? '완료' : '대기';
+    
     const updatePromises = rowsToUpdate.map(row => {
       let commissionRate = 0;
       if (grade === 'A') {
@@ -976,7 +985,8 @@ async function savePerformanceData() {
           prescription_qty: Number(row.prescription_qty),
           prescription_type: row.prescription_type,
           remarks: row.remarks,
-          commission_rate: commissionRate
+          commission_rate: commissionRate,
+          review_status: reviewStatus
         })
         .eq('id', row.id)
     });
@@ -1204,11 +1214,41 @@ function confirmAddRowBelow(idx) {
   }
 }
 
+// 행 초기화 함수
+function resetRow(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  if (!row) return;
+  
+  // 해당 행을 초기화
+  row.prescription_month = getDefaultPrescriptionMonth(); // 정산월 - 1M
+  row.product_name_display = '';
+  row.product_id = null;
+  row.insurance_code = '';
+  row.price = '';
+  row.prescription_qty = '';
+  row.prescription_amount = '';
+  row.prescription_type = 'EDI';
+  row.remarks = '';
+  row.commission_rate_a = null;
+  row.commission_rate_b = null;
+  
+  // 제품 검색 드롭다운 숨기기
+  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIdx) {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.activeRowIndex = -1;
+  }
+  
+  // 해당 행의 제품명 필드로 포커스 이동
+  nextTick(() => {
+    focusField(rowIdx, 'product_name');
+  });
+}
+
 // 단축키 처리
 function handleGlobalKeydown(e) {
-  // 제품 검색 드롭다운이 열려있으면 Insert/Delete 키 차단
+  // 제품 검색 드롭다운이 열려있으면 Insert/Delete/Escape 키 차단
   if (isProductSearchOpen.value) {
-    if (e.key === 'Delete' || e.key === 'Insert') {
+    if (e.key === 'Delete' || e.key === 'Insert' || e.key === 'Escape') {
       e.preventDefault();
       return;
     }
@@ -1224,6 +1264,13 @@ function handleGlobalKeydown(e) {
     e.preventDefault();
     const currentRowIdx = currentCell.value.row;
     confirmAddRowBelow(currentRowIdx);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    const currentRowIdx = currentCell.value.row;
+    // 편집 가능한 행만 초기화
+    if (isRowEditable(inputRows.value[currentRowIdx])) {
+      resetRow(currentRowIdx);
+    }
   }
 }
 

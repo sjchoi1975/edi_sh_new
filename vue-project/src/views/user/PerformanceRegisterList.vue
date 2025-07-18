@@ -171,9 +171,9 @@
             :sortable="true"
           >
             <template #body="slotProps">
+
               <span 
                 :class="getStatusClass(slotProps.data.review_status)"
-                style="font-size: var(--font-size-sm); font-weight: 400; padding: 2px 6px; border-radius: 4px;"
               >
                 {{ slotProps.data.review_status }}
               </span>
@@ -320,13 +320,13 @@ function getPrescriptionMonth(settlementMonth, offset) {
 function getStatusClass(status) {
   switch (status) {
     case '대기':
-      return 'status-pending'
-    case '진행중':
-      return 'status-reviewing'
+      return 'status-pending_user'
+    case '검수중':
+      return 'status-reviewing_user'
     case '완료':
-      return 'status-completed'
+      return 'status-completed_user'
     default:
-      return 'status-pending'
+      return 'status-pending_user'
   }
 }
 
@@ -1048,9 +1048,9 @@ function onQtyInput(rowIdx) {
   if (isNaN(qty)) qty = 0
   if (isNaN(price)) price = 0
   if (price > 0) {
-    displayRows.value[rowIdx].prescription_amount = Math.round(qty * price)
+    displayRows.value[rowIdx].prescription_amount = Math.round(qty * price).toLocaleString()
   } else {
-    displayRows.value[rowIdx].prescription_amount = 0
+    displayRows.value[rowIdx].prescription_amount = '0'
   }
 }
 
@@ -1492,8 +1492,9 @@ async function fetchPerformanceRecords() {
     }
 
     const mappedData = data.map((record) => {
-      const prescriptionAmount =
+      const prescriptionAmount = Math.round(
         (record.prescription_qty || 0) * (record.products?.price || 0)
+      )
       return {
         id: record.id,
         client_name: record.clients?.name || '',
@@ -1630,18 +1631,18 @@ function downloadExcel() {
   const range = XLSX.utils.decode_range(ws['!ref'])
   for (let R = range.s.r + 1; R <= range.e.r; R++) {
     // 헤더 제외하고 시작
-    // 약가 컬럼 (F열, 인덱스 5)
-    const priceCell = XLSX.utils.encode_cell({ r: R, c: 5 })
+    // 약가 컬럼 (H열, 인덱스 7)
+    const priceCell = XLSX.utils.encode_cell({ r: R, c: 7 })
     if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
       ws[priceCell].z = '#,##0'
     }
-    // 처방수량 컬럼 (G열, 인덱스 6)
-    const qtyCell = XLSX.utils.encode_cell({ r: R, c: 6 })
+    // 처방수량 컬럼 (I열, 인덱스 8) - 소수점 1자리 표시
+    const qtyCell = XLSX.utils.encode_cell({ r: R, c: 8 })
     if (ws[qtyCell] && typeof ws[qtyCell].v === 'number') {
-      ws[qtyCell].z = '#,##0'
+      ws[qtyCell].z = '#,##0.0'
     }
-    // 처방액 컬럼 (H열, 인덱스 7)
-    const amountCell = XLSX.utils.encode_cell({ r: R, c: 7 })
+    // 처방액 컬럼 (J열, 인덱스 9)
+    const amountCell = XLSX.utils.encode_cell({ r: R, c: 9 })
     if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
       ws[amountCell].z = '#,##0'
     }
@@ -1697,3 +1698,4 @@ function addNewRow() {
   })
 }
 </script>
+

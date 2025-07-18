@@ -63,7 +63,7 @@
 
   /* 폰트 크기 */
   --font-size-base: 0.9rem; /* 기본 */
-  --font-size-sm: 0.78rem; /* 작게 */
+  --font-size-sm: 0.82rem; /* 작게 */
   --font-size-md: 0.9rem; /* 중간 */
   --font-size-lg: 1.02rem; /* 크게 */
   --font-size-title: 1.2rem; /* 제목 */
@@ -678,22 +678,57 @@ select.input-editable {
 }
 
 /* 이용자 - 대기 pending > 검수중 reviewing > 완료 completed */
-.status-completed,
-.status-reviewing,
 .status-pending {
+  color: #fff;
   font-size: var(--font-size-sm) !important;
-  font-weight: 400;
-  border: none !important;
-  padding: 2px 8px !important;
-  border-radius: 24px !important;
-  min-width: 40px !important;
-  max-width: 40px !important;
-  text-align: center !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--danger);
+  border-radius: 4px;
 }
 
-.status-pending { background-color: var(--primary-blue); color: #fff; }
-.status-reviewing { background-color: var(--primary-color); color: #fff; }
-.status-completed { background-color: var(--danger); color: #fff; }
+.status-reviewing {
+  color: #fff;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--primary-color);
+  border-radius: 4px;
+}
+
+.status-completed {
+  color: #fff;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--primary-blue);
+  border-radius: 4px;
+}
+
+
+/* 이용자 - 대기 pending > 검수중 reviewing > 완료 completed */
+.status-pending_user {
+  color: #fff;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--primary-blue);
+  border-radius: 4px;
+}
+
+.status-reviewing_user {
+  color: #fff;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--primary-color);
+  border-radius: 4px;
+}
+
+.status-completed_user {
+  color: #fff;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.15rem 0.5rem;
+  background-color: var(--danger);
+  border-radius: 4px;
+}
+
+
 
 /* 실적 검수, 흡수율 분석 헤더 메시지 (필터 조건을 선택하고 '실적 정보 불러오기'(검수 완료 불러오기)를 클릭하세요.) */
 .header-center-message {
@@ -1945,6 +1980,9 @@ select.input-editable {
     max-width: 98vw !important;
   }
 }
+
+
+
 
 /* ===================================================== */
 /* TopNavigationBar.vue (상단 네비게이션 바) 전역 스타일 */

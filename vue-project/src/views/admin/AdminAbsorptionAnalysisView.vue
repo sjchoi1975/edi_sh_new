@@ -452,56 +452,135 @@ async function loadAbsorptionAnalysisResults() {
   displayRows.value = [];
   
   try {
-    let query = supabase
-      .from('performance_records_absorption')
-      .select(`
-        *,
-        company:companies(company_name, company_group),
-        client:clients(name),
-        product:products(product_name, insurance_code, price)
-      `)
-      .eq('settlement_month', selectedSettlementMonth.value);
-    
-    if (selectedCompanyId.value !== 'ALL') {
-      query = query.eq('company_id', selectedCompanyId.value);
-    }
-    if (selectedHospitalId.value !== 'ALL') {
-      query = query.eq('client_id', selectedHospitalId.value);
-    }
-    
-    if (prescriptionOffset.value !== 0) {
-      const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
-      query = query.eq('prescription_month', prescriptionMonth);
-    }
-
-    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
     let allData = [];
-    let from = 0;
-    const batchSize = 1000;
     
-    while (true) {
-      const { data, error } = await query
-        .range(from, from + batchSize - 1)
-        .order('created_at', { ascending: false });
+    if (selectedCompanyId.value === 'ALL') {
+      // === 전체 조회 시: 각 업체별로 개별 쿼리 실행 ===
+      console.log('=== 전체 조회: 업체별 개별 쿼리 시작 ===');
       
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        break;
+      const availableCompanies = companyOptions.value.filter(company => company.id !== 'ALL');
+      console.log(`처리할 업체 수: ${availableCompanies.length}개`);
+      
+      for (const company of availableCompanies) {
+        console.log(`업체 처리 중: ${company.company_name} (ID: ${company.id})`);
+        
+        let companyQuery = supabase
+          .from('performance_records_absorption')
+          .select(`
+            *,
+            company:companies(company_name, company_group),
+            client:clients(name),
+            product:products(product_name, insurance_code, price)
+          `)
+          .eq('settlement_month', selectedSettlementMonth.value)
+          .eq('company_id', company.id);
+        
+        if (selectedHospitalId.value !== 'ALL') {
+          companyQuery = companyQuery.eq('client_id', selectedHospitalId.value);
+        }
+        
+        if (prescriptionOffset.value !== 0) {
+          const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+          companyQuery = companyQuery.eq('prescription_month', prescriptionMonth);
+        }
+        
+        // 업체별 배치 처리
+        let companyData = [];
+        let from = 0;
+        const batchSize = 1000;
+        
+        while (true) {
+          const { data, error } = await companyQuery
+            .range(from, from + batchSize - 1)
+            .order('created_at', { ascending: false });
+          
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+            break;
+          }
+          
+          companyData = companyData.concat(data);
+          
+          if (data.length < batchSize) {
+            break;
+          }
+          
+          from += batchSize;
+        }
+        
+        console.log(`${company.company_name}: ${companyData.length}건`);
+        allData = allData.concat(companyData);
       }
       
-      allData = allData.concat(data);
+      console.log(`전체 업체 합계: ${allData.length}건`);
+      console.log('=== 업체별 개별 쿼리 완료 ===');
       
-      // 가져온 데이터가 batchSize보다 적으면 마지막 배치
-      if (data.length < batchSize) {
-        break;
+    } else {
+      // === 개별 업체 조회 시: 기존 로직 ===
+      console.log('=== 개별 업체 조회 시작 ===');
+      
+      let query = supabase
+        .from('performance_records_absorption')
+        .select(`
+          *,
+          company:companies(company_name, company_group),
+          client:clients(name),
+          product:products(product_name, insurance_code, price)
+        `)
+        .eq('settlement_month', selectedSettlementMonth.value)
+        .eq('company_id', selectedCompanyId.value);
+      
+      if (selectedHospitalId.value !== 'ALL') {
+        query = query.eq('client_id', selectedHospitalId.value);
       }
       
-      from += batchSize;
+      if (prescriptionOffset.value !== 0) {
+        const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+        query = query.eq('prescription_month', prescriptionMonth);
+      }
+      
+      // 배치 처리
+      let from = 0;
+      const batchSize = 1000;
+      
+      while (true) {
+        const { data, error } = await query
+          .range(from, from + batchSize - 1)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          break;
+        }
+        
+        allData = allData.concat(data);
+        
+        if (data.length < batchSize) {
+          break;
+        }
+        
+        from += batchSize;
+      }
+      
+      console.log(`개별 업체 조회 완료: ${allData.length}건`);
     }
+
+    console.log('=== 데이터 매핑 전 검증 ===');
+    console.log(`매핑 전 원본 데이터: ${allData.length}건`);
+    
+    // NULL 값 체크
+    const companyNullCount = allData.filter(row => !row.company).length;
+    const clientNullCount = allData.filter(row => !row.client).length;
+    const productNullCount = allData.filter(row => !row.product).length;
+    
+    console.log(`회사 정보 NULL: ${companyNullCount}건`);
+    console.log(`병원 정보 NULL: ${clientNullCount}건`);
+    console.log(`제품 정보 NULL: ${productNullCount}건`);
 
     let mappedData = allData.map(row => {
-        const prescriptionAmount = (row.prescription_qty || 0) * (row.product?.price || 0);
+        const prescriptionAmount = Math.round((row.prescription_qty || 0) * (row.product?.price || 0));
         const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
 
         return {
@@ -512,13 +591,16 @@ async function loadAbsorptionAnalysisResults() {
             product_name_display: row.product?.product_name || 'N/A',
             insurance_code: row.product?.insurance_code || 'N/A',
             price: row.product?.price ? Math.round(row.product.price).toLocaleString() : '0',
-            prescription_amount: Math.round((row.prescription_qty || 0) * (row.product?.price || 0)).toLocaleString(),
-            payment_amount: Math.round(Math.round((row.prescription_qty || 0) * (row.product?.price || 0)) * (row.commission_rate || 0)).toLocaleString(),
+            prescription_amount: prescriptionAmount.toLocaleString(),
+            payment_amount: paymentAmount.toLocaleString(),
             commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
             absorption_rate: ((row.absorption_rate || 0) * 100).toFixed(1),
             created_date: formatDateTime(row.created_at),
         };
     });
+    
+    console.log(`매핑 후 데이터: ${mappedData.length}건`);
+    console.log('=== 데이터 매핑 완료 ===');
 
     const actionOrder = { '추가': 1, '수정': 2, '삭제': 3 };
     mappedData.sort((a, b) => {
@@ -535,6 +617,25 @@ async function loadAbsorptionAnalysisResults() {
     });
     
     displayRows.value = mappedData;
+
+    // === 업체별 개수 콘솔 로그 ===
+    console.log('=== 흡수율 분석 결과 업체별 개수 ===');
+    console.log(`전체 데이터: ${mappedData.length}건`);
+    console.log(`선택된 업체: ${selectedCompanyId.value === 'ALL' ? '전체' : companyOptions.value.find(c => c.id === selectedCompanyId.value)?.company_name || selectedCompanyId.value}`);
+    
+    // 업체별 집계
+    const companyCount = {};
+    mappedData.forEach(row => {
+      const companyName = row.company_name || 'N/A';
+      companyCount[companyName] = (companyCount[companyName] || 0) + 1;
+    });
+    
+    // 업체별 개수 출력 (많은 순으로 정렬)
+    const sortedCompanies = Object.entries(companyCount).sort((a, b) => b[1] - a[1]);
+    sortedCompanies.forEach(([company, count]) => {
+      console.log(`${company}: ${count}건`);
+    });
+    console.log('=====================================');
 
   } catch (err) {
     console.error('분석 결과 데이터 로딩 오류:', err);

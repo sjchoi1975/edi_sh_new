@@ -65,8 +65,11 @@
           />
           <Column header="병의원명" :headerStyle="{ width: columnWidths.name, textAlign: 'center' }">
             <template #body="slotProps">
-              <span
+              <a 
+                href="#" 
+                class="text-link"
                 :title="slotProps.data.name"
+                @click.prevent="goToClientDetail(slotProps.data.id)"
                 style="
                   display: block;
                   width: 100%;
@@ -77,7 +80,7 @@
                 "
               >
                 {{ slotProps.data.name }}
-              </span>
+              </a>
             </template>
           </Column>
           <Column
@@ -357,13 +360,14 @@
                 style="
                   display: flex;
                   font-weight: bold;
-                  padding: 0.75rem 0;
+                  padding: 0.5rem 0;
+                  border-top: 1px solid #ddd;
                   border-bottom: 1px solid #bbb;
-                  margin-bottom: 0.5rem;
                 "
               >
                 <div style="flex: 1; text-align: center">제품명</div>
                 <div style="width: 100px; text-align: center">처방수량</div>
+                <div style="width: 100px; text-align: center">처방액</div>
               </div>
               <!-- 테이블 데이터 -->
               <div
@@ -374,8 +378,30 @@
                 <div style="flex: 1; text-align: left; padding-left: 1rem">
                   {{ record.product_name }}
                 </div>
-                <div style="width: 100px; text-align: right; padding-right: 2rem">
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
                   {{ formatNumber(record.prescription_qty) }}
+                </div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ Number(record.prescription_amount || 0).toLocaleString() }}
+                </div>
+              </div>
+              <!-- 합계 행 -->
+              <div
+                style="
+                  display: flex;
+                  padding: 0.5rem 0;
+                  border-top: 1px solid #ddd;
+                  border-bottom: 1px solid #bbb;
+                  font-weight: bold;
+                  background-color: #f8f9fa;
+                "
+              >
+                <div style="flex: 1; text-align: center">합계</div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ formatNumber(viewModalTotalQty) }}
+                </div>
+                <div style="width: 100px; text-align: right; padding-right: 1rem">
+                  {{ Number(viewModalTotalAmount).toLocaleString() }}
                 </div>
               </div>
             </div>
@@ -580,10 +606,19 @@ const totalPerformanceCount = computed(() =>
   clientList.value.reduce((sum, c) => sum + (c.performance_count || 0), 0),
 )
 const totalPrescriptionAmount = computed(() =>
-  clientList.value.reduce((sum, c) => sum + (c.total_prescription_amount || 0), 0),
+  clientList.value.reduce((sum, c) => sum + Math.round(c.total_prescription_amount || 0), 0),
 )
 const totalEvidenceFilesCount = computed(() =>
   clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0),
+)
+
+// 조회 모달 합계 계산
+const viewModalTotalQty = computed(() =>
+  viewModalData.value.reduce((sum, record) => sum + (record.prescription_qty || 0), 0),
+)
+
+const viewModalTotalAmount = computed(() =>
+  viewModalData.value.reduce((sum, record) => sum + Math.round(record.prescription_amount || 0), 0),
 )
 
 const viewDetails = (client) => {
@@ -621,7 +656,8 @@ async function fetchViewModalData(clientId) {
         `
         prescription_qty,
         products (
-          product_name
+          product_name,
+          price
         )
       `,
       )
@@ -633,6 +669,7 @@ async function fetchViewModalData(clientId) {
       viewModalData.value = data.map((record) => ({
         product_name: record.products?.product_name || '',
         prescription_qty: record.prescription_qty || 0,
+        prescription_amount: Math.round((record.prescription_qty || 0) * (record.products?.price || 0)),
       }))
     }
   } catch (err) {
@@ -857,6 +894,15 @@ onMounted(async () => {
   await checkInputPeriod()
 })
 
+// 병의원 상세 화면으로 이동
+function goToClientDetail(clientId) {
+  router.push({
+    name: 'AdminClientDetail',
+    params: { id: clientId },
+    query: { from: 'admin-performance-register' }
+  })
+}
+
 // 엑셀 다운로드 함수
 function downloadExcel() {
   if (!clientList.value || clientList.value.length === 0) {
@@ -911,18 +957,18 @@ function downloadExcel() {
   // 숫자 형식 설정
   const range = XLSX.utils.decode_range(ws['!ref'])
   for (let R = range.s.r + 1; R <= range.e.r; R++) {
-    // 처방건수 컬럼 (E열, 인덱스 4)
-    const countCell = XLSX.utils.encode_cell({ r: R, c: 4 })
+    // 처방건수 컬럼 (F열, 인덱스 5)
+    const countCell = XLSX.utils.encode_cell({ r: R, c: 5 })
     if (ws[countCell] && typeof ws[countCell].v === 'number') {
       ws[countCell].z = '#,##0'
     }
-    // 처방액 컬럼 (F열, 인덱스 5)
-    const amountCell = XLSX.utils.encode_cell({ r: R, c: 5 })
+    // 처방액 컬럼 (G열, 인덱스 6)
+    const amountCell = XLSX.utils.encode_cell({ r: R, c: 6 })
     if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
       ws[amountCell].z = '#,##0'
     }
-    // 증빙파일 컬럼 (G열, 인덱스 6)
-    const filesCell = XLSX.utils.encode_cell({ r: R, c: 6 })
+    // 증빙파일 컬럼 (H열, 인덱스 7)
+    const filesCell = XLSX.utils.encode_cell({ r: R, c: 7 })
     if (ws[filesCell] && typeof ws[filesCell].v === 'number') {
       ws[filesCell].z = '#,##0'
     }

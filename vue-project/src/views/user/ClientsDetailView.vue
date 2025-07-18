@@ -86,6 +86,11 @@ onMounted(async () => {
 });
 
 function goList() {
-  router.push('/clients');
+  // 이전 화면이 실적 등록인지 확인
+  if (route.query.from === 'performance-register') {
+    router.push('/performance/register');
+  } else {
+    router.push('/clients');
+  }
 }
 </script>

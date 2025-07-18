@@ -129,13 +129,13 @@ const totalRecordsCount = computed(() => {
 });
 
 const totalPrescriptionAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_prescription_amount || 0), 0);
-  return Math.round(total).toLocaleString();
+  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_prescription_amount || 0)), 0);
+  return total.toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_payment_amount || 0), 0);
-  return Math.round(total).toLocaleString();
+  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_payment_amount || 0)), 0);
+  return total.toLocaleString();
 });
 
 
@@ -244,7 +244,7 @@ async function loadSettlementData() {
       summary.client_count.add(record.client_id);
       summary.total_records += 1;
 
-      const prescriptionAmount = (record.prescription_qty || 0) * (record.product?.price || 0);
+      const prescriptionAmount = Math.round((record.prescription_qty || 0) * (record.product?.price || 0));
       const paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0));
 
       summary.total_prescription_amount += prescriptionAmount;

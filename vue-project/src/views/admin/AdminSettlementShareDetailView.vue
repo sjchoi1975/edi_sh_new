@@ -164,7 +164,7 @@ async function loadDetailData() {
       // 데이터 매핑 시
       const qty = row.prescription_qty ?? 0;
       const price = row.products?.price ?? 0;
-      const prescriptionAmount = qty * price;
+      const prescriptionAmount = Math.round(qty * price);
       const commissionRate = row.commission_rate ?? 0;
       const paymentAmount = Math.round(prescriptionAmount * commissionRate);
       
@@ -237,11 +237,11 @@ const totalQty = computed(() => {
 });
 const totalPrescriptionAmount = computed(() => {
   const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount ?? 0), 0);
-  return Math.round(sum).toLocaleString();
+  return sum.toLocaleString();
 });
 const totalPaymentAmount = computed(() => {
   const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount ?? 0), 0);
-  return Math.round(sum).toLocaleString();
+  return sum.toLocaleString();
 });
 
 const settlementSummary = computed(() => {

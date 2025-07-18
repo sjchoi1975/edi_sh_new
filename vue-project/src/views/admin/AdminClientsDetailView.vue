@@ -91,7 +91,12 @@ function goEdit() {
   router.push(`/admin/clients/${route.params.id}/edit`);
 }
 function goList() {
-  router.push('/admin/clients');
+  // 이전 화면이 관리자 실적 등록인지 확인
+  if (route.query.from === 'admin-performance-register') {
+    router.push('/admin/performance/register');
+  } else {
+    router.push('/admin/clients');
+  }
 }
 async function handleDelete() {
   if (!confirm('정말 삭제하시겠습니까?')) return;
