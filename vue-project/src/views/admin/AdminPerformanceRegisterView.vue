@@ -584,6 +584,10 @@ const fetchClientList = async () => {
 
 // 입력 가능 기간 체크
 const checkInputPeriod = async () => {
+  // 관리자는 항상 입력 가능
+  isInputPeriod.value = true
+  return
+  
   if (!selectedSettlementMonth.value) return
   const { data, error } = await supabase
     .from('settlement_months')

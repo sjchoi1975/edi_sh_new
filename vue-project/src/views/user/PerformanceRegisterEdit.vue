@@ -440,6 +440,13 @@ async function checkPerformanceEditStatus() {
       return;
     }
 
+    // 관리자가 companyId로 접근하는 경우 기간 체크 우회
+    if (route.query.companyId && isAdminUser.value) {
+      reviewStatus.value = '대기';
+      checkEditStatus();
+      return;
+    }
+
     // 해당 거래처의 실적 중 하나라도 검수중/완료 상태인지 확인
     const { data, error } = await supabase
       .from('performance_records')
