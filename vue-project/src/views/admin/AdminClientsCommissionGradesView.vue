@@ -168,7 +168,7 @@ const fetchAssignments = async () => {
         company_default_commission_grade,
         modified_commission_grade,
         client:clients(id, client_code, name, business_registration_number, owner_name, address),
-        company:companies(id, company_name, business_registration_number)
+        company:companies(id, company_name, business_registration_number, default_commission_grade)
       `)
     
     if (!error && assignmentsData) {
@@ -181,7 +181,7 @@ const fetchAssignments = async () => {
         address: assignment.client?.address || '',
         company_name: assignment.company?.company_name || '',
         company_business_registration_number: assignment.company?.business_registration_number || '',
-        company_default_commission_grade: assignment.company_default_commission_grade,
+        company_default_commission_grade: assignment.company?.default_commission_grade || assignment.company_default_commission_grade,
         modified_commission_grade: assignment.modified_commission_grade,
       }))
     }

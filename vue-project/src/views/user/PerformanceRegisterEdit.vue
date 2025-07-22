@@ -865,7 +865,7 @@ function cellClass(rowIdx, col) {
 async function getCommissionGradeForClientCompany(companyId, clientId) {
   const { data, error } = await supabase
     .from('client_company_assignments')
-    .select('modified_commission_grade, company_default_commission_grade')
+    .select('modified_commission_grade, company:companies(default_commission_grade)')
     .eq('company_id', companyId)
     .eq('client_id', clientId)
     .single();
@@ -880,8 +880,8 @@ async function getCommissionGradeForClientCompany(companyId, clientId) {
     return company?.default_commission_grade || 'A';
   }
   
-  // modified_commission_grade가 있으면 우선 사용, 없으면 company_default_commission_grade 사용
-  return data.modified_commission_grade || data.company_default_commission_grade || 'A';
+  // modified_commission_grade가 있으면 우선 사용, 없으면 companies 테이블의 default_commission_grade 사용
+  return data.modified_commission_grade || data.company?.default_commission_grade || 'A';
 }
 
 // 실적 저장로직 - 기존 데이터를 삭제 후 새로 저장
