@@ -251,29 +251,7 @@ const handleSubmit = async () => {
 
   loading.value = true;
   try {
-    // 1. 이메일 중복 체크
-    const { data: emailDup } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('email', email.value)
-      .maybeSingle();
-    if (emailDup) {
-      alert('이미 등록된 이메일입니다.');
-      return;
-    }
-
-    // 2. 사업자등록번호 중복 체크
-    const { data: brnDup } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('business_registration_number', businessNumber.value)
-      .maybeSingle();
-    if (brnDup) {
-      alert('이미 등록된 사업자등록번호입니다.');
-      return;
-    }
-
-    // 3. Supabase Auth 회원가입
+    // 1. Supabase Auth 회원가입 (이메일 중복 등은 Auth에서 처리)
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
@@ -285,13 +263,13 @@ const handleSubmit = async () => {
       },
     });
     if (signUpError) {
-      alert('회원가입 실패: ' + signUpError.message);
+      alert('회원가입 실패: ' + (signUpError.error_description || signUpError.message));
       return;
     }
 
     const userId = signUpData.user?.id;
 
-    // 4. companies 테이블에 데이터 저장
+    // 2. companies 테이블에 데이터 저장 (Auth 등록 성공 시에만)
     const companyDataToInsert = {
       email: email.value,
       company_name: companyName.value,
