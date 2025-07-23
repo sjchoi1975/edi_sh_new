@@ -91,9 +91,116 @@
 
 ---
 
-## 5. Database Functions 상세 분석
+## 5. 실적 등록 시 초기 상태 차이
 
-### 5.1. 핵심 비즈니스 로직 함수들
+### 5.1. 이용자 vs 관리자 실적 등록 초기 상태
+
+신일 PMS에서는 **등록자의 권한에 따라 실적의 초기 검수 상태가 다르게 설정**됩니다.
+
+#### 5.1.1. 이용자 실적 등록
+- **초기 상태**: `review_status = '대기'`
+- **설명**: 이용자가 등록한 실적은 관리자의 검수를 거쳐야 하므로 초기 상태가 '대기'로 설정됩니다.
+- **코드 위치**: `vue-project/src/views/user/PerformanceRegisterEdit.vue`
+
+```javascript
+// 관리자가 입력하는 경우 바로 완료 상태로 저장
+const reviewStatus = (route.query.companyId && isAdminUser.value) ? '완료' : '대기';
+```
+
+#### 5.1.2. 관리자 실적 등록
+- **초기 상태**: `review_status = '완료'`
+- **설명**: 관리자가 등록한 실적은 이미 검수가 완료된 것으로 간주하여 바로 '완료' 상태로 설정됩니다.
+- **조건**: `route.query.companyId`가 존재하고 `isAdminUser.value`가 `true`인 경우
+- **코드 위치**: `vue-project/src/views/user/PerformanceRegisterEdit.vue`
+
+```javascript
+// 관리자가 입력하는 경우 바로 완료 상태로 저장
+const reviewStatus = (route.query.companyId && isAdminUser.value) ? '완료' : '대기';
+```
+
+#### 5.1.3. 관리자 실적 검수 화면에서 추가
+- **초기 상태**: `review_status = '검수중'`
+- **설명**: 관리자가 실적 검수 화면에서 새로 추가하는 실적은 검수 과정에 포함되어야 하므로 '검수중' 상태로 설정됩니다.
+- **코드 위치**: `vue-project/src/views/admin/AdminPerformanceReviewView.vue`
+
+```javascript
+// 추가 (INSERT)
+saveData = {
+  ...saveData,
+  created_at: new Date().toISOString(),
+  registered_by: adminUserId,
+  review_action: '추가',
+  review_status: '검수중'
+};
+```
+
+### 5.2. 상태별 의미 및 데이터 흐름
+
+| 상태 | 의미 | 등록자 | 데이터 흐름 |
+|------|------|--------|-------------|
+| `대기` | 이용자가 등록한 실적, 관리자 검수 대기 | 이용자 | 이용자 등록 → 관리자 검수 화면에서 '검수중'으로 변경 |
+| `검수중` | 관리자가 검수 중인 실적 | 관리자 | 관리자 검수 화면에서 추가/수정 → 검수 완료 시 '완료'로 변경 |
+| `완료` | 검수가 완료된 최종 실적 | 관리자/이용자 | 흡수율 분석, 정산내역서 공유 대상 |
+
+### 5.3. 구현 상세
+
+#### 5.3.1. 이용자 실적 등록 시
+```javascript
+// INSERT 시
+const dataToInsert = rowsToInsert.map(row => ({
+  // ... 기타 필드들
+  registered_by: currentUserUid,
+  review_status: '대기', // 이용자는 항상 '대기' 상태
+  commission_rate: commissionRate
+}));
+
+// UPDATE 시
+const updatePromises = rowsToUpdate.map(row => 
+  supabase.from('performance_records').update({
+    // ... 기타 필드들
+    review_status: '대기', // 이용자는 항상 '대기' 상태
+    updated_by: currentUserUid,
+    updated_at: new Date().toISOString()
+  }).eq('id', row.id)
+);
+```
+
+#### 5.3.2. 관리자 실적 등록 시
+```javascript
+// 관리자 권한 확인
+const reviewStatus = (route.query.companyId && isAdminUser.value) ? '완료' : '대기';
+
+// INSERT 시
+const dataToInsert = rowsToInsert.map(row => ({
+  // ... 기타 필드들
+  registered_by: currentUserUid,
+  review_status: reviewStatus, // 관리자는 '완료' 상태
+  commission_rate: commissionRate
+}));
+
+// UPDATE 시
+const updatePromises = rowsToUpdate.map(row => 
+  supabase.from('performance_records').update({
+    // ... 기타 필드들
+    review_status: reviewStatus, // 관리자는 '완료' 상태
+    updated_by: currentUserUid,
+    updated_at: new Date().toISOString()
+  }).eq('id', row.id)
+);
+```
+
+### 5.4. 비즈니스 로직의 의의
+
+1. **검수 프로세스 보장**: 이용자 등록 실적은 반드시 관리자 검수를 거치도록 강제
+2. **관리자 권한 인정**: 관리자가 등록한 실적은 즉시 활용 가능하도록 설계
+3. **데이터 무결성**: 상태에 따른 명확한 데이터 흐름으로 시스템 일관성 확보
+4. **업무 효율성**: 관리자의 즉시 등록과 이용자의 검수 대기 프로세스 분리
+
+---
+
+## 6. Database Functions 상세 분석
+
+### 6.1. 핵심 비즈니스 로직 함수들
 
 #### `calculate_absorption_rates(p_settlement_month text)`
 ```sql
@@ -232,4 +339,453 @@
 
 - **파일 URL**: `notices.file_url` 필드에 저장
 - **링크 정보**: `notices.links` 필드에 외부 링크 저장
-- **관리 권한**: 관리자만 파일 업로드/관리 가능 
+- **관리 권한**: 관리자만 파일 업로드/관리 가능
+
+---
+
+## 8. 실적 등록 시 처방월 변경 로직
+
+### 8.1. 제품 정보 자동 업데이트 규칙
+
+**목적**: 사용자가 실적 등록 중 처방월을 변경할 때, 해당 월의 제품 정보(약가, 수수료율)를 자동으로 업데이트
+
+**핵심 로직**:
+1. **검색 기준**: 이미 선택된 제품의 **보험코드**를 사용
+2. **검색 대상**: 변경된 처방월의 `base_month`에서 해당 보험코드 검색
+3. **결과 처리**: 
+   - **여러 결과가 있는 경우**: 첫 번째 결과만 사용 (`.limit(1)` 적용)
+   - **결과가 없는 경우**: 제품 선택 해제 (제품명, 보험코드, 약가, 수수료율 등 모든 정보 초기화)
+   - **결과가 있는 경우**: 새로운 제품 정보로 자동 업데이트 (약가, 수수료율, 처방액 재계산)
+
+**구현 위치**: `PerformanceRegisterEdit.vue` - `updateProductInfoForMonthChange()` 함수
+
+**동작 시나리오**:
+- **시나리오 1**: 2025-05에서 가모피드정 5mg 선택 → 2025-04로 변경 → 보험코드로 검색하여 약가 4원, 수수료율 40%로 자동 업데이트
+- **시나리오 2**: 2025-05에서 가모피드정 5mg 선택 → 2025-03으로 변경 → 보험코드가 2025-03에 없으므로 제품 선택 해제
+
+**기술적 특징**:
+- `.single()` 대신 `.limit(1)` 사용으로 여러 결과 처리 가능
+- 에러 처리 개선으로 쿼리 에러와 데이터 없음을 분리
+- 처방수량이 있는 경우 처방액 자동 재계산
+
+---
+
+## 9. 실적입력기간 제한 시스템
+
+### 9.1. 개요
+
+시스템은 실적 등록을 관리자가 설정한 기간 내에서만 허용하는 제한 시스템을 운영합니다. 이는 데이터 입력의 일관성과 관리 효율성을 위한 핵심 기능입니다.
+
+### 9.2. 데이터 구조
+
+**`settlement_months` 테이블**:
+- `settlement_month`: 정산월 (예: '2025-01')
+- `start_date`: 실적입력 시작일 (YYYY-MM-DD)
+- `end_date`: 실적입력 종료일 (YYYY-MM-DD)
+- `notice`: 전달 사항
+- `status`: 활성/비활성 상태
+- `remarks`: 비고
+
+### 9.3. 권한별 실적입력기간 제한
+
+#### 9.3.1. 일반 사용자 (CSO 업체)
+- **제한 적용**: 실적입력기간 내에서만 실적 등록/수정 가능
+- **검증 로직**: `checkInputPeriod()` 함수에서 현재 시간과 `start_date`, `end_date` 비교
+- **UI 제어**: 실적입력기간 외에는 모든 입력 버튼 비활성화
+- **구현 위치**: `PerformanceRegister.vue`, `PerformanceRegisterEdit.vue`
+
+#### 9.3.2. 관리자 (신일제약)
+- **제한 없음**: 실적입력기간과 무관하게 언제든지 실적 등록/수정 가능
+- **우회 로직**: `checkInputPeriod()` 함수에서 `isInputPeriod.value = true`로 강제 설정
+- **구현 위치**: `AdminPerformanceRegisterView.vue`
+
+### 9.4. 핵심 로직
+
+#### 9.4.1. 실적입력기간 체크 함수
+```javascript
+// 일반 사용자용
+const checkInputPeriod = async () => {
+  if (!selectedSettlementMonth.value) return
+  const { data, error } = await supabase
+    .from('settlement_months')
+    .select('start_date, end_date')
+    .eq('settlement_month', selectedSettlementMonth.value)
+    .single()
+  
+  if (!error && data) {
+    const now = new Date()
+    const startDate = new Date(data.start_date)
+    const endDate = new Date(data.end_date)
+    endDate.setHours(23, 59, 59, 999) // 종료일을 그날의 마지막 시간으로 설정
+    isInputPeriod.value = now >= startDate && now <= endDate
+  } else {
+    isInputPeriod.value = false
+  }
+}
+
+// 관리자용 (우회)
+const checkInputPeriod = async () => {
+  // 관리자는 항상 입력 가능
+  isInputPeriod.value = true
+  return
+  // ... 일반 사용자 로직 (실행되지 않음)
+}
+```
+
+#### 9.4.2. UI 제어 로직
+- **버튼 비활성화**: `:disabled="!isInputPeriod"`
+- **실적 등록**: `:disabled="!isInputPeriod"`
+- **실적 수정**: `:disabled="!isInputPeriod"`
+- **파일 업로드**: `:disabled="!isInputPeriod"`
+
+### 9.5. 관리자 설정 화면
+
+**`AdminSettlementMonthsCreateView.vue`**:
+- 정산월 설정
+- 실적입력 시작일/종료일 설정
+- 전달 사항 입력
+- 상태 관리 (활성/비활성)
+
+### 9.6. 동작 시나리오
+
+#### 9.6.1. 일반 사용자 시나리오
+1. **기간 내**: 실적 등록/수정 버튼 활성화 → 정상 입력 가능
+2. **기간 외**: 실적 등록/수정 버튼 비활성화 → 입력 불가
+3. **기간 변경**: 관리자가 기간을 수정하면 즉시 반영
+
+#### 9.6.2. 관리자 시나리오
+1. **언제든지**: 실적 등록/수정 버튼 항상 활성화
+2. **기간 무관**: 설정된 실적입력기간과 관계없이 입력 가능
+3. **긴급 대응**: 기간 외에도 실적 데이터 수정 가능
+
+### 9.7. 보안 및 데이터 무결성
+
+- **데이터베이스 레벨**: RLS 정책으로 추가 보안 강화
+- **프론트엔드 레벨**: UI 제어로 사용자 경험 개선
+- **관리자 권한**: `user_type = 'admin'` 확인 후 우회 로직 적용
+
+---
+
+## 10. 실적 등록 시 제품 선택 및 키보드 네비게이션 시스템
+
+### 10.1. 제품 선택 방식
+
+#### 10.1.1. 제품 선택 방식 (2가지)
+
+**방식 1: 제품명 검색 + 드롭다운**
+- **검색 방식**: 제품명 또는 보험코드로 실시간 검색
+- **드롭다운 표시**: 검색 결과를 드롭다운으로 표시 (제품명 + 보험코드)
+- **선택 방법**: 
+  - 마우스 클릭으로 선택
+  - 키보드 상하 화살표로 탐색 후 Enter로 선택
+
+**방식 2: 드롭다운 아이콘 클릭**
+- **동작**: 드롭다운 아이콘(▼) 클릭 시 해당 처방월의 모든 제품 표시
+- **유니크 처리**: 보험코드 기준으로 중복 제거하여 유니크하게 표시
+- **표시 내용**: 제품명 + 보험코드
+- **구현 위치**: `PerformanceRegisterEdit.vue` - `toggleProductDropdown()` 함수
+
+#### 10.1.2. 검색 로직
+
+**방식 1: 제품명 실시간 검색**
+```javascript
+// 제품명 입력 시 실시간 검색
+function handleProductNameInput(rowIndex, event) {
+  const query = event.target.value.toLowerCase();
+  const month = inputRows.value[rowIndex].prescription_month;
+  
+  productSearchForRow.value.activeRowIndex = rowIndex;
+  productSearchForRow.value.results = productList.filter(
+    product => product.product_name.toLowerCase().includes(query) ||
+               product.insurance_code.toLowerCase().includes(query)
+  );
+  productSearchForRow.value.selectedIndex = -1;
+  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
+}
+```
+
+**방식 2: 드롭다운 아이콘 클릭 (전체 제품 표시)**
+```javascript
+// 드롭다운 아이콘 클릭 시 해당 월의 모든 제품 표시
+function toggleProductDropdown(rowIndex) {
+  if (!isInputEnabled.value) return;
+  
+  // 이미 열려있으면 닫기
+  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIndex) {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.activeRowIndex = -1;
+    return;
+  }
+  
+  // 처방월에 맞는 제품만 필터링 (보험코드 기준 유니크)
+  const month = inputRows.value[rowIndex].prescription_month;
+  productSearchForRow.value.activeRowIndex = rowIndex;
+  productSearchForRow.value.results = productsByMonth.value[month] || [];
+  productSearchForRow.value.selectedIndex = -1;
+  productSearchForRow.value.show = productSearchForRow.value.results.length > 0;
+}
+```
+
+**제품 유니크 처리 로직**
+```javascript
+// 보험코드 기준으로 유니크하게 제품 처리
+async function fetchProductsForMonth(month) {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .eq('base_month', month)
+    .range(0, 2999);
+
+  if (!error && data) {
+    const uniqByMonthAndInsurance = {};
+    const noInsurance = [];
+    
+    data.forEach(p => {
+      const key = `${p.base_month}_${p.insurance_code || ''}`;
+      if (p.insurance_code) {
+        // 보험코드가 있으면 유니크 처리
+        if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
+      } else {
+        // 보험코드가 없으면 별도 배열에 추가
+        noInsurance.push(p);
+      }
+    });
+    
+    // 유니크 처리된 제품 + 보험코드 없는 제품
+    productsByMonth.value[month] = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
+  }
+}
+```
+
+### 10.2. 키보드 네비게이션 규칙
+
+#### 10.2.1. Enter 키 동작
+- **제품명 필드**: 선택된 제품 적용 후 처방수량 필드로 이동
+- **처방수량 필드**: 제품명과 수량이 모두 입력된 경우 다음 행으로 이동 (자동 행 추가)
+- **비고 필드**: 제품명과 수량이 모두 입력된 경우 다음 행으로 이동 (자동 행 추가)
+
+#### 10.2.2. 화살표 키 동작
+- **상하 화살표**: 같은 열에서 위아래 행으로 이동
+- **좌우 화살표**: 같은 행에서 좌우 열로 이동
+- **이동 순서**: 처방월 → 제품명 → 처방수량 → 처방구분 → 비고
+- **제품 검색 중**: 상하 화살표는 드롭다운 탐색, 좌우 화살표는 차단
+
+#### 10.2.3. 특수 키 동작
+- **ESC 키**: 현재 행의 모든 입력 정보 초기화 (제품명, 처방수량, 비고 등)
+- **Delete 키**: 현재 행 삭제 (최소 1행은 유지)
+- **Insert 키**: 현재 행 아래에 새 행 추가
+
+### 10.3. 자동 행 관리 시스템
+
+#### 10.3.1. 자동 행 추가
+- **조건**: 마지막 행에 제품명 또는 처방수량이 입력되면 자동으로 새 행 추가
+- **구현**: `watch(inputRows)` 감시자로 실시간 모니터링
+- **기본값**: 새 행의 처방월은 정산월 - 1M, 처방구분은 'EDI'
+
+#### 10.3.2. 행 초기화 로직
+```javascript
+function resetRow(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  row.prescription_month = getDefaultPrescriptionMonth();
+  row.product_name_display = '';
+  row.product_id = null;
+  row.insurance_code = '';
+  row.price = '';
+  row.prescription_qty = '';
+  row.prescription_amount = '';
+  row.prescription_type = 'EDI';
+  row.remarks = '';
+  row.commission_rate_a = null;
+  row.commission_rate_b = null;
+  
+  // 제품 검색 드롭다운 숨기기
+  if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIdx) {
+    productSearchForRow.value.show = false;
+    productSearchForRow.value.activeRowIndex = -1;
+  }
+  
+  // 해당 행의 제품명 필드로 포커스 이동
+  nextTick(() => {
+    focusField(rowIdx, 'product_name');
+  });
+}
+```
+
+### 10.4. 전역 키보드 이벤트 처리
+
+#### 10.4.1. 핸들러 등록
+```javascript
+// 컴포넌트 마운트 시 등록
+onMounted(() => {
+  document.addEventListener('keydown', handleGlobalKeydown);
+  document.addEventListener('click', handleGlobalClick);
+});
+
+// 컴포넌트 언마운트 시 해제
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleGlobalKeydown);
+  document.removeEventListener('click', handleGlobalClick);
+});
+```
+
+#### 10.4.2. 전역 키 처리 로직
+```javascript
+function handleGlobalKeydown(e) {
+  // 제품 검색 드롭다운이 열려있으면 Insert/Delete/Escape 키 차단
+  if (isProductSearchOpen.value) {
+    if (e.key === 'Delete' || e.key === 'Insert' || e.key === 'Escape') {
+      e.preventDefault();
+      return;
+    }
+  }
+  
+  if (e.key === 'Delete') {
+    e.preventDefault();
+    const currentRowIdx = currentCell.value.row;
+    if (inputRows.value.length > 1) {
+      confirmDeleteRow(currentRowIdx);
+    }
+  } else if (e.key === 'Insert') {
+    e.preventDefault();
+    const currentRowIdx = currentCell.value.row;
+    confirmAddRowBelow(currentRowIdx);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    const currentRowIdx = currentCell.value.row;
+    if (isRowEditable(inputRows.value[currentRowIdx])) {
+      resetRow(currentRowIdx);
+    }
+  }
+}
+```
+
+### 10.5. 포커스 관리 시스템
+
+#### 10.5.1. 셀 포커스 추적
+- **현재 셀**: `currentCell.value = { row: rowIdx, col: colName }`
+- **포커스 스타일**: `cellClass()` 함수로 현재 셀 하이라이트
+- **자동 포커스**: 행 추가/삭제 시 적절한 필드로 자동 포커스
+
+#### 10.5.2. 필드별 포커스 규칙
+- **처방월**: 드롭다운 선택 후 제품명으로 이동
+- **제품명**: 제품 선택 후 처방수량으로 이동
+- **처방수량**: 입력 완료 후 다음 행 제품명으로 이동
+- **처방구분**: 선택 후 비고로 이동
+- **비고**: 입력 완료 후 다음 행 제품명으로 이동
+
+### 10.6. 사용자 경험 최적화
+
+#### 10.6.1. 편집 상태별 제어
+- **편집 가능**: 모든 키보드 기능 활성화
+- **편집 불가**: 키보드 기능 비활성화, 읽기 전용 모드
+- **관리자**: 모든 상태에서 편집 가능
+
+#### 10.6.2. 실시간 피드백
+- **처방액 자동 계산**: 처방수량 입력 시 실시간 계산
+- **제품 정보 자동 업데이트**: 처방월 변경 시 제품 정보 자동 업데이트
+- **처방구분 자동 복사**: 한 행의 처방구분 변경 시 아래 행들에 자동 적용
+
+---
+
+## 11. 정렬 규칙 시스템
+
+### 11.1. 개요
+
+시스템은 사용자 권한과 화면 목적에 따라 다른 정렬 규칙을 적용합니다. 기본적으로 가나다순 정렬을 사용하되, 입력 상태와 검수 상태에 따라 우선순위를 조정합니다.
+
+### 11.2. 사용자별 정렬 규칙
+
+#### 11.2.1. 일반 사용자 (CSO 업체)
+- **정렬 대상**: 거래처 목록
+- **정렬 방식**: 
+  - **1순위**: 처방건수 0건 → 1건 이상 (입력된 것이 아래로)
+  - **2순위**: 각 그룹 내 가나다순 정렬
+- **구현 위치**: `PerformanceRegister.vue`, `PerformanceRegisterList.vue`
+
+```javascript
+// 정렬: 처방건수 0건 → 1건 이상, 각 그룹 내 가나다순
+const noData = unsortedList
+  .filter((c) => !c.performance_count || Number(c.performance_count) === 0)
+  .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+const hasData = unsortedList
+  .filter((c) => Number(c.performance_count) > 0)
+  .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+clientList.value = [...noData, ...hasData] // 입력된 것이 아래로
+```
+
+#### 11.2.2. 관리자 (신일제약)
+- **정렬 대상**: 업체 목록, 거래처 목록
+- **업체 정렬**: 가나다순 (company_name 기준)
+- **거래처 정렬**: 
+  - **1순위**: 처방건수 0건 → 1건 이상 (입력된 것이 위로)
+  - **2순위**: 각 그룹 내 가나다순 정렬
+- **구현 위치**: `AdminPerformanceRegisterView.vue`, `AdminPerformanceReviewView.vue`
+
+```javascript
+// 업체 목록 정렬 (가나다순)
+const { data, error } = await supabase
+  .from('companies')
+  .select('id, company_name')
+  .eq('approval_status', 'approved')
+  .eq('status', 'active')
+  .eq('user_type', 'user')
+  .order('company_name', { ascending: true }) // 가나다순
+
+// 거래처 목록 정렬 (입력된 것이 위로)
+const noData = unsortedList
+  .filter((c) => !c.performance_count || Number(c.performance_count) === 0)
+  .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+const hasData = unsortedList
+  .filter((c) => Number(c.performance_count) > 0)
+  .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+clientList.value = [...hasData, ...noData] // 입력된 것이 위로
+```
+
+### 11.3. 실적 검수 화면 정렬 규칙
+
+#### 11.3.1. 검수 상태별 정렬
+- **정렬 우선순위**: 신규 > 검수중 > 완료
+- **상태 표시**: 
+  - `review_status = '대기'` → `display_status = '신규'`
+  - `review_status = '검수중'` → `display_status = '검수중'`
+  - `review_status = '완료'` → `display_status = '완료'`
+
+#### 11.3.2. 필터 옵션 정렬
+```javascript
+// 업체 필터 정렬 (가나다순)
+monthlyCompanies.value = companies.sort((a, b) => 
+  a.company_name.localeCompare(b.company_name, 'ko')
+);
+
+// 거래처 필터 정렬 (가나다순)
+monthlyHospitals.value = clients.sort((a, b) => 
+  a.name.localeCompare(b.name, 'ko')
+);
+```
+
+### 11.4. 정렬 로직 상세
+
+#### 11.4.1. 가나다순 정렬
+- **사용 언어**: 한국어 (`'ko'` 로케일)
+- **정렬 방식**: `localeCompare()` 메서드 사용
+- **대소문자**: 구분하지 않음
+
+#### 11.4.2. 상태별 그룹화 정렬
+1. **데이터 분리**: 조건에 따라 그룹별로 분리
+2. **그룹 내 정렬**: 각 그룹 내에서 가나다순 정렬
+3. **그룹 결합**: 우선순위에 따라 그룹들을 결합
+
+#### 11.4.3. 실시간 정렬
+- **Computed 속성**: `displayRows` computed로 실시간 정렬
+- **필터 적용**: 처방월, 업체, 거래처 필터와 함께 적용
+- **성능 최적화**: 필요한 경우에만 정렬 수행
+
+### 11.5. 정렬 규칙 요약
+
+| 사용자 유형 | 정렬 대상 | 1순위 | 2순위 | 입력 데이터 위치 |
+|------------|----------|-------|-------|----------------|
+| 일반 사용자 | 거래처 | 처방건수 (0건 → 1건+) | 가나다순 | 아래로 |
+| 관리자 | 업체 | 가나다순 | - | - |
+| 관리자 | 거래처 | 처방건수 (0건 → 1건+) | 가나다순 | 위로 |
+| 관리자 | 실적 검수 | 검수상태 (신규 → 검수중 → 완료) | 가나다순 | - | 
