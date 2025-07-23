@@ -227,7 +227,7 @@ function goList() {
 
 const handleSubmit = async () => {
   if (loading.value) return;
-  
+
   // 필수 입력값 체크
   if (
     !email.value ||
@@ -251,25 +251,28 @@ const handleSubmit = async () => {
 
   loading.value = true;
   try {
-    // 1. Supabase Auth 회원가입 (이메일 중복 등은 Auth에서 처리)
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: email.value,
-      password: password.value,
-      options: {
-        data: {
-          user_type: 'user',
-          company_name: companyName.value,
-        },
-      },
+    // 1. 서버리스 함수로 회원가입 (자동 로그인 없음)
+    const response = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+        company_name: companyName.value,
+      }),
     });
-    if (signUpError) {
-      alert('회원가입 실패: ' + (signUpError.error_description || signUpError.message));
+    const result = await response.json();
+    if (!response.ok) {
+      alert('회원가입 실패: ' + (result.error || '알 수 없는 오류'));
+      return;
+    }
+    const userId = result.user?.id;
+    if (!userId) {
+      alert('회원가입 실패: 사용자 ID를 가져올 수 없습니다.');
       return;
     }
 
-    const userId = signUpData.user?.id;
-
-    // 2. companies 테이블에 데이터 저장 (Auth 등록 성공 시에만)
+    // 2. companies 테이블에 데이터 저장
     const companyDataToInsert = {
       email: email.value,
       company_name: companyName.value,
@@ -293,17 +296,14 @@ const handleSubmit = async () => {
       updated_at: new Date().toISOString(),
       created_by: userId,
     };
-
     if (approvalStatus.value === '승인') {
       companyDataToInsert.approved_at = new Date().toISOString();
     }
-
     const { error: insertError } = await supabase.from('companies').insert(companyDataToInsert);
     if (insertError) {
       alert('업체 등록 실패: ' + insertError.message);
       return;
     }
-
     alert('등록되었습니다.');
     const from = route.query.from === 'pending' ? 'pending' : 'approved';
     router.push(`/admin/companies/${from}`);

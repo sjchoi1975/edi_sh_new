@@ -2,6 +2,29 @@
 
 **문서 버전: 3.0 (2025-07-22)**
 
+## 폴더 구조
+- `/vue-project` : 프론트엔드 소스 (Vue.js)
+- `/sql-scripts` : DB 관련 SQL 스크립트
+- `/admin-scripts` : 관리자용 Node.js 스크립트
+
+## 개발 환경 및 실행 방법
+1. Node.js 18+ 권장
+2. 터미널에서 아래 명령 실행
+   ```bash
+   cd vue-project
+   npm install
+   npm run dev
+   ```
+3. 브라우저에서 [http://localhost:5173](http://localhost:5173) 접속
+
+## 빌드 및 배포
+- 빌드: `npm run build` (결과물은 `dist/` 폴더)
+- Vercel 자동 배포 (Root: vue-project, Output: dist)
+- SPA 라우팅: `vercel.json`에 rewrites 설정 필수
+
+## 환경변수
+- `vue-project/.env.local`에 Supabase 등 민감 정보 저장
+
 ## 1. 개요 및 설계 철학
 
 ### 1.1. 문서의 목적
