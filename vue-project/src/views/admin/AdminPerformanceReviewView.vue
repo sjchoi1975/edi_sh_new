@@ -27,7 +27,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>병의원</label>
-          <select v-model="selectedHospitalId" class="select_200px">
+          <select v-model="selectedHospitalId" class="select_240px">
             <option v-for="hospital in hospitalOptions" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
           </select>
         </div>
@@ -87,9 +87,10 @@
           class="admin-performance-review-table"
           dataKey="id"
           v-model:first="currentPageFirstIndex"
+
           :pt="{
-            wrapper: { style: 'min-width: 2200px;' },
-            table: { style: 'min-width: 2200px;' }
+            wrapper: { style: 'min-width: 2400px;' },
+            table: { style: 'min-width: 2400px;' }
           }"
         >
           <template #empty>
@@ -320,25 +321,25 @@ const toast = useToast();
 
 // --- 고정 변수 ---
 const columnWidths = {
-  no: '4%',
-  review_status: '4%',
-  review_action: '4%',
-  actions: '7%',
-  company_name: '10%',
-  client_name: '14%',
+  no: '3%',
+  review_status: '3%',
+  review_action: '3%',
+  actions: '6%',
+  company_name: '8%',
+  client_name: '15%',
   prescription_month: '5%',
-  product_name_display: '12%', 
-  insurance_code: '7%', 
-  price: '6%',
-  prescription_qty: '7%', 
-  prescription_amount: '7%', 
+  product_name_display: '15%', 
+  insurance_code: '5%', 
+  price: '5%',
+  prescription_qty: '5%', 
+  prescription_amount: '6%', 
   checkbox: '4%',
-  prescription_type: '7%',
-  commission_rate: '6%',
-  payment_amount: '7%', 
+  prescription_type: '6%',
+  commission_rate: '5%',
+  payment_amount: '6%', 
   remarks: '10%',
-  created_date: '9%',
-  created_by: '10%'
+  created_date: '7%',
+  created_by: '8%'
 };
 const prescriptionTypeOptions = ['EDI', 'ERP직거래자료', '매출자료', '약국조제', '원내매출', '원외매출', '차감'];
 

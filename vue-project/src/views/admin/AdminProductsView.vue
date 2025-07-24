@@ -79,7 +79,7 @@
               v-model="slotProps.data.product_name"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
-            <a v-else href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
+            <a v-else href="#" class="text-link ellipsis-cell" :title="slotProps.data.product_name" @click.prevent="goToDetail(slotProps.data.id)" @mouseenter="checkProductOverflow" @mouseleave="removeOverflowClass">
               {{ slotProps.data.product_name }}
             </a>
           </template>
@@ -907,4 +907,52 @@ async function deleteAllProducts() {
   
   alert(`${selectedMonth.value} 기준월의 모든 제품이 삭제되었습니다.`);
 }
+
+// 제품명 오버플로우 감지 함수
+const checkProductOverflow = (event) => {
+  const element = event.target;
+  
+  // 실제 오버플로우 감지
+  const rect = element.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = parseFloat(computedStyle.fontSize);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // 임시 캔버스를 만들어서 텍스트의 실제 너비 측정
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = `${fontSize}px ${fontFamily}`;
+  const textWidth = context.measureText(element.textContent).width;
+  
+  // 패딩과 보더 고려
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderRight = parseFloat(computedStyle.borderRightWidth) || 0;
+  
+  const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+  const isOverflowed = textWidth > availableWidth;
+  
+  console.log('오버플로우 체크:', {
+    text: element.textContent,
+    textWidth,
+    availableWidth,
+    isOverflowed
+  });
+  
+  if (isOverflowed) {
+    element.classList.add('overflowed');
+    console.log('오버플로우 클래스 추가됨');
+  } else {
+    element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
+    console.log('오버플로우 아님 - 클래스 제거됨');
+  }
+}
+
+const removeOverflowClass = (event) => {
+  const element = event.target;
+  element.classList.remove('overflowed');
+  console.log('오버플로우 클래스 제거됨');
+}
+
 </script>
