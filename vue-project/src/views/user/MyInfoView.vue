@@ -43,7 +43,7 @@
         <div class="form-col"></div>
       </div>
       <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
-        <button class="btn-reset-password" type="button" @click="goChangePassword">비밀번호 변경</button>
+        <button class="btn-reset-password" type="button" @click="goChangePassword" style="margin-right: 1rem;">비밀번호 변경</button>
         <button class="btn-edit" type="button" @click="goEdit">수정</button>
       </div>
     </form>

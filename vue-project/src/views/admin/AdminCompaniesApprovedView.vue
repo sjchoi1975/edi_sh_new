@@ -6,37 +6,51 @@
     </div>
 
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="filter-item p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="업체명, 사업자등록번호, 대표자명 검색"
-            class="search-input"
-          />
-        </span>
-        <!-- 추가 필터가 있다면 여기에 배치 -->
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="업체명, 사업자등록번호, 대표자명 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              style="position:absolute; right:6px; top:50%; transform:translateY(-50%); height:28px; width:24px; border:none; background:transparent; color:#888; font-size:18px; cursor:pointer;"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
 
     <div class="data-card">
       <div class="data-card-header">
         <div class="total-count-display">
-          전체 {{ approvedCompanies.length }} 건
+          전체 {{ filteredCompanies.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-download" @click="downloadExcel" :disabled="approvedCompanies.length === 0">엑셀 다운로드</button>
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="filteredCompanies.length === 0" style="margin-right: 1rem;">엑셀 다운로드</button>
           <button class="btn-save" @click="goCreate">업체 등록</button>
         </div>
       </div>
 
       <DataTable
-        :value="approvedCompanies"
+        :value="filteredCompanies"
         :loading="loading"
         paginator :rows="50" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
         scrollable scrollHeight="calc(100vh - 250px)" 
-        v-model:filters="filters"
-        :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="admin-companies-approved-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -110,6 +124,9 @@ const columnWidths = {
 }
 
 const approvedCompanies = ref([])
+const filteredCompanies = ref([])
+const searchInput = ref('');
+const searchKeyword = ref('');
 const loading = ref(false)
 const currentPageFirstIndex = ref(0)
 const filters = ref({
@@ -133,11 +150,29 @@ const fetchCompanies = async () => {
     approvedCompanies.value = (data || []).filter(
       (company) => company.user_type === 'user' && company.approval_status === 'approved',
     )
+    filteredCompanies.value = approvedCompanies.value;
   } catch (err) {
     console.error('업체 정보를 불러오는데 실패했습니다.', err)
   } finally {
     loading.value = false
   }
+}
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredCompanies.value = approvedCompanies.value.filter(c =>
+      (c.company_name && c.company_name.toLowerCase().includes(keyword)) ||
+      (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
+      (c.representative_name && c.representative_name.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredCompanies.value = approvedCompanies.value;
 }
 
 onMounted(() => {
@@ -302,12 +337,12 @@ function goToDetail(id) {
 }
 
 const downloadExcel = () => {
-  if (approvedCompanies.value.length === 0) {
+  if (filteredCompanies.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  const dataToExport = approvedCompanies.value.map((company, index) => ({
+  const dataToExport = filteredCompanies.value.map((company, index) => ({
     ID: company.id,
     No: index + 1 + currentPageFirstIndex.value,
     '아이디(이메일)': company.email,

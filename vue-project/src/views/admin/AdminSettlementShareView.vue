@@ -20,8 +20,8 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ companySummary.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-secondary" @click="toggleAllShares(true)">전체 공유</button>
-          <button class="btn-secondary" @click="toggleAllShares(false)">전체 해제</button>
+          <button class="btn-secondary" @click="toggleAllShares(true)" style="margin-right: 1rem;">전체 공유</button>
+          <button class="btn-secondary" @click="toggleAllShares(false)" style="margin-right: 1rem;">전체 해제</button>
           <button class="btn-save" @click="saveShareStatus" :disabled="Object.keys(shareChanges).length === 0">저장</button>
         </div>
       </div>
@@ -438,6 +438,5 @@ function formatDateTime(dateTimeString) {
 <style scoped>
 .action-buttons-group {
     display: flex;
-    gap: 8px;
 }
 </style>

@@ -18,13 +18,29 @@
             </option>
           </select>
         </div>
-        <span class="filter-item p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="제품명, 보험코드 검색"
-            class="search-input"
-          />
-        </span>
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="제품명, 보험코드 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
 
@@ -34,8 +50,8 @@
           전체 {{ filteredProducts.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
           <input
             ref="fileInput"
             type="file"
@@ -43,8 +59,8 @@
             @change="handleFileUpload"
             style="display: none"
           />
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-delete" @click="deleteAllProducts">모두 삭제</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
+          <button class="btn-delete" @click="deleteAllProducts" style="margin-right: 1rem;">모두 삭제</button>
           <button class="btn-save" @click="goCreate">개별 등록</button>
         </div>
       </div>
@@ -57,8 +73,6 @@
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="admin-products-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -240,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -267,12 +281,30 @@ const columnWidths = {
 
 const products = ref([])
 const loading = ref(false)
-const filters = ref({ global: { value: null, matchMode: 'contains' } })
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredProducts = ref([]);
 const selectedMonth = ref('')
 const availableMonths = ref([])
 const router = useRouter()
 const fileInput = ref(null)
 const currentPageFirstIndex = ref(0)
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredProducts.value = products.value.filter(p =>
+      (p.product_name && p.product_name.toLowerCase().includes(keyword)) ||
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredProducts.value = products.value;
+}
 
 const koLocale = {
   firstDayOfWeek: 0,
@@ -310,10 +342,6 @@ const koLocale = {
   today: '오늘',
   clear: '초기화',
 }
-
-const filteredProducts = computed(() => {
-  return products.value; // 이제 선택된 기준월의 제품만 불러오므로 추가 필터링 불필요
-})
 
 const filterByMonth = async () => {
   if (selectedMonth.value) {
@@ -421,6 +449,11 @@ const fetchProductsByMonth = async (month) => {
 onMounted(() => {
   fetchProducts()
 })
+
+// 기준월이 바뀌거나 products가 새로 로드될 때 전체로 복원
+watch(products, (newVal) => {
+  filteredProducts.value = newVal;
+}, { immediate: true });
 
 const downloadTemplate = () => {
   // 기준월과 보험코드에 예시 데이터 추가 (보험코드 앞에 0이 있는 예시)

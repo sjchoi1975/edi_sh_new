@@ -59,6 +59,7 @@
              class="btn-add" 
              @click="calculateAbsorptionRates" 
              :disabled="!hasCompletedData || loading"
+             style="margin-right: 1rem;"
            >
              흡수율 분석
            </button>
@@ -1109,7 +1110,7 @@ async function deleteFilteredAnalysisData() {
 
 <style scoped>
 .absorption-analysis-view { padding: 0px; }
-.data-card-buttons { display: flex; gap: 8px; }
+.data-card-buttons { display: flex; }
 
 /* 셀 배경색을 흰색으로 지정 */
 :deep(.p-datatable-tbody > tr > td) {

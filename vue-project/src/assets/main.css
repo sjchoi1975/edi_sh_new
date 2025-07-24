@@ -23,7 +23,9 @@
   --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
 
   /* 텍스트 색상 */
+  --text-primary: #222222; /* 기본 텍스트 */
   --text-primary: #343a40; /* 기본 텍스트 */
+  --text-secondary: #444444; /* 보조 텍스트 */
   --text-secondary: #6c757d; /* 보조 텍스트 */
   --text-light: #adb5bd; /* 연한 텍스트 */
   --text-white: #ffffff; /* 흰색 텍스트 */
@@ -886,7 +888,7 @@ select.input-editable {
 /* 모달 헤더 */
 .p-dialog-header {
   background: none !important;
-  padding: 1.5rem 2rem 0.5rem 1rem !important;
+  padding: 1rem 2rem 1rem 2rem !important;
   border-radius: var(--border-radius) !important;
 }
 
@@ -894,13 +896,12 @@ select.input-editable {
   font-size: var(--font-size-title) !important;
   font-weight: 700!important;
   color: var(--text-primary) !important;
-  margin-left: 1rem !important;
 }
 
 /* 모달 내용 */
 .p-dialog-content {
-  min-height: 600px !important;
-  max-height: 600px !important;
+  min-height: 620px !important;
+  max-height: 620px !important;
   overflow-y: auto !important;
   padding: 1rem 2rem 1rem 2rem !important;
   background: transparent !important;
@@ -939,14 +940,14 @@ select.input-editable {
 }
 
 .modal-body {
-  padding: 1rem !important;
+  padding: 1rem 2rem 1rem 2rem !important;
 }
 
 .modal-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 1rem !important;
+  padding: 1rem 2rem 1rem 2rem !important;
   background: none !important;
   color: var(--text-dark) !important;
 }
@@ -954,16 +955,15 @@ select.input-editable {
 /* 사용하는지??????????????????????????????????? */
 .modal-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-size-title) !important;
   font-weight: 600;
 }
 
 .modal-footer {
   display: flex !important;
   justify-content: flex-end !important;
-  gap: 0.5rem !important;
-  margin-top: 1rem !important;
-  padding: 1rem !important;
+  gap: 1rem !important;
+  padding: 1rem 2rem 2rem 2rem !important;
 }
 
 /* 사용하는지??????????????????????????????????? */

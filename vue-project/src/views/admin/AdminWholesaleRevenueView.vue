@@ -19,23 +19,41 @@
             </option>
           </select>
         </div>
-        <span class="p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
-            class="search-input"
-          />
-        </span>
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">전체 {{ totalCount }} 건</div>
+        <div class="total-count-display">
+          전체 {{ filteredRevenues.length }} 건
+        </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-delete" @click="deleteAllRevenues">모두 삭제</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
+          <button class="btn-delete" @click="deleteAllRevenues" style="margin-right: 1rem;">모두 삭제</button>
           <button class="btn-save" @click="goCreate">개별 등록</button>
           <input
             ref="fileInput"
@@ -47,25 +65,15 @@
         </div>
       </div>
       <DataTable
-        :value="revenues"
+        :value="filteredRevenues"
         :loading="loading"
         paginator
         :rows="pageSize"
-        :totalRecords="totalCount"
         :rowsPerPageOptions="[20, 50, 100]"
-        :first="currentPageFirstIndex"
-        :lazy="true"
+        v-model:first="currentPageFirstIndex"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="[
-          'pharmacy_name',
-          'business_registration_number',
-          'standard_code',
-          'product_name',
-        ]"
         class="admin-wholesale-revenue-table"
-        @page="onPageChange"
       >
         <template #empty>
           <div v-if="!loading">등록된 매출이 없습니다.</div>
@@ -217,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -247,51 +255,38 @@ const columnWidths = {
 }
 
 const revenues = ref([])
+const filteredRevenues = ref([])
 const loading = ref(false)
-const filters = ref({ global: { value: null, matchMode: 'contains' } })
+const searchInput = ref('');
+const searchKeyword = ref('');
 const router = useRouter()
 const fileInput = ref(null)
 const fromMonth = ref('')
 const toMonth = ref('')
 const availableMonths = ref([])
 const currentPageFirstIndex = ref(0)
-const pageSize = ref(50) // 한 페이지에 보여줄 행 수
-const totalCount = ref(0) // 전체 데이터 개수
+const pageSize = ref(50)
 
 function goCreate() {
   router.push('/admin/wholesale-revenue/create')
 }
 
-// 페이지 변경 핸들러
-const onPageChange = async (event) => {
-  currentPageFirstIndex.value = event.first
-  pageSize.value = event.rows
-  await fetchRevenues()
-}
+// 클라이언트 페이징이므로 onPageChange 불필요
 
 const fetchRevenues = async () => {
   loading.value = true;
   try {
-    // 전체 개수 조회
-    const { count } = await supabase
-      .from('wholesale_sales')
-      .select('*', { count: 'exact', head: true })
-    totalCount.value = count || 0
-
-    // 페이지별 데이터 조회
-    const from = currentPageFirstIndex.value
-    const to = from + pageSize.value - 1
     const { data, error } = await supabase
       .from('wholesale_sales')
       .select('*')
       .order('sales_date', { ascending: false })
-      .range(from, to)
     if (!error && data) {
       revenues.value = data.map((item) => ({
         ...item,
         isEditing: false,
         originalData: { ...item },
       }))
+      filteredRevenues.value = revenues.value;
     }
   } finally {
     loading.value = false;
@@ -318,18 +313,23 @@ const fetchAvailableMonths = async () => {
   }
 }
 
-// 월별 필터링된 매출 데이터
-const filteredRevenues = computed(() => {
-  if (!fromMonth.value || !toMonth.value) {
-    return revenues.value
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredRevenues.value = revenues.value.filter(r =>
+      (r.pharmacy_name && r.pharmacy_name.toLowerCase().includes(keyword)) ||
+      (r.business_registration_number && r.business_registration_number.toLowerCase().includes(keyword)) ||
+      (r.standard_code && r.standard_code.toLowerCase().includes(keyword)) ||
+      (r.product_name && r.product_name.toLowerCase().includes(keyword))
+    );
   }
-
-  return revenues.value.filter((revenue) => {
-    if (!revenue.sales_date) return false
-    const revenueMonth = revenue.sales_date.substring(0, 7)
-    return revenueMonth >= fromMonth.value && revenueMonth <= toMonth.value
-  })
-})
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredRevenues.value = revenues.value;
+}
 
 // 수정 시작
 const startEdit = (row) => {

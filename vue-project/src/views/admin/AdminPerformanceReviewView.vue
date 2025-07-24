@@ -57,12 +57,12 @@
           필터 조건을 선택하고 '불러오기'를 클릭하세요.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
-           <button class="btn-secondary" @click="selectAll" :disabled="isAnyEditing">전체 선택</button>
-           <button class="btn-secondary" @click="unselectAll" :disabled="isAnyEditing">전체 해제</button>
-           <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
+           <button class="btn-secondary" @click="selectAll" :disabled="isAnyEditing" style="margin-right: 1rem;">전체 선택</button>
+           <button class="btn-secondary" @click="unselectAll" :disabled="isAnyEditing" style="margin-right: 1rem;">전체 해제</button>
+           <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
              검수 상태 변경 ({{ selectedRows.length }}건)
            </button>
-           <button class="btn-primary" @click="openPrescriptionTypeModal" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
+           <button class="btn-primary" @click="openPrescriptionTypeModal" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
              처방구분변경 ({{ selectedRows.length }}건)
            </button>
            <button class="btn-warning" @click="excludeFromReview" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
