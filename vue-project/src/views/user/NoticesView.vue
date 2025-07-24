@@ -8,7 +8,7 @@
         <span class="filter-item p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
-            placeholder="제목 검색"
+            placeholder="제목, 내용 검색"
             class="search-input"
           />
         </span>
