@@ -159,8 +159,8 @@
           <input v-model="remarks" type="text" />
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <Button class="btn-cancel" type="button" @click="goList" label="취소" />
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+        <Button class="btn-cancel" type="button" @click="goList" label="취소" style="margin-right: 1rem;" />
         <Button class="btn-save" type="submit" label="등록" />
       </div>
     </form>

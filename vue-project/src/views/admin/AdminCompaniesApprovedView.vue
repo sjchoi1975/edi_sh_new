@@ -6,37 +6,51 @@
     </div>
 
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="filter-item p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="업체명, 사업자등록번호, 대표자명 검색"
-            class="search-input"
-          />
-        </span>
-        <!-- 추가 필터가 있다면 여기에 배치 -->
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="업체명, 사업자등록번호, 대표자명 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              style="position:absolute; right:6px; top:50%; transform:translateY(-50%); height:28px; width:24px; border:none; background:transparent; color:#888; font-size:18px; cursor:pointer;"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
 
     <div class="data-card">
       <div class="data-card-header">
         <div class="total-count-display">
-          전체 {{ approvedCompanies.length }} 건
+          전체 {{ filteredCompanies.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-download" @click="downloadExcel" :disabled="approvedCompanies.length === 0">엑셀 다운로드</button>
+          <button class="btn-excell-download" @click="downloadExcel" :disabled="filteredCompanies.length === 0" style="margin-right: 1rem;">엑셀 다운로드</button>
           <button class="btn-save" @click="goCreate">업체 등록</button>
         </div>
       </div>
 
       <DataTable
-        :value="approvedCompanies"
+        :value="filteredCompanies"
         :loading="loading"
         paginator :rows="50" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
         scrollable scrollHeight="calc(100vh - 250px)" 
-        v-model:filters="filters"
-        :globalFilterFields="['company_name', 'business_registration_number', 'representative_name']"
         class="admin-companies-approved-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -56,7 +70,11 @@
         </Column>
         <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: columnWidths.business_registration_number }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="representative_name" header="대표자" :headerStyle="{ width: columnWidths.representative_name }" :sortable="true" :editor="getTextEditor"></Column>
-        <Column field="business_address" header="사업장소재지" :headerStyle="{ width: columnWidths.business_address }" :sortable="true" :editor="getTextEditor"></Column>
+        <Column field="business_address" header="사업장소재지" :headerStyle="{ width: columnWidths.business_address }" :sortable="true" :editor="getTextEditor">
+          <template #body="slotProps">
+            <span class="ellipsis-cell" :title="slotProps.data.business_address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.business_address }}</span>
+          </template>
+        </Column>
         <Column field="default_commission_grade" header="수수료 등급" :headerStyle="{ width: columnWidths.default_commission_grade }" :sortable="true" :editor="getDropdownEditor">
           <template #editor="{ data, field }">
             <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" style="width: 100%" />
@@ -106,6 +124,9 @@ const columnWidths = {
 }
 
 const approvedCompanies = ref([])
+const filteredCompanies = ref([])
+const searchInput = ref('');
+const searchKeyword = ref('');
 const loading = ref(false)
 const currentPageFirstIndex = ref(0)
 const filters = ref({
@@ -129,11 +150,29 @@ const fetchCompanies = async () => {
     approvedCompanies.value = (data || []).filter(
       (company) => company.user_type === 'user' && company.approval_status === 'approved',
     )
+    filteredCompanies.value = approvedCompanies.value;
   } catch (err) {
     console.error('업체 정보를 불러오는데 실패했습니다.', err)
   } finally {
     loading.value = false
   }
+}
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredCompanies.value = approvedCompanies.value.filter(c =>
+      (c.company_name && c.company_name.toLowerCase().includes(keyword)) ||
+      (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
+      (c.representative_name && c.representative_name.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredCompanies.value = approvedCompanies.value;
 }
 
 onMounted(() => {
@@ -298,12 +337,12 @@ function goToDetail(id) {
 }
 
 const downloadExcel = () => {
-  if (approvedCompanies.value.length === 0) {
+  if (filteredCompanies.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  const dataToExport = approvedCompanies.value.map((company, index) => ({
+  const dataToExport = filteredCompanies.value.map((company, index) => ({
     ID: company.id,
     No: index + 1 + currentPageFirstIndex.value,
     '아이디(이메일)': company.email,
@@ -344,6 +383,53 @@ function goList() {
   const from = route.query.from === 'pending' ? 'pending' : 'approved';
   router.push(`/admin/companies/${from}`);
 }
+
+// 오버플로우 감지 및 툴팁 제어 함수들
+const checkOverflow = (event) => {
+  const element = event.target;
+  
+  // 실제 오버플로우 감지
+  const rect = element.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = parseFloat(computedStyle.fontSize);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // 임시 캔버스를 만들어서 텍스트의 실제 너비 측정
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = `${fontSize}px ${fontFamily}`;
+  const textWidth = context.measureText(element.textContent).width;
+  
+  // 패딩과 보더 고려
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderRight = parseFloat(computedStyle.borderRightWidth) || 0;
+  
+  const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+  const isOverflowed = textWidth > availableWidth;
+  
+  console.log('업체 오버플로우 체크:', {
+    text: element.textContent,
+    textWidth,
+    availableWidth,
+    isOverflowed
+  });
+  
+  if (isOverflowed) {
+    element.classList.add('overflowed');
+    console.log('업체 오버플로우 클래스 추가됨');
+  } else {
+    element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
+    console.log('업체 오버플로우 아님 - 클래스 제거됨');
+  }
+}
+
+const removeOverflowClass = (event) => {
+  const element = event.target;
+  element.classList.remove('overflowed');
+}
+
 </script>
 
 <style scoped>

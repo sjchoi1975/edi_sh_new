@@ -58,9 +58,9 @@
           <input class="input-readonly-detail" :value="client.remarks || '-'" readonly disabled />
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
-        <button class="btn-delete" @click="handleDelete">삭제</button>
-        <button class="btn-edit" @click="goEdit">수정</button>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+        <button class="btn-delete" @click="handleDelete" style="margin-right: 1rem;">삭제</button>
+        <button class="btn-edit" @click="goEdit" style="margin-right: 1rem;">수정</button>
         <button class="btn-list" @click="goList">목록</button>
       </div>
     </div>

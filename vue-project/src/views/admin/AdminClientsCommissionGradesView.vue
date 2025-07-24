@@ -4,23 +4,39 @@
       <div class="header-title">수수료 등급 설정</div>
     </div>
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="병의원명, 병의원 사업자등록번호, 업체명, 업체 사업자등록번호 검색"
-            class="search-input"
-          />
-        </span>
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
     <div class="data-card">
       <div class="data-card-header">
-        <div class="total-count-display">전체 {{ filteredAssignments.length }} 건</div>
+        <div class="total-count-display">전체 {{ filteredClients.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
           <button class="btn-delete" @click="deleteAllGrades">모두 삭제</button>
           <input
             ref="fileInput"
@@ -33,15 +49,13 @@
       </div>
 
       <DataTable
-        :value="filteredAssignments"
+        :value="filteredClients"
         :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="['client_name', 'client_business_registration_number', 'owner_name', 'address', 'company_name', 'company_business_registration_number']"
         class="admin-commission-grades-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -71,7 +85,11 @@
           :headerStyle="{ width: columnWidths.client_name }"
           :style="{ fontWeight: '500 !important' }"  
           :sortable="true"
-        />
+        >
+          <template #body="slotProps">
+            <span class="ellipsis-cell" :title="slotProps.data.client_name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.client_name }}</span>
+          </template>
+        </Column>
         <Column
           field="client_business_registration_number"
           header="사업자등록번호"
@@ -89,7 +107,11 @@
           header="주소"
           :headerStyle="{ width: columnWidths.address }"
           :sortable="true"
-        />
+        >
+          <template #body="slotProps">
+            <span class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
+          </template>
+        </Column>
         <Column
           field="company_name"
           header="업체명"
@@ -131,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -143,6 +165,31 @@ const loading = ref(false)
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const currentPageFirstIndex = ref(0)
 const fileInput = ref(null)
+
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredClients = ref([]);
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredClients.value = assignments.value.filter(c =>
+      (c.client_name && c.client_name.toLowerCase().includes(keyword)) ||
+      (c.client_business_registration_number && c.client_business_registration_number.toLowerCase().includes(keyword)) ||
+      (c.client_code && c.client_code.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredClients.value = assignments.value;
+}
+
+watch(assignments, (newVal) => {
+  filteredClients.value = newVal;
+}, { immediate: true });
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -191,19 +238,6 @@ const fetchAssignments = async () => {
     loading.value = false;
   }
 }
-const filteredAssignments = computed(() => {
-  if (!filters.value['global'].value) return assignments.value
-  const search = filters.value['global'].value.toLowerCase()
-  return assignments.value.filter(
-    (a) =>
-      a.client_name.toLowerCase().includes(search) ||
-      a.client_business_registration_number.includes(search) ||
-      a.owner_name.toLowerCase().includes(search) ||
-      a.address.toLowerCase().includes(search) ||
-      a.company_name.toLowerCase().includes(search) ||
-      a.company_business_registration_number.includes(search),
-  )
-})
 // 수수료 등급 변경 관련 함수들
 async function onGradeChange(assignment, newValue) {
   const oldValue = assignment.modified_commission_grade
@@ -371,12 +405,12 @@ const handleFileUpload = async (event) => {
 }
 
 const downloadExcel = () => {
-  if (filteredAssignments.value.length === 0) {
+  if (filteredClients.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
   
-  const excelData = filteredAssignments.value.map((assignment) => ({
+  const excelData = filteredClients.value.map((assignment) => ({
     병의원코드: assignment.client_code,
     병의원명: assignment.client_name,
     '병의원 사업자등록번호': assignment.client_business_registration_number,
@@ -415,6 +449,53 @@ async function deleteAllGrades() {
   })
   
   alert('모든 변경 수수료 등급이 삭제되었습니다.')
+}
+
+// 오버플로우 감지 및 툴팁 제어 함수들
+const checkOverflow = (event) => {
+  const element = event.target;
+  
+  // 실제 오버플로우 감지
+  const rect = element.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = parseFloat(computedStyle.fontSize);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // 임시 캔버스를 만들어서 텍스트의 실제 너비 측정
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = `${fontSize}px ${fontFamily}`;
+  const textWidth = context.measureText(element.textContent).width;
+  
+  // 패딩과 보더 고려
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderRight = parseFloat(computedStyle.borderRightWidth) || 0;
+  
+  const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+  const isOverflowed = textWidth > availableWidth;
+  
+  console.log('병의원 수수료등급 오버플로우 체크:', {
+    text: element.textContent,
+    textWidth,
+    availableWidth,
+    isOverflowed
+  });
+  
+  if (isOverflowed) {
+    element.classList.add('overflowed');
+    console.log('병의원 수수료등급 오버플로우 클래스 추가됨');
+  } else {
+    element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
+    console.log('병의원 수수료등급 오버플로우 아님 - 클래스 제거됨');
+  }
+}
+
+const removeOverflowClass = (event) => {
+  const element = event.target;
+  element.classList.remove('overflowed');
+  console.log('병의원 수수료등급 오버플로우 클래스 제거됨');
 }
 
 onMounted(() => {

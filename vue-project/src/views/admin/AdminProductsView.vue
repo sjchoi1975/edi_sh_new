@@ -18,13 +18,29 @@
             </option>
           </select>
         </div>
-        <span class="filter-item p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="제품명, 보험코드 검색"
-            class="search-input"
-          />
-        </span>
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="제품명, 보험코드 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
 
@@ -34,8 +50,8 @@
           전체 {{ filteredProducts.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
           <input
             ref="fileInput"
             type="file"
@@ -43,8 +59,8 @@
             @change="handleFileUpload"
             style="display: none"
           />
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-delete" @click="deleteAllProducts">모두 삭제</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
+          <button class="btn-delete" @click="deleteAllProducts" style="margin-right: 1rem;">모두 삭제</button>
           <button class="btn-save" @click="goCreate">개별 등록</button>
         </div>
       </div>
@@ -57,8 +73,6 @@
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="['base_month', 'product_name', 'insurance_code']"
         class="admin-products-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -79,7 +93,7 @@
               v-model="slotProps.data.product_name"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
             />
-            <a v-else href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
+            <a v-else href="#" class="text-link ellipsis-cell" :title="slotProps.data.product_name" @click.prevent="goToDetail(slotProps.data.id)" @mouseenter="checkProductOverflow" @mouseleave="removeOverflowClass">
               {{ slotProps.data.product_name }}
             </a>
           </template>
@@ -240,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -267,12 +281,30 @@ const columnWidths = {
 
 const products = ref([])
 const loading = ref(false)
-const filters = ref({ global: { value: null, matchMode: 'contains' } })
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredProducts = ref([]);
 const selectedMonth = ref('')
 const availableMonths = ref([])
 const router = useRouter()
 const fileInput = ref(null)
 const currentPageFirstIndex = ref(0)
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredProducts.value = products.value.filter(p =>
+      (p.product_name && p.product_name.toLowerCase().includes(keyword)) ||
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredProducts.value = products.value;
+}
 
 const koLocale = {
   firstDayOfWeek: 0,
@@ -310,10 +342,6 @@ const koLocale = {
   today: '오늘',
   clear: '초기화',
 }
-
-const filteredProducts = computed(() => {
-  return products.value; // 이제 선택된 기준월의 제품만 불러오므로 추가 필터링 불필요
-})
 
 const filterByMonth = async () => {
   if (selectedMonth.value) {
@@ -421,6 +449,11 @@ const fetchProductsByMonth = async (month) => {
 onMounted(() => {
   fetchProducts()
 })
+
+// 기준월이 바뀌거나 products가 새로 로드될 때 전체로 복원
+watch(products, (newVal) => {
+  filteredProducts.value = newVal;
+}, { immediate: true });
 
 const downloadTemplate = () => {
   // 기준월과 보험코드에 예시 데이터 추가 (보험코드 앞에 0이 있는 예시)
@@ -907,4 +940,52 @@ async function deleteAllProducts() {
   
   alert(`${selectedMonth.value} 기준월의 모든 제품이 삭제되었습니다.`);
 }
+
+// 제품명 오버플로우 감지 함수
+const checkProductOverflow = (event) => {
+  const element = event.target;
+  
+  // 실제 오버플로우 감지
+  const rect = element.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = parseFloat(computedStyle.fontSize);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // 임시 캔버스를 만들어서 텍스트의 실제 너비 측정
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = `${fontSize}px ${fontFamily}`;
+  const textWidth = context.measureText(element.textContent).width;
+  
+  // 패딩과 보더 고려
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderRight = parseFloat(computedStyle.borderRightWidth) || 0;
+  
+  const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+  const isOverflowed = textWidth > availableWidth;
+  
+  console.log('오버플로우 체크:', {
+    text: element.textContent,
+    textWidth,
+    availableWidth,
+    isOverflowed
+  });
+  
+  if (isOverflowed) {
+    element.classList.add('overflowed');
+    console.log('오버플로우 클래스 추가됨');
+  } else {
+    element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
+    console.log('오버플로우 아님 - 클래스 제거됨');
+  }
+}
+
+const removeOverflowClass = (event) => {
+  const element = event.target;
+  element.classList.remove('overflowed');
+  console.log('오버플로우 클래스 제거됨');
+}
+
 </script>

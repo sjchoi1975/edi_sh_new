@@ -4,26 +4,42 @@
       <div class="header-title">병의원 목록</div>
     </div>
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
-            class="search-input"
-          />
-        </span>
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
     <div class="data-card">
       <div class="data-card-header">
         <div class="total-count-display">
-          전체 {{ clients.length }} 건
+          전체 {{ filteredClients.length }} 건
         </div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
-          <button class="btn-delete" @click="deleteAllClients">모두 삭제</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
+          <button class="btn-delete" @click="deleteAllClients" style="margin-right: 1rem;">모두 삭제</button>
           <input
             ref="fileInput"
             type="file"
@@ -35,15 +51,13 @@
         </div>
       </div>
       <DataTable
-        :value="clients"
+        :value="filteredClients"
         :loading="loading"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="['client_code', 'name', 'business_registration_number']"
         class="admin-clients-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -78,7 +92,7 @@
               v-model="slotProps.data.name"
               class="inline-edit-input"
             />
-            <a v-else href="#" class="text-link" @click.prevent="goToDetail(slotProps.data.id)">
+            <a v-else href="#" class="text-link ellipsis-cell" :title="slotProps.data.name" @click.prevent="goToDetail(slotProps.data.id)" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">
               {{ slotProps.data.name }}
             </a>
           </template>
@@ -115,7 +129,7 @@
               v-model="slotProps.data.address"
               class="inline-edit-input"
             />
-            <span v-else>{{ slotProps.data.address }}</span>
+            <span v-else class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
           </template>
         </Column>
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
@@ -183,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -193,10 +207,11 @@ import * as XLSX from 'xlsx'
 
 const clients = ref([])
 const loading = ref(false)
-const filters = ref({ global: { value: null, matchMode: 'contains' } })
-const router = useRouter()
-const fileInput = ref(null)
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredClients = ref([]);
 const currentPageFirstIndex = ref(0)
+const filterBackup = ref(null)
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -211,6 +226,9 @@ const columnWidths = {
   status: '6%',
   actions: '8%'
 };
+
+const isAnyEditing = ref(false); // 편집 중인 행이 있는지 확인
+const router = useRouter();
 
 function goCreate() {
   router.push('/admin/clients/create')
@@ -233,6 +251,7 @@ const fetchClients = async () => {
         isEditing: false,
         originalData: { ...item },
       }))
+      filteredClients.value = clients.value;
     }
   } finally {
     loading.value = false;
@@ -241,6 +260,11 @@ const fetchClients = async () => {
 
 // 수정 시작
 const startEdit = (row) => {
+  // 편집 시작 시 검색어 백업 및 필터 해제
+  if (filterBackup.value === null) {
+    filterBackup.value = searchInput.value
+    searchInput.value = ''
+  }
   // 다른 행이 편집 중이면 취소
   clients.value.forEach((item) => {
     if (item.isEditing && item.id !== row.id) {
@@ -251,10 +275,16 @@ const startEdit = (row) => {
   // 원본 데이터 백업
   row.originalData = { ...row }
   row.isEditing = true
+  isAnyEditing.value = true; // 편집 중인 행이 있음을 표시
 }
 
 // 수정 취소
 const cancelEdit = (row) => {
+  // 편집 취소 시 검색어 복원
+  if (filterBackup.value !== null) {
+    searchInput.value = filterBackup.value
+    filterBackup.value = null
+  }
   // 원본 데이터로 복원
   Object.keys(row.originalData).forEach((key) => {
     if (key !== 'isEditing' && key !== 'originalData') {
@@ -262,6 +292,7 @@ const cancelEdit = (row) => {
     }
   })
   row.isEditing = false
+  isAnyEditing.value = false; // 편집 중인 행이 없음을 표시
 }
 
 // 수정 저장
@@ -299,6 +330,11 @@ const saveEdit = async (row) => {
     // 편집 모드 종료
     row.isEditing = false
     row.originalData = { ...row }
+    // 편집 저장 후 검색어 복원
+    if (filterBackup.value !== null) {
+      searchInput.value = filterBackup.value
+      filterBackup.value = null
+    }
 
     alert('수정되었습니다.')
   } catch (error) {
@@ -652,6 +688,70 @@ async function deleteAllClients() {
   }
   clients.value = [];
   alert('모든 병의원 및 관련 지정 데이터가 삭제되었습니다.');
+}
+
+// 오버플로우 감지 및 툴팁 제어 함수들
+const checkOverflow = (event) => {
+  const element = event.target;
+  
+  // 실제 오버플로우 감지
+  const rect = element.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = parseFloat(computedStyle.fontSize);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // 임시 캔버스를 만들어서 텍스트의 실제 너비 측정
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = `${fontSize}px ${fontFamily}`;
+  const textWidth = context.measureText(element.textContent).width;
+  
+  // 패딩과 보더 고려
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const borderLeft = parseFloat(computedStyle.borderLeftWidth) || 0;
+  const borderRight = parseFloat(computedStyle.borderRightWidth) || 0;
+  
+  const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+  const isOverflowed = textWidth > availableWidth;
+  
+  console.log('병의원 오버플로우 체크:', {
+    text: element.textContent,
+    textWidth,
+    availableWidth,
+    isOverflowed
+  });
+  
+  if (isOverflowed) {
+    element.classList.add('overflowed');
+    console.log('병의원 오버플로우 클래스 추가됨');
+  } else {
+    element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
+    console.log('병의원 오버플로우 아님 - 클래스 제거됨');
+  }
+}
+
+const removeOverflowClass = (event) => {
+  const element = event.target;
+  element.classList.remove('overflowed');
+  console.log('병의원 오버플로우 클래스 제거됨');
+}
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredClients.value = clients.value.filter(c =>
+      (c.name && c.name.toLowerCase().includes(keyword)) ||
+      (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
+      (c.client_code && c.client_code.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredClients.value = clients.value;
 }
 
 onMounted(() => {

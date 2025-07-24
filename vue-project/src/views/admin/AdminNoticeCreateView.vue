@@ -24,7 +24,7 @@
           <label style="text-align: right;">필수</label>
         </div>
         <div class="form-col input-col input-400">
-          <input type="checkbox" v-model="isRequired" id="requiredCheck" style="width:16px;height:16px;vertical-align:middle;" />
+          <input type="checkbox" v-model="isPinned" id="requiredCheck" style="width:16px;height:16px;vertical-align:middle;" />
         </div>
       </div>
       <div class="form-row" style="align-items:flex-start;">
@@ -44,8 +44,8 @@
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-cancel" type="button" @click="goList">취소</button>
+      <div style="justify-content: flex-end; margin-top: 2rem;">
+        <button class="btn-cancel" type="button" @click="goList" style="margin-right: 1rem;">취소</button>
         <button class="btn-save" type="submit">등록</button>
       </div>
     </form>

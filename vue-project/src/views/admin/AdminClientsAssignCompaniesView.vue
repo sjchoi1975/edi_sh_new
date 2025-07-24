@@ -4,23 +4,39 @@
       <div class="header-title">담당업체 지정</div>
     </div>
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
-            class="search-input"
-          />
-        </span>
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+              style="width:100%;"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
     <div class="data-card">
       <div class="data-card-header">
         <div class="total-count-display">전체 {{ filteredClients.length }} 건</div>
         <div class="action-buttons-group">
-          <button class="btn-excell-template" @click="downloadTemplate">엑셀 템플릿</button>
-          <button class="btn-excell-upload" @click="triggerFileUpload">엑셀 등록</button>
-          <button class="btn-excell-download" @click="downloadExcel">엑셀 다운로드</button>
+          <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
+          <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
+          <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
           <button class="btn-delete" @click="deleteAllAssignments">모두 삭제</button>
           <input
             ref="fileInput"
@@ -67,7 +83,11 @@
           :headerStyle="{ width: columnWidths.name }"
           :style="{ fontWeight: '500 !important' }"  
           :sortable="true"
-        />
+        >
+          <template #body="slotProps">
+            <span class="ellipsis-cell" :title="slotProps.data.name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.name }}</span>
+          </template>
+        </Column>
         <Column
           field="business_registration_number"
           header="사업자등록번호"
@@ -85,7 +105,11 @@
           header="주소"
           :headerStyle="{ width: columnWidths.address }"
           :sortable="true"
-        />
+        >
+          <template #body="slotProps">
+            <span class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
+          </template>
+        </Column>
         <Column header="업체명" :headerStyle="{ width: columnWidths.company_name }">
           <template #body="slotProps">
             <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
@@ -157,7 +181,7 @@
           selectionMode="multiple"
           class="custom-table modal-assign-companies-table"
           scrollable
-          scrollHeight="440px"
+          scrollHeight="480px"
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
           <Column
@@ -185,16 +209,11 @@
             :sortable="true"
           />
         </DataTable>
-        <div class="btn-row" style="margin-top: 16px">
-          <button class="btn-cancel"
-          @click="closeAssignModal">
-          취소
-        </button>
-          <button class="btn-save"
-          :disabled="selectedCompanies.length === 0"
-          @click="assignCompanies">
-          지정
-        </button>
+        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top: 1rem;">
+          <div class="btn-row">
+            <button class="btn-cancel" @click="closeAssignModal" style="margin-right: 1rem;">취소</button>
+            <button class="btn-save" :disabled="selectedCompanies.length === 0" @click="assignCompanies">지정</button>
+          </div>
         </div>
       </div>
     </Dialog>
@@ -202,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -243,6 +262,7 @@ const fetchClients = async () => {
         `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number))`,
       )
       .eq('status', 'active')
+    console.log('clientsData:', clientsData, 'error:', error); // ← 추가
     if (!error && clientsData) {
       clients.value = clientsData.map((client) => {
         const companiesArr = client.companies.map((c) => c.company)
@@ -251,6 +271,7 @@ const fetchClients = async () => {
           companies: companiesArr,
         }
       })
+      filteredClients.value = clients.value;
     }
   } finally {
     loading.value = false;
@@ -265,16 +286,29 @@ const fetchCompanies = async () => {
     .eq('user_type', 'user') // user만 불러오기
   if (!error && data) companies.value = data
 }
-const filteredClients = computed(() => {
-  if (!filters.value['global'].value) return clients.value
-  const search = filters.value['global'].value.toLowerCase()
-  return clients.value.filter(
-    (c) =>
-      c.client_code.toLowerCase().includes(search) ||
-      c.name.toLowerCase().includes(search) ||
-      c.business_registration_number.includes(search),
-  )
-})
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredClients = ref([]);
+
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredClients.value = clients.value.filter(c =>
+      (c.name && c.name.toLowerCase().includes(keyword)) ||
+      (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
+      (c.client_code && c.client_code.toLowerCase().includes(keyword))
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredClients.value = clients.value;
+}
+
+// (filteredClients를 ref로만 관리, 검색 버튼/X버튼/검색 버튼 클릭 시에만 갱신)
+
 const filteredCompanies = computed(() => {
   if (!companySearch.value) return companies.value
   const search = companySearch.value.toLowerCase()
@@ -463,18 +497,6 @@ const downloadExcel = () => {
   XLSX.utils.book_append_sheet(wb, ws, '담당업체지정현황')
   const today = new Date().toISOString().split('T')[0]
   XLSX.writeFile(wb, `담당업체지정현황_${today}.xlsx`)
-}
-
-async function deleteAllAssignments() {
-  if (!confirm('정말 모든 담당업체 지정 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))
-    return
-  const { error } = await supabase.from('client_company_assignments').delete().neq('id', 0)
-  if (error) {
-    alert('삭제 중 오류가 발생했습니다: ' + error.message)
-    return
-  }
-  clients.value.forEach((c) => (c.companies = []))
-  alert('모든 담당업체 지정 데이터가 삭제되었습니다.')
 }
 
 onMounted(() => {

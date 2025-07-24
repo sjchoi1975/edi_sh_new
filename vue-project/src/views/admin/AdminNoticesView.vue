@@ -5,14 +5,29 @@
     </div>
 
     <div class="filter-card">
-      <div class="filter-row">
-        <span class="filter-item p-input-icon-left">
-          <InputText
-            v-model="filters['global'].value"
-            placeholder="제목 검색"
-            class="search-input"
-          />
-        </span>
+      <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
+        <div style="display:flex; align-items:center;">
+          <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
+            <InputText
+              v-model="searchInput"
+              placeholder="제목, 내용 검색"
+              class="search-input"
+              @keyup.enter="doSearch"
+            />
+            <button
+              v-if="searchInput.length > 0"
+              class="clear-btn"
+              @click="clearSearch"
+              title="검색어 초기화"
+            >×</button>
+          </span>
+          <button
+            class="search-btn"
+            :disabled="searchInput.length < 2"
+            @click="doSearch"
+            style="margin-left: 4px;"
+          >검색</button>
+        </div>
       </div>
     </div>
 
@@ -34,8 +49,6 @@
         :rowsPerPageOptions="[20, 50, 100]"
         scrollable
         scrollHeight="calc(100vh - 250px)"
-        v-model:filters="filters"
-        :globalFilterFields="['title']"
         class="admin-notices-table"
         v-model:first="currentPageFirstIndex"
       >
@@ -77,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -88,12 +101,10 @@ const notices = ref([]);
 const loading = ref(false);
 const router = useRouter();
 const userType = ref('');
-const search = ref('');
+const searchInput = ref('');
+const searchKeyword = ref('');
+const filteredNotices = ref([]);
 const currentPageFirstIndex = ref(0);
-
-const filters = ref({
-  'global': { value: null, matchMode: 'contains' }
-});
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -131,13 +142,25 @@ function formatKST(dateStr) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
-const filteredNotices = computed(() => {
-  if (!search.value) return notices.value;
-  return notices.value.filter(n =>
-    n.title?.includes(search.value) ||
-    formatKST(n.created_at)?.includes(search.value)
-  );
-});
+function doSearch() {
+  if (searchInput.value.length >= 2) {
+    searchKeyword.value = searchInput.value;
+    const keyword = searchKeyword.value.toLowerCase();
+    filteredNotices.value = notices.value.filter(n =>
+      n.title && n.title.toLowerCase().includes(keyword)
+    );
+  }
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  filteredNotices.value = notices.value;
+}
+
+// notices가 바뀌면 전체로 복원
+watch(notices, (newVal) => {
+  filteredNotices.value = newVal;
+}, { immediate: true });
 
 async function handleDelete(id) {
   if (!confirm('정말 삭제하시겠습니까?')) return;
@@ -173,11 +196,5 @@ onMounted(async () => {
   loading.value = false;
   const { data: { session } } = await supabase.auth.getSession();
   userType.value = session?.user?.user_metadata?.user_type || '';
-});
-
-import { watch } from 'vue';
-
-watch(filteredNotices, (val) => {
-  console.log('filteredNotices:', val);
 });
 </script>

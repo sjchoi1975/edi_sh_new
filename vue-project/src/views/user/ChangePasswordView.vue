@@ -73,7 +73,7 @@
       </div>
       
       <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-cancel" type="button" @click="goBack">취소</button>
+        <button class="btn-cancel" type="button" @click="goBack" style="margin-right: 1rem;">취소</button>
         <button class="btn-primary" type="submit" :disabled="loading">
           {{ loading ? '변경 중...' : '변경' }}
         </button>
