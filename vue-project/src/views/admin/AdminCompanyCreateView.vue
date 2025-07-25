@@ -2,20 +2,14 @@
   <TopNavigationBar :breadcrumbMenu="'업체 관리'" :breadcrumbSubMenu="breadcrumbSubMenu" />
   <div class="board_640">
     <div class="form-title">신규 업체 등록</div>
-    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">아이디(이메일) <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="email" type="email" required />
-        </div>
+    <form @submit.prevent="handleSubmit" class="form-grid">
+      <div class="form-group">
+        <label>아이디(이메일)<span class="required">*</span></label>
+        <input v-model="email" type="email" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비밀번호 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col" style="position: relative;">
+      <div class="form-group">
+        <label>비밀번호<span class="required">*</span></label>
+        <div style="position: relative;">
           <input v-model="password" :type="showPassword ? 'text' : 'password'" required style="padding-right:2.5rem;" />
           <i
             :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
@@ -24,11 +18,9 @@
           ></i>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비밀번호 확인 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col" style="position: relative;">
+      <div class="form-group">
+        <label>비밀번호 확인<span class="required">*</span></label>
+        <div style="position: relative;">
           <input v-model="confirmPassword" :type="showPassword2 ? 'text' : 'password'" required style="padding-right:2.5rem;" />
           <i
             :class="showPassword2 ? 'pi pi-eye-slash' : 'pi pi-eye'"
@@ -37,129 +29,73 @@
           ></i>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">업체명 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="companyName" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>업체명<span class="required">*</span></label>
+        <input v-model="companyName" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">사업자등록번호 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="businessNumber" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>사업자등록번호<span class="required">*</span></label>
+        <input v-model="businessNumber" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">대표자 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="representative" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>대표자<span class="required">*</span></label>
+        <input v-model="representative" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">사업장 소재지 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="address" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>사업장 소재지<span class="required">*</span></label>
+        <input v-model="address" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">유선전화</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="landline" type="text" />
-        </div>
+      <div class="form-group">
+        <label>유선전화</label>
+        <input v-model="landline" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">담당자 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="contactPerson" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>담당자 <span class="required">*</span></label>
+        <input v-model="contactPerson" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">휴대폰 번호 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="mobile" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>휴대폰 번호<span class="required">*</span></label>
+        <input v-model="mobile" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">휴대폰 번호 2</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="mobile2" type="text" />
-        </div>
+      <div class="form-group">
+        <label>휴대폰 번호 2</label>
+        <input v-model="mobile2" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수신용 이메일</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="receiveEmail" type="email" />
-        </div>
+      <div class="form-group">
+        <label>수신용 이메일</label>
+        <input v-model="receiveEmail" type="email" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">구분</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="companyGroup" type="text" />
-        </div>
+      <div class="form-group">
+        <label>구분</label>
+        <input v-model="companyGroup" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료 등급</label>
-        </div>
-        <div class="form-col input-col">
-          <select v-model="commissionGrade">
-            <option disabled value="">등급 선택</option>
-            <option v-for="item in commissionGradeOptions" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>수수료 등급</label>
+        <select v-model="commissionGrade">
+          <option disabled value="">등급 선택</option>
+          <option v-for="item in commissionGradeOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">관리자</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="manager" type="text" />
-        </div>
+      <div class="form-group">
+        <label>관리자</label>
+        <input v-model="manager" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">승인여부</label>
-        </div>
-        <div class="form-col input-col">
-          <select v-model="approvalStatus">
-            <option disabled value="">승인여부 선택</option>
-            <option v-for="item in approvalStatusOptions" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>승인여부</label>
+        <select v-model="approvalStatus">
+          <option disabled value="">승인여부 선택</option>
+          <option v-for="item in approvalStatusOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="remarks" type="text" />
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input v-model="remarks" type="text" />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <Button class="btn-cancel" type="button" @click="goList" label="취소" style="margin-right: 1rem;" />
         <Button class="btn-save" type="submit" label="등록" />
       </div>

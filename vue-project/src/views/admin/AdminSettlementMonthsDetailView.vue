@@ -1,56 +1,32 @@
 <template>
   <div class="board_960">
     <div class="form-title">정산월 상세</div>
-    <div class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">정산월</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="month.settlement_month || '-'" readonly disabled />
-        </div>
+    <div class="form-grid-2x">
+      <div class="form-group">
+        <label>정산월</label>
+        <input class="input-readonly-detail" :value="month.settlement_month || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">실적입력 시작일</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="month.start_date || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>실적입력 시작일</label>
+        <input class="input-readonly-detail" :value="month.start_date || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">실적입력 종료일</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="month.end_date || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>실적입력 종료일</label>
+        <input class="input-readonly-detail" :value="month.end_date || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">전달 사항</label>
-        </div>
-        <div class="form-col input-col">
-          <div class="input-readonly-detail" style="white-space: pre-wrap;">{{ month.notice || '-' }}</div>
-        </div>
+      <div class="form-group">
+        <label>전달 사항</label>
+        <div class="input-readonly-detail" style="white-space: pre-wrap;">{{ month.notice || '-' }}</div>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="month.remarks || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input class="input-readonly-detail" :value="month.remarks || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">상태</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="month.status === 'active' ? '활성' : (month.status === 'inactive' ? '비활성' : '-')" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>상태</label>
+        <input class="input-readonly-detail" :value="month.status === 'active' ? '활성' : (month.status === 'inactive' ? '비활성' : '-')" readonly disabled />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-delete" @click="handleDelete" style="margin-right: 1rem;">삭제</button>
         <button class="btn-edit" @click="goEdit" style="margin-right: 1rem;">수정</button>
         <button class="btn-list" @click="goList">목록</button>

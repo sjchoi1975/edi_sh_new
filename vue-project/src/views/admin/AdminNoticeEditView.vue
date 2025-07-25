@@ -2,49 +2,35 @@
   <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 수정'" />
   <div class="board_960">
     <div class="form-title">공지사항 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">제목 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <input v-model="title" type="text" required />
-        </div>
+    <form @submit.prevent="handleSubmit" class="form-grid-2x">
+      <div class="form-group">
+        <label>제목<span class="required">*</span></label>
+        <input v-model="title" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">내용 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <textarea v-model="content" ref="contentArea" rows="12" required @input="adjustTextareaHeight"></textarea>
-        </div>
+      <div class="form-group">
+        <label>내용<span class="required">*</span></label>
+        <textarea v-model="content" ref="contentArea" rows="12" required @input="adjustTextareaHeight"></textarea>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">필수</label>
-        </div>
-        <div class="form-col input-col input-400">
-          <input type="checkbox" v-model="isPinned" id="requiredCheck" style="width:16px;height:16px;vertical-align:middle;" />
-        </div>
+      <div class="form-group">
+        <label>필수</label>
+        <input type="checkbox" v-model="isPinned" id="requiredCheck" style="width:16px; height:16px; vertical-align:middle;" />
       </div>
-      <div class="form-row" style="align-items:flex-start;">
-        <div class="form-col label-col label-60" style="padding-top:8px;">
-          <label style="text-align: right;">파일 첨부</label>
-        </div>
-        <div class="form-col input-col input-400">
-          <label class="file-upload-label" style="display:inline-block;cursor:pointer;background:#eee;padding:6px 18px;border-radius:4px;font-size:15px;">
+      <div class="form-group">
+        <label>파일 첨부</label>
+        <div>
+          <label class="file-upload-label" style="margin-top:1rem;">
             파일 선택
-            <input type="file" multiple @change="onFileChange" class="file-upload-input" style="display:none;" />
+            <input type="file" multiple @change="onFileChange" style="display:none; margin-top:1rem;" />
           </label>
-          <div v-if="files.length" style="margin-top:6px;">
-            <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:2px;">
-              <button type="button" class="btn-delete-sm" @click="removeFile(idx)">삭제</button>
-              <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
+          <div v-if="files.length" style="margin-top:1rem;">
+            <div v-for="(f, idx) in files" :key="f.name + idx" style="display: flex; align-items:center; margin-bottom:0.5rem;">
+              <button class="btn-delete-sm" @click="removeFile(idx)">삭제</button>
+              <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:0.25rem;">{{ f.name }}</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goDetail" style="margin-right: 1rem;">취소</button>
         <button class="btn-save" type="submit">저장</button>
       </div>

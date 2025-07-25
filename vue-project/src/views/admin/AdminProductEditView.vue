@@ -1,107 +1,59 @@
 <template>
   <div class="board_640">
     <div class="form-title">제품 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">기준월 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="baseMonth" type="text" placeholder="YYYY-MM" maxlength="7" required />
-        </div>
+    <form @submit.prevent="handleSubmit" class="form-grid">
+      <div class="form-group">
+        <label>기준월<span class="required">*</span></label>
+        <input v-model="baseMonth" type="text" placeholder="YYYY-MM" maxlength="7" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">제품명 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="productName" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>제품명<span class="required">*</span></label>
+        <input v-model="productName" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">보험코드 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="insuranceCode" type="number" maxlength="9" required />
-        </div>
+      <div class="form-group">
+        <label>보험코드<span class="required">*</span></label>
+        <input v-model="insuranceCode" type="number" maxlength="9" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">약가 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="price" type="number" required />
-        </div>
+      <div class="form-group">
+        <label>약가<span class="required">*</span></label>
+        <input v-model="price" type="number" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료율 A</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="commissionA" type="number" step="0.001" required />
-        </div>
+      <div class="form-group">
+        <label>수수료율 A</label>
+        <input v-model="commissionA" type="number" step="0.001" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료율 B</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="commissionB" type="number" step="0.001" required />
-        </div>
+      <div class="form-group">
+        <label>수수료율 B</label>
+        <input v-model="commissionB" type="number" step="0.001" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료율 C</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="commissionC" type="number" step="0.001" />
-        </div>
+      <div class="form-group">
+        <label>수수료율 C</label>
+        <input v-model="commissionC" type="number" step="0.001" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">표준코드 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="standardCode" type="text" maxlength="13" required />
-        </div>
+      <div class="form-group">
+        <label>표준코드<span class="required">*</span></label>
+        <input v-model="standardCode" type="text" maxlength="13" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">단위/포장형태</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="unitPackagingDesc" type="text" />
-        </div>
+      <div class="form-group">
+        <label>단위/포장형태</label>
+        <input v-model="unitPackagingDesc" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">단위수량</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="unitQuantity" type="number" />
-        </div>
+      <div class="form-group">
+        <label>단위수량</label>
+        <input v-model="unitQuantity" type="number" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">상태</label>
-        </div>
-        <div class="form-col input-col">
-          <select v-model="status">
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>상태</label>
+        <select v-model="status">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="remarks" type="text" />
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input v-model="remarks" type="text" />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goDetail" style="margin-right: 1rem;">취소</button>
         <button class="btn-save" type="submit">저장</button>
       </div>

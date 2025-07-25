@@ -1,49 +1,37 @@
 <template>
   <div class="board_640">
     <div class="form-title">내 정보</div>
-    <form class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col">
-          <label>아이디(이메일)</label>
-          <input :value="email" readonly disabled class="input-no-select" />
-        </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
+    <form class="form-grid-2x">
+      <div class="form-group">
+        <label>아이디(이메일)</label>
+        <input :value="email" readonly disabled class="input-no-select" />
       </div>
-      <div class="form-row">
-        <div class="form-col">
-          <label>업체명</label>
-          <input :value="companyName" readonly disabled class="input-no-select" />
-        </div>
-        <div class="form-col">
-          <label>사업자등록번호</label>
-          <input :value="businessNumber" readonly disabled class="input-no-select" />
-        </div>
-        <div class="form-col">
-          <label>대표자명</label>
-          <input :value="representative" readonly disabled class="input-no-select" />
-        </div>
+      <div class="form-group">
+        <label>업체명</label>
+        <input :value="companyName" readonly disabled class="input-no-select" />
       </div>
-      <div class="form-row">
-        <div class="form-col col-2">
-          <label>사업장 소재지</label>
-          <input :value="address" readonly disabled class="input-no-select" />
-        </div>
-        <div class="form-col">
-          <label>담당자명</label>
-          <input :value="contactPerson" readonly disabled class="input-no-select" />
-        </div>
+      <div class="form-group">
+        <label>사업자등록번호</label>
+        <input :value="businessNumber" readonly disabled class="input-no-select" />
       </div>
-      <div class="form-row">
-        <div class="form-col">
-          <label>휴대폰번호</label>
-          <input :value="mobile" readonly disabled class="input-no-select" />
-        </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
+      <div class="form-group">
+        <label>대표자명</label>
+        <input :value="representative" readonly disabled class="input-no-select" />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
-        <button class="btn-reset-password" type="button" @click="goChangePassword" style="margin-right: 1rem;">비밀번호 변경</button>
+      <div class="form-group">
+        <label>사업장 소재지</label>
+        <input :value="address" readonly disabled class="input-no-select" />
+      </div>
+      <div class="form-group">
+        <label>담당자명</label>
+        <input :value="contactPerson" readonly disabled class="input-no-select" />
+      </div>
+      <div class="form-group">
+        <label>휴대폰번호</label>
+        <input :value="mobile" readonly disabled class="input-no-select" />
+      </div>
+      <div style="justify-content: flex-end; margin-top: 2rem; display: flex; gap: 1rem;">
+        <button class="btn-reset-password" type="button" @click="goChangePassword">비밀번호 변경</button>
         <button class="btn-edit" type="button" @click="goEdit">수정</button>
       </div>
     </form>

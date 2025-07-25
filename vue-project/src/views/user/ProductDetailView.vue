@@ -1,67 +1,39 @@
 <template>
   <div class="board_640">
     <div class="form-title">제품 상세</div>
-    <div class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">기준월</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
-        </div>
+    <form class="form-grid">
+      <div class="form-group">
+        <label>기준월</label>
+        <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">제품명</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>제품명</label>
+        <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">보험코드</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>보험코드</label>
+        <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">약가</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>약가</label>
+        <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">수수료율(%)</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="getCommissionRate()" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>수수료율(%)</label>
+        <input class="input-readonly-detail" :value="getCommissionRate()" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">상태</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>상태</label>
+        <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
-        </div>
-        <div class="form-col input-col">
-          <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-list" type="button" @click="goList">목록</button>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
