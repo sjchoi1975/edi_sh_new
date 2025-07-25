@@ -1,45 +1,35 @@
 <template>
   <div class="board_960">
     <div class="form-title">정산월 등록</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
-      <div class="form-row">
-        <div class="form-col col-2">
-          <label>정산월 <span class="required">*</span></label>
-          <input v-model="settlementMonth" type="month" required />
-        </div>
+    <form @submit.prevent="handleSubmit" class="form-grid-2x">
+      <div class="form-group">
+        <label>정산월<span class="required">*</span></label>
+        <input v-model="settlementMonth" type="month" required />
       </div>
-      <div class="form-row">
-        <div class="form-col col-2">
-          <label>실적입력 시작일 <span class="required">*</span></label>
-          <input v-model="startDate" type="date" required />
-        </div>
-        <div class="form-col col-2">
-          <label>실적입력 종료일 <span class="required">*</span></label>
-          <input v-model="endDate" type="date" required />
-        </div>
+      <div class="form-group">
+        <label>실적입력 시작일<span class="required">*</span></label>
+        <input v-model="startDate" type="date" required />
       </div>
-      <div class="form-row">
-        <div class="form-col col-3">
-          <label>전달 사항</label>
-          <textarea v-model="notice" ref="noticeArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustTextareaHeight"></textarea>
-        </div>
+      <div class="form-group">
+        <label>실적입력 종료일<span class="required">*</span></label>
+        <input v-model="endDate" type="date" required />
       </div>
-      <div class="form-row">
-        <div class="form-col col-3">
-          <label>비고</label>
-          <input v-model="remarks" type="text" />
-        </div>
+      <div class="form-group">
+        <label>전달 사항</label>
+        <textarea v-model="notice" ref="noticeArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustTextareaHeight"></textarea>
       </div>
-      <div class="form-row">
-        <div class="form-col col-2">
-          <label>상태</label>
-          <select v-model="status">
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input v-model="remarks" type="text" />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+      <div class="form-group">
+        <label>상태</label>
+        <select v-model="status">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goList" style="margin-right: 1rem;">취소</button>
         <button class="btn-save" type="submit">저장</button>
       </div>

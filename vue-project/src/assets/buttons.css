@@ -56,11 +56,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   --focus-shadow: 0 0 0 2px rgba(95, 165, 107, 0.25);
-  
-  /* 폰트 크기 */
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
+ 
 }
 
 /* ========================================== */
@@ -95,7 +91,6 @@
 .btn-reset-password,
 .btn-select-all,
 .btn-select-none,
-.file-upload-label,
 .file-label {
   padding: 0.35rem 1rem !important;
   font-size: var(--font-size-base) !important;
@@ -141,6 +136,23 @@
   font-size: 18px;
   cursor: pointer;
 }
+
+
+.file-upload-label {
+  padding: 0.25rem 0.5rem !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-top: 2rem !important;
+}
+
 
 
 
@@ -265,36 +277,35 @@
 /* 3. 특수 버튼 스타일 (로그인/회원가입)        */
 /* ========================================== */
 
-/* 로그인 버튼 */
-.login-btn {
+
+.login-btn,
+.signup-btn,
+.cancel-btn {
   width: 100% !important;
-  padding: 1.5rem 1rem !important;
-  background: var(--primary-color) !important;
+  padding: 0.75rem 1rem !important;
+  height: 36px !important;
   border: none !important;
   border-radius: var(--border-radius) !important;
-  font-size: var(--font-size-base) !important;
+  font-size: var(--font-size-100) !important;
+}
+
+
+
+/* 로그인 버튼 */
+.login-btn {
+  background: var(--primary-color) !important;
   color: var(--text-white) !important;
 }
 
 /* 회원가입 버튼 */
 .signup-btn {
-  flex: 1 !important;
-  padding: 0.5rem 1rem !important;
   background: var(--primary-blue) !important;
-  border: none !important;
-  border-radius: var(--border-radius) !important;
-  font-size: var(--font-size-base) !important;
   color: var(--text-white) !important;
 }
 
 /* 취소 버튼 */
 .cancel-btn {
-  flex: 1 !important;
-  padding: 0.5rem 1rem !important;
   background: var(--gray-400) !important;
-  border: none !important;
-  border-radius: var(--border-radius) !important;
-  font-size: var(--font-size-base) !important;
   color: var(--text-dark) !important;
 }
 
@@ -419,6 +430,91 @@
   color: var(--text-white) !important;
   border: 1px solid var(--gray-500) !important;
 }
+
+
+/* 관리자 - 대기 pending > 검수중 reviewing > 완료 completed */
+
+.status-pending,
+.status-reviewing,
+.status-completed {
+  padding: 0.25em 0 !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 400 !important;
+  width: 48px !important;
+  line-height: 1.2 !important;
+  border-radius: 12px !important;
+  display: inline-block !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  vertical-align: baseline !important;
+}
+
+.status-pending {
+  background-color: var(--danger);
+  color: #fff;
+}
+
+.status-reviewing {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.status-completed {
+  background-color: var(--primary-blue);
+  color: #fff;
+}
+
+
+/* 이용자 - 대기 pending > 검수중 reviewing > 완료 completed */
+.status-pending_user,
+.status-reviewing_user,
+.status-completed_user {
+  padding: 0.25em 0 !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 400 !important;
+  width: 48px !important;
+  line-height: 1.2 !important;
+  border-radius: 12px !important;
+  display: inline-block !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  vertical-align: baseline !important;
+}
+
+.status-pending_user {
+  background-color: var(--primary-blue);
+  color: #fff;
+}
+
+.status-reviewing_user {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.status-completed_user {
+  background-color: var(--danger);
+  color: #fff;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ========================================== */
 /* 6. 액션 셀 스타일 (테이블용)                */
@@ -586,7 +682,15 @@ button:focus,
 .btn-select-all:disabled,
 .btn-select-none:disabled,
 .file-label[disabled],
-.login-btn:disabled,
+.login-btn:disabled {
+  background: #ABCEB2 !important;
+  border-color: #ABCEB2 !important;
+  color: var(--text-white) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+  box-shadow: none !important;
+}
+
 .signup-btn:disabled,
 .cancel-btn:disabled,
 .btn-primary-sm:disabled,

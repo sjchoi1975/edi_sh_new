@@ -229,6 +229,7 @@ const columnWidths = {
 
 const isAnyEditing = ref(false); // 편집 중인 행이 있는지 확인
 const router = useRouter();
+const fileInput = ref(null)
 
 function goCreate() {
   router.push('/admin/clients/create')

@@ -1,43 +1,31 @@
 <template>
   <div class="board_960">
     <div class="form-title">공지사항 상세</div>
-    <form class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">제목 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <input :value="notice.title" type="text" readonly disabled />
-        </div>
+    <form class="form-grid-2x">
+      <div class="form-group">
+        <label>제목</label>
+        <input :value="notice.title" type="text" readonly disabled />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">내용 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col input-400">
-          <div class="input-readonly-detail">{{ notice.content }}</div>
-        </div>
+      <div class="form-group">
+        <label>내용</label>
+        <div class="input-readonly-detail">{{ notice.content }}</div>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col label-60">
-          <label style="text-align: right;">필수</label>
-        </div>
-        <div class="form-col input-col input-400">
+      <div class="form-group">
+        <label>필수</label>
+        <div style="display: flex; align-items: center;">
           <input type="checkbox" :checked="notice.is_pinned" disabled style="width:16px;height:16px;vertical-align:middle;" />
           <span style="margin-left:8px;">상단 고정</span>
         </div>
       </div>
-      <div class="form-row" v-if="notice.file_url && notice.file_url.length > 0" style="align-items:flex-start;">
-        <div class="form-col label-col label-60" style="padding-top:8px;">
-          <label style="text-align: right;">첨부 파일</label>
-        </div>
-        <div class="form-col input-col input-400">
+      <div class="form-group" v-if="notice.file_url && notice.file_url.length > 0">
+        <label>첨부 파일</label>
+        <div>
           <div v-for="(url, idx) in notice.file_url" :key="url" style="margin-bottom:2px;">
             <a @click.prevent="downloadFile(url)" class="file-link" style="cursor: pointer;">{{ getFileName(url) }}</a>
           </div>
         </div>
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 1.2rem; gap: 0.5rem;">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-list" type="button" @click="goList">목록</button>
       </div>
     </form>

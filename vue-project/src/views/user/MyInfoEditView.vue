@@ -1,50 +1,37 @@
 <template>
   <div class="board_640">
     <div class="form-title">내 정보 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
-      <div class="form-row">
-        <div class="form-col">
-          <label>아이디(이메일)</label>
-          <input :value="email" readonly disabled class="input-uneditable" />
-        </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
+    <form @submit.prevent="handleSubmit" class="form-grid-2x">
+      <div class="form-group">
+        <label>아이디(이메일)</label>
+        <input :value="email" readonly disabled class="input-uneditable" />
       </div>
-      <div class="form-row">
-        <div class="form-col">
-          <label>업체명 <span class="required">*</span></label>
-          <input v-model="companyName" type="text" required />
-        </div>
-        <div class="form-col">
-          <label>사업자등록번호 <span class="required">*</span></label>
-          <input v-model="businessNumber" type="text" required />
-        </div>
-        <div class="form-col">
-          <label>대표자명 <span class="required">*</span></label>
-          <input v-model="representative" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>업체명 <span class="required">*</span></label>
+        <input v-model="companyName" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col col-2">
-          <label>사업장 소재지 <span class="required">*</span></label>
-          <input v-model="address" type="text" required />
-        </div>
-        <div class="form-col">
-          <label>담당자명 <span class="required">*</span></label>
-          <input v-model="contactPerson" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>사업자등록번호 <span class="required">*</span></label>
+        <input v-model="businessNumber" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col">
-          <label>휴대폰번호 <span class="required">*</span></label>
-          <input v-model="mobile" type="text" required />
-        </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
+      <div class="form-group">
+        <label>대표자명 <span class="required">*</span></label>
+        <input v-model="representative" type="text" required />
       </div>
-      
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-cancel" type="button" @click="goBack" style="margin-right: 1rem;">취소</button>
+      <div class="form-group">
+        <label>사업장 소재지 <span class="required">*</span></label>
+        <input v-model="address" type="text" required />
+      </div>
+      <div class="form-group">
+        <label>담당자명 <span class="required">*</span></label>
+        <input v-model="contactPerson" type="text" required />
+      </div>
+      <div class="form-group">
+        <label>휴대폰번호 <span class="required">*</span></label>
+        <input v-model="mobile" type="text" required />
+      </div>
+      <div style="justify-content: flex-end; margin-top: 2rem; display: flex; gap: 1rem;">
+        <button class="btn-cancel" type="button" @click="goBack">취소</button>
         <button class="btn-save" type="submit">저장</button>
       </div>
     </form>

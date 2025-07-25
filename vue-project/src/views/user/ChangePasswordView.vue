@@ -1,79 +1,68 @@
 <template>
   <div class="board_640">
     <div class="form-title">비밀번호 변경</div>
-    <form @submit.prevent="handleSubmit" class="notice-form grid-form">
-      <div class="form-row">
-        <div class="form-col">
-          <label>현재 비밀번호 <span class="required">*</span></label>
-          <div style="position: relative;">
-            <input 
-              v-model="currentPassword" 
-              :type="showCurrentPassword ? 'text' : 'password'" 
-              required 
-              placeholder="현재 비밀번호를 입력하세요"
-              style="padding-right:2.5rem;"
-            />
-            <i
-              :class="showCurrentPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
-              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
-              @click="showCurrentPassword = !showCurrentPassword"
-            ></i>
-          </div>
-        </div>
-        <div class="form-col"></div>
-        <div class="form-col"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-col">
-          <label>새 비밀번호 <span class="required">*</span></label>
-          <div style="position: relative;">
-            <input 
-              v-model="newPassword" 
-              :type="showNewPassword ? 'text' : 'password'" 
-              required 
-              placeholder="새 비밀번호를 입력하세요"
-              minlength="6"
-              style="padding-right:2.5rem;"
-            />
-            <i
-              :class="showNewPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
-              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
-              @click="showNewPassword = !showNewPassword"
-            ></i>
-          </div>
-        </div>
-        <div class="form-col">
-          <label>새 비밀번호 확인 <span class="required">*</span></label>
-          <div style="position: relative;">
-            <input 
-              v-model="confirmPassword" 
-              :type="showConfirmPassword ? 'text' : 'password'" 
-              required 
-              placeholder="새 비밀번호를 다시 입력하세요"
-              minlength="6"
-              style="padding-right:2.5rem;"
-            />
-            <i
-              :class="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
-              style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
-              @click="showConfirmPassword = !showConfirmPassword"
-            ></i>
-          </div>
-        </div>
-        <div class="form-col"></div>
-      </div>
-      
-      <div class="form-row" style="margin-top: 1rem;">
-        <div class="form-col col-3">
-          <div style="color: #666; font-size: 0.9rem; line-height: 1.4;">
-            • 비밀번호는 최소 6자 이상이어야 합니다.<br>
-            • 보안을 위해 주기적으로 비밀번호를 변경해 주세요.
-          </div>
+    <form @submit.prevent="handleSubmit" class="form-grid-2x">
+      <div class="form-group">
+        <label>현재 비밀번호 <span class="required">*</span></label>
+        <div style="position: relative; width: 100%;">
+          <input 
+            v-model="currentPassword" 
+            :type="showCurrentPassword ? 'text' : 'password'" 
+            required 
+            placeholder="현재 비밀번호를 입력하세요"
+            style="padding-right:2.5rem; width: 100%;"
+          />
+          <i
+            :class="showCurrentPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+            @click="showCurrentPassword = !showCurrentPassword"
+          ></i>
         </div>
       </div>
-      
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-cancel" type="button" @click="goBack" style="margin-right: 1rem;">취소</button>
+      <div class="form-group">
+        <label>새 비밀번호 <span class="required">*</span></label>
+        <div style="position: relative; width: 100%;">
+          <input 
+            v-model="newPassword" 
+            :type="showNewPassword ? 'text' : 'password'" 
+            required 
+            placeholder="새 비밀번호를 입력하세요"
+            minlength="6"
+            style="padding-right:2.5rem; width: 100%;"
+          />
+          <i
+            :class="showNewPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+            @click="showNewPassword = !showNewPassword"
+          ></i>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호 확인 <span class="required">*</span></label>
+        <div style="position: relative; width: 100%;">
+          <input 
+            v-model="confirmPassword" 
+            :type="showConfirmPassword ? 'text' : 'password'" 
+            required 
+            placeholder="새 비밀번호를 다시 입력하세요"
+            minlength="6"
+            style="padding-right:2.5rem; width: 100%;"
+          />
+          <i
+            :class="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 1.2rem;"
+            @click="showConfirmPassword = !showConfirmPassword"
+          ></i>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 1rem; grid-column: 1 / -1;">
+        <div style="color: #666; font-size: 0.9rem; line-height: 1.4;">
+          • 비밀번호는 최소 6자 이상이어야 합니다.<br>
+          • 보안을 위해 주기적으로 비밀번호를 변경해 주세요.
+        </div>
+      </div>
+      <div style="justify-content: flex-end; margin-top: 2rem; display: flex; gap: 1rem; grid-column: 1 / -1;">
+        <button class="btn-cancel" type="button" @click="goBack">취소</button>
         <button class="btn-primary" type="submit" :disabled="loading">
           {{ loading ? '변경 중...' : '변경' }}
         </button>

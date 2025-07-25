@@ -23,7 +23,7 @@
             ></i>
           </div>
         </div>
-        <Button :label="'로그인'" class="login-btn" :disabled="!canLogin" :style="loginBtnStyle" @click="handleLogin" />
+        <Button :label="'로그인'" class="login-btn" :disabled="!canLogin" @click="handleLogin" style="margin-bottom: 0.75rem;" />
         <Button label="회원가입" class="signup-btn" @click="$router.push('/signup')" />
         <div class="login-link">
           <a href="#" @click.prevent="openPasswordResetModal">비밀번호를 잊으셨나요?</a>
@@ -98,15 +98,6 @@ const resetEmail = ref('');
 const showPassword = ref(false);
 
 const canLogin = computed(() => email.value.trim() !== '' && password.value.trim() !== '');
-const loginBtnStyle = computed(() => ({
-  background: canLogin.value ? '#5FA56B' : '#ABCEB2',
-  color: canLogin.value ? '#fff' : '#fff',
-  border: 'none',
-  width: '100%',
-  marginBottom: '0.5rem',
-  fontSize: '1rem',
-  cursor: canLogin.value ? 'pointer' : 'not-allowed',
-}));
 
 const handleLogin = async () => {
   if (!canLogin.value) return;

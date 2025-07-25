@@ -1,67 +1,39 @@
 <template>
   <div class="board_640">
     <div class="form-title">병의원 수정</div>
-    <form @submit.prevent="handleSubmit" class="notice-form single-row-form">
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">병의원코드</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="clientCode" type="text" />
-        </div>
+    <form @submit.prevent="handleSubmit" class="form-grid">
+      <div class="form-group">
+        <label>병의원코드</label>
+        <input v-model="clientCode" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">병의원명 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="name" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>병의원명<span class="required">*</span></label>
+        <input v-model="name" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">사업자등록번호 <span class="required">*</span></label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="businessNumber" type="text" required />
-        </div>
+      <div class="form-group">
+        <label>사업자등록번호<span class="required">*</span></label>
+        <input v-model="businessNumber" type="text" required />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">원장명</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="ownerName" type="text" />
-        </div>
+      <div class="form-group">
+        <label>원장명</label>
+        <input v-model="ownerName" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">주소</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="address" type="text" />
-        </div>
+      <div class="form-group">
+        <label>주소</label>
+        <input v-model="address" type="text" />
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">상태</label>
-        </div>
-        <div class="form-col input-col">
-          <select v-model="status">
-            <option value="active">활성</option>
-            <option value="inactive">비활성</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>상태</label>
+        <select v-model="status">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-col label-col">
-          <label style="text-align: right;">비고</label>
-        </div>
-        <div class="form-col input-col">
-          <input v-model="remarks" type="text" />
-        </div>
+      <div class="form-group">
+        <label>비고</label>
+        <input v-model="remarks" type="text" />
       </div>
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 2rem">
+      <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goDetail" style="margin-right: 1rem;">취소</button>
         <button class="btn-add" type="submit">저장</button>
       </div>
