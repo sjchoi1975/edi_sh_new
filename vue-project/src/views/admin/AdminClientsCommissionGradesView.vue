@@ -160,6 +160,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 const assignments = ref([])
 const loading = ref(false)
@@ -426,8 +427,8 @@ const downloadExcel = () => {
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '수수료등급설정현황')
-  const today = new Date().toISOString().split('T')[0]
-  XLSX.writeFile(wb, `수수료등급설정현황_${today}.xlsx`)
+  const fileName = generateExcelFileName('병의원-수수료등급')
+  XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllGrades() {

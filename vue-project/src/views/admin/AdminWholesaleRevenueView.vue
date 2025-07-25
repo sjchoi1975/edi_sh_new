@@ -252,6 +252,7 @@ import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 console.log('supabase:', supabase);
 
@@ -768,9 +769,7 @@ const downloadExcel = () => {
     }
   }
 
-  // 파일명에 현재 날짜 포함
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `도매매출목록_${today}.xlsx`
+  const fileName = generateExcelFileName('도매매출목록')
 
   XLSX.writeFile(wb, fileName)
 }

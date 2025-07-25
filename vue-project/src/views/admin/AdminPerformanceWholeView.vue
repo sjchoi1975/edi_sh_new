@@ -148,6 +148,7 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 
 const columnWidths = {
   no: '3%',
@@ -645,10 +646,9 @@ const downloadExcel = () => {
 
   XLSX.utils.book_append_sheet(wb, ws, '전체 등록 현황');
 
-  // 파일명 생성
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10);
-  const fileName = `전체_등록현황_${selectedSettlementMonth.value || dateStr}.xlsx`;
+  // 정산월 정보가 있으면 파일명에 포함
+  const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null
+  const fileName = generateExcelFileName('전체등록현황', monthInfo)
 
   // 다운로드
   XLSX.writeFile(wb, fileName);

@@ -201,6 +201,7 @@ import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 const clients = ref([])
 const loading = ref(false)
@@ -515,8 +516,8 @@ const downloadExcel = () => {
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '문전약국지정현황')
-  const today = new Date().toISOString().split('T')[0]
-  XLSX.writeFile(wb, `문전약국지정현황_${today}.xlsx`)
+  const fileName = generateExcelFileName('병의원-문전약국목록')
+  XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllAssignments() {

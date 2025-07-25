@@ -108,6 +108,7 @@ import Password from 'primevue/password'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 관리
 const columnWidths = {
@@ -354,8 +355,7 @@ const downloadExcel = () => {
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, '미승인업체목록')
 
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `미승인업체목록_${today}.xlsx`
+  const fileName = generateExcelFileName('미승인업체목록')
   XLSX.writeFile(workbook, fileName)
 }
 

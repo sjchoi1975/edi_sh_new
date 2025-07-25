@@ -269,6 +269,7 @@ import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -877,8 +878,9 @@ const downloadExcel = () => {
     }
   }
 
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `제품목록_${today}.xlsx`
+  // 기준월 정보가 있으면 파일명에 포함
+  const monthInfo = selectedMonth.value ? formatMonthToKorean(selectedMonth.value) : null
+  const fileName = generateExcelFileName('제품목록', monthInfo)
 
   XLSX.writeFile(wb, fileName)
 }

@@ -116,6 +116,7 @@ import * as XLSX from 'xlsx'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 관리
 const columnWidths = {
@@ -382,8 +383,7 @@ const downloadExcel = () => {
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, '승인업체목록')
 
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `승인업체목록_${today}.xlsx`
+  const fileName = generateExcelFileName('승인업체목록')
   XLSX.writeFile(workbook, fileName)
 }
 
