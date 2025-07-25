@@ -1,6 +1,6 @@
 <template>
   <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 수정'" />
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">공지사항 수정</div>
     <form @submit.prevent="handleSubmit" class="form-grid-2x">
       <div class="form-group">
@@ -32,14 +32,14 @@
       </div>
       <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goDetail" style="margin-right: 1rem;">취소</button>
-        <button class="btn-save" type="submit">저장</button>
+        <button class="btn-save" type="submit" :disabled="!isFormValid">수정</button>
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, onMounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -51,6 +51,29 @@ const contentArea = ref(null);
 const isPinned = ref(false);
 const files = ref([]);
 const fileInput = ref(null);
+
+// 원본 데이터 저장
+const originalData = ref({
+  title: '',
+  content: '',
+  isPinned: false,
+  files: []
+});
+
+// 필수 필드 검증 및 변경값 감지
+const isFormValid = computed(() => {
+  // 필수값 검증
+  const hasRequiredFields = title.value && title.value.trim() !== '' && 
+                           content.value && content.value.trim() !== '';
+  
+  // 변경값 감지
+  const hasChanges = title.value !== originalData.value.title ||
+                    content.value !== originalData.value.content ||
+                    isPinned.value !== originalData.value.isPinned ||
+                    JSON.stringify(files.value) !== JSON.stringify(originalData.value.files);
+  
+  return hasRequiredFields && hasChanges;
+});
 
 const adjustTextareaHeight = () => {
   if (contentArea.value) {
@@ -73,6 +96,12 @@ onMounted(async () => {
   title.value = data.title;
   content.value = data.content;
   isPinned.value = data.is_pinned;
+  
+  // 원본 데이터 저장
+  originalData.value.title = data.title;
+  originalData.value.content = data.content;
+  originalData.value.isPinned = data.is_pinned;
+  
   if (data.file_url) {
     let fileUrls = [];
     if (typeof data.file_url === 'string') {
@@ -84,10 +113,12 @@ onMounted(async () => {
     } else if (Array.isArray(data.file_url)) {
       fileUrls = data.file_url;
     }
-    files.value = fileUrls.map(url => ({
+    const fileObjects = fileUrls.map(url => ({
       name: getFileName(url),
       url: url
     }));
+    files.value = fileObjects;
+    originalData.value.files = JSON.parse(JSON.stringify(fileObjects)); // 깊은 복사
   }
   nextTick(adjustTextareaHeight);
 });
@@ -118,8 +149,14 @@ function removeFile(idx) {
 }
 
 const handleSubmit = async () => {
-  if (!title.value.trim() || !content.value.trim()) {
-    alert('제목과 내용을 입력하세요.');
+  // 필수 필드 검증
+  if (!title.value || title.value.trim() === '') {
+    alert('제목은 필수 입력 항목입니다.');
+    return;
+  }
+  
+  if (!content.value || content.value.trim() === '') {
+    alert('내용은 필수 입력 항목입니다.');
     return;
   }
   let fileUrls = files.value.map(f => f.url || '');
@@ -161,4 +198,3 @@ function goDetail() {
   router.push(`/admin/notices/${route.params.id}`);
 }
 </script>
-

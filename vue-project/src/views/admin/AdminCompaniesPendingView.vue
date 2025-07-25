@@ -20,15 +20,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -107,6 +108,7 @@ import Password from 'primevue/password'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 관리
 const columnWidths = {
@@ -353,8 +355,7 @@ const downloadExcel = () => {
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, '미승인업체목록')
 
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `미승인업체목록_${today}.xlsx`
+  const fileName = generateExcelFileName('미승인업체목록')
   XLSX.writeFile(workbook, fileName)
 }
 

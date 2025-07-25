@@ -4,55 +4,55 @@
     <div class="form-grid">
       <div class="form-group">
         <label>기준월</label>
-        <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
+        <input :value="product.base_month || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>제품명</label>
-        <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
+        <input :value="product.product_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>보험코드</label>
-        <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
+        <input :value="product.insurance_code || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>약가</label>
-        <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
+        <input :value="product.price || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수수료율 A등급(%)</label>
-        <input class="input-readonly-detail" :value="product.commission_rate_a !== undefined && product.commission_rate_a !== null ? (product.commission_rate_a * 100).toFixed(1) : '-'" readonly disabled />
+        <input :value="product.commission_rate_a !== undefined && product.commission_rate_a !== null ? (product.commission_rate_a * 100).toFixed(1) : '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수수료율 B등급(%)</label>
-        <input class="input-readonly-detail" :value="product.commission_rate_b !== undefined && product.commission_rate_b !== null ? (product.commission_rate_b * 100).toFixed(1) : '-'" readonly disabled />
+        <input :value="product.commission_rate_b !== undefined && product.commission_rate_b !== null ? (product.commission_rate_b * 100).toFixed(1) : '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수수료율 C등급(%)</label>
-        <input class="input-readonly-detail" :value="product.commission_rate_c !== undefined && product.commission_rate_c !== null ? (product.commission_rate_c * 100).toFixed(1) : '-'" readonly disabled />
+        <input :value="product.commission_rate_c !== undefined && product.commission_rate_c !== null ? (product.commission_rate_c * 100).toFixed(1) : '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>표준코드</label>
-        <input class="input-readonly-detail" :value="product.standard_code || '-'" readonly disabled />
+        <input :value="product.standard_code || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>단위/포장형태</label>
-        <input class="input-readonly-detail" :value="product.unit_packaging_desc || '-'" readonly disabled />
+        <input :value="product.unit_packaging_desc || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>단위수량</label>
-        <input class="input-readonly-detail" :value="product.unit_quantity || '-'" readonly disabled />
+        <input :value="product.unit_quantity || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>상태</label>
-        <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <input :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
+        <input :value="product.remarks || '-'" readonly disabled />
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-delete" @click="handleDelete" style="margin-right: 1rem;">삭제</button>
-        <button class="btn-edit" @click="goEdit" style="margin-right: 1rem;">수정</button>
+      <div class="button-area">
+        <button class="btn-delete" @click="handleDelete">삭제</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
         <button class="btn-list" @click="goList">목록</button>
       </div>
     </div>

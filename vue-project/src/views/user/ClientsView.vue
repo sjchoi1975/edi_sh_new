@@ -9,7 +9,7 @@
           <InputText
             v-model="filters['global'].value"
             placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
-            class="search-input"
+            class="search-input-only"
           />
         </span>
       </div>

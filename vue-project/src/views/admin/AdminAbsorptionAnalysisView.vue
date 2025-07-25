@@ -210,6 +210,7 @@ import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 
 const columnWidths = {
   no: '3.5%',
@@ -1008,7 +1009,12 @@ async function downloadExcel() {
     // 5. 파일 다운로드
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '흡수율 분석');
-    XLSX.writeFile(workbook, '흡수율_분석_데이터.xlsx');
+    
+    // 정산월 정보가 있으면 파일명에 포함
+    const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null
+    const fileName = generateExcelFileName('흡수율분석', monthInfo)
+    
+    XLSX.writeFile(workbook, fileName);
 
   } catch (err) {
     console.error('엑셀 다운로드 오류:', err);

@@ -17,7 +17,7 @@
           <InputText
             v-model="filters['global'].value"
             placeholder="제품명, 보험코드 검색"
-            class="search-input"
+            class="search-input-only"
           />
         </span>
       </div>

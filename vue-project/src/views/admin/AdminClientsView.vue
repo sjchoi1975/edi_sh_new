@@ -18,15 +18,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -91,6 +92,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.name"
               class="inline-edit-input"
+              :id="`name_${slotProps.data.id}`"
             />
             <a v-else href="#" class="text-link ellipsis-cell" :title="slotProps.data.name" @click.prevent="goToDetail(slotProps.data.id)" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">
               {{ slotProps.data.name }}
@@ -108,6 +110,10 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
               class="inline-edit-input"
+              :id="`business_registration_number_${slotProps.data.id}`"
+              @input="formatBusinessNumber"
+              @keypress="allowOnlyNumbers"
+              @keydown="handleBackspace"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
@@ -173,7 +179,7 @@
           <template #body="slotProps">
             <div style="display: flex; gap: 4px; justify-content: center">
               <template v-if="slotProps.data.isEditing">
-                <button class="btn-save-sm" @click="saveEdit(slotProps.data)" title="저장">
+                <button class="btn-save-sm" @click="saveEdit(slotProps.data)" :disabled="!isEditValid(slotProps.data)" title="저장">
                   저장
                 </button>
                 <button class="btn-cancel-sm" @click="cancelEdit(slotProps.data)" title="취소">
@@ -204,6 +210,7 @@ import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 const clients = ref([])
 const loading = ref(false)
@@ -279,6 +286,24 @@ const startEdit = (row) => {
   isAnyEditing.value = true; // 편집 중인 행이 있음을 표시
 }
 
+// 변경값 감지 및 필수값 검증
+const isEditValid = (row) => {
+  // 필수값 검증
+  const hasRequiredFields = row.name && row.name.trim() !== '' && 
+                           row.business_registration_number && row.business_registration_number.trim() !== '';
+  
+  // 변경값 감지
+  const hasChanges = row.client_code !== row.originalData.client_code ||
+                    row.name !== row.originalData.name ||
+                    row.business_registration_number !== row.originalData.business_registration_number ||
+                    row.owner_name !== row.originalData.owner_name ||
+                    row.address !== row.originalData.address ||
+                    row.status !== row.originalData.status ||
+                    row.remarks !== row.originalData.remarks;
+  
+  return hasRequiredFields && hasChanges;
+}
+
 // 수정 취소
 const cancelEdit = (row) => {
   // 편집 취소 시 검색어 복원
@@ -300,9 +325,42 @@ const cancelEdit = (row) => {
 const saveEdit = async (row) => {
   try {
     // 필수 필드 검증
-    if (!row.name || !row.business_registration_number) {
-      alert('필수 항목을 모두 입력하세요. (병의원명, 사업자등록번호)')
-      return
+    if (!row.name || row.name.trim() === '') {
+      alert('병의원명은 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const nameInput = document.getElementById(`name_${row.id}`);
+        if (nameInput) {
+          nameInput.focus();
+          nameInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.business_registration_number || row.business_registration_number.trim() === '') {
+      alert('사업자등록번호는 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const businessNumberInput = document.getElementById(`business_registration_number_${row.id}`);
+        if (businessNumberInput) {
+          businessNumberInput.focus();
+          businessNumberInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 사업자등록번호 형식 검증 (10자리 숫자)
+    const businessNumberDigits = row.business_registration_number.replace(/[^0-9]/g, '');
+    if (businessNumberDigits.length !== 10) {
+      alert('사업자등록번호는 10자리여야 합니다.');
+      setTimeout(() => {
+        const businessNumberInput = document.getElementById(`business_registration_number_${row.id}`);
+        if (businessNumberInput) {
+          businessNumberInput.focus();
+          businessNumberInput.select();
+        }
+      }, 100);
+      return;
     }
 
     // 상태 값 검증
@@ -498,6 +556,18 @@ const handleFileUpload = async (event) => {
         return
       }
 
+      // 사업자등록번호 형식 검증 및 변환 (10자리 숫자)
+      const businessNumber = row['사업자등록번호'].toString().replace(/[^0-9]/g, '');
+      if (businessNumber.length !== 10) {
+        errors.push(`${rowNum}행: 사업자등록번호는 10자리 숫자여야 합니다.`)
+        return
+      }
+      
+      // 사업자등록번호 형식 변환: ###-##-#####
+      const formattedBusinessNumber = businessNumber.substring(0, 3) + '-' + 
+                                     businessNumber.substring(3, 5) + '-' + 
+                                     businessNumber.substring(5);
+
       // 상태 값 검증 및 변환
       let statusValue = 'active' // 기본값
       if (row['상태']) {
@@ -516,7 +586,7 @@ const handleFileUpload = async (event) => {
       uploadData.push({
         client_code: row['병의원코드'] || '',
         name: row['병의원명'],
-        business_registration_number: row['사업자등록번호'],
+        business_registration_number: formattedBusinessNumber,
         owner_name: row['원장명'] || '',
         address: row['주소'] || '',
         remarks: row['비고'] || '',
@@ -668,9 +738,7 @@ const downloadExcel = () => {
     }
   }
 
-  // 파일명에 현재 날짜 포함
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `병의원목록_${today}.xlsx`
+  const fileName = generateExcelFileName('병의원목록')
 
   XLSX.writeFile(wb, fileName)
 }
@@ -755,7 +823,67 @@ function clearSearch() {
   filteredClients.value = clients.value;
 }
 
+// 숫자만 입력 허용
+const allowOnlyNumbers = (event) => {
+  const charCode = event.which ? event.which : event.keyCode;
+  if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+    event.preventDefault();
+  }
+};
+
+// 사업자등록번호 형식 변환
+const formatBusinessNumber = (event) => {
+  const target = event.target;
+  let value = target.value.replace(/[^0-9]/g, ''); // 숫자만 추출
+  
+  if (value.length > 10) {
+    value = value.substring(0, 10); // 최대 10자리로 제한
+  }
+  
+  // 형식 변환: ###-##-#####
+  if (value.length >= 3) {
+    value = value.substring(0, 3) + '-' + value.substring(3);
+  }
+  if (value.length >= 6) {
+    value = value.substring(0, 6) + '-' + value.substring(6);
+  }
+  
+  // 최대 12자리(하이픈 포함)로 제한
+  if (value.length > 12) {
+    value = value.substring(0, 12);
+  }
+  
+  target.value = value;
+};
+
+// 백스페이스 처리 (하이픈 건너뛰기)
+const handleBackspace = (event) => {
+  if (event.key === 'Backspace') {
+    const cursorPosition = event.target.selectionStart;
+    const value = event.target.value;
+    
+    // 커서 위치에 하이픈이 있으면 한 칸 더 뒤로 이동
+    if (value[cursorPosition - 1] === '-') {
+      event.preventDefault();
+      const newPosition = cursorPosition - 2;
+      event.target.value = value.substring(0, newPosition) + value.substring(cursorPosition);
+      
+      // 커서 위치 조정
+      setTimeout(() => {
+        event.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
+  }
+};
+
 onMounted(() => {
   fetchClients()
 })
 </script>
+
+<style scoped>
+.btn-save-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+</style>

@@ -18,15 +18,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -159,6 +160,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 const assignments = ref([])
 const loading = ref(false)
@@ -425,8 +427,8 @@ const downloadExcel = () => {
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '수수료등급설정현황')
-  const today = new Date().toISOString().split('T')[0]
-  XLSX.writeFile(wb, `수수료등급설정현황_${today}.xlsx`)
+  const fileName = generateExcelFileName('병의원-수수료등급')
+  XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllGrades() {
@@ -507,11 +509,10 @@ onMounted(() => {
 .commission-grade-select {
   width: 100%;
   min-width: 80px;
-  padding: 4px 8px;
+  height: 1.9rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   background-color: white;
-  font-size: 13px;
   color: #374151;
   cursor: pointer;
   text-align: center;
@@ -532,7 +533,4 @@ onMounted(() => {
   color: white;
 }
 
-.admin-commission-grades-table .p-datatable-tbody > tr > td {
-  padding: 4px 12px;
-}
 </style>

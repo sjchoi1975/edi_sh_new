@@ -1,5 +1,5 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">정산월 등록</div>
     <form @submit.prevent="handleSubmit" class="form-grid-2x">
       <div class="form-group">
@@ -31,14 +31,14 @@
       </div>
       <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-cancel" type="button" @click="goList" style="margin-right: 1rem;">취소</button>
-        <button class="btn-save" type="submit">저장</button>
+        <button class="btn-save" type="submit" :disabled="!isFormValid">등록</button>
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -50,6 +50,13 @@ const status = ref('active');
 const remarks = ref('');
 const router = useRouter();
 const noticeArea = ref(null);
+
+// 필수값 검증
+const isFormValid = computed(() => {
+  return settlementMonth.value && settlementMonth.value.trim() !== '' &&
+         startDate.value && startDate.value.trim() !== '' &&
+         endDate.value && endDate.value.trim() !== '';
+});
 
 const adjustTextareaHeight = () => {
   if (noticeArea.value) {
@@ -64,8 +71,26 @@ watch(notice, () => {
 });
 
 const handleSubmit = async () => {
-  if (!settlementMonth.value || !startDate.value || !endDate.value) {
+  if (!isFormValid.value) {
     alert('필수 항목을 모두 입력하세요.');
+    return;
+  }
+
+  // 1. 정산월 중복 검증
+  const { data: existingMonth, error: checkError } = await supabase
+    .from('settlement_months')
+    .select('id')
+    .eq('settlement_month', settlementMonth.value)
+    .single();
+
+  if (existingMonth) {
+    alert('이미 등록된 정산월이 있습니다.');
+    return;
+  }
+
+  // 2. 날짜 검증
+  if (new Date(endDate.value) <= new Date(startDate.value)) {
+    alert('실적입력 종료일이 실적입력 시작일보다 이전 날짜입니다.');
     return;
   }
 

@@ -105,6 +105,8 @@
   box-shadow: var(--shadow-sm) !important;
 }
 
+/* 기존 검색 버튼 */
+/* 
 .search-btn {
   height: 34px;
   min-width: 64px;
@@ -116,10 +118,26 @@
   padding: 0 18px;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
+*/
+
+.search-btn {
+  height: 34px;
+  min-width: 64px;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: var(--border-radius) !important;
+  border-bottom-right-radius: var(--border-radius) !important;
+  border-bottom-left-radius: 0 !important;
+  border: 1px solid var(--primary-blue);
+  background: var(--primary-blue);
+  color: var(--text-white);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
 .search-btn:disabled {
   background: #eee !important;
-  color: #444 !important;
-  border-color: #ccc !important;
+  color: #888 !important;
+  border-color: #cccccc !important;
   cursor: not-allowed !important;
 }
 
@@ -302,12 +320,19 @@
   background: var(--primary-blue) !important;
   color: var(--text-white) !important;
 }
+.signup-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
 
 /* 취소 버튼 */
 .cancel-btn {
   background: var(--gray-400) !important;
   color: var(--text-dark) !important;
 }
+
+
+
 
 /* ========================================== */
 /* 4. 작은 버튼 스타일 (테이블용 -sm 접미사)    */
@@ -691,7 +716,6 @@ button:focus,
   box-shadow: none !important;
 }
 
-.signup-btn:disabled,
 .cancel-btn:disabled,
 .btn-primary-sm:disabled,
 .btn-add-sm:disabled,

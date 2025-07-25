@@ -1,18 +1,18 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">정산월 상세</div>
     <div class="form-grid-2x">
       <div class="form-group">
         <label>정산월</label>
-        <input class="input-readonly-detail" :value="month.settlement_month || '-'" readonly disabled />
+        <input :value="month.settlement_month || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>실적입력 시작일</label>
-        <input class="input-readonly-detail" :value="month.start_date || '-'" readonly disabled />
+        <input :value="month.start_date || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>실적입력 종료일</label>
-        <input class="input-readonly-detail" :value="month.end_date || '-'" readonly disabled />
+        <input :value="month.end_date || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>전달 사항</label>
@@ -20,11 +20,11 @@
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="month.remarks || '-'" readonly disabled />
+        <input :value="month.remarks || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>상태</label>
-        <input class="input-readonly-detail" :value="month.status === 'active' ? '활성' : (month.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <input :value="month.status === 'active' ? '활성' : (month.status === 'inactive' ? '비활성' : '-')" readonly disabled />
       </div>
       <div style="justify-content: flex-end; margin-top: 2rem;">
         <button class="btn-delete" @click="handleDelete" style="margin-right: 1rem;">삭제</button>

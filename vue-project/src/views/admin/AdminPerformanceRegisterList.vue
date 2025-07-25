@@ -276,6 +276,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 
 // 반응형 데이터
 const availableMonths = ref([]); // 선택 가능한 정산월 목록
@@ -750,23 +751,9 @@ const downloadExcel = () => {
     }
   }
   
-  // 파일명 생성
-  let fileName = '실적등록현황';
-  if (selectedSettlementMonth.value) {
-    fileName += `_${selectedSettlementMonth.value}`;
-  }
-  if (prescriptionOffset.value !== 0) {
-    fileName += `_${prescriptionMonth.value}`;
-  }
-  if (selectedCompanyInfo.value) {
-    fileName += `_${selectedCompanyInfo.value.company_name}`;
-  }
-  if (selectedHospitalInfo.value) {
-    fileName += `_${selectedHospitalInfo.value.name}`;
-  }
-  
-  const today = new Date().toISOString().split('T')[0];
-  fileName += `_${today}.xlsx`;
+  // 정산월 정보가 있으면 파일명에 포함
+  const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null
+  const fileName = generateExcelFileName('실적등록현황', monthInfo)
   
   XLSX.writeFile(wb, fileName);
 };

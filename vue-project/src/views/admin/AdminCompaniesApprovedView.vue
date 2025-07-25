@@ -20,16 +20,15 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              style="position:absolute; right:6px; top:50%; transform:translateY(-50%); height:28px; width:24px; border:none; background:transparent; color:#888; font-size:18px; cursor:pointer;"
               title="검색어 초기화"
             >×</button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -44,7 +43,7 @@
           <button class="btn-save" @click="goCreate">업체 등록</button>
         </div>
       </div>
-
+      
       <DataTable
         :value="filteredCompanies"
         :loading="loading"
@@ -88,11 +87,18 @@
         </Column>
         <Column field="approval_status" header="승인 취소" :headerStyle="{ width: columnWidths.approval_status }" :exportable="false">
           <template #body="slotProps">
-            <button class="btn-pending-sm" @click="confirmApprovalChange(slotProps.data, 'pending')">취소</button>
+            <button class="btn-pending-sm" @click="openCancelDialog(slotProps.data)">취소</button>
           </template>
         </Column>
       </DataTable>
     </div>
+    <Dialog v-model:visible="dialogVisible" header="업체 승인 취소 확인" :modal="true" :closable="false">
+      <div>정말 {{ selectedCompanyName }} 업체를 승인 취소 처리하시겠습니까?</div>
+      <template #footer>
+        <button class="btn-cancel" @click="dialogVisible = false">취소</button>
+        <button class="btn-delete" @click="handleCancel">승인 취소</button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -108,6 +114,9 @@ import Password from 'primevue/password'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
+import Dialog from 'primevue/dialog'
+import Dropdown from 'primevue/dropdown'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 관리
 const columnWidths = {
@@ -374,8 +383,7 @@ const downloadExcel = () => {
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, '승인업체목록')
 
-  const today = new Date().toISOString().split('T')[0]
-  const fileName = `승인업체목록_${today}.xlsx`
+  const fileName = generateExcelFileName('승인업체목록')
   XLSX.writeFile(workbook, fileName)
 }
 
@@ -428,6 +436,20 @@ const checkOverflow = (event) => {
 const removeOverflowClass = (event) => {
   const element = event.target;
   element.classList.remove('overflowed');
+}
+
+const dialogVisible = ref(false);
+const selectedCompanyForCancel = ref(null);
+const selectedCompanyName = ref('');
+function openCancelDialog(company) {
+  selectedCompanyForCancel.value = company;
+  selectedCompanyName.value = company.company_name;
+  dialogVisible.value = true;
+}
+async function handleCancel() {
+  if (!selectedCompanyForCancel.value) return;
+  await confirmApprovalChange(selectedCompanyForCancel.value, 'pending');
+  dialogVisible.value = false;
 }
 
 </script>

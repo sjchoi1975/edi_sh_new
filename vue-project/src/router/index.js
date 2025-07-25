@@ -112,19 +112,19 @@ const router = createRouter({
       path: '/admin/products/create',
       name: 'admin-product-create',
       component: AdminProductCreateView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '제품 관리', submenu: '제품 등록', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/products/:id',
       name: 'admin-product-detail',
       component: () => import('../views/admin/AdminProductDetailView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '제품 관리', submenu: '제품 상세', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/products/:id/edit',
       name: 'admin-product-edit',
       component: () => import('../views/admin/AdminProductEditView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '제품 관리', submenu: '제품 수정', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/clients',
@@ -148,7 +148,7 @@ const router = createRouter({
       path: '/admin/clients/:id/edit',
       name: 'admin-clients-edit',
       component: () => import('../views/admin/AdminClientsEditView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '병의원 관리', submenu: '병의원 수정', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/clients/assign-companies',
@@ -178,19 +178,19 @@ const router = createRouter({
       path: '/admin/pharmacies/create',
       name: 'admin-pharmacies-create',
       component: AdminPharmaciesCreateView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '문전약국 관리', submenu: '문전약국 등록', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/pharmacies/:id',
       name: 'admin-pharmacies-detail',
       component: () => import('../views/admin/AdminPharmaciesDetailView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '문전약국 관리', submenu: '문전약국 상세', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/pharmacies/:id/edit',
       name: 'admin-pharmacies-edit',
       component: () => import('../views/admin/AdminPharmaciesEditView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '문전약국 관리', submenu: '문전약국 수정', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/wholesale-revenue',
@@ -202,7 +202,7 @@ const router = createRouter({
       path: '/admin/wholesale-revenue/create',
       name: 'admin-wholesale-revenue-create',
       component: AdminWholesaleRevenueCreateView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '도매매출 관리', submenu: '도매매출 등록', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/direct-revenue',
@@ -214,7 +214,7 @@ const router = createRouter({
       path: '/admin/direct-revenue/create',
       name: 'admin-direct-revenue-create',
       component: AdminDirectRevenueCreateView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '직거래매출 관리', submenu: '직거래매출 등록', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/settlement-month',
@@ -275,7 +275,7 @@ const router = createRouter({
       path: '/admin/settlement-months/:id',
       name: 'admin-settlement-months-detail',
       component: AdminSettlementMonthsDetailView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '실적 관리', submenu: '정산월 상세', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/settlement-months/:id/edit',
@@ -299,7 +299,7 @@ const router = createRouter({
       path: '/admin/notices/:id',
       name: 'AdminNoticeDetail',
       component: () => import('../views/admin/AdminNoticeDetailView.vue'),
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '공지사항 관리', submenu: '공지사항 상세', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/notices/:id/edit',
@@ -311,7 +311,7 @@ const router = createRouter({
       path: '/admin/companies/create',
       name: 'admin-company-create',
       component: AdminCompanyCreateView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '업체 관리', submenu: '신규 업체 등록', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/companies/:id',
@@ -323,7 +323,7 @@ const router = createRouter({
       path: '/admin/companies/:id/edit',
       name: 'admin-company-edit',
       component: AdminCompanyEditView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { menu: '업체 관리', submenu: '업체 수정', requiresAuth: true, isAdmin: true }
     },
     {
       path: '/products',
@@ -335,7 +335,7 @@ const router = createRouter({
       path: '/products/:id',
       name: 'user-product-detail',
       component: () => import('../views/user/ProductDetailView.vue'),
-      meta: { requiresAuth: true, role: 'user' }
+      meta: { menu: '제품 조회', submenu: '제품 상세', requiresAuth: true }
     },
     {
       path: '/clients',
@@ -347,7 +347,7 @@ const router = createRouter({
       path: '/clients/:id',
       name: 'user-client-detail',
       component: () => import('../views/user/ClientsDetailView.vue'),
-      meta: { requiresAuth: true, role: 'user' }
+      meta: { menu: '병의원 조회', submenu: '병의원 상세', requiresAuth: true }
     },
     {
       path: '/performance/register',

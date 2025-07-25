@@ -18,15 +18,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -40,13 +41,6 @@
           <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
           <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
           <button class="btn-delete" @click="deleteAllAssignments">모두 삭제</button>
-          <input
-            ref="fileInput"
-            type="file"
-            accept=".xlsx,.xls"
-            @change="handleFileUpload"
-            style="display: none"
-          />
         </div>
       </div>
       <DataTable
@@ -207,6 +201,7 @@ import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
+import { generateExcelFileName } from '@/utils/excelUtils'
 
 const clients = ref([])
 const loading = ref(false)
@@ -521,8 +516,8 @@ const downloadExcel = () => {
   const ws = XLSX.utils.json_to_sheet(excelData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '문전약국지정현황')
-  const today = new Date().toISOString().split('T')[0]
-  XLSX.writeFile(wb, `문전약국지정현황_${today}.xlsx`)
+  const fileName = generateExcelFileName('병의원-문전약국목록')
+  XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllAssignments() {
