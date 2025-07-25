@@ -1,8 +1,8 @@
 <template>
   <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 등록'" />
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">공지사항 등록</div>
-    <div @submit.prevent="handleSubmit" class="form-grid-2x">
+    <form @submit.prevent="handleSubmit" class="form-grid-2x">
       <div class="form-group">
         <label>제목<span class="required">*</span></label>
         <input v-model="title" type="text" required />
@@ -30,16 +30,16 @@
           </div>
         </div>
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
+      <div style="justify-content: flex-end !important; margin-top: 2rem !important;">
         <button class="btn-cancel" type="button" @click="goList" style="margin-right: 1rem;">취소</button>
-        <button class="btn-save" type="submit">등록</button>
+        <button class="btn-save" type="submit" :disabled="!isFormValid">등록</button>
       </div>
-    </div>
-</div>
+    </form>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, onMounted, watch, nextTick, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -50,6 +50,12 @@ const isPinned = ref(false);
 const files = ref([]);
 const fileInput = ref(null);
 const router = useRouter();
+
+// 필수 필드 검증
+const isFormValid = computed(() => {
+  return title.value && title.value.trim() !== '' && 
+         content.value && content.value.trim() !== '';
+});
 
 const adjustTextareaHeight = () => {
   if (contentArea.value) {
@@ -77,10 +83,6 @@ function removeFile(idx) {
 }
 
 const handleSubmit = async () => {
-  if (!title.value.trim() || !content.value.trim()) {
-    alert('제목과 내용을 입력하세요.');
-    return;
-  }
 
   let fileUrls = [];
   for (const f of files.value) {

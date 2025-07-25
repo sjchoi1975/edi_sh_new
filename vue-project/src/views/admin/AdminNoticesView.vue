@@ -3,7 +3,6 @@
     <div class="page-header-title-area">
       <div class="header-title">공지사항 목록</div>
     </div>
-
     <div class="filter-card">
       <div class="filter-row" style="display:flex; align-items:center; justify-content:flex-start;">
         <div style="display:flex; align-items:center;">
@@ -18,15 +17,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>

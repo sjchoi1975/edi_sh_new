@@ -32,15 +32,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -100,7 +101,7 @@
           :sortable="true"
         >
           <template #body="slotProps">
-            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_name" />
+            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_name" :id="`pharmacy_name_${slotProps.data.id}`" />
             <span v-else class="ellipsis-cell" :title="slotProps.data.pharmacy_name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.pharmacy_name }}</span>
           </template>
         </Column>
@@ -114,6 +115,10 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.business_registration_number"
+              :id="`business_registration_number_${slotProps.data.id}`"
+              @input="formatBusinessNumber"
+              @keypress="allowOnlyNumbers"
+              @keydown="handleBackspace"
             />
             <span v-else>{{ slotProps.data.business_registration_number }}</span>
           </template>
@@ -125,7 +130,7 @@
           :sortable="true"
         >
           <template #body="slotProps">
-            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.address" />
+            <input v-if="slotProps.data.isEditing" v-model="slotProps.data.address" :id="`address_${slotProps.data.id}`" />
             <span v-else class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
           </template>
         </Column>
@@ -140,6 +145,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.standard_code"
               style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              :id="`standard_code_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
@@ -155,6 +161,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.product_name"
               style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              :id="`product_name_${slotProps.data.id}`"
             />
             <span v-else class="ellipsis-cell" :title="slotProps.data.product_name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.product_name }}</span>
           </template>
@@ -171,6 +178,7 @@
               v-model="slotProps.data.sales_amount"
               type="number"
               style="width: 100%; border: 1px solid #ddd; padding: 4px; text-align: right"
+              :id="`sales_amount_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.sales_amount?.toLocaleString() }}</span>
           </template>
@@ -187,6 +195,7 @@
               v-model="slotProps.data.sales_date"
               type="date"
               style="width: 100%; border: 1px solid #ddd; padding: 4px"
+              :id="`sales_date_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.sales_date }}</span>
           </template>
@@ -219,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -345,11 +354,115 @@ const cancelEdit = (row) => {
 // 수정 저장
 const saveEdit = async (row) => {
   try {
-    // 필수 필드 검증 (매출액, 매출일자 제외)
-    if (!row.business_registration_number || !row.standard_code) {
-      // 매출액, 매출일자 필수 검증 제거
-      alert('사업자등록번호, 표준코드는 필수 항목입니다.')
-      return
+    // 필수 필드 검증
+    if (!row.business_registration_number || row.business_registration_number.trim() === '') {
+      alert('사업자등록번호는 필수 입력 항목입니다.');
+      await nextTick();
+      setTimeout(() => {
+        const businessNumberInput = document.getElementById(`business_registration_number_${row.id}`);
+        if (businessNumberInput) {
+          businessNumberInput.focus();
+          businessNumberInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.standard_code || row.standard_code.toString().trim() === '') {
+      alert('표준코드는 필수 입력 항목입니다.');
+      await nextTick();
+      setTimeout(() => {
+        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
+        if (standardCodeInput) {
+          standardCodeInput.focus();
+          standardCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.sales_amount || row.sales_amount.toString().trim() === '') {
+      alert('매출액은 필수 입력 항목입니다.');
+      await nextTick();
+      setTimeout(() => {
+        const salesAmountInput = document.getElementById(`sales_amount_${row.id}`);
+        if (salesAmountInput) {
+          salesAmountInput.focus();
+          salesAmountInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.sales_date || row.sales_date.toString().trim() === '') {
+      alert('매출일자는 필수 입력 항목입니다.');
+      await nextTick();
+      setTimeout(() => {
+        const salesDateInput = document.getElementById(`sales_date_${row.id}`);
+        if (salesDateInput) {
+          salesDateInput.focus();
+          salesDateInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 사업자등록번호 형식 검증 (10자리 숫자)
+    const businessNumberDigits = row.business_registration_number.replace(/[^0-9]/g, '');
+    if (businessNumberDigits.length !== 10) {
+      alert('사업자등록번호는 10자리여야 합니다.');
+      await nextTick();
+      setTimeout(() => {
+        const businessNumberInput = document.getElementById(`business_registration_number_${row.id}`);
+        if (businessNumberInput) {
+          businessNumberInput.focus();
+          businessNumberInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 표준코드 형식 검증 (13자리 숫자)
+    if (row.standard_code.toString().length !== 13 || !/^\d{13}$/.test(row.standard_code.toString())) {
+      alert('표준코드는 13자리 숫자여야 합니다.');
+      await nextTick();
+      setTimeout(() => {
+        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
+        if (standardCodeInput) {
+          standardCodeInput.focus();
+          standardCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 매출액 형식 검증 (숫자, 마이너스 허용)
+    if (isNaN(Number(row.sales_amount))) {
+      alert('매출액은 숫자여야 합니다.');
+      await nextTick();
+      setTimeout(() => {
+        const salesAmountInput = document.getElementById(`sales_amount_${row.id}`);
+        if (salesAmountInput) {
+          salesAmountInput.focus();
+          salesAmountInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 매출일자 형식 검증 (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(row.sales_date)) {
+      alert('매출일자는 YYYY-MM-DD 형식이어야 합니다.');
+      await nextTick();
+      setTimeout(() => {
+        const salesDateInput = document.getElementById(`sales_date_${row.id}`);
+        if (salesDateInput) {
+          salesDateInput.focus();
+          salesDateInput.select();
+        }
+      }, 100);
+      return;
     }
 
     const userId = await getCurrentUserId();
@@ -473,7 +586,7 @@ const handleFileUpload = async (event) => {
     jsonData.forEach((row, index) => {
       const rowNum = index + 2 // 엑셀 행 번호 (헤더 제외)
 
-      // 필수 필드 검증 (매출액, 매출일자 제외)
+      // 필수 필드 검증
       if (!row['사업자등록번호']) {
         errors.push(`${rowNum}행: 사업자등록번호가 필요합니다.`)
         return
@@ -482,9 +595,41 @@ const handleFileUpload = async (event) => {
         errors.push(`${rowNum}행: 표준코드가 필요합니다.`)
         return
       }
-      // 매출액, 매출일자는 NULL 허용으로 필수 검증에서 제외
+      if (!row['매출액']) {
+        errors.push(`${rowNum}행: 매출액이 필요합니다.`)
+        return
+      }
+      if (!row['매출일자']) {
+        errors.push(`${rowNum}행: 매출일자가 필요합니다.`)
+        return
+      }
 
-      // 날짜 변환 처리 (NULL 허용)
+      // 사업자등록번호 형식 검증 및 변환 (10자리 숫자)
+      const businessNumber = row['사업자등록번호'].toString().replace(/[^0-9]/g, '');
+      if (businessNumber.length !== 10) {
+        errors.push(`${rowNum}행: 사업자등록번호는 10자리 숫자여야 합니다.`)
+        return
+      }
+      
+      // 사업자등록번호 형식 변환: ###-##-#####
+      const formattedBusinessNumber = businessNumber.substring(0, 3) + '-' + 
+                                     businessNumber.substring(3, 5) + '-' + 
+                                     businessNumber.substring(5);
+
+      // 표준코드 형식 검증 (13자리 숫자)
+      if (row['표준코드'].toString().length !== 13 || !/^\d{13}$/.test(row['표준코드'].toString())) {
+        errors.push(`${rowNum}행: 표준코드는 13자리 숫자여야 합니다.`)
+        return
+      }
+
+      // 매출액 형식 검증 (숫자, 마이너스 허용)
+      const salesAmountValue = Number(row['매출액']);
+      if (isNaN(salesAmountValue)) {
+        errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`)
+        return
+      }
+
+      // 매출일자 형식 검증 (YYYY-MM-DD)
       let salesDate = null
       if (row['매출일자']) {
         if (typeof row['매출일자'] === 'number') {
@@ -497,28 +642,24 @@ const handleFileUpload = async (event) => {
           if (dateRegex.test(row['매출일자'])) {
             salesDate = row['매출일자']
           } else {
-            errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이거나 비워두어야 합니다.`)
+            errors.push(`${rowNum}행: 매출일자는 YYYY-MM-DD 형식이어야 합니다.`)
             return
           }
         }
-      }
-
-      // 매출액 처리 (NULL 허용)
-      const salesAmount = row['매출액'] ? Number(row['매출액']) : null
-      if (row['매출액'] && isNaN(salesAmount)) {
-        errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`)
+      } else {
+        errors.push(`${rowNum}행: 매출일자가 필요합니다.`)
         return
       }
 
       uploadData.push({
         pharmacy_code: row['약국코드'] || '',
         pharmacy_name: row['약국명'] || '',
-        business_registration_number: row['사업자등록번호'],
+        business_registration_number: formattedBusinessNumber,
         address: row['주소'] || '',
         standard_code: row['표준코드'],
         product_name: row['제품명'] || '',
-        sales_amount: salesAmount, // NULL 가능
-        sales_date: salesDate, // NULL 가능
+        sales_amount: salesAmountValue,
+        sales_date: salesDate,
         created_by: userId,
         updated_by: userId,
       })
@@ -666,6 +807,59 @@ const removeOverflowClass = (event) => {
   element.classList.remove('overflowed');
   console.log('직거래매출 오버플로우 클래스 제거됨');
 }
+
+// 숫자만 입력 허용
+const allowOnlyNumbers = (event) => {
+  const charCode = event.which ? event.which : event.keyCode;
+  if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+    event.preventDefault();
+  }
+};
+
+// 사업자등록번호 형식 변환
+const formatBusinessNumber = (event) => {
+  const target = event.target;
+  let value = target.value.replace(/[^0-9]/g, ''); // 숫자만 추출
+  
+  if (value.length > 10) {
+    value = value.substring(0, 10); // 최대 10자리로 제한
+  }
+  
+  // 형식 변환: ###-##-#####
+  if (value.length >= 3) {
+    value = value.substring(0, 3) + '-' + value.substring(3);
+  }
+  if (value.length >= 6) {
+    value = value.substring(0, 6) + '-' + value.substring(6);
+  }
+  
+  // 최대 12자리(하이픈 포함)로 제한
+  if (value.length > 12) {
+    value = value.substring(0, 12);
+  }
+  
+  target.value = value;
+};
+
+// 백스페이스 처리 (하이픈 건너뛰기)
+const handleBackspace = (event) => {
+  if (event.key === 'Backspace') {
+    const cursorPosition = event.target.selectionStart;
+    const value = event.target.value;
+    
+    // 커서 위치에 하이픈이 있으면 한 칸 더 뒤로 이동
+    if (value[cursorPosition - 1] === '-') {
+      event.preventDefault();
+      const newPosition = cursorPosition - 2;
+      event.target.value = value.substring(0, newPosition) + value.substring(cursorPosition);
+      
+      // 커서 위치 조정
+      setTimeout(() => {
+        event.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
+  }
+};
 
 onMounted(() => {
   fetchRevenues()

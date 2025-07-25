@@ -1,14 +1,13 @@
 <template>
-  <TopNavigationBar :breadcrumbMenu="'공지사항'" :breadcrumbSubMenu="'공지사항 상세'" />
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">공지사항 상세</div>
     <form class="form-grid-2x">
       <div class="form-group">
-        <label>제목 <span class="required">*</span></label>
+        <label>제목</label>
         <input :value="notice.title" type="text" readonly disabled />
       </div>
       <div class="form-group">
-        <label>내용 <span class="required">*</span></label>
+        <label>내용</label>
         <div class="input-readonly-detail">{{ notice.content }}</div>
       </div>
       <div class="form-group">

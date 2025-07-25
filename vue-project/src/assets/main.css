@@ -27,7 +27,8 @@
   --text-primary: #343a40; /* 기본 텍스트 */
   --text-secondary: #444444; /* 보조 텍스트 */
   --text-secondary: #6c757d; /* 보조 텍스트 */
-  --text-light: #adb5bd; /* 연한 텍스트 */
+   /* 플레이스홀더 =======================================================*/ 
+  --text-light: #999; /* 연한 텍스트 */ 
   --text-white: #ffffff; /* 흰색 텍스트 */
   --text-link: var(--primary-color); /* 링크 색상 */
 
@@ -55,6 +56,8 @@
   --border-primary: #dee2e6; /* 주요 구분선 */
   --border-secondary: #d1dbe6; /* 연한 구분선 */
   --border-input: #ced4da; /* 입력 필드 */
+  /* 입력 필드 <- 필터 카드 인풋 =========================================*/
+  --border-input: #cccccc;
   --border-focus: var(--primary-color); /* 포커스 */
 
   /* 크기 */
@@ -237,8 +240,8 @@ select.input-editable {
   font-weight: 500;
 }
 
-/* 검색 입력창 */
-.search-input {
+/* 기존 검색 입력창 (검색창만)*/
+.search-input-only {
   width: var(--search-input-width) !important;
   height: var(--search-input-height) !important;
   padding: 0 1rem !important;
@@ -247,6 +250,22 @@ select.input-editable {
   border: 1px solid var(--border-input) !important;
   border-radius: var(--border-radius) !important;
 }
+
+/* 검색 입력창 (W.검색 버튼)*/
+.search-input {
+  width: var(--search-input-width) !important;
+  height: var(--search-input-height) !important;
+  padding: 0 1rem !important;
+  font-size: var(--font-size-base) !important;
+  background: var(--bg-content) !important;
+  border: 1px solid var(--border-input) !important;
+  border-right: none !important;
+  border-top-left-radius: var(--border-radius) !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-bottom-left-radius: var(--border-radius) !important;
+}
+
 
 .search-input:focus {
   border-color: var(--primary-color) !important;
@@ -365,35 +384,29 @@ select.input-editable {
 .board_960 {max-width: 960px !important;}
 
 .form-title {
-  font-size: var(--font-size-title) !important;
+  font-size: 1.4rem !important;
   font-weight: 600 !important;
   color: var(--text-primary) !important;
-  margin-bottom: 1.5rem !important;
+  text-align: center !important;
+  margin-bottom: 2.4rem !important;
 }
-
-
-
-
-
-
-
 
 .form-grid {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 0.75rem !important;
+  gap: 0.5rem !important;
 }
 
 .form-grid-2x {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 1.2rem !important;
+  gap: 1.0rem !important;
 }
 
 .form-group {
   display: flex !important;
   flex-direction: column !important;
-  gap: 0.25rem !important;
+  gap: 0.2rem !important;
 }
 
 .form-group-2x {
@@ -407,6 +420,80 @@ select.input-editable {
   font-size: var(--font-size-base) !important;
   font-weight: 500 !important;
   color: var(--text-primary) !important;
+}
+
+/* [AdminCompanyCreateView.vue] 신규업체 등록 폼 - 회원가입과 동일한 스타일 */
+.form-grid {
+  width: 100% !important;
+  max-width: 720px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.2rem !important;
+}
+
+.form-grid .form-group {
+  font-size: var(--font-size-base) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  margin-bottom: 0rem !important;
+  gap: 0.5rem !important;
+}
+
+.form-grid .form-group label {
+  width: 180px !important;
+  min-width: 140px !important;
+  text-align: right !important;
+  margin-right: 1rem !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
+}
+
+.form-grid .form-group input,
+.form-grid .form-group select {
+  flex: 1 1 0 !important;
+  min-width: 260px !important;
+  max-width: 340px !important;
+  height: 32px !important;
+  font-size: var(--font-size-base) !important;
+  padding: 0.5rem 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* [AdminCompanyCreateView.vue] 버튼 영역 - 입력창과 정렬 */
+.form-grid .button-area {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-top: 1rem !important;
+  margin-right: 38px !important;
+  gap: 1rem !important;
+}
+
+/* [AdminCompanyCreateView.vue] 비밀번호 입력창 스타일 */
+.form-grid .password-input-container {
+  position: relative !important;
+  flex: 1 1 0 !important;
+  min-width: 260px !important;
+  max-width: 340px !important;
+}
+
+.form-grid .password-input-container input {
+  width: 100% !important;
+  height: 32px !important;
+  font-size: var(--font-size-base) !important;
+  padding: 0.5rem 2.5rem 0.5rem 1rem !important;
+  box-sizing: border-box !important;
+}
+
+.form-grid .password-toggle-icon {
+  position: absolute !important;
+  right: 0.7rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  cursor: pointer !important;
+  color: #888 !important;
+  font-size: 1.2rem !important;
 }
 
 
@@ -1269,6 +1356,7 @@ select.input-editable {
   border-style: none !important;
 }
 
+/* 미사용!!!??? */
 .input-readonly-detail {
   border: 1px solid var(--border-input);
   border-radius: var(--border-radius);
@@ -2317,7 +2405,7 @@ select.input-editable {
 .login-link {
   text-align: center !important;
   color: var(--primary-color) !important;
-  font-size: var(--font-size-sm) !important;
+  font-size: 0.85rem !important;
   margin-top: 1.5rem !important;
   margin-bottom: 3rem !important;
   text-decoration: underline !important;
@@ -2509,7 +2597,7 @@ select.input-editable {
   background-color: var(--primary-color) !important;
   color: #fff !important;
   font-weight: 600 !important;
-  border-radius: 4px !important;
+  border-radius: var(--border-radius) !important;
   margin-right: 1.5rem;
 }
 .side-nav-sub-item:not(.active):hover {

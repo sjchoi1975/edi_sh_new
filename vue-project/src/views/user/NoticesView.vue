@@ -9,7 +9,7 @@
           <InputText
             v-model="filters['global'].value"
             placeholder="제목, 내용 검색"
-            class="search-input"
+            class="search-input-only"
           />
         </span>
       </div>

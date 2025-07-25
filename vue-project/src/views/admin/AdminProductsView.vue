@@ -31,15 +31,16 @@
               v-if="searchInput.length > 0"
               class="clear-btn"
               @click="clearSearch"
-              title="검색어 초기화"
-            >×</button>
+              title="검색어 초기화">
+              ×
+            </button>
           </span>
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch"
-            style="margin-left: 4px;"
-          >검색</button>
+            @click="doSearch">
+            검색
+          </button>
         </div>
       </div>
     </div>
@@ -92,6 +93,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.product_name"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
+              :id="`product_name_${slotProps.data.id}`"
             />
             <a v-else href="#" class="text-link ellipsis-cell" :title="slotProps.data.product_name" @click.prevent="goToDetail(slotProps.data.id)" @mouseenter="checkProductOverflow" @mouseleave="removeOverflowClass">
               {{ slotProps.data.product_name }}
@@ -109,6 +111,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.insurance_code"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
+              :id="`insurance_code_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.insurance_code }}</span>
           </template>
@@ -120,6 +123,7 @@
               v-model="slotProps.data.price"
               type="number"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`price_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.price?.toLocaleString() }}</span>
           </template>
@@ -132,6 +136,7 @@
               type="number"
               step="0.001"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`commission_rate_a_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.commission_rate_a !== undefined && slotProps.data.commission_rate_a !== null ? (slotProps.data.commission_rate_a * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
@@ -144,6 +149,7 @@
               type="number"
               step="0.001"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`commission_rate_b_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.commission_rate_b !== undefined && slotProps.data.commission_rate_b !== null ? (slotProps.data.commission_rate_b * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
@@ -156,6 +162,7 @@
               type="number"
               step="0.001"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`commission_rate_c_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.commission_rate_c !== undefined && slotProps.data.commission_rate_c !== null ? (slotProps.data.commission_rate_c * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
@@ -171,6 +178,7 @@
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.standard_code"
               class="p-inputtext p-component p-inputtext-sm inline-edit-input"
+              :id="`standard_code_${slotProps.data.id}`"
             />
             <span v-else>{{ slotProps.data.standard_code }}</span>
           </template>
@@ -238,7 +246,7 @@
           <template #body="slotProps">
             <div style="display: flex; gap: 0.25rem; justify-content: center;">
               <template v-if="slotProps.data.isEditing">
-                <button @click="saveEdit(slotProps.data)" class="btn-save-sm" title="저장">저장</button>
+                <button @click="saveEdit(slotProps.data)" class="btn-save-sm" :disabled="!isEditValid(slotProps.data)" title="저장">저장</button>
                 <button @click="cancelEdit(slotProps.data)" class="btn-cancel-sm" title="취소">취소</button>
               </template>
               <template v-else>
@@ -618,6 +626,57 @@ const handleFileUpload = async (event) => {
         return
       }
 
+      // 보험코드 형식 검증 (9자리 숫자)
+      if (row['보험코드'].toString().length !== 9 || !/^\d{9}$/.test(row['보험코드'].toString())) {
+        errors.push(`${rowNum}행: 보험코드는 9자리 숫자여야 합니다.`)
+        return
+      }
+
+      // 표준코드 형식 검증 (13자리 숫자)
+      if (row['표준코드'] && (row['표준코드'].toString().length !== 13 || !/^\d{13}$/.test(row['표준코드'].toString()))) {
+        errors.push(`${rowNum}행: 표준코드는 13자리 숫자여야 합니다.`)
+        return
+      }
+
+      // 약가 형식 검증 (숫자)
+      if (row['약가'] && (isNaN(Number(row['약가'])) || Number(row['약가']) < 0)) {
+        errors.push(`${rowNum}행: 약가는 0 이상의 숫자여야 합니다.`)
+        return
+      }
+
+      // 수수료율 A 검증 (0~1, 소수점 3자리)
+      if (row['수수료A'] !== undefined && row['수수료A'] !== null && row['수수료A'] !== '') {
+        const commissionA = Number(row['수수료A'])
+        if (isNaN(commissionA) || commissionA < 0 || commissionA > 1) {
+          errors.push(`${rowNum}행: 수수료율 A는 0~1 사이의 숫자여야 합니다.`)
+          return
+        }
+        // 소수점 3자리로 반올림
+        row['수수료A'] = Math.round(commissionA * 1000) / 1000
+      }
+
+      // 수수료율 B 검증 (0~1, 소수점 3자리)
+      if (row['수수료B'] !== undefined && row['수수료B'] !== null && row['수수료B'] !== '') {
+        const commissionB = Number(row['수수료B'])
+        if (isNaN(commissionB) || commissionB < 0 || commissionB > 1) {
+          errors.push(`${rowNum}행: 수수료율 B는 0~1 사이의 숫자여야 합니다.`)
+          return
+        }
+        // 소수점 3자리로 반올림
+        row['수수료B'] = Math.round(commissionB * 1000) / 1000
+      }
+
+      // 수수료율 C 검증 (0~1, 소수점 3자리)
+      if (row['수수료C'] !== undefined && row['수수료C'] !== null && row['수수료C'] !== '') {
+        const commissionC = Number(row['수수료C'])
+        if (isNaN(commissionC) || commissionC < 0 || commissionC > 1) {
+          errors.push(`${rowNum}행: 수수료율 C는 0~1 사이의 숫자여야 합니다.`)
+          return
+        }
+        // 소수점 3자리로 반올림
+        row['수수료C'] = Math.round(commissionC * 1000) / 1000
+      }
+
       const monthRegex = /^\d{4}-\d{2}$/
       if (!monthRegex.test(row['기준월'])) {
         errors.push(`${rowNum}행: 기준월은 YYYY-MM 형식이어야 합니다.`)
@@ -835,6 +894,30 @@ const startEdit = (row) => {
   row.isEditing = true
 }
 
+// 변경값 감지 및 필수값 검증
+const isEditValid = (row) => {
+  // 필수값 검증
+  const hasRequiredFields = row.product_name && row.product_name.trim() !== '' && 
+                           row.insurance_code && row.insurance_code.toString().trim() !== '' && 
+                           row.price && row.price.toString().trim() !== '' && 
+                           row.standard_code && row.standard_code.toString().trim() !== '';
+  
+  // 변경값 감지
+  const hasChanges = row.product_name !== row.originalData.product_name ||
+                    row.insurance_code !== row.originalData.insurance_code ||
+                    row.price !== row.originalData.price ||
+                    row.commission_rate_a !== row.originalData.commission_rate_a ||
+                    row.commission_rate_b !== row.originalData.commission_rate_b ||
+                    row.commission_rate_c !== row.originalData.commission_rate_c ||
+                    row.standard_code !== row.originalData.standard_code ||
+                    row.unit_packaging_desc !== row.originalData.unit_packaging_desc ||
+                    row.unit_quantity !== row.originalData.unit_quantity ||
+                    row.status !== row.originalData.status ||
+                    row.remarks !== row.originalData.remarks;
+  
+  return hasRequiredFields && hasChanges;
+}
+
 const cancelEdit = (row) => {
   Object.keys(row.originalData).forEach((key) => {
     if (key !== 'isEditing' && key !== 'originalData') {
@@ -846,15 +929,146 @@ const cancelEdit = (row) => {
 
 const saveEdit = async (row) => {
   try {
-    if (!row.base_month || !row.product_name || !row.insurance_code) {
-      alert('필수 항목을 모두 입력하세요.')
-      return
+    // 필수 필드 검증
+    if (!row.product_name || row.product_name.trim() === '') {
+      alert('제품명은 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const productNameInput = document.getElementById(`product_name_${row.id}`);
+        if (productNameInput) {
+          productNameInput.focus();
+          productNameInput.select();
+        }
+      }, 100);
+      return;
     }
 
-    const monthRegex = /^\d{4}-\d{2}$/
-    if (!monthRegex.test(row.base_month)) {
-      alert('기준월은 YYYY-MM 형식이어야 합니다.')
-      return
+    if (!row.insurance_code || row.insurance_code.toString().trim() === '') {
+      alert('보험코드는 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const insuranceCodeInput = document.getElementById(`insurance_code_${row.id}`);
+        if (insuranceCodeInput) {
+          insuranceCodeInput.focus();
+          insuranceCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.price || row.price.toString().trim() === '') {
+      alert('약가는 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const priceInput = document.getElementById(`price_${row.id}`);
+        if (priceInput) {
+          priceInput.focus();
+          priceInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    if (!row.standard_code || row.standard_code.toString().trim() === '') {
+      alert('표준코드는 필수 입력 항목입니다.');
+      setTimeout(() => {
+        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
+        if (standardCodeInput) {
+          standardCodeInput.focus();
+          standardCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 보험코드 형식 검증 (9자리 숫자)
+    if (row.insurance_code.toString().length !== 9 || !/^\d{9}$/.test(row.insurance_code.toString())) {
+      alert('보험코드는 9자리 숫자여야 합니다.');
+      setTimeout(() => {
+        const insuranceCodeInput = document.getElementById(`insurance_code_${row.id}`);
+        if (insuranceCodeInput) {
+          insuranceCodeInput.focus();
+          insuranceCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 표준코드 형식 검증 (13자리 숫자)
+    if (row.standard_code.toString().length !== 13 || !/^\d{13}$/.test(row.standard_code.toString())) {
+      alert('표준코드는 13자리 숫자여야 합니다.');
+      setTimeout(() => {
+        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
+        if (standardCodeInput) {
+          standardCodeInput.focus();
+          standardCodeInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 약가 형식 검증 (0 이상의 숫자)
+    if (row.price && (isNaN(Number(row.price)) || Number(row.price) < 0)) {
+      alert('약가는 0 이상의 숫자여야 합니다.');
+      setTimeout(() => {
+        const priceInput = document.getElementById(`price_${row.id}`);
+        if (priceInput) {
+          priceInput.focus();
+          priceInput.select();
+        }
+      }, 100);
+      return;
+    }
+
+    // 수수료율 A 검증 (0~1, 소수점 3자리)
+    if (row.commission_rate_a && row.commission_rate_a.toString().trim() !== '') {
+      const commissionAValue = Number(row.commission_rate_a);
+      if (isNaN(commissionAValue) || commissionAValue < 0 || commissionAValue > 1) {
+        alert('수수료율 A는 0~1 사이의 숫자여야 합니다.');
+        setTimeout(() => {
+          const commissionAInput = document.getElementById(`commission_rate_a_${row.id}`);
+          if (commissionAInput) {
+            commissionAInput.focus();
+            commissionAInput.select();
+          }
+        }, 100);
+        return;
+      }
+      // 소수점 3자리로 반올림
+      row.commission_rate_a = Math.round(commissionAValue * 1000) / 1000;
+    }
+
+    // 수수료율 B 검증 (0~1, 소수점 3자리)
+    if (row.commission_rate_b && row.commission_rate_b.toString().trim() !== '') {
+      const commissionBValue = Number(row.commission_rate_b);
+      if (isNaN(commissionBValue) || commissionBValue < 0 || commissionBValue > 1) {
+        alert('수수료율 B는 0~1 사이의 숫자여야 합니다.');
+        setTimeout(() => {
+          const commissionBInput = document.getElementById(`commission_rate_b_${row.id}`);
+          if (commissionBInput) {
+            commissionBInput.focus();
+            commissionBInput.select();
+          }
+        }, 100);
+        return;
+      }
+      // 소수점 3자리로 반올림
+      row.commission_rate_b = Math.round(commissionBValue * 1000) / 1000;
+    }
+
+    // 수수료율 C 검증 (0~1, 소수점 3자리)
+    if (row.commission_rate_c && row.commission_rate_c.toString().trim() !== '') {
+      const commissionCValue = Number(row.commission_rate_c);
+      if (isNaN(commissionCValue) || commissionCValue < 0 || commissionCValue > 1) {
+        alert('수수료율 C는 0~1 사이의 숫자여야 합니다.');
+        setTimeout(() => {
+          const commissionCInput = document.getElementById(`commission_rate_c_${row.id}`);
+          if (commissionCInput) {
+            commissionCInput.focus();
+            commissionCInput.select();
+          }
+        }, 100);
+        return;
+      }
+      // 소수점 3자리로 반올림
+      row.commission_rate_c = Math.round(commissionCValue * 1000) / 1000;
     }
 
     if (!['active', 'inactive'].includes(row.status)) {
@@ -863,13 +1077,12 @@ const saveEdit = async (row) => {
     }
 
     const updateData = {
-      base_month: row.base_month,
       product_name: row.product_name,
       insurance_code: row.insurance_code,
       price: Number(row.price) || 0,
-      commission_rate_a: Number(row.commission_rate_a) || 0,
-      commission_rate_b: Number(row.commission_rate_b) || 0,
-      commission_rate_c: Number(row.commission_rate_c) || 0,
+      commission_rate_a: row.commission_rate_a === '' ? 0 : Number(row.commission_rate_a),
+      commission_rate_b: row.commission_rate_b === '' ? 0 : Number(row.commission_rate_b),
+      commission_rate_c: row.commission_rate_c === '' ? 0 : Number(row.commission_rate_c),
       standard_code: row.standard_code || '',
       unit_packaging_desc: row.unit_packaging_desc || '',
       unit_quantity: Number(row.unit_quantity) || 0,
@@ -989,3 +1202,10 @@ const removeOverflowClass = (event) => {
 }
 
 </script>
+
+<style scoped>
+.btn-save-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+</style>

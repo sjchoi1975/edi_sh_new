@@ -1,71 +1,70 @@
 <template>
-  <TopNavigationBar :breadcrumbMenu="'업체 관리'" :breadcrumbSubMenu="breadcrumbSubMenu" />
   <div class="board_640">
     <div class="form-title">업체 상세</div>
     <div class="form-grid">
       <div class="form-group">
         <label>아이디(이메일)</label>
-        <input class="input-readonly-detail" :value="company.email || '-'" readonly disabled />
+        <input :value="company.email || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>업체명</label>
-        <input class="input-readonly-detail" :value="company.company_name || '-'" readonly disabled />
+        <input :value="company.company_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>사업자등록번호</label>
-        <input class="input-readonly-detail" :value="company.business_registration_number || '-'" readonly disabled />
+        <input :value="company.business_registration_number || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>대표자</label>
-        <input class="input-readonly-detail" :value="company.representative_name || '-'" readonly disabled />
+        <input :value="company.representative_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>사업장 소재지</label>
-        <input class="input-readonly-detail" :value="company.business_address || '-'" readonly disabled />
+        <input :value="company.business_address || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>유선전화</label>
-        <input class="input-readonly-detail" :value="company.landline_phone || '-'" readonly disabled />
+        <input :value="company.landline_phone || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>담당자</label>
-        <input class="input-readonly-detail" :value="company.contact_person_name || '-'" readonly disabled />
+        <input :value="company.contact_person_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>휴대폰 번호</label>
-        <input class="input-readonly-detail" :value="company.mobile_phone || '-'" readonly disabled />
+        <input :value="company.mobile_phone || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>휴대폰 번호 2</label>
-        <input class="input-readonly-detail" :value="company.mobile_phone_2 || '-'" readonly disabled />
+        <input :value="company.mobile_phone_2 || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수신용 이메일</label>
-        <input class="input-readonly-detail" :value="company.receive_email || '-'" readonly disabled />
+        <input :value="company.receive_email || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>구분</label>
-        <input class="input-readonly-detail" :value="company.company_group || '-'" readonly disabled />
+        <input :value="company.company_group || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수수료 등급</label>
-        <input class="input-readonly-detail" :value="company.default_commission_grade || '-'" readonly disabled />
+        <input :value="company.default_commission_grade || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>관리자</label>
-        <input class="input-readonly-detail" :value="company.assigned_pharmacist_contact || '-'" readonly disabled />
+        <input :value="company.assigned_pharmacist_contact || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>승인여부</label>
-        <input class="input-readonly-detail" :value="company.approval_status === 'approved' ? '승인' : (company.approval_status === 'pending' ? '미승인' : '-')" readonly disabled />
+        <input :value="company.approval_status === 'approved' ? '승인' : (company.approval_status === 'pending' ? '미승인' : '-')" readonly disabled />
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="company.remarks || '-'" readonly disabled />
+        <input :value="company.remarks || '-'" readonly disabled />
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-reset-password" @click="handleResetPassword" style="margin-right: 1rem;">비밀번호 재설정 이메일 발송</button>
-        <button class="btn-edit" @click="goEdit" style="margin-right: 1rem;">수정</button>
+      <div class="button-area">        
+        <button class="btn-reset-password" @click="handleResetPassword">비밀번호 재설정 이메일 발송</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
         <button class="btn-list" @click="goList">목록</button>
       </div>
     </div>

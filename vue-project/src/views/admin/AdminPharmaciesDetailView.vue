@@ -4,31 +4,31 @@
     <div class="form-grid">
       <div class="form-group">
         <label>약국코드</label>
-        <input class="input-readonly-detail" :value="pharmacy.pharmacy_code || '-'" readonly disabled />
+        <input :value="pharmacy.pharmacy_code || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>약국명</label>
-        <input class="input-readonly-detail" :value="pharmacy.name || '-'" readonly disabled />
+        <input :value="pharmacy.name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>사업자등록번호</label>
-        <input class="input-readonly-detail" :value="pharmacy.business_registration_number || '-'" readonly disabled />
+        <input :value="pharmacy.business_registration_number || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>주소</label>
-        <input class="input-readonly-detail" :value="pharmacy.address || '-'" readonly disabled />
+        <input :value="pharmacy.address || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>상태</label>
-        <input class="input-readonly-detail" :value="pharmacy.status === 'active' ? '활성' : (pharmacy.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <input :value="pharmacy.status === 'active' ? '활성' : (pharmacy.status === 'inactive' ? '비활성' : '-')" readonly disabled />
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="pharmacy.remarks || '-'" readonly disabled />
+        <input :value="pharmacy.remarks || '-'" readonly disabled />
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn-delete" @click="handleDelete" style="margin-right: 1rem;">삭제</button>
-        <button class="btn-edit" @click="goEdit" style="margin-right: 1rem;">수정</button>
+      <div class="button-area">
+        <button class="btn-delete" @click="handleDelete">삭제</button>
+        <button class="btn-edit" @click="goEdit">수정</button>
         <button class="btn-list" @click="goList">목록</button>
       </div>
     </div>

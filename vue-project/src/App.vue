@@ -17,7 +17,6 @@ const userEmail = ref('');
 const userType = ref(''); // 'admin', 'user', or ''
 const route = useRoute();
 const isSideNavExpanded = ref(false);
-const dialogVisible = ref(false);
 const toast = useToast();
 
 console.log('[App.vue] Script setup: Initializing');
@@ -85,7 +84,11 @@ const handleRedirect = async (currentSession) => {
 
 // 대메뉴/중메뉴 구조(TopNavigationBar용, SideNavigationBar와 동일하게 유지)
 const adminMenuTree = [
-  { label: '공지사항 관리', children: [ { label: '공지사항 목록', path: '/admin/notices' } ] },
+  { label: '공지사항 관리', children: [ 
+    { label: '공지사항 목록', path: '/admin/notices' },
+    { label: '공지사항 상세', path: '/admin/notices/:id' },
+    { label: '공지사항 수정', path: '/admin/notices/:id/edit' }
+  ] },
   { label: '업체 관리', children: [ 
     { label: '승인 업체', path: '/admin/companies/approved' },
     { label: '미승인 업체', path: '/admin/companies/pending' }
@@ -122,33 +125,47 @@ const menuTree = computed(() => userType.value === 'admin' ? adminMenuTree : use
 
 const breadcrumbMenu = computed(() => {
   const currentPath = route.path;
-  for (const menu of menuTree.value) {
-    for (const child of menu.children) {
-      if (currentPath.startsWith(child.path)) {
-        return menu.label;
-      }
-    }
-  }
+  if (/^\/admin\/notices(\/|$)/.test(currentPath)) return '공지사항 관리';
+  if (/^\/admin\/companies(\/|$)/.test(currentPath)) return '업체 관리';
+  if (/^\/admin\/products(\/|$)/.test(currentPath)) return '제품 관리';
+  if (/^\/admin\/clients(\/|$)/.test(currentPath)) return '병의원 관리';
+  if (/^\/admin\/pharmacies(\/|$)/.test(currentPath)) return '문전약국 관리';
+  if (/^\/admin\/wholesale-revenue(\/|$)/.test(currentPath)) return '도매매출 관리';
+  if (/^\/admin\/direct-revenue(\/|$)/.test(currentPath)) return '직거래매출 관리';
+  if (/^\/admin\/settlement-months(\/|$)/.test(currentPath)) return '정산월 관리';
   return '';
 });
+
 const breadcrumbSubMenu = computed(() => {
   const currentPath = route.path;
-  let bestMatch = '';
-  let bestMatchLength = 0;
-  
-  for (const menu of menuTree.value) {
-    for (const child of menu.children) {
-      // 정확한 경로 매칭 또는 하위 경로 매칭
-      if (currentPath === child.path || currentPath.startsWith(child.path + '/')) {
-        // 더 긴 경로가 더 구체적인 매칭이므로 우선순위를 높임
-        if (child.path.length > bestMatchLength) {
-          bestMatch = child.label;
-          bestMatchLength = child.path.length;
-        }
-      }
-    }
-  }
-  return bestMatch;
+  // 공지사항
+  if (/^\/admin\/notices\/[\w-]+\/edit(?:\?.*)?$/.test(currentPath)) return '공지사항 수정';
+  if (/^\/admin\/notices\/create(?:\?.*)?$/.test(currentPath)) return '공지사항 등록';
+  if (/^\/admin\/notices\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '공지사항 상세';
+  // 업체
+  if (/^\/admin\/companies\/create(?:\?.*)?$/.test(currentPath)) return '신규 업체 등록';
+  if (/^\/admin\/companies\/[\w-]+\/edit(?:\?.*)?$/.test(currentPath)) return '업체 수정';
+  if (/^\/admin\/companies\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '업체 상세';
+  // 제품
+  if (/^\/admin\/products\/create(?:\?.*)?$/.test(currentPath)) return '제품 등록';
+  if (/^\/admin\/products\/[\w-]+\/edit(?:\?.*)?$/.test(currentPath)) return '제품 수정';
+  if (/^\/admin\/products\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '제품 상세';
+  // 병의원
+  if (/^\/admin\/clients\/[\w-]+\/edit(?:\?.*)?$/.test(currentPath)) return '병의원 수정';
+  if (/^\/admin\/clients\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '병의원 상세';
+  // 문전약국
+  if (/^\/admin\/pharmacies\/create(?:\?.*)?$/.test(currentPath)) return '문전약국 등록';
+  if (/^\/admin\/pharmacies\/[\w-]+\/edit(?:\?.*)?$/.test(currentPath)) return '문전약국 수정';
+  if (/^\/admin\/pharmacies\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '문전약국 상세';
+  // 도매매출/직거래매출
+  if (/^\/admin\/wholesale-revenue\/create(?:\?.*)?$/.test(currentPath)) return '도매매출 등록';
+  if (/^\/admin\/direct-revenue\/create(?:\?.*)?$/.test(currentPath)) return '직거래매출 등록';
+  // 정산월
+  if (/^\/admin\/settlement-months\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '정산월 상세';
+  // 이용자
+  if (/^\/products\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '제품 상세';
+  if (/^\/clients\/[\w-]+(?:\?.*)?$/.test(currentPath)) return '병의원 상세';
+  return '';
 });
 
 onMounted(async () => {
@@ -218,12 +235,6 @@ const handleLogout = async () => {
   }
 };
 
-const handleCancel = () => {
-  // 여기에 취소 처리 로직을 추가해야 합니다.
-  console.log('[App.vue] handleCancel: Cancel clicked');
-  dialogVisible.value = false;
-};
-
 // 처리 성공 시
 toast.add({ severity: 'success', summary: '성공', detail: '업체 상태가 성공적으로 변경되었습니다.', life: 3000 });
 
@@ -242,12 +253,6 @@ toast.add({ severity: 'error', summary: '실패', detail: '오류가 발생했�
       <RouterView />
     </div>
     <Toast />
-    <Dialog v-model:visible="dialogVisible" header="업체 승인 취소 확인" :modal="true" :closable="false">
-      <div>스엽사인 업체를 승인 취소 처리하시겠습니까?</div>
-      <template #footer>
-        <Button label="취소" @click="dialogVisible = false" />
-        <Button label="승인 취소" @click="handleCancel" />
-      </template>
-    </Dialog>
+    <!-- Dialog(승인 취소 모달) 완전 삭제 -->
   </DefaultLayout>
 </template>
