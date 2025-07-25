@@ -508,11 +508,10 @@ onMounted(() => {
 .commission-grade-select {
   width: 100%;
   min-width: 80px;
-  padding: 4px 8px;
+  height: 1.9rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   background-color: white;
-  font-size: 13px;
   color: #374151;
   cursor: pointer;
   text-align: center;
@@ -533,7 +532,4 @@ onMounted(() => {
   color: white;
 }
 
-.admin-commission-grades-table .p-datatable-tbody > tr > td {
-  padding: 4px 12px;
-}
 </style>

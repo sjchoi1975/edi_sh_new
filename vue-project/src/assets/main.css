@@ -541,8 +541,18 @@ select.input-editable {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-
 }
+
+/* DataTable Footer (합계 행) 공통 스타일 */
+.p-datatable .p-datatable-tfoot > tr > td.footer-cell {
+  background-color: #f8f9fa !important; /* 합계 행 배경색 */
+  font-weight: bold !important; /* 글자 굵게 */
+  padding: 0.38rem 0.5rem !important;
+  border-top: 1px solid #dee2e6 !important; 
+  border-right: 1px solid #dee2e6 !important; 
+  border-bottom: 1px solid #dee2e6 !important; 
+}
+
 
 /* 사업장 소재지 컬럼 오버플로우 및 툴팁 처리 */
 .ellipsis-cell {
@@ -910,7 +920,8 @@ select.input-editable {
 .p-datatable .p-datatable-thead > tr > th,
 /* 테이블 바디 */
 .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.25rem 0.5rem !important;
+  padding: 0.0rem 0.5rem !important;
+  height: 2.3rem !important;
   color: var(--text-primary) !important;
   border-right: 1px solid var(--border-secondary) !important;
   white-space: normal !important;
@@ -2653,14 +2664,6 @@ select.input-editable {
   text-decoration: underline !important;
 }
 
-/* DataTable Footer (합계 행) 공통 스타일 */
-.p-datatable .p-datatable-tfoot > tr > td.footer-cell {
-  background-color: #f8f9fa !important; /* 합계 행 배경색 */
-  font-weight: bold !important; /* 글자 굵게 */
-  padding: 0.25rem 0.5rem !important;
-  border-top: 1px solid #dee2e6 !important; 
-  border-right: 1px solid #dee2e6 !important; 
-}
 
 /* 제품 검색 드롭다운 스타일 */
 .product-search-dropdown {

@@ -57,6 +57,8 @@
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
+        scrollable
+        scrollHeight="calc(100vh - 250px)"
         class="admin-pharmacies-table"
         v-model:first="currentPageFirstIndex"
       >

@@ -229,15 +229,25 @@
             </div>
           </template>
         </Column>
+        <ColumnGroup type="footer">
+          <Row>
+            <Column footer="합계" :colspan="7" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+            <Column :footer="totalSalesAmount.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column footer="" footerClass="footer-cell" />
+            <Column footer="" footerClass="footer-cell" />
+          </Row>
+        </ColumnGroup>
       </DataTable>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import ColumnGroup from 'primevue/columngroup'
+import Row from 'primevue/row'
 import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
@@ -256,10 +266,10 @@ const columnWidths = {
   pharmacy_code: '7%',
   pharmacy_name: '16%',
   business_registration_number: '8%',
-  address: '21%',
+  address: '20%',
   standard_code: '8%',
   product_name: '16%',
-  sales_amount: '6%',
+  sales_amount: '7%',
   sales_date: '6%',
   actions: '8%',
 }
@@ -276,6 +286,13 @@ const toMonth = ref('')
 const availableMonths = ref([])
 const currentPageFirstIndex = ref(0)
 const pageSize = ref(50)
+
+// 매출액 합계 계산
+const totalSalesAmount = computed(() => {
+  return filteredRevenues.value.reduce((sum, revenue) => {
+    return sum + (revenue.sales_amount || 0)
+  }, 0)
+})
 
 function goCreate() {
   router.push('/admin/wholesale-revenue/create')
@@ -880,3 +897,11 @@ onMounted(() => {
   fetchAvailableMonths()
 })
 </script>
+
+<style scoped>
+.footer-cell {
+  background-color: #f8f9fa !important;
+  font-weight: bold !important;
+  border-top: 1px solid #dee2e6 !important;
+}
+</style>
