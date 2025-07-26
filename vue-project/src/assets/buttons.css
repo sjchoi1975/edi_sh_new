@@ -59,6 +59,7 @@
  
 }
 
+
 /* ========================================== */
 /* 2. 기본 버튼 스타일 (일반 크기)             */
 /* ========================================== */
@@ -415,127 +416,82 @@
 
 
 
-/* ========================================== */
-/* 5. 뱃지 스타일                             */
-/* ========================================== */
-/*
-사용처:
-- 공지사항 필수 표시 (.required-badge)
-- 제품/거래처/문전약국 활성화 상태 표시 (.active-badge/.inactive-badge)
-- 상태 표시용 라벨들
-*/
+/* ================================================================================ */
+/* 5. 뱃지 스타일
+/* ================================================================================ */
+
 
 .required-badge,
 .active-badge,
-.inactive-badge {
-  padding: 0.25em 0 !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 300 !important;
-  width: 48px !important;
-  line-height: 1.2 !important;
-  border-radius: 12px !important;
-  display: inline-block !important;
-  text-align: center !important;
-  white-space: nowrap !important;
-  vertical-align: baseline !important;
-}
-
-.required-badge {
-  background: var(--danger) !important;
-  color: var(--text-white) !important;
-}
-
-.active-badge {
-  background: var(--primary-blue) !important;
-  color: var(--text-white) !important;
-}
-
-.inactive-badge {
-  background: var(--gray-500) !important;
-  color: var(--text-white) !important;
-  border: 1px solid var(--gray-500) !important;
-}
-
-
-/* 관리자 - 대기 pending > 검수중 reviewing > 완료 completed */
-
+.inactive-badge,
 .status-pending,
 .status-reviewing,
-.status-completed {
-  padding: 0.25em 0 !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 400 !important;
-  width: 48px !important;
-  line-height: 1.2 !important;
-  border-radius: 12px !important;
-  display: inline-block !important;
-  text-align: center !important;
-  white-space: nowrap !important;
-  vertical-align: baseline !important;
-}
-
-.status-pending {
-  background-color: var(--danger);
-  color: #fff;
-}
-
-.status-reviewing {
-  background-color: var(--primary-color);
-  color: #fff;
-}
-
-.status-completed {
-  background-color: var(--primary-blue);
-  color: #fff;
-}
-
-
-/* 이용자 - 대기 pending > 검수중 reviewing > 완료 completed */
+.status-completed,
 .status-pending_user,
 .status-reviewing_user,
 .status-completed_user {
   padding: 0.25em 0 !important;
-  font-size: var(--font-size-sm) !important;
+  font-size: 0.8rem !important;
   font-weight: 400 !important;
-  width: 48px !important;
+  width: 44px !important;
   line-height: 1.2 !important;
-  border-radius: 12px !important;
   display: inline-block !important;
   text-align: center !important;
   white-space: nowrap !important;
   vertical-align: baseline !important;
 }
 
+/* 공지사항 필수 표시 (.required-badge) */  
+.active-badge {
+  background: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+  border-radius: 16px !important;
+}
+.inactive-badge {
+  background: var(--gray-500) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--gray-500) !important;
+  border-radius: 16px !important;
+}
+
+/* 제품/거래처/문전약국 활성화 상태 표시 (.active-badge/.inactive-badge) */
+.required-badge {
+  background: var(--danger) !important;
+  color: var(--text-white) !important;
+  border-radius: 2px !important;
+}
+
+/* 검수 상태 - 대기 pending > 검수중 reviewing > 완료 completed */
+.status-pending {
+  background-color: var(--danger);
+  color: #fff;
+  border-radius: 2px !important;
+}
+.status-reviewing {
+  background-color: var(--primary-color);
+  color: #fff;
+  border-radius: 2px !important;
+}
+.status-completed {
+  background-color: var(--primary-blue);
+  color: #fff;
+  border-radius: 2px !important;
+}
 .status-pending_user {
   background-color: var(--primary-blue);
   color: #fff;
+  border-radius: 2px !important;
 }
-
 .status-reviewing_user {
   background-color: var(--primary-color);
   color: #fff;
+  border-radius: 2px !important;
 }
-
 .status-completed_user {
   background-color: var(--danger);
   color: #fff;
+  border-radius: 2px !important;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

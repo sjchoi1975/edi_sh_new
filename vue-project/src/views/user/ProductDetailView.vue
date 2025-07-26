@@ -4,33 +4,29 @@
     <form class="form-grid">
       <div class="form-group">
         <label>기준월</label>
-        <input class="input-readonly-detail" :value="product.base_month || '-'" readonly disabled />
+        <input :value="product.base_month || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>제품명</label>
-        <input class="input-readonly-detail" :value="product.product_name || '-'" readonly disabled />
+        <input :value="product.product_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>보험코드</label>
-        <input class="input-readonly-detail" :value="product.insurance_code || '-'" readonly disabled />
+        <input :value="product.insurance_code || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>약가</label>
-        <input class="input-readonly-detail" :value="product.price || '-'" readonly disabled />
+        <input :value="product.price || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>수수료율(%)</label>
-        <input class="input-readonly-detail" :value="getCommissionRate()" readonly disabled />
-      </div>
-      <div class="form-group">
-        <label>상태</label>
-        <input class="input-readonly-detail" :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <input :value="getCommissionRate()" readonly disabled />
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="product.remarks || '-'" readonly disabled />
+        <input :value="product.remarks || '-'" readonly disabled />
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
+      <div class="button-area">
         <button class="btn-list" type="button" @click="goList">목록</button>
       </div>
     </form>

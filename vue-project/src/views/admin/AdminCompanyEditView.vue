@@ -3,8 +3,8 @@
     <div class="form-title">업체 수정</div>
     <form @submit.prevent="handleSubmit" class="form-grid">
       <div class="form-group">
-        <label>아이디(이메일)<span class="required">*</span></label>
-        <input id="email" v-model="email" type="email" required />
+        <label>아이디(이메일)</label>
+        <input :value="email" readonly disabled class="input-readonly" />
       </div>
       <div class="form-group">
         <label>업체명<span class="required">*</span></label>
@@ -27,11 +27,11 @@
         <input id="representative" v-model="representative" type="text" required />
       </div>
       <div class="form-group">
-        <label>사업장 소재지<span class="required">*</span></label>
-        <input id="address" v-model="address" type="text" required />
+        <label>사업장 소재지</label>
+        <input id="address" v-model="address" type="text" />
       </div>
       <div class="form-group">
-        <label>유선전화</label>
+        <label>유선 전화번호</label>
         <input 
           id="landline" 
           v-model="landline" 
@@ -42,16 +42,15 @@
         />
       </div>
       <div class="form-group">
-        <label>담당자<span class="required">*</span></label>
-        <input id="contactPerson" v-model="contactPerson" type="text" required />
+        <label>담당자</label>
+        <input id="contactPerson" v-model="contactPerson" type="text" />
       </div>
       <div class="form-group">
-        <label>휴대폰 번호<span class="required">*</span></label>
+        <label>휴대폰 번호</label>
         <input 
           id="mobile" 
           v-model="mobile" 
           type="text" 
-          required 
           @input="formatPhoneNumber"
           @keypress="allowOnlyNumbers"
           @keydown="handleBackspace"
@@ -156,18 +155,13 @@ const originalData = ref({
 
 // 필수 필드 검증 및 변경값 감지
 const isFormValid = computed(() => {
-  // 필수값 검증
-  const hasRequiredFields = email.value && email.value.trim() !== '' && 
-                           companyName.value && companyName.value.trim() !== '' && 
+  // 필수값 검증 (이메일 제외)
+  const hasRequiredFields = companyName.value && companyName.value.trim() !== '' && 
                            businessNumber.value && businessNumber.value.trim() !== '' && 
-                           representative.value && representative.value.trim() !== '' && 
-                           address.value && address.value.trim() !== '' && 
-                           contactPerson.value && contactPerson.value.trim() !== '' && 
-                           mobile.value && mobile.value.trim() !== '';
+                           representative.value && representative.value.trim() !== '';
   
-  // 변경값 감지
-  const hasChanges = email.value !== originalData.value.email ||
-                    companyName.value !== originalData.value.companyName ||
+  // 변경값 감지 (이메일 제외)
+  const hasChanges = companyName.value !== originalData.value.companyName ||
                     businessNumber.value !== originalData.value.businessNumber ||
                     representative.value !== originalData.value.representative ||
                     address.value !== originalData.value.address ||
@@ -368,18 +362,6 @@ function goDetail() {
 }
 
 const handleSubmit = async () => {
-  // 필수 필드 검증
-  if (!email.value || email.value.trim() === '') {
-    alert('아이디(이메일)는 필수 입력 항목입니다.');
-    setTimeout(() => {
-      const emailInput = document.getElementById('email');
-      if (emailInput) {
-        emailInput.focus();
-        emailInput.select();
-      }
-    }, 100);
-    return;
-  }
 
   if (!companyName.value || companyName.value.trim() === '') {
     alert('업체명은 필수 입력 항목입니다.');
@@ -417,55 +399,9 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (!address.value || address.value.trim() === '') {
-    alert('사업장 소재지는 필수 입력 항목입니다.');
-    setTimeout(() => {
-      const addressInput = document.getElementById('address');
-      if (addressInput) {
-        addressInput.focus();
-        addressInput.select();
-      }
-    }, 100);
-    return;
-  }
 
-  if (!contactPerson.value || contactPerson.value.trim() === '') {
-    alert('담당자는 필수 입력 항목입니다.');
-    setTimeout(() => {
-      const contactPersonInput = document.getElementById('contactPerson');
-      if (contactPersonInput) {
-        contactPersonInput.focus();
-        contactPersonInput.select();
-      }
-    }, 100);
-    return;
-  }
 
-  if (!mobile.value || mobile.value.trim() === '') {
-    alert('휴대폰 번호는 필수 입력 항목입니다.');
-    setTimeout(() => {
-      const mobileInput = document.getElementById('mobile');
-      if (mobileInput) {
-        mobileInput.focus();
-        mobileInput.select();
-      }
-    }, 100);
-    return;
-  }
 
-  // 아이디(이메일) 형식 검증
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email.value)) {
-    alert('아이디(이메일) 형식이 올바르지 않습니다.');
-    setTimeout(() => {
-      const emailInput = document.getElementById('email');
-      if (emailInput) {
-        emailInput.focus();
-        emailInput.select();
-      }
-    }, 100);
-    return;
-  }
 
   // 사업자등록번호 형식 검증 (10자리 숫자)
   const businessNumberDigits = businessNumber.value.replace(/[^0-9]/g, '');
@@ -609,7 +545,6 @@ const handleSubmit = async () => {
     const { error } = await supabase
       .from('companies')
       .update({
-        email: email.value,
         company_name: companyName.value,
         business_registration_number: businessNumber.value,
         representative_name: representative.value,

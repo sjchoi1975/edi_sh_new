@@ -4,33 +4,29 @@
     <form class="form-grid">
       <div class="form-group">
         <label>병의원코드</label>
-        <input class="input-readonly-detail" :value="client.client_code || '-'" readonly disabled />
+        <input :value="client.client_code || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>병의원명</label>
-        <input class="input-readonly-detail" :value="client.name || '-'" readonly disabled />
+        <input :value="client.name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>사업자등록번호</label>
-        <input class="input-readonly-detail" :value="client.business_registration_number || '-'" readonly disabled />
+        <input :value="client.business_registration_number || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>원장명</label>
-        <input class="input-readonly-detail" :value="client.owner_name || '-'" readonly disabled />
+        <input :value="client.owner_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>주소</label>
-        <input class="input-readonly-detail" :value="client.address || '-'" readonly disabled />
-      </div>
-      <div class="form-group">
-        <label>상태</label>
-        <input class="input-readonly-detail" :value="client.status === 'active' ? '활성' : (client.status === 'inactive' ? '비활성' : '-')" readonly disabled />
+        <input :value="client.address || '-'" readonly disabled />
       </div>
       <div class="form-group">
         <label>비고</label>
-        <input class="input-readonly-detail" :value="client.remarks || '-'" readonly disabled />
+        <input :value="client.remarks || '-'" readonly disabled />
       </div>
-      <div style="justify-content: flex-end; margin-top: 2rem;">
+      <div class="button-area">
         <button class="btn-list" type="button" @click="goList">목록</button>
       </div>
     </form>

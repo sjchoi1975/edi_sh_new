@@ -23,7 +23,7 @@
         <input :value="company.business_address || '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>유선전화</label>
+        <label>유선 전화번호</label>
         <input :value="company.landline_phone || '-'" readonly disabled />
       </div>
       <div class="form-group">

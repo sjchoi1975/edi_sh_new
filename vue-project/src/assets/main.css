@@ -23,11 +23,8 @@
   --primary-blue-hover: #1565c0; /* 호버 시 파랑 */
 
   /* 텍스트 색상 */
-  --text-primary: #222222; /* 기본 텍스트 */
   --text-primary: #343a40; /* 기본 텍스트 */
-  --text-secondary: #444444; /* 보조 텍스트 */
   --text-secondary: #6c757d; /* 보조 텍스트 */
-   /* 플레이스홀더 =======================================================*/ 
   --text-light: #999; /* 연한 텍스트 */ 
   --text-white: #ffffff; /* 흰색 텍스트 */
   --text-link: var(--primary-color); /* 링크 색상 */
@@ -55,11 +52,9 @@
   /* 테두리 색상 */
   --border-primary: #dee2e6; /* 주요 구분선 */
   --border-secondary: #d1dbe6; /* 연한 구분선 */
-  --border-input: #ced4da; /* 입력 필드 */
-  /* 입력 필드 <- 필터 카드 인풋 =========================================*/
-  --border-input: #cccccc;
+  --border-input: #cccccc; /* 입력 필드 */
   --border-focus: var(--primary-color); /* 포커스 */
-
+  
   /* 크기 */
   --border-radius: 4px; /* 모서리 둥글기 */
   --input-height: 34px; /* 입력 필드 높이 */
@@ -308,6 +303,102 @@ select.input-editable {
 .select_120px,
 .select_240px { display: inline-block; }
 
+/* ========================================== */
+/* Select 요소 스타일 통합 정리                */
+/* ========================================== */
+
+/* 모든 select 요소 기본 스타일 */
+select {
+  border-color: var(--border-input) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+/* Select 요소의 호버 상태 */
+select:hover,
+.select_month:hover,
+.select_100px:hover,
+.select_110px:hover,
+.select_120px:hover,
+.select_200px:hover,
+.select_240px:hover {
+  border-color: var(--primary-color) !important;
+}
+
+/* Select 요소의 포커스 상태 (최고 우선순위) */
+html body select:focus,
+html body select:focus-visible,
+html body select:focus-within,
+select:focus,
+select:focus-visible,
+select:focus-within,
+.select_month:focus,
+.select_100px:focus,
+.select_110px:focus,
+.select_120px:focus,
+.select_200px:focus,
+.select_240px:focus {
+  border-color: var(--primary-color) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px var(--primary-color) !important;
+}
+
+/* 드롭다운 옵션 스타일 */
+select option {
+  background-color: white !important;
+  color: var(--text-primary) !important;
+  border-radius: 4px !important;
+}
+
+/* 드롭다운 옵션 선택/호버 상태 */
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-radius: 4px !important;
+}
+
+/* 편집 모드 셀 강조 */
+.admin-performance-review-table .p-datatable-tbody td.p-cell-editing {
+  background-color: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25) !important;
+}
+
+/* 체크박스 및 버튼 가운데 정렬 */
+.admin-performance-review-table .p-datatable-tbody td .p-checkbox,
+.admin-performance-review-table .p-datatable-tbody td .p-button {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* 액션 버튼 컨테이너 */
+.admin-performance-review-table .p-datatable-tbody td:last-child > div {
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ========================================== */
 /* 6. 카드 스타일                             */
@@ -554,7 +645,11 @@ select.input-editable {
 }
 
 
-/* 사업장 소재지 컬럼 오버플로우 및 툴팁 처리 */
+/* ========================================== */
+/* 6. 테이블 툴팁 스타일 (통합)                */
+/* ========================================== */
+
+/* 기본 ellipsis-cell 스타일 */
 .ellipsis-cell {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -562,8 +657,8 @@ select.input-editable {
   position: relative !important;
 }
 
-/* 제품목록 전용 툴팁 - 오버플로우 시에만 */
-.admin-products-table .ellipsis-cell.overflowed:hover::after {
+/* 공통 툴팁 스타일 (모든 테이블에 적용) */
+.ellipsis-cell.overflowed:hover::after {
   content: attr(title) !important;
   position: absolute !important;
   left: 50% !important;
@@ -582,7 +677,7 @@ select.input-editable {
   text-overflow: ellipsis !important;
 }
 
-.admin-products-table .ellipsis-cell.overflowed:hover::before {
+.ellipsis-cell.overflowed:hover::before {
   content: '' !important;
   position: absolute !important;
   left: 50% !important;
@@ -594,323 +689,28 @@ select.input-editable {
   pointer-events: none !important;
 }
 
-/* 제품목록에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-products-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-products-table .ellipsis-cell:not(.overflowed):hover::before {
+/* 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
+.ellipsis-cell:not(.overflowed):hover::after,
+.ellipsis-cell:not(.overflowed):hover::before {
   content: none !important;
   display: none !important;
 }
 
-/* 제품목록에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-products-table .ellipsis-cell[title] {
+/* 브라우저 기본 툴팁 완전 비활성화 */
+.ellipsis-cell[title] {
   -webkit-tooltip: none !important;
   tooltip: none !important;
 }
 
-/* 업체 관리 테이블 전용 툴팁 - 오버플로우 시에만 */
-.admin-companies-approved-table .ellipsis-cell.overflowed:hover::after,
-.admin-companies-pending-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
 
-.admin-companies-approved-table .ellipsis-cell.overflowed:hover::before,
-.admin-companies-pending-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
 
-/* 업체 관리 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-companies-approved-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-companies-approved-table .ellipsis-cell:not(.overflowed):hover::before,
-.admin-companies-pending-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-companies-pending-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
 
-/* 업체 관리 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-companies-approved-table .ellipsis-cell[title],
-.admin-companies-pending-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
 
-/* 병의원 관리 테이블 전용 툴팁 - 오버플로우 시에만 */
-.admin-clients-table .ellipsis-cell.overflowed:hover::after,
-.admin-assign-companies-table .ellipsis-cell.overflowed:hover::after,
-.admin-commission-grades-table .ellipsis-cell.overflowed:hover::after,
-.admin-assign-pharmacies-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
 
-.admin-clients-table .ellipsis-cell.overflowed:hover::before,
-.admin-assign-companies-table .ellipsis-cell.overflowed:hover::before,
-.admin-commission-grades-table .ellipsis-cell.overflowed:hover::before,
-.admin-assign-pharmacies-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
 
-/* 병의원 관리 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-clients-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-clients-table .ellipsis-cell:not(.overflowed):hover::before,
-.admin-assign-companies-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-assign-companies-table .ellipsis-cell:not(.overflowed):hover::before,
-.admin-commission-grades-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-commission-grades-table .ellipsis-cell:not(.overflowed):hover::before,
-.admin-assign-pharmacies-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-assign-pharmacies-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
 
-/* 병의원 관리 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-clients-table .ellipsis-cell[title],
-.admin-assign-companies-table .ellipsis-cell[title],
-.admin-commission-grades-table .ellipsis-cell[title],
-.admin-assign-pharmacies-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
 
-/* 문전약국 관리 테이블 전용 툴팁 - 오버플로우 시에만 */
-.admin-pharmacies-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
 
-.admin-pharmacies-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
-
-/* 문전약국 관리 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-pharmacies-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-pharmacies-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
-
-/* 문전약국 관리 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-pharmacies-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
-
-/* 매출 관리 테이블 전용 툴팁 - 오버플로우 시에만 */
-.admin-wholesale-revenue-table .ellipsis-cell.overflowed:hover::after,
-.admin-direct-revenue-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.admin-wholesale-revenue-table .ellipsis-cell.overflowed:hover::before,
-.admin-direct-revenue-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
-
-/* 매출 관리 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-wholesale-revenue-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-wholesale-revenue-table .ellipsis-cell:not(.overflowed):hover::before,
-.admin-direct-revenue-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-direct-revenue-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
-
-/* 매출 관리 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-wholesale-revenue-table .ellipsis-cell[title],
-.admin-direct-revenue-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
-
-/* 정산내역서 상세 테이블 전용 툴팁 - 오버플로우 시에만 */
-.admin-settlement-share-detail-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.admin-settlement-share-detail-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
-
-/* 정산내역서 상세 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.admin-settlement-share-detail-table .ellipsis-cell:not(.overflowed):hover::after,
-.admin-settlement-share-detail-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
-
-/* 정산내역서 상세 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.admin-settlement-share-detail-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
-
-/* 이용자 화면 테이블 전용 툴팁 - 오버플로우 시에만 */
-.user-clients-table .ellipsis-cell.overflowed:hover::after,
-.user-performance-register-table .ellipsis-cell.overflowed:hover::after,
-.user-settlement-detail-table .ellipsis-cell.overflowed:hover::after {
-  content: attr(title) !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -40px !important;
-  transform: translateX(-50%) !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  white-space: nowrap !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-  max-width: 300px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.user-clients-table .ellipsis-cell.overflowed:hover::before,
-.user-performance-register-table .ellipsis-cell.overflowed:hover::before,
-.user-settlement-detail-table .ellipsis-cell.overflowed:hover::before {
-  content: '' !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: -8px !important;
-  transform: translateX(-50%) !important;
-  border: 4px solid transparent !important;
-  border-top-color: rgba(0, 0, 0, 0.8) !important;
-  z-index: 9999 !important;
-  pointer-events: none !important;
-}
-
-/* 이용자 화면 테이블에서 오버플로우가 아닐 때는 툴팁 완전 숨기기 */
-.user-clients-table .ellipsis-cell:not(.overflowed):hover::after,
-.user-clients-table .ellipsis-cell:not(.overflowed):hover::before,
-.user-performance-register-table .ellipsis-cell:not(.overflowed):hover::after,
-.user-performance-register-table .ellipsis-cell:not(.overflowed):hover::before,
-.user-settlement-detail-table .ellipsis-cell:not(.overflowed):hover::after,
-.user-settlement-detail-table .ellipsis-cell:not(.overflowed):hover::before {
-  content: none !important;
-  display: none !important;
-}
-
-/* 이용자 화면 테이블에서 브라우저 기본 툴팁 완전 비활성화 */
-.user-clients-table .ellipsis-cell[title],
-.user-performance-register-table .ellipsis-cell[title],
-.user-settlement-detail-table .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
-}
 
 
 
@@ -1043,13 +843,13 @@ select.input-editable {
 /* 모달 헤더 */
 .p-dialog-header {
   background: none !important;
-  padding: 1rem 2rem 1rem 2rem !important;
+  padding: 1.5rem 2rem 1rem 2rem !important;
   border-radius: var(--border-radius) !important;
 }
 
 .p-dialog-title {
-  font-size: var(--font-size-title) !important;
-  font-weight: 700!important;
+  font-size: 1.4rem !important;
+  font-weight: 600!important;
   color: var(--text-primary) !important;
 }
 
@@ -1062,15 +862,23 @@ select.input-editable {
   background: transparent !important;
 }
 
-.modal-search-input {
-  border: 1px solid var(--border-input) !important;
-  background: var(--bg-content) !important;
-  border-radius: var(--border-radius) !important;
-  padding: 0 1rem !important;
-  margin-bottom: 1.5rem !important;
+
+
+/* 사용하는지??????????????????????????????????? */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 실적 조회, 증빙 파일 보기, 업로드 모달 */
 .modal-content.modal-center {
   position: fixed !important;
   top: 50% !important;
@@ -1086,7 +894,6 @@ select.input-editable {
   padding: 0 !important;
 }
 
-/* 사용하는지??????????????????????????????????? */
 .modal-content {
   background: white;
   border-radius: var(--border-radius) !important;
@@ -1094,24 +901,24 @@ select.input-editable {
   overflow: hidden;
 }
 
-.modal-body {
-  padding: 1rem 2rem 1rem 2rem !important;
-}
-
 .modal-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 1rem 2rem 1rem 2rem !important;
+  padding: 1.5rem 2rem 1rem 2rem !important;
   background: none !important;
   color: var(--text-dark) !important;
 }
 
-/* 사용하는지??????????????????????????????????? */
 .modal-header h3 {
   margin: 0;
-  font-size: var(--font-size-title) !important;
+  font-size: 1.4rem !important;
   font-weight: 600;
+  color: var(--text-primary) !important;
+}
+
+.modal-body {
+  padding: 1rem 2rem 1rem 2rem !important;
 }
 
 .modal-footer {
@@ -1121,7 +928,6 @@ select.input-editable {
   padding: 1rem 2rem 2rem 2rem !important;
 }
 
-/* 사용하는지??????????????????????????????????? */
 .modal-close {
   background: none;
   border: none;
@@ -1130,7 +936,6 @@ select.input-editable {
   cursor: pointer;
 }
 
-/* 사용하는지??????????????????????????????????? */
 .modal-close-btn {
   background: none;
   border: none;
@@ -1145,18 +950,15 @@ select.input-editable {
   justify-content: center;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.18);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.modal-search-input {
+  border: 1px solid var(--border-input) !important;
+  background: var(--bg-content) !important;
+  border-radius: var(--border-radius) !important;
+  padding: 0 1rem !important;
+  margin-bottom: 1.5rem !important;
 }
+
+
 
 /* ========================================== */
 /* 10. 유틸리티 클래스                        */
@@ -1706,87 +1508,12 @@ select.input-editable {
 /* 15. 화면별 테이블 정렬 스타일                */
 /* ========================================== */
 
-/* 테이블 헤더 가운데 정렬 */
+/* ========================================== */
+/* 7. 테이블 헤더 스타일 (통합)                */
+/* ========================================== */
 
-/* 이용자 공지사항 목록 테이블 헤더 */
-.notices-table .p-datatable-column-title,
-
-/* 이용자 제품 목록 테이블 헤더 */
-.products-table .p-datatable-column-title,
-
-/* 이용자 거래처 목록 테이블 헤더 */
-.clients-table .p-datatable-column-title,
-
-/* 이용자 실적 등록 테이블 헤더 */
-.performance-register-table .p-datatable-column-title,
-
-/* 이용자 실적 등록 - 입력 테이블 헤더 */
-.performance-edit-table .p-datatable-column-title,
-
-/* 이용자 실적 등록 현황 테이블 헤더 */
-.performance-list-table .p-datatable-column-title,
-
-/* 이용자 정산내역서 테이블 헤더 */
-.user-settlement-detail-table .p-datatable-column-title,
-
-
-/* 관리자 공지사항 목록 테이블 헤더 */
-.admin-notices-table .p-datatable-column-title,
-
-/* 관리자 승인 업체 테이블 헤더 */
-.admin-companies-approved-table .p-datatable-column-title,
-
-/* 관리자 미승인 업체 테이블 헤더 */
-.admin-companies-pending-table .p-datatable-column-title, 
-
-/* 관리자 제품 테이블 헤더 */
-.admin-products-table .p-datatable-column-title,
-
-/* 관리자 거래처 테이블 헤더 */
-.admin-clients-table .p-datatable-column-title,
-
-/* 관리자 담당업체 지정 테이블 헤더 */
-.admin-assign-companies-table .p-datatable-column-title,
-
-/* 관리자 수수료 등급 설정 테이블 헤더 */
-.admin-commission-grades-table .p-datatable-column-title,
-
-/* 관리자 문전약국 지정 테이블 헤더 */
-.admin-assign-pharmacies-table .p-datatable-column-title,
-
-/* 관리자 문전약국 테이블 헤더 */
-.admin-pharmacies-table .p-datatable-column-title,
-
-/* 관리자 도매매출 테이블 헤더 */
-.admin-wholesale-revenue-table .p-datatable-column-title,
-
-/* 관리자 직거래매출 테이블 헤더 */
-.admin-direct-revenue-table .p-datatable-column-title,
-
-
-/* 관리자 정산월관리 테이블 헤더 */
-.admin-settlement-months-table .p-datatable-column-title,
-
-/* 관리자 업체별 등록 현황 테이블 헤더 */
-.admin-performance-companies-table .p-datatable-column-title,
-
-/* 관리자 업체별 등록 현황 - 증빙 파일 보기 모달 테이블 헤더 */
-.admin-performance_evidence_files_modal-table .p-datatable-column-title,
-
-/* 관리자 전체 등록 현황 테이블 헤더 */
-.admin-performance-whole-table .p-datatable-column-title,
-
-/* 관리자 실적 검수 테이블 헤더 */
-.admin-performance-review-table .p-datatable-column-title,
-
-/* 관리자 흡수율 분석 테이블 헤더 */
-.absorption-analysis-table .p-datatable-column-title,
-
-/* 관리자 정산내역서 공유 테이블 헤더 */
-.admin-settlement-share-table .p-datatable-column-title,
-
-/* 관리자 정산내역서 상세 테이블 헤더 */
-.admin-settlement-share-detail-table .p-datatable-column-title {
+/* 모든 테이블 헤더 가운데 정렬 */
+.p-datatable-column-title {
   text-align: center !important;
   justify-content: center !important;
   display: flex !important;
