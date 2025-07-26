@@ -1,17 +1,11 @@
 <template>
   <div class="reset-password-container">
     <div class="reset-password-card">
-      <h2>비밀번호 재설정</h2>
-      
+      <h2 style="text-align: left; font-size: 1.4rem; font-weight: 600; color: #333;">비밀번호 재설정</h2>
+
       <div v-if="loading" class="loading">
         처리 중입니다...
       </div>
-      
-      <div v-else-if="error" class="error">
-        {{ error }}
-        <button @click="goToLogin" class="btn-login">로그인 페이지로 이동</button>
-      </div>
-      
       <form v-else @submit.prevent="handleResetPassword" class="reset-form">
         <div class="form-group">
           <label for="password">새 비밀번호</label>
@@ -32,7 +26,6 @@
             ></i>
           </div>
         </div>
-        
         <div class="form-group">
           <label for="confirmPassword">비밀번호 확인</label>
           <div style="position: relative;">
@@ -52,7 +45,6 @@
             ></i>
           </div>
         </div>
-        
         <button type="submit" :disabled="!canSubmit" class="btn-submit">
           비밀번호 변경
         </button>
@@ -130,14 +122,19 @@ async function handleResetPassword() {
     
   } catch (err) {
     console.error('비밀번호 변경 오류:', err);
-    alert('비밀번호 변경 실패: ' + err.message);
+    
+    // 에러 메시지를 한글로 변환
+    let errorMessage = err.message;
+    if (errorMessage.includes('New password should be different from the old password')) {
+      errorMessage = '새 비밀번호는 기존 비밀번호와 달라야 합니다.';
+    }
+    
+    alert('비밀번호 변경 실패: ' + errorMessage);
     loading.value = false;
   }
 }
 
-function goToLogin() {
-  router.push('/login');
-}
+
 </script>
 
 <style scoped>
@@ -183,47 +180,24 @@ function goToLogin() {
   gap: 1rem;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
-
-.form-group input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
 .btn-submit {
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 0.75rem;
   border-radius: 4px;
   font-size: 1rem;
+  height: 36px;
   cursor: pointer;
   margin-top: 1rem;
 }
 
 .btn-submit:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--primary-color-dark);
 }
 
 .btn-submit:disabled {
-  background-color: #ccc;
+  background-color: var(--primary-color-light);
   cursor: not-allowed;
 }
 
@@ -240,4 +214,5 @@ function goToLogin() {
 .btn-login:hover {
   background-color: #545b62;
 }
+
 </style> 

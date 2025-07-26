@@ -31,17 +31,17 @@
       </form>
       <div class="copyright">© 2025. 주식회사 팜플코리아 All Rights Reserved.</div>
     </div>
-
+    
     <!-- 비밀번호 재설정 이메일 입력 모달 -->
     <teleport to="body">
       <div v-if="isPasswordResetModalOpen" class="modal-overlay" @click="closePasswordResetModal">
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
-            <h2>비밀번호 찾기</h2>
+            <h3>비밀번호 찾기</h3>
             <button @click="closePasswordResetModal" class="btn-close-nobg">X</button>
           </div>
           <div class="modal-body">
-            <p style="margin-bottom: 1rem;">비밀번호를 재설정하려면 아이디(이메일)를 입력해주세요.</p>
+            <p style="margin-bottom: 1rem; font-size: 0.95rem;">비밀번호를 재설정하려면 아이디(이메일)를 입력해주세요.</p>
             <input 
               v-model="resetEmail" 
               type="email" 
@@ -64,11 +64,11 @@
        <div v-if="isConfirmationModalOpen" class="modal-overlay" @click="closeConfirmationModal">
         <div class="modal-content modal-center" @click.stop>
           <div class="modal-header">
-            <h2>안내</h2>
+            <h2 class="modal-title">안내</h2>
              <button @click="closeConfirmationModal" class="btn-close-nobg">X</button>
           </div>
           <div class="modal-body">
-            <p>비밀번호 재설정 이메일을 보냈습니다.<br>받은 편지함을 확인해주세요.</p>
+            <p style="font-size: 1.0rem; margin-left: 0.25rem;">비밀번호 재설정 이메일을 보냈습니다.<br>받은 편지함을 확인해주세요.</p>
           </div>
           <div class="modal-footer">
             <button class="btn-primary" @click="closeConfirmationModal">확인</button>
@@ -156,25 +156,41 @@ const closeConfirmationModal = () => {
 
 const handlePasswordReset = async () => {
   if (!resetEmail.value) {
-    alert('아이디(이메일)를 입력해주세요.'); // 모달 내에서의 유효성 검사는 간단하게 alert 사용
+    alert('아이디(이메일)를 입력해주세요.');
     return;
   }
+
+  // 이메일 형식 검증
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(resetEmail.value)) {
+    alert('올바른 이메일 형식으로 입력해주세요.');
+    return;
+  }
+  
   loading.value = true;
+  console.log('비밀번호 재설정 요청:', resetEmail.value);
+  
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.value, {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail.value, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
+    
+    console.log('비밀번호 재설정 응답:', { data, error });
+    
     if (error) {
+      console.error('비밀번호 재설정 오류:', error);
       if (error.message.includes('not found')) {
         alert('가입되지 않은 이메일입니다. 이메일 주소를 다시 확인해주세요.');
       } else {
         alert(`오류가 발생했습니다: ${error.message}`);
       }
     } else {
+      console.log('비밀번호 재설정 이메일 발송 성공');
       closePasswordResetModal();
       isConfirmationModalOpen.value = true;
     }
   } catch (err) {
+    console.error('비밀번호 재설정 예외:', err);
     alert('예기치 않은 오류가 발생했습니다.');
   } finally {
     loading.value = false;

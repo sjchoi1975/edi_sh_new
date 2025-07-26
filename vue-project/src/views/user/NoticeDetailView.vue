@@ -1,5 +1,5 @@
 <template>
-  <div class="board_960">
+  <div class="board_640">
     <div class="form-title">공지사항 상세</div>
     <form class="form-grid-2x">
       <div class="form-group">

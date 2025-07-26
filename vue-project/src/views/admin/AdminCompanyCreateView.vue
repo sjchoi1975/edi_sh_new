@@ -45,7 +45,7 @@
         <input v-model="address" type="text" />
       </div>
       <div class="form-group">
-        <label>유선전화</label>
+        <label>유선 전화번호</label>
         <input id="landline" v-model="landline" type="text" @input="formatPhoneNumber" @keypress="allowOnlyNumbers" @keydown="handleBackspace" />
       </div>
       <div class="form-group">
