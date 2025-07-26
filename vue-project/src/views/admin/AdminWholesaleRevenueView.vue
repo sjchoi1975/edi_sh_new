@@ -7,13 +7,15 @@
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px">
           <label style="font-weight: 400">기간</label>
-          <select v-model="fromMonth" class="select_month">
+          <select v-model="fromMonth" class="select_month" @change="applyFilters">
+            <option value="">전체</option>
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
             </option>
           </select>
           <span>~</span>
-          <select v-model="toMonth" class="select_month">
+          <select v-model="toMonth" class="select_month" @change="applyFilters">
+            <option value="">전체</option>
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
             </option>
@@ -25,7 +27,7 @@
               v-model="searchInput"
               placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
               class="search-input"
-              @keyup.enter="doSearch"
+              @keyup.enter="applyFilters"
               style="width:100%;"
             />
             <button
@@ -39,7 +41,7 @@
           <button
             class="search-btn"
             :disabled="searchInput.length < 2"
-            @click="doSearch">
+            @click="applyFilters">
             검색
           </button>
         </div>
@@ -48,7 +50,7 @@
     <div class="data-card">
       <div class="data-card-header">
         <div class="total-count-display">
-          전체 {{ filteredRevenues.length }} 건
+          전체 {{ totalCount.toLocaleString() }} 건
         </div>
         <div class="action-buttons-group">
           <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
@@ -66,12 +68,16 @@
         </div>
       </div>
       <DataTable
-        :value="filteredRevenues"
+        :value="revenues"
         :loading="loading"
         paginator
         :rows="pageSize"
+        :totalRecords="totalCount"
         :rowsPerPageOptions="[20, 50, 100]"
         v-model:first="currentPageFirstIndex"
+        v-model:page="currentPage"
+        @page="onPageChange"
+        :lazy="true"
         scrollable
         scrollHeight="calc(100vh - 250px)"
         class="admin-wholesale-revenue-table"
@@ -82,14 +88,13 @@
         <template #loading>매출 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
-            {{ slotProps.index + currentPageFirstIndex + 1 }}
+            {{ (currentPage - 1) * pageSize + slotProps.index + 1 }}
           </template>
         </Column>
         <Column
           field="pharmacy_code"
           header="약국코드"
           :headerStyle="{ width: columnWidths.pharmacy_code }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_code" />
@@ -100,7 +105,6 @@
           field="pharmacy_name"
           header="약국명"
           :headerStyle="{ width: columnWidths.pharmacy_name }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input v-if="slotProps.data.isEditing" v-model="slotProps.data.pharmacy_name" :id="`pharmacy_name_${slotProps.data.id}`" />
@@ -111,7 +115,6 @@
           field="business_registration_number"
           header="사업자번호"
           :headerStyle="{ width: columnWidths.business_registration_number }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -129,7 +132,6 @@
           field="address"
           header="주소"
           :headerStyle="{ width: columnWidths.address }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -145,7 +147,6 @@
           field="standard_code"
           header="표준코드"
           :headerStyle="{ width: columnWidths.standard_code }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -161,7 +162,6 @@
           field="product_name"
           header="제품명"
           :headerStyle="{ width: columnWidths.product_name }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -177,7 +177,6 @@
           field="sales_amount"
           header="매출액"
           :headerStyle="{ width: columnWidths.sales_amount }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -194,7 +193,6 @@
           field="sales_date"
           header="매출일자"
           :headerStyle="{ width: columnWidths.sales_date }"
-          :sortable="true"
         >
           <template #body="slotProps">
             <input
@@ -226,7 +224,7 @@
                   삭제
                 </button>
               </template>
-            </div>
+                        </div>
           </template>
         </Column>
         <ColumnGroup type="footer">
@@ -276,87 +274,210 @@ const columnWidths = {
 }
 
 const revenues = ref([])
-const filteredRevenues = ref([])
 const loading = ref(false)
 const searchInput = ref('');
-const searchKeyword = ref('');
 const router = useRouter()
 const fileInput = ref(null)
 const fromMonth = ref('')
 const toMonth = ref('')
 const availableMonths = ref([])
 const currentPageFirstIndex = ref(0)
+const currentPage = ref(1)
 const pageSize = ref(50)
+const totalCount = ref(0)
+const totalSalesAmount = ref(0)
 
-// 매출액 합계 계산
-const totalSalesAmount = computed(() => {
-  return filteredRevenues.value.reduce((sum, revenue) => {
-    return sum + (revenue.sales_amount || 0)
-  }, 0)
-})
+
 
 function goCreate() {
   router.push('/admin/wholesale-revenue/create')
 }
 
-// 클라이언트 페이징이므로 onPageChange 불필요
-
+// 서버 사이드 페이징으로 데이터 조회
 const fetchRevenues = async () => {
   loading.value = true;
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('wholesale_sales')
       .select('*')
       .order('sales_date', { ascending: false })
+
+    // 검색 조건 적용
+    if (searchInput.value.length >= 2) {
+      const keyword = searchInput.value.toLowerCase();
+      query = query.or(`pharmacy_name.ilike.%${keyword}%,business_registration_number.ilike.%${keyword}%,standard_code.ilike.%${keyword}%,product_name.ilike.%${keyword}%`)
+    }
+
+    // 기간 필터 적용 (A to B 방식)
+    if (fromMonth.value && toMonth.value) {
+      // A와 B 모두 선택: A 포함 이후 ~ B 포함 이전
+      const fromDate = fromMonth.value + '-01'
+      const toDate = new Date(toMonth.value + '-01')
+      toDate.setMonth(toDate.getMonth() + 1)
+      toDate.setDate(0) // 해당 월의 마지막 날
+      const lastDay = toDate.getDate().toString().padStart(2, '0')
+      const toDateStr = toMonth.value + '-' + lastDay
+      
+      query = query.gte('sales_date', fromDate)
+        .lte('sales_date', toDateStr)
+    } else if (fromMonth.value) {
+      // A만 선택: A 포함 이후 모두
+      query = query.gte('sales_date', fromMonth.value + '-01')
+    } else if (toMonth.value) {
+      // B만 선택: B 포함 이전 모두
+      const toDate = new Date(toMonth.value + '-01')
+      toDate.setMonth(toDate.getMonth() + 1)
+      toDate.setDate(0) // 해당 월의 마지막 날
+      const lastDay = toDate.getDate().toString().padStart(2, '0')
+      const toDateStr = toMonth.value + '-' + lastDay
+      
+      query = query.lte('sales_date', toDateStr)
+    }
+
+    // 페이징 적용
+    const from = (currentPage.value - 1) * pageSize.value
+    const to = from + pageSize.value - 1
+    query = query.range(from, to)
+
+    const { data, error } = await query
+
     if (!error && data) {
       revenues.value = data.map((item) => ({
         ...item,
         isEditing: false,
         originalData: { ...item },
       }))
-      filteredRevenues.value = revenues.value;
     }
   } finally {
     loading.value = false;
   }
 }
 
-const fetchAvailableMonths = async () => {
-  const { data, error } = await supabase
-    .from('wholesale_sales')
-    .select('sales_date')
-    .order('sales_date', { ascending: false })
-  if (!error && data) {
-    const monthSet = new Set()
-    data.forEach((item) => {
-      if (item.sales_date) {
-        monthSet.add(item.sales_date.substring(0, 7))
-      }
-    })
-    availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a))
-    if (availableMonths.value.length > 0) {
-      toMonth.value = availableMonths.value[0]
-      fromMonth.value = availableMonths.value[Math.min(2, availableMonths.value.length - 1)]
+// 전체 개수와 합계 조회
+const fetchSummary = async () => {
+  try {
+    // 개수 조회
+    let countQuery = supabase
+      .from('wholesale_sales')
+      .select('*', { count: 'exact' })
+
+    // 합계 조회 - RPC 함수 사용
+    let sumQuery = supabase
+      .rpc('calculate_sales_sum', {
+        table_name: 'wholesale_sales',
+        from_date: fromMonth.value ? fromMonth.value + '-01' : null,
+        to_date: toMonth.value ? (() => {
+          const toDate = new Date(toMonth.value + '-01')
+          toDate.setMonth(toDate.getMonth() + 1)
+          toDate.setDate(0)
+          const lastDay = toDate.getDate().toString().padStart(2, '0')
+          return toMonth.value + '-' + lastDay
+        })() : null,
+        search_keyword: searchInput.value.length >= 2 ? searchInput.value.toLowerCase() : null
+      })
+
+    // 검색 조건 적용
+    if (searchInput.value.length >= 2) {
+      const keyword = searchInput.value.toLowerCase();
+      countQuery = countQuery.or(`pharmacy_name.ilike.%${keyword}%,business_registration_number.ilike.%${keyword}%,standard_code.ilike.%${keyword}%,product_name.ilike.%${keyword}%`)
     }
+
+    // 기간 필터 적용 (A to B 방식)
+    if (fromMonth.value && toMonth.value) {
+      // A와 B 모두 선택: A 포함 이후 ~ B 포함 이전
+      const fromDate = fromMonth.value + '-01'
+      const toDate = new Date(toMonth.value + '-01')
+      toDate.setMonth(toDate.getMonth() + 1)
+      toDate.setDate(0) // 해당 월의 마지막 날
+      const lastDay = toDate.getDate().toString().padStart(2, '0')
+      const toDateStr = toMonth.value + '-' + lastDay
+      
+      countQuery = countQuery.gte('sales_date', fromDate)
+        .lte('sales_date', toDateStr)
+    } else if (fromMonth.value) {
+      // A만 선택: A 포함 이후 모두
+      countQuery = countQuery.gte('sales_date', fromMonth.value + '-01')
+    } else if (toMonth.value) {
+      // B만 선택: B 포함 이전 모두
+      const toDate = new Date(toMonth.value + '-01')
+      toDate.setMonth(toDate.getMonth() + 1)
+      toDate.setDate(0) // 해당 월의 마지막 날
+      const lastDay = toDate.getDate().toString().padStart(2, '0')
+      const toDateStr = toMonth.value + '-' + lastDay
+      
+      countQuery = countQuery.lte('sales_date', toDateStr)
+    }
+
+    // 개수와 합계를 병렬로 조회
+    const [countResult, sumResult] = await Promise.all([
+      countQuery,
+      sumQuery
+    ])
+
+    if (!countResult.error) {
+      totalCount.value = countResult.count || 0
+    } else {
+      console.error('개수 조회 오류:', countResult.error)
+      totalCount.value = 0
+    }
+
+    if (!sumResult.error && sumResult.data !== null) {
+      totalSalesAmount.value = Number(sumResult.data) || 0
+    } else {
+      console.error('합계 조회 오류:', sumResult.error)
+      totalSalesAmount.value = 0
+    }
+
+  } catch (error) {
+    console.error('fetchSummary 오류:', error)
+    totalCount.value = 0
+    totalSalesAmount.value = 0
   }
 }
 
-function doSearch() {
-  if (searchInput.value.length >= 2) {
-    searchKeyword.value = searchInput.value;
-    const keyword = searchKeyword.value.toLowerCase();
-    filteredRevenues.value = revenues.value.filter(r =>
-      (r.pharmacy_name && r.pharmacy_name.toLowerCase().includes(keyword)) ||
-      (r.business_registration_number && r.business_registration_number.toLowerCase().includes(keyword)) ||
-      (r.standard_code && r.standard_code.toLowerCase().includes(keyword)) ||
-      (r.product_name && r.product_name.toLowerCase().includes(keyword))
-    );
+const fetchAvailableMonths = () => {
+  // 현재 월에서 1년 전까지의 연월 생성
+  const months = []
+  const currentDate = new Date()
+  
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    months.push(`${year}-${month}`)
+  }
+  
+  availableMonths.value = months
+}
+
+// 페이지 변경 처리
+const onPageChange = async (event) => {
+  console.log('페이지 변경:', event)
+  currentPage.value = event.page + 1
+  currentPageFirstIndex.value = event.first
+  await fetchRevenues()
+}
+
+// 필터 적용
+const applyFilters = async () => {
+  console.log('필터 적용 시작:', { fromMonth: fromMonth.value, toMonth: toMonth.value, searchInput: searchInput.value })
+  currentPage.value = 1
+  currentPageFirstIndex.value = 0
+  loading.value = true
+  try {
+    await fetchSummary()
+    console.log('fetchSummary 완료:', { totalCount: totalCount.value, totalSalesAmount: totalSalesAmount.value })
+    await fetchRevenues()
+  } finally {
+    loading.value = false
   }
 }
+
 function clearSearch() {
   searchInput.value = '';
-  searchKeyword.value = '';
-  filteredRevenues.value = revenues.value;
+  fromMonth.value = '';
+  toMonth.value = '';
+  applyFilters()
 }
 
 // 수정 시작
@@ -521,6 +642,11 @@ const saveEdit = async (row) => {
 
     row.isEditing = false
     row.originalData = { ...row }
+
+    // 데이터 새로고침
+    fetchSummary()
+    fetchRevenues()
+
     alert('수정되었습니다.')
   } catch (error) {
     console.error('수정 오류:', error)
@@ -542,11 +668,9 @@ const deleteRevenue = async (row) => {
       return
     }
 
-    // 목록에서 제거
-    const index = revenues.value.findIndex((item) => item.id === row.id)
-    if (index > -1) {
-      revenues.value.splice(index, 1)
-    }
+    // 데이터 새로고침
+    fetchSummary()
+    fetchRevenues()
 
     alert('삭제되었습니다.')
   } catch (error) {
@@ -709,7 +833,9 @@ const handleFileUpload = async (event) => {
       alert('업로드 실패: ' + error.message)
     } else {
       alert(`${uploadData.length}건의 도매매출 데이터가 업로드되었습니다.`)
-      await fetchRevenues() // 목록 새로고침
+      // 데이터 새로고침
+      fetchSummary()
+      fetchRevenues()
     }
   } catch (error) {
     console.error('파일 처리 오류:', error)
@@ -720,58 +846,135 @@ const handleFileUpload = async (event) => {
   }
 }
 
-// 엑셀 다운로드 (현재 목록)
-const downloadExcel = () => {
-  if (filteredRevenues.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.')
-    return
-  }
+// 엑셀 다운로드 (전체 데이터)
+const downloadExcel = async () => {
+  try {
+    loading.value = true
+    
+    // 전체 데이터를 페이지별로 조회하여 합치기
+    let allData = []
+    let page = 0
+    const pageSize = 1000
+    let hasMore = true
+    
+    while (hasMore) {
+      // 페이지별 데이터 조회
+      let query = supabase
+        .from('wholesale_sales')
+        .select('*')
+        .order('sales_date', { ascending: false })
 
-  // 데이터 변환
-  const excelData = filteredRevenues.value.map((revenue) => ({
-    약국코드: revenue.pharmacy_code || '',
-    약국명: revenue.pharmacy_name || '',
-    사업자등록번호: revenue.business_registration_number || '',
-    주소: revenue.address || '',
-    표준코드: revenue.standard_code || '',
-    제품명: revenue.product_name || '',
-    매출액: revenue.sales_amount || 0,
-    매출일자: revenue.sales_date || '',
-    등록일: revenue.created_at ? new Date(revenue.created_at).toISOString().split('T')[0] : '',
-    수정일: revenue.updated_at ? new Date(revenue.updated_at).toISOString().split('T')[0] : '',
-  }))
+      // 검색 조건 적용
+      if (searchInput.value.length >= 2) {
+        const keyword = searchInput.value.toLowerCase();
+        query = query.or(`pharmacy_name.ilike.%${keyword}%,business_registration_number.ilike.%${keyword}%,standard_code.ilike.%${keyword}%,product_name.ilike.%${keyword}%`)
+      }
 
-  const ws = XLSX.utils.json_to_sheet(excelData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '도매매출목록')
+      // 기간 필터 적용 (A to B 방식)
+      if (fromMonth.value && toMonth.value) {
+        // A와 B 모두 선택: A 포함 이후 ~ B 포함 이전
+        const fromDate = fromMonth.value + '-01'
+        const toDate = new Date(toMonth.value + '-01')
+        toDate.setMonth(toDate.getMonth() + 1)
+        toDate.setDate(0) // 해당 월의 마지막 날
+        const lastDay = toDate.getDate().toString().padStart(2, '0')
+        const toDateStr = toMonth.value + '-' + lastDay
+        
+        query = query.gte('sales_date', fromDate)
+          .lte('sales_date', toDateStr)
+      } else if (fromMonth.value) {
+        // A만 선택: A 포함 이후 모두
+        query = query.gte('sales_date', fromMonth.value + '-01')
+      } else if (toMonth.value) {
+        // B만 선택: B 포함 이전 모두
+        const toDate = new Date(toMonth.value + '-01')
+        toDate.setMonth(toDate.getMonth() + 1)
+        toDate.setDate(0) // 해당 월의 마지막 날
+        const lastDay = toDate.getDate().toString().padStart(2, '0')
+        const toDateStr = toMonth.value + '-' + lastDay
+        
+        query = query.lte('sales_date', toDateStr)
+      }
 
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 12 }, // 약국코드
-    { width: 20 }, // 약국명
-    { width: 15 }, // 사업자등록번호
-    { width: 30 }, // 주소
-    { width: 12 }, // 표준코드
-    { width: 20 }, // 제품명
-    { width: 12 }, // 매출액
-    { width: 12 }, // 매출일자
-    { width: 12 }, // 등록일
-    { width: 12 }, // 수정일
-  ]
+      // 페이징 적용 (필터 적용 후)
+      query = query.range(page * pageSize, (page + 1) * pageSize - 1)
 
-  // 매출액 컬럼에 숫자 형식 적용 (천단위 콤마)
-  const range = XLSX.utils.decode_range(ws['!ref'])
-  for (let row = 1; row <= range.e.r; row++) {
-    // 헤더 제외하고 시작
-    const cellAddress = XLSX.utils.encode_cell({ r: row, c: 6 }) // 매출액은 7번째 컬럼 (인덱스 6)
-    if (ws[cellAddress]) {
-      ws[cellAddress].z = '#,##0' // 천단위 콤마 형식
+      const { data, error } = await query
+
+      if (error) {
+        alert('데이터 조회 실패: ' + error.message)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        hasMore = false
+        break
+      }
+
+      allData = allData.concat(data)
+      page++
+      
+      // 1000개 미만이면 더 이상 데이터가 없음
+      if (data.length < pageSize) {
+        hasMore = false
+      }
     }
+
+    if (allData.length === 0) {
+      alert('다운로드할 데이터가 없습니다.')
+      return
+    }
+
+    // 데이터 변환
+    const excelData = allData.map((revenue) => ({
+      약국코드: revenue.pharmacy_code || '',
+      약국명: revenue.pharmacy_name || '',
+      사업자등록번호: revenue.business_registration_number || '',
+      주소: revenue.address || '',
+      표준코드: revenue.standard_code || '',
+      제품명: revenue.product_name || '',
+      매출액: revenue.sales_amount || 0,
+      매출일자: revenue.sales_date || '',
+      등록일: revenue.created_at ? new Date(revenue.created_at).toISOString().split('T')[0] : '',
+      수정일: revenue.updated_at ? new Date(revenue.updated_at).toISOString().split('T')[0] : '',
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '도매매출목록')
+
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { width: 12 }, // 약국코드
+      { width: 20 }, // 약국명
+      { width: 15 }, // 사업자등록번호
+      { width: 30 }, // 주소
+      { width: 12 }, // 표준코드
+      { width: 20 }, // 제품명
+      { width: 12 }, // 매출액
+      { width: 12 }, // 매출일자
+      { width: 12 }, // 등록일
+      { width: 12 }, // 수정일
+    ]
+
+    // 매출액 컬럼에 숫자 형식 적용 (천단위 콤마)
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    for (let row = 1; row <= range.e.r; row++) {
+      // 헤더 제외하고 시작
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 6 }) // 매출액은 7번째 컬럼 (인덱스 6)
+      if (ws[cellAddress]) {
+        ws[cellAddress].z = '#,##0' // 천단위 콤마 형식
+      }
+    }
+
+    const fileName = generateExcelFileName('도매매출목록')
+    XLSX.writeFile(wb, fileName)
+  } catch (error) {
+    console.error('엑셀 다운로드 오류:', error)
+    alert('엑셀 다운로드 중 오류가 발생했습니다.')
+  } finally {
+    loading.value = false
   }
-
-  const fileName = generateExcelFileName('도매매출목록')
-
-  XLSX.writeFile(wb, fileName)
 }
 
 async function deleteAllRevenues() {
@@ -783,6 +986,8 @@ async function deleteAllRevenues() {
     return
   }
   revenues.value = []
+  totalCount.value = 0
+  totalSalesAmount.value = 0
   alert('모든 도매매출 데이터가 삭제되었습니다.')
 }
 
@@ -891,9 +1096,10 @@ const handleBackspace = (event) => {
   }
 };
 
-onMounted(() => {
-  fetchRevenues()
+onMounted(async () => {
   fetchAvailableMonths()
+  await fetchSummary()
+  await fetchRevenues()
 })
 </script>
 
