@@ -89,6 +89,14 @@
         </DataTable>
       </div>
     </div>
+
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -110,6 +118,7 @@ const availableClients = ref([]);
 const selectedClient = ref('');
 const detailRows = ref([]);
 const allDataForMonth = ref([]);
+const loading = ref(false);
 
 const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
 const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0).toLocaleString());
@@ -168,6 +177,9 @@ async function fetchAllDataForMonth() {
     allDataForMonth.value = [];
     return;
   }
+
+  loading.value = true;
+  try {
   
   // 1. settlement_share 테이블에서 공유 여부 확인
   const { data: shareData, error: shareError } = await supabase
@@ -227,6 +239,9 @@ async function fetchAllDataForMonth() {
   
   updateFilterOptions();
   filterDetailRows();
+  } finally {
+    loading.value = false;
+  }
 }
 
 function updateFilterOptions() {

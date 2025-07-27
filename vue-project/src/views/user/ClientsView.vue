@@ -58,6 +58,14 @@
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
       </DataTable>
     </div>
+
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -74,6 +82,7 @@ const clients = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 const currentPageFirstIndex = ref(0);
+const loading = ref(false);
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -91,7 +100,9 @@ function goToDetail(id) {
 }
 
 const fetchClients = async () => {
-  // 1. 로그인한 사용자의 UID
+  loading.value = true;
+  try {
+    // 1. 로그인한 사용자의 UID
   const { data: { session } } = await supabase.auth.getSession();
   const userUid = session?.user?.id;
 
@@ -131,6 +142,9 @@ const fetchClients = async () => {
 
   if (!error && data) {
     clients.value = data;
+  }
+  } finally {
+    loading.value = false;
   }
 };
 
