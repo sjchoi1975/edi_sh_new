@@ -225,12 +225,28 @@
         <ColumnGroup type="footer">
           <Row>
             <Column footer="합계" :colspan="7" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-            <Column :footer="totalSalesAmount.toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+            <Column :footer="Math.round(totalSalesAmount).toLocaleString()" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column footer="" footerClass="footer-cell" />
             <Column footer="" footerClass="footer-cell" />
           </Row>
         </ColumnGroup>
       </DataTable>
+    </div>
+
+    <!-- 전체 화면 로딩 오버레이 - 메뉴 진입 시 -->
+    <div v-if="loading && !excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 전체 화면 로딩 오버레이 - 엑셀 등록 시 -->
+    <div v-if="excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">등록 진행중입니다...</div>
+      </div>
     </div>
   </div>
 </template>
@@ -263,6 +279,7 @@ const columnWidths = {
 
 const revenues = ref([])
 const loading = ref(false)
+const excelLoading = ref(false)
 const searchInput = ref('');
 const router = useRouter()
 const fileInput = ref(null)
@@ -709,6 +726,9 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  // 엑셀 등록 로딩 시작
+  excelLoading.value = true
+
   try {
     const data = await file.arrayBuffer()
     const workbook = XLSX.read(data)
@@ -737,10 +757,6 @@ const handleFileUpload = async (event) => {
         errors.push(`${rowNum}행: 표준코드가 필요합니다.`)
         return
       }
-      if (!row['매출액']) {
-        errors.push(`${rowNum}행: 매출액이 필요합니다.`)
-        return
-      }
       if (!row['매출일자']) {
         errors.push(`${rowNum}행: 매출일자가 필요합니다.`)
         return
@@ -764,11 +780,14 @@ const handleFileUpload = async (event) => {
         return
       }
 
-      // 매출액 형식 검증 (숫자, 마이너스 허용)
-      const salesAmountValue = Number(row['매출액']);
-      if (isNaN(salesAmountValue)) {
-        errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`)
-        return
+      // 매출액 형식 검증 (숫자, 마이너스 허용) - 없으면 0으로 설정
+      let salesAmountValue = 0;
+      if (row['매출액'] !== undefined && row['매출액'] !== null && row['매출액'] !== '') {
+        salesAmountValue = Number(row['매출액']);
+        if (isNaN(salesAmountValue)) {
+          errors.push(`${rowNum}행: 매출액은 숫자여야 합니다.`)
+          return
+        }
       }
 
       // 매출일자 형식 검증 (YYYY-MM-DD)
@@ -827,6 +846,8 @@ const handleFileUpload = async (event) => {
     console.error('파일 처리 오류:', error)
     alert('파일 처리 중 오류가 발생했습니다.')
   } finally {
+    // 엑셀 등록 로딩 종료
+    excelLoading.value = false
     // 파일 입력 초기화
     event.target.value = ''
   }
@@ -1080,9 +1101,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+
 .footer-cell {
   background-color: #f8f9fa !important;
   font-weight: bold !important;
   border-top: 1px solid #dee2e6 !important;
 }
+
 </style>

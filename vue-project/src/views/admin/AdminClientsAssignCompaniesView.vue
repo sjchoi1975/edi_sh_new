@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="병의원코드, 병의원명, 사업자등록번호 검색"
+              placeholder="병의원코드, 병의원명, 사업자등록번호, 업체명 검색"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -218,6 +218,22 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- 전체 화면 로딩 오버레이 - 메뉴 진입 시 -->
+    <div v-if="loading && !excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 전체 화면 로딩 오버레이 - 엑셀 등록 시 -->
+    <div v-if="excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">등록 진행중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -233,6 +249,7 @@ import { generateExcelFileName } from '@/utils/excelUtils'
 
 const clients = ref([])
 const loading = ref(false)
+const excelLoading = ref(false)
 const companies = ref([])
 const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const assignModalVisible = ref(false)
@@ -299,7 +316,10 @@ function doSearch() {
     filteredClients.value = clients.value.filter(c =>
       (c.name && c.name.toLowerCase().includes(keyword)) ||
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
-      (c.client_code && c.client_code.toLowerCase().includes(keyword))
+      (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
+      (c.companies && c.companies.some(company => 
+        company.company_name && company.company_name.toLowerCase().includes(keyword)
+      ))
     );
   }
 }
@@ -371,6 +391,9 @@ const triggerFileUpload = () => {
 const handleFileUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
+
+  // 엑셀 등록 로딩 시작
+  excelLoading.value = true
 
   try {
     const data = await file.arrayBuffer()
@@ -452,6 +475,8 @@ const handleFileUpload = async (event) => {
     console.error('파일 처리 오류:', error)
     alert('파일 처리 중 오류가 발생했습니다.')
   } finally {
+    // 엑셀 등록 로딩 종료
+    excelLoading.value = false
     if (event.target) {
       event.target.value = ''
     }

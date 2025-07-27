@@ -199,6 +199,22 @@
         </Column>
       </DataTable>
     </div>
+
+    <!-- 전체 화면 로딩 오버레이 - 메뉴 진입 시 -->
+    <div v-if="loading && !excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 전체 화면 로딩 오버레이 - 엑셀 등록 시 -->
+    <div v-if="excelLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">등록 진행중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -214,6 +230,7 @@ import { generateExcelFileName } from '@/utils/excelUtils'
 
 const clients = ref([])
 const loading = ref(false)
+const excelLoading = ref(false)
 const searchInput = ref('');
 const searchKeyword = ref('');
 const filteredClients = ref([]);
@@ -500,6 +517,9 @@ const handleFileUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  // 엑셀 등록 로딩 시작
+  excelLoading.value = true
+
   try {
     const data = await file.arrayBuffer()
     const workbook = XLSX.read(data)
@@ -682,6 +702,8 @@ const handleFileUpload = async (event) => {
     console.error('파일 처리 오류:', error)
     alert('파일 처리 중 오류가 발생했습니다.')
   } finally {
+    // 엑셀 등록 로딩 종료
+    excelLoading.value = false
     // 파일 입력 초기화
     event.target.value = ''
   }

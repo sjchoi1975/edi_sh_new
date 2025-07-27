@@ -189,6 +189,14 @@
         </DataTable>
       </div>
     </div>
+
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -237,6 +245,7 @@ const performanceRecords = ref([]) // DB에서 가져온 실적 데이터
 const displayRows = ref([]) // 화면에 표시할 행들
 const originalData = ref([]) // 원본 데이터 (변경 감지용)
 const hasChanges = ref(false) // 변경사항 여부
+const loading = ref(false) // 로딩 상태
 
 // 편집 모드 관련
 const isEditMode = ref(false) // 편집 가능 여부
@@ -1437,15 +1446,15 @@ async function fetchPerformanceRecords() {
     return
   }
 
-  // prescriptionOffset이 0이면 전체 처방월 조회
-  if (prescriptionOffset.value !== 0 && !prescriptionMonth.value) {
-    displayRows.value = []
-    performanceRecords.value = []
-    originalData.value = []
-    return
-  }
-
+  loading.value = true;
   try {
+    // prescriptionOffset이 0이면 전체 처방월 조회
+    if (prescriptionOffset.value !== 0 && !prescriptionMonth.value) {
+      displayRows.value = []
+      performanceRecords.value = []
+      originalData.value = []
+      return
+    }
     let query = supabase
       .from('performance_records')
       .select(
@@ -1543,6 +1552,8 @@ async function fetchPerformanceRecords() {
     displayRows.value = []
     originalData.value = []
     hasChanges.value = false
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -1744,4 +1755,3 @@ const removeOverflowClass = (event) => {
   console.log('이용자 실적등록 오버플로우 클래스 제거됨');
 }
 </script>
-

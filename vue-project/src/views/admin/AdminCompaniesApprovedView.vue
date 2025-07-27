@@ -79,26 +79,104 @@
             <Dropdown v-model="data[field]" :options="commissionGrades" optionLabel="name" optionValue="value" style="width: 100%" />
           </template>
         </Column>
+        <Column header="병의원" :headerStyle="{ width: columnWidths.client_count }" :sortable="true">
+          <template #body="slotProps">
+            <span 
+              v-if="slotProps.data.client_count > 0" 
+              class="text-link" 
+              @click="openClientModal(slotProps.data)"
+              style="cursor: pointer; color: #007bff; text-decoration: underline;"
+            >
+              {{ slotProps.data.client_count }}
+            </span>
+            <span v-else>-</span>
+          </template>
+        </Column>
         <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true" :editor="getTextEditor"></Column>
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }">
           <template #body="slotProps">
             {{ slotProps.data.remarks || '-' }}
           </template>
         </Column>
-        <Column field="approval_status" header="승인 취소" :headerStyle="{ width: columnWidths.approval_status }" :exportable="false">
+        <Column field="approval_status" header="승인 취소" :headerStyle="{ width: columnWidths.approval_status, textAlign: 'center' }" :exportable="false">
           <template #body="slotProps">
-            <button class="btn-pending-sm" @click="openCancelDialog(slotProps.data)">취소</button>
+            <div style="display: flex; justify-content: center;">
+              <button class="btn-pending-sm" @click="openCancelDialog(slotProps.data)">취소</button>
+            </div>
           </template>
         </Column>
       </DataTable>
     </div>
-    <Dialog v-model:visible="dialogVisible" header="업체 승인 취소 확인" :modal="true" :closable="false">
-      <div>정말 {{ selectedCompanyName }} 업체를 승인 취소 처리하시겠습니까?</div>
-      <template #footer>
-        <button class="btn-cancel" @click="dialogVisible = false">취소</button>
-        <button class="btn-delete" @click="handleCancel">승인 취소</button>
-      </template>
+    <!-- 승인 취소 확인 모달은 기본 브라우저 confirm 사용 -->
+
+    <!-- 담당 병의원 모달 -->
+    <Dialog 
+      v-model:visible="clientModalVisible" 
+      header="담당 병의원" 
+      :modal="true" 
+      :style="{ width: '1200px', minWidth: '1200px', maxWidth: '1200px' }"
+      class="client-modal-dialog">
+      <div>
+        <DataTable
+          :value="clientModalData"
+          class="custom-table modal-client-table"
+          scrollable
+          scrollHeight="400px"
+        >
+          <Column
+            field="client_code"
+            header="병의원코드"
+            :headerStyle="{ width: '10%', textAlign: 'center' }"
+            :style="{ textAlign: 'center' }"
+            :sortable="true"
+          />
+          <Column
+            field="name"
+            header="병의원명"
+            :headerStyle="{ width: '20%' }"
+            :sortable="true"
+          />
+          <Column
+            field="business_registration_number"
+            header="사업자등록번호"
+            :headerStyle="{ width: '12%', textAlign: 'center' }"
+            :style="{ textAlign: 'center' }"
+            :sortable="true"
+          />
+          <Column
+            field="owner_name"
+            header="원장명"
+            :headerStyle="{ width: '10%', textAlign: 'center' }"
+            :style="{ textAlign: 'center' }"
+            :sortable="true"
+          />
+          <Column
+            field="address"
+            header="주소"
+            :headerStyle="{ width: '38%' }"
+            :sortable="true"
+          />
+          <Column
+            field="commission_grade"
+            header="수수료 등급"
+            :headerStyle="{ width: '10%', textAlign: 'center' }"
+            :style="{ textAlign: 'center' }"
+            :sortable="true"
+          />
+        </DataTable>
+        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top: 1rem;">
+          <button class="btn-cancel" @click="closeClientModal">닫기</button>
+        </div>
+      </div>
     </Dialog>
+
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -125,8 +203,9 @@ const columnWidths = {
   company_name: '16%',
   business_registration_number: '9%',
   representative_name: '7%',
-  business_address: '25%',
+  business_address: '20%',
   default_commission_grade: '7%',
+  client_count: '7%',
   assigned_pharmacist_contact: '7%',
   remarks: '12%',
   approval_status: '6%',
@@ -151,14 +230,27 @@ const router = useRouter()
 const fetchCompanies = async () => {
   loading.value = true
   try {
-    const { data, error } = await supabase.from('companies').select('*')
+    // 업체 정보와 함께 병의원 수를 가져오기
+    const { data, error } = await supabase
+      .from('companies')
+      .select(`
+        *,
+        client_assignments:client_company_assignments(count)
+      `)
+    
     if (error) {
       console.error('업체 정보를 불러오는데 실패했습니다.', error)
       throw error
     }
-    approvedCompanies.value = (data || []).filter(
-      (company) => company.user_type === 'user' && company.approval_status === 'approved',
-    )
+    
+    // 승인된 업체만 필터링하고 병의원 수 추가
+    approvedCompanies.value = (data || [])
+      .filter(company => company.user_type === 'user' && company.approval_status === 'approved')
+      .map(company => ({
+        ...company,
+        client_count: company.client_assignments?.[0]?.count || 0
+      }))
+    
     filteredCompanies.value = approvedCompanies.value;
   } catch (err) {
     console.error('업체 정보를 불러오는데 실패했습니다.', err)
@@ -438,18 +530,53 @@ const removeOverflowClass = (event) => {
   element.classList.remove('overflowed');
 }
 
-const dialogVisible = ref(false);
-const selectedCompanyForCancel = ref(null);
-const selectedCompanyName = ref('');
+const clientModalVisible = ref(false);
+const clientModalData = ref([]);
+
 function openCancelDialog(company) {
-  selectedCompanyForCancel.value = company;
-  selectedCompanyName.value = company.company_name;
-  dialogVisible.value = true;
+  if (confirm(`정말 ${company.company_name} 업체를 승인 취소 처리하시겠습니까?`)) {
+    confirmApprovalChange(company, 'pending');
+  }
 }
-async function handleCancel() {
-  if (!selectedCompanyForCancel.value) return;
-  await confirmApprovalChange(selectedCompanyForCancel.value, 'pending');
-  dialogVisible.value = false;
+
+// 담당 병의원 모달 관련 함수들
+async function openClientModal(company) {
+  try {
+    const { data, error } = await supabase
+      .from('client_company_assignments')
+      .select(`
+        modified_commission_grade,
+        company_default_commission_grade,
+        client:clients(
+          client_code,
+          name,
+          business_registration_number,
+          owner_name,
+          address
+        )
+      `)
+      .eq('company_id', company.id)
+    
+    if (error) {
+      console.error('병의원 정보 조회 오류:', error);
+      alert('병의원 정보를 불러오는데 실패했습니다.');
+      return;
+    }
+    
+    clientModalData.value = data.map(item => ({
+      ...item.client,
+      commission_grade: item.modified_commission_grade || item.company_default_commission_grade || '-'
+    }));
+    clientModalVisible.value = true;
+  } catch (err) {
+    console.error('병의원 정보 조회 오류:', err);
+    alert('병의원 정보를 불러오는데 실패했습니다.');
+  }
+}
+
+function closeClientModal() {
+  clientModalVisible.value = false;
+  clientModalData.value = [];
 }
 
 </script>
@@ -458,4 +585,15 @@ async function handleCancel() {
 /* 이 컴포넌트 전용 스타일이 있다면 여기에, 없다면 태그 제거 */
 .text-link { color: var(--text-link); text-decoration: underline; cursor: pointer; }
 .text-link:hover { color: var(--primary-color-dark); }
+
+/* 담당 병의원 모달 너비 강제 적용 */
+:deep(.client-modal-dialog) {
+  width: 1200px !important;
+  max-width: 1200px !important;
+}
+
+:deep(.client-modal-dialog .p-dialog-content) {
+  width: 100% !important;
+}
+
 </style>

@@ -208,6 +208,14 @@
       </div>
     </div>
 
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
+
     <!-- 증빙파일 상세 모달: teleport로 body에 위치 -->
     <teleport to="body">
       <div v-if="detailModalVisible" class="modal-overlay" @click="closeDetailModal">

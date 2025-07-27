@@ -227,6 +227,14 @@
         </ColumnGroup>
       </DataTable>
     </div>
+
+    <!-- 전체 화면 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </div>
 
   <!-- 파일 보기 모달 -->
