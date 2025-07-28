@@ -648,11 +648,29 @@ async function loadPerformanceData() {
         shouldFetchByIds = true;
 
         console.log(`${idsToFetch.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
-        const { error: updateError } = await supabase
+        // review_status만 변경하므로 updated_at, updated_by는 갱신하지 않음
+        // 먼저 현재 데이터를 조회하여 updated_at 값을 가져옴
+        const { data: currentData, error: fetchError } = await supabase
           .from('performance_records')
-          .update({ review_status: '검수중', updated_at: currentTimestamp, updated_by: adminUserId })
+          .select('updated_at, updated_by')
           .in('id', idsToFetch);
-        if (updateError) throw updateError;
+        if (fetchError) throw fetchError;
+        
+        // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
+        const updates = currentData.map(record => 
+          supabase
+            .from('performance_records')
+            .update({ 
+              review_status: '검수중',
+              updated_at: record.updated_at,  // 이전 값으로 유지
+              updated_by: record.updated_by   // 이전 값으로 유지
+            })
+            .eq('id', record.id)
+        );
+        
+        const results = await Promise.all(updates);
+        const errorResult = results.find(res => res.error);
+        if (errorResult) throw errorResult.error;
       }
     } 
     // 2. '전체' 선택 시: 필터에 맞는 모든 데이터를 대상으로 '대기' 상태인 것을 '검수중'으로 업데이트하고, 전체를 불러옵니다.
@@ -669,11 +687,29 @@ async function loadPerformanceData() {
       if (pendingRecords && pendingRecords.length > 0) {
           const idsToUpdate = pendingRecords.map(r => r.id);
           console.log(`전체 데이터 중 ${idsToUpdate.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
-          const { error: updateError } = await supabase
+          // review_status만 변경하므로 updated_at, updated_by는 갱신하지 않음
+          // 먼저 현재 데이터를 조회하여 updated_at 값을 가져옴
+          const { data: currentData, error: fetchError } = await supabase
+            .from('performance_records')
+            .select('id, updated_at, updated_by')
+            .in('id', idsToUpdate);
+          if (fetchError) throw fetchError;
+          
+          // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
+          const updates = currentData.map(record => 
+            supabase
               .from('performance_records')
-              .update({ review_status: '검수중', updated_at: currentTimestamp, updated_by: adminUserId })
-              .in('id', idsToUpdate);
-          if (updateError) throw updateError;
+              .update({ 
+                review_status: '검수중',
+                updated_at: record.updated_at,  // 이전 값으로 유지
+                updated_by: record.updated_by   // 이전 값으로 유지
+              })
+              .eq('id', record.id)
+          );
+          
+          const results = await Promise.all(updates);
+          const errorResult = results.find(res => res.error);
+          if (errorResult) throw errorResult.error;
       }
     }
     // 3. '검수중' 또는 '완료' 선택 시: 상태 변경 없이 데이터만 불러옵니다.
@@ -1049,9 +1085,9 @@ async function changeReviewStatus() {
         return supabase
           .from('performance_records')
           .update({ 
-            review_status: newStatus, 
-            updated_by: user.id,
-            updated_at: new Date().toISOString() 
+            review_status: newStatus,
+            updated_at: record.updated_at,  // 이전 값으로 유지
+            updated_by: record.updated_by   // 이전 값으로 유지
           })
           .eq('id', record.id);
       });
