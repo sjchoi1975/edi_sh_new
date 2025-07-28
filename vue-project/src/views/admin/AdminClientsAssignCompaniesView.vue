@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="병의원코드, 병의원명, 사업자등록번호, 업체명 검색"
+              placeholder="코드, 병의원명, 사업자번호, 원장명, 구분, 업체명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -111,6 +111,20 @@
             <span class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
           </template>
         </Column>
+        <Column header="구분" :headerStyle="{ width: columnWidths.company_group }">
+          <template #body="slotProps">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
+              <div
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
+                style="min-height: 32px; display: flex; align-items: center !important;"
+              >
+                {{ company.company_group || '-' }}
+              </div>
+            </div>
+            <div v-else style="min-height: 32px">-</div>
+          </template>
+        </Column>
         <Column header="업체명" :headerStyle="{ width: columnWidths.company_name }">
           <template #body="slotProps">
             <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
@@ -172,7 +186,7 @@
       <div>
         <InputText
           v-model="companySearch"
-          placeholder="업체명, 사업자등록번호, 대표자명 검색"
+          placeholder="구분, 업체명, 사업자등록번호, 대표자명"
           style="width: 100%; margin-bottom: 12px; margin-top: 0px"
           class="modal-search-input"
         />
@@ -186,9 +200,15 @@
         >
           <Column selectionMode="multiple" :headerStyle="{ width: '6%' }" />
           <Column
+            field="company_group"
+            header="구분"
+            :headerStyle="{ width: '12%' }"
+            :sortable="true"
+          />
+          <Column
             field="company_name"
             header="업체명"
-            :headerStyle="{ width: '20%' }"
+            :headerStyle="{ width: '18%' }"
             :sortable="true"
           />
           <Column
@@ -206,7 +226,7 @@
           <Column
             field="business_address"
             header="사업장 소재지"
-            :headerStyle="{ width: '46%' }"
+            :headerStyle="{ width: '36%' }"
             :sortable="true"
           />
         </DataTable>
@@ -266,8 +286,9 @@ const columnWidths = {
   name: '18%',
   business_registration_number: '8%',
   owner_name: '7%',
-  address: '24%',
-  company_name: '16%',
+  address: '20%',
+  company_group: '10%',
+  company_name: '14%',
   company_brn: '8%',
   actions: '8%',
 }
@@ -278,7 +299,7 @@ const fetchClients = async () => {
     const { data: clientsData, error } = await supabase
       .from('clients')
       .select(
-        `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number))`,
+        `*, companies:client_company_assignments(company:companies(id, company_name, business_registration_number, company_group))`,
       )
       .eq('status', 'active')
     console.log('clientsData:', clientsData, 'error:', error); // ← 추가
@@ -317,8 +338,10 @@ function doSearch() {
       (c.name && c.name.toLowerCase().includes(keyword)) ||
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
+      (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.companies && c.companies.some(company => 
-        company.company_name && company.company_name.toLowerCase().includes(keyword)
+        (company.company_name && company.company_name.toLowerCase().includes(keyword)) ||
+        (company.company_group && company.company_group.toLowerCase().includes(keyword))
       ))
     );
   }
@@ -338,7 +361,8 @@ const filteredCompanies = computed(() => {
     (c) =>
       c.company_name.toLowerCase().includes(search) ||
       c.business_registration_number.includes(search) ||
-      c.representative_name.toLowerCase().includes(search),
+      c.representative_name.toLowerCase().includes(search) ||
+      (c.company_group && c.company_group.toLowerCase().includes(search)),
   )
 })
 function openAssignModal(client) {

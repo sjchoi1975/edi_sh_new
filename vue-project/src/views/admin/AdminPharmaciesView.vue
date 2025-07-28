@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="약국코드, 약국명, 사업자등록번호 검색"
+              placeholder="약국코드, 약국명, 사업자등록번호"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"

@@ -25,7 +25,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="약국명, 사업자등록번호, 표준코드, 제품명 검색"
+              placeholder="약국명, 사업자등록번호, 표준코드, 제품명"
               class="search-input"
               @keyup.enter="applyFilters"
               style="width:100%;"
