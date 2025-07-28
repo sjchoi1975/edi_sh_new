@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="코드, 병의원명, 사업자번호, 원장명, 약국명"
+              placeholder="코드, 병의원, 사업자번호, 원장, 구분, 업체명, 약국명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -28,6 +28,12 @@
             @click="doSearch">
             검색
           </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label>병원 구분</label>
+          <select v-model="hospitalFilter" class="select_120px" @change="applyHospitalFilter">
+            <option v-for="option in hospitalFilterOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
         </div>
       </div>
     </div>
@@ -97,6 +103,34 @@
         <Column field="address" header="주소" :headerStyle="{ width: columnWidths.address }" :sortable="true">
           <template #body="slotProps">
             <span class="ellipsis-cell" :title="slotProps.data.address" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.address }}</span>
+          </template>
+        </Column>
+        <Column header="구분" :headerStyle="{ width: columnWidths.company_group }">
+          <template #body="slotProps">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
+              <div
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
+                style="min-height: 32px; display: flex; align-items: center !important;"
+              >
+                {{ company.company_group || '-' }}
+              </div>
+            </div>
+            <div v-else style="min-height: 32px">-</div>
+          </template>
+        </Column>
+        <Column header="업체명" :headerStyle="{ width: columnWidths.company_name }">
+          <template #body="slotProps">
+            <div v-if="slotProps.data.companies && slotProps.data.companies.length > 0">
+              <div
+                v-for="(company, idx) in slotProps.data.companies"
+                :key="company.id"
+                style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
+              >
+                {{ company.company_name }}
+              </div>
+            </div>
+            <div v-else style="min-height: 32px">-</div>
           </template>
         </Column>
         <Column header="약국명" :headerStyle="{ width: columnWidths.pharmacy_name }">
@@ -235,11 +269,13 @@ const fileInput = ref(null)
 const columnWidths = {
   no: '4%',
   client_code: '7%',
-  name: '18%',
+  name: '16%',
   business_registration_number: '8%',
   owner_name: '7%',
-  address: '24%',
-  pharmacy_name: '16%',
+  address: '20%',
+  company_group: '8%',
+  company_name: '12%',
+  pharmacy_name: '12%',
   pharmacy_brn: '8%',
   actions: '8%'
 };
@@ -250,19 +286,23 @@ const fetchClients = async () => {
     const { data: clientsData, error } = await supabase
       .from('clients')
       .select(
-        `*, pharmacies:client_pharmacy_assignments(pharmacy:pharmacies(id, name, business_registration_number))`,
+        `*, 
+        pharmacies:client_pharmacy_assignments(pharmacy:pharmacies(id, name, business_registration_number)),
+        companies:client_company_assignments(company:companies(id, company_name, company_group))`,
       )
       // .eq('status', 'active') // 조건 제거
     console.log('clientsData:', clientsData, 'error:', error);
     if (!error && clientsData) {
       clients.value = clientsData.map((client) => {
         const pharmaciesArr = client.pharmacies.map((p) => p.pharmacy)
+        const companiesArr = client.companies.map((c) => c.company)
         return {
           ...client,
           pharmacies: pharmaciesArr,
+          companies: companiesArr,
         }
       })
-      filteredClients.value = clients.value;
+      applyFilters(); // 초기 필터 적용
       console.log('filteredClients:', filteredClients.value);
     }
   } finally {
@@ -277,25 +317,62 @@ const searchInput = ref('');
 const searchKeyword = ref('');
 const filteredClients = ref([]);
 
+// 병원 필터 관련 변수들
+const hospitalFilter = ref('assigned'); // 기본값: 담당업체 지정
+const hospitalFilterOptions = ref([
+  { label: '전체 병의원', value: 'all' },
+  { label: '담당업체 지정', value: 'assigned' }
+]);
+
 function doSearch() {
   if (searchInput.value.length >= 2) {
     searchKeyword.value = searchInput.value;
+  } else {
+    searchKeyword.value = '';
+  }
+  applyFilters();
+}
+function clearSearch() {
+  searchInput.value = '';
+  searchKeyword.value = '';
+  applyFilters();
+}
+
+// 병원 필터 적용 함수
+function applyHospitalFilter() {
+  applyFilters();
+}
+
+// 통합 필터 적용 함수
+function applyFilters() {
+  let filtered = clients.value;
+  
+  // 병원 필터 적용
+  if (hospitalFilter.value === 'assigned') {
+    filtered = filtered.filter(client => 
+      client.companies && client.companies.length > 0
+    );
+  }
+  
+  // 검색 필터 적용
+  if (searchKeyword.value && searchKeyword.value.length >= 2) {
     const keyword = searchKeyword.value.toLowerCase();
-    filteredClients.value = clients.value.filter(c =>
+    filtered = filtered.filter(c =>
       (c.name && c.name.toLowerCase().includes(keyword)) ||
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
       (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.pharmacies && c.pharmacies.some(pharmacy => 
         pharmacy.name && pharmacy.name.toLowerCase().includes(keyword)
+      )) ||
+      (c.companies && c.companies.some(company => 
+        (company.company_group && company.company_group.toLowerCase().includes(keyword)) ||
+        (company.company_name && company.company_name.toLowerCase().includes(keyword))
       ))
     );
   }
-}
-function clearSearch() {
-  searchInput.value = '';
-  searchKeyword.value = '';
-  filteredClients.value = clients.value;
+  
+  filteredClients.value = filtered;
 }
 
 // (filteredClients를 ref로만 관리, 검색 버튼/X버튼/검색 버튼 클릭 시에만 갱신)
