@@ -63,9 +63,15 @@
            >
              흡수율 분석
            </button>
-           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
+           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0" style="margin-right: 1rem;">
              엑셀 다운로드
            </button>
+           <div style="display: flex; align-items: center; gap: 8px;">
+             <label>정렬</label>
+             <select v-model="sortCriteria" class="select_120px" @change="applySorting">
+               <option v-for="option in sortOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+             </select>
+           </div>
         </div>
       </div>
       
@@ -82,8 +88,8 @@
           v-model:first="currentPageFirstIndex"
 
           :pt="{
-            wrapper: { style: 'min-width: 2600px;' },
-            table: { style: 'min-width: 2600px;' }
+            wrapper: { style: 'min-width: 2900px;' },
+            table: { style: 'min-width: 2900px;' }
           }"
         >
           <template #empty>
@@ -171,6 +177,16 @@
               <span :title="slotProps.data.created_by">{{ slotProps.data.created_by }}</span>
             </template>
           </Column>
+          <Column field="updated_date" header="수정일시" :headerStyle="{ width: columnWidths.updated_date }" :sortable="true">
+            <template #body="slotProps">
+              <span :title="slotProps.data.updated_date">{{ slotProps.data.updated_date || '-' }}</span>
+            </template>
+          </Column>
+          <Column field="updated_by" header="수정자" :headerStyle="{ width: columnWidths.updated_by }" :sortable="true">
+            <template #body="slotProps">
+              <span :title="slotProps.data.updated_by">{{ slotProps.data.updated_by || '-' }}</span>
+            </template>
+          </Column>
 
           <ColumnGroup type="footer">
             <Row>
@@ -188,6 +204,8 @@
               <Column :footer="averageAbsorptionRate" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="averageCommissionRate" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
@@ -223,25 +241,27 @@ import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 const columnWidths = {
   no: '3.5%',
   review_action: '3.5%',
-  company_type: '7%',
-  company_name: '9%',
-  client_name: '16%',
-  prescription_month: '6%',
-  product_name_display: '16%',
-  insurance_code: '6.5%',
-  price: '6%',
-  prescription_qty: '7%',
-  prescription_amount: '7%',
-  prescription_type: '7%',
-  wholesale_revenue: '7%',
-  direct_revenue: '7%',
-  total_revenue: '7%',
+  company_type: '6%',
+  company_name: '8%',
+  client_name: '12%',
+  prescription_month: '5%',
+  product_name_display: '12%',
+  insurance_code: '6%',
+  price: '5%',
+  prescription_qty: '6%',
+  prescription_amount: '6%',
+  prescription_type: '6%',
+  wholesale_revenue: '6%',
+  direct_revenue: '6%',
+  total_revenue: '6%',
   absorption_rate: '5%',
   commission_rate: '5%',
-  payment_amount: '7%',
-  remarks: '12%',
-  created_date: '8%',
-  created_by: '9%'
+  payment_amount: '6%',
+  remarks: '10%',
+  created_date: '7%',
+  created_by: '8%',
+  updated_date: '7%',
+  updated_by: '8%'
 };
 
 // --- 상태 변수 정의 ---
@@ -272,6 +292,14 @@ const changeInfo = ref({
   updated_mappings: 0,
   updated_sales: 0
 });
+
+// 정렬 관련 변수들
+const sortCriteria = ref('alphabetical'); // 기본값: 가나다순
+const sortOptions = ref([
+  { label: '가나다순', value: 'alphabetical' },
+  { label: '등록순', value: 'created' },
+  { label: '수정순', value: 'updated' }
+]);
 
 // --- 합계 계산 ---
 const totalPrescriptionAmount = computed(() => {
@@ -618,6 +646,36 @@ async function loadAbsorptionAnalysisResults() {
     console.log(`병원 정보 NULL: ${clientNullCount}건`);
     console.log(`제품 정보 NULL: ${productNullCount}건`);
 
+    // 사용자 ID를 업체명으로 변환하기 위한 매핑 생성
+    const userIds = [...new Set(allData.map(row => row.registered_by).filter(id => id))];
+    if (allData.some(row => row.updated_by)) {
+      userIds.push(...allData.map(row => row.updated_by).filter(id => id));
+    }
+    
+    let userMap = new Map();
+    if (userIds.length > 0) {
+      console.log('사용자 ID 목록:', userIds);
+      
+      // companies 테이블에서 user_id를 통해 업체명 가져오기
+      const { data: companies, error: companyError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', userIds);
+      
+      console.log('companies 조회 결과:', companies);
+      console.log('companies 조회 오류:', companyError);
+      
+      if (!companyError && companies) {
+        companies.forEach(company => {
+          if (company.user_id) {
+            userMap.set(company.user_id, company.company_name || 'N/A');
+          }
+        });
+      }
+      
+      console.log('사용자 매핑 결과:', Object.fromEntries(userMap));
+    }
+
     let mappedData = allData.map(row => {
         const prescriptionAmount = Math.round((row.prescription_qty || 0) * (row.product?.price || 0));
         const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
@@ -635,27 +693,21 @@ async function loadAbsorptionAnalysisResults() {
             commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
             absorption_rate: ((row.absorption_rate || 0) * 100).toFixed(1),
             created_date: formatDateTime(row.created_at),
+            created_by: userMap.get(row.registered_by) || '-', // 등록자를 업체명으로 표시
+            updated_date: row.updated_at ? formatDateTime(row.updated_at) : null,
+            updated_by: row.updated_by ? userMap.get(row.updated_by) || '-' : null, // 수정자를 업체명으로 표시
         };
     });
     
     console.log(`매핑 후 데이터: ${mappedData.length}건`);
     console.log('=== 데이터 매핑 완료 ===');
 
-    const actionOrder = { '추가': 1, '수정': 2, '삭제': 3 };
-    mappedData.sort((a, b) => {
-      const orderA_action = actionOrder[a.review_action] || 4;
-      const orderB_action = actionOrder[b.review_action] || 4;
-      if (orderA_action !== orderB_action) return orderA_action - orderB_action;
-
-      if (a.company_type !== b.company_type) return a.company_type.localeCompare(b.company_type, 'ko');
-      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
-      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
-      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
-
-      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
-    });
+    // 정렬은 applySorting 함수에서 처리
     
     displayRows.value = mappedData;
+    
+    // 정렬 적용
+    applySorting();
 
     // === 업체별 개수 콘솔 로그 ===
     console.log('=== 흡수율 분석 결과 업체별 개수 ===');
@@ -826,7 +878,7 @@ const calculateAbsorptionRates = async () => {
     for (let i = 0; i < allSourceData.length; i += insertBatchSize) {
       const batchData = allSourceData.slice(i, i + insertBatchSize);
       
-      const { error: insertError } = await supabase
+              const { error: insertError } = await supabase
         .from('performance_records_absorption')
         .insert(batchData.map(record => ({
           id: record.id, // 원본 performance_records의 id 사용
@@ -841,8 +893,10 @@ const calculateAbsorptionRates = async () => {
           remarks: record.remarks,
           registered_by: record.registered_by,
           review_action: record.review_action, // review_action 필드 추가
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          created_at: record.created_at, // performance_records의 created_at 그대로 사용
+          // review_action이 '수정'인 경우에만 updated_at, updated_by 값을 가져옴
+          updated_at: record.review_action === '수정' ? record.updated_at : null,
+          updated_by: record.review_action === '수정' ? record.updated_by : null
         })));
 
       if (insertError) throw insertError;
@@ -903,6 +957,51 @@ function getActionSeverity(action) {
   return 'secondary';
 }
 
+// 정렬 함수
+function applySorting() {
+  if (!displayRows.value || displayRows.value.length === 0) return;
+  
+  const sortedRows = [...displayRows.value];
+  
+  switch (sortCriteria.value) {
+    case 'alphabetical':
+      // 가나다순: 업체명 > 병의원명 > 제품명 순
+      sortedRows.sort((a, b) => {
+        // 업체명 비교
+        const companyCompare = (a.company_name || '').localeCompare(b.company_name || '', 'ko');
+        if (companyCompare !== 0) return companyCompare;
+        
+        // 병의원명 비교
+        const clientCompare = (a.client_name || '').localeCompare(b.client_name || '', 'ko');
+        if (clientCompare !== 0) return clientCompare;
+        
+        // 제품명 비교
+        return (a.product_name_display || '').localeCompare(b.product_name_display || '', 'ko');
+      });
+      break;
+      
+    case 'created':
+      // 등록순: created_at 기준 (최신순)
+      sortedRows.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA; // 최신순
+      });
+      break;
+      
+    case 'updated':
+      // 수정순: updated_at 기준 (최신순)
+      sortedRows.sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at || 0);
+        const dateB = new Date(b.updated_at || b.created_at || 0);
+        return dateB - dateA; // 최신순
+      });
+      break;
+  }
+  
+  displayRows.value = sortedRows;
+}
+
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return '-';
   const date = new Date(dateTimeString);
@@ -918,10 +1017,16 @@ async function downloadExcel() {
   }
 
   try {
-    // 1. 등록자 UUID -> company_name 매핑을 위한 companies 조회
+    // 1. 등록자/수정자 UUID -> company_name 매핑을 위한 companies 조회
+    const userIds = [...new Set(displayRows.value.map(row => row.registered_by).filter(id => id))];
+    if (displayRows.value.some(row => row.updated_by)) {
+      userIds.push(...displayRows.value.map(row => row.updated_by).filter(id => id));
+    }
+    
     const { data: companies, error } = await supabase
       .from('companies')
-      .select('user_id, company_name');
+      .select('user_id, company_name')
+      .in('user_id', userIds);
     
     if (error) throw error;
     
@@ -955,7 +1060,9 @@ async function downloadExcel() {
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
       '등록일시': row.created_date,
-      '등록자': userCompanyMap[row.registered_by] || row.registered_by || '-'
+      '등록자': userCompanyMap[row.registered_by] || row.registered_by || '-',
+      '수정일시': row.updated_date || '-',
+      '수정자': userCompanyMap[row.updated_by] || row.updated_by || '-'
     }));
 
     // 합계 행 추가
