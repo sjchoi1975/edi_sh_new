@@ -8,7 +8,7 @@
         <span class="p-input-icon-left">
           <InputText
             v-model="filters['global'].value"
-            placeholder="정산월, 내용 검색"
+            placeholder="정산월, 내용"
             class="search-input-only"
           />
         </span>

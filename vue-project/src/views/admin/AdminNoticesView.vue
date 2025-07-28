@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="제목, 내용 검색"
+              placeholder="제목, 내용"
               class="search-input"
               @keyup.enter="doSearch"
             />
@@ -155,7 +155,8 @@ function doSearch() {
     searchKeyword.value = searchInput.value;
     const keyword = searchKeyword.value.toLowerCase();
     filteredNotices.value = notices.value.filter(n =>
-      n.title && n.title.toLowerCase().includes(keyword)
+      (n.title && n.title.toLowerCase().includes(keyword)) ||
+      (n.content && n.content.toLowerCase().includes(keyword))
     );
   }
 }

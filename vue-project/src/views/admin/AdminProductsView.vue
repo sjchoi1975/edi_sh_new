@@ -22,7 +22,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="제품명, 보험코드 검색"
+              placeholder="제품명, 보험코드, 표준코드"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -322,7 +322,8 @@ function doSearch() {
     const keyword = searchKeyword.value.toLowerCase();
     filteredProducts.value = products.value.filter(p =>
       (p.product_name && p.product_name.toLowerCase().includes(keyword)) ||
-      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword))
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword)) ||
+      (p.standard_code && p.standard_code.toLowerCase().includes(keyword))
     );
   }
 }

@@ -11,7 +11,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="업체명, 사업자등록번호, 대표자명 검색"
+              placeholder="구분, 업체명, 사업자등록번호, 대표자명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -266,7 +266,8 @@ function doSearch() {
     filteredCompanies.value = approvedCompanies.value.filter(c =>
       (c.company_name && c.company_name.toLowerCase().includes(keyword)) ||
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
-      (c.representative_name && c.representative_name.toLowerCase().includes(keyword))
+      (c.representative_name && c.representative_name.toLowerCase().includes(keyword)) ||
+      (c.company_group && c.company_group.toLowerCase().includes(keyword))
     );
   }
 }

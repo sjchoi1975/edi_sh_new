@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="병의원코드, 병의원명, 사업자등록번호, 업체명 검색"
+              placeholder="코드, 병의원명, 사업자번호, 원장명, 구분, 업체명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -114,6 +114,12 @@
           </template>
         </Column>
         <Column
+          field="company_group"
+          header="구분"
+          :headerStyle="{ width: columnWidths.company_group }"
+          :sortable="true"
+        />
+        <Column
           field="company_name"
           header="업체명"
           :headerStyle="{ width: columnWidths.company_name }"
@@ -195,7 +201,9 @@ function doSearch() {
       (c.client_name && c.client_name.toLowerCase().includes(keyword)) ||
       (c.client_business_registration_number && c.client_business_registration_number.toLowerCase().includes(keyword)) ||
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
-      (c.company_name && c.company_name.toLowerCase().includes(keyword))
+      (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
+      (c.company_name && c.company_name.toLowerCase().includes(keyword)) ||
+      (c.company_group && c.company_group.toLowerCase().includes(keyword))
     );
   }
 }
@@ -216,7 +224,8 @@ const columnWidths = {
   client_name: '16%',
   client_business_registration_number: '8%',
   owner_name: '6%',
-  address: '24%',
+  address: '20%',
+  company_group: '8%',
   company_name: '12%',
   company_business_registration_number: '8%',
   default_grade: '8%',
@@ -233,7 +242,7 @@ const fetchAssignments = async () => {
         company_default_commission_grade,
         modified_commission_grade,
         client:clients(id, client_code, name, business_registration_number, owner_name, address),
-        company:companies(id, company_name, business_registration_number, default_commission_grade)
+        company:companies(id, company_name, business_registration_number, default_commission_grade, company_group)
       `)
     
     if (!error && assignmentsData) {
@@ -244,6 +253,7 @@ const fetchAssignments = async () => {
         client_business_registration_number: assignment.client?.business_registration_number || '',
         owner_name: assignment.client?.owner_name || '',
         address: assignment.client?.address || '',
+        company_group: assignment.company?.company_group || '',
         company_name: assignment.company?.company_name || '',
         company_business_registration_number: assignment.company?.business_registration_number || '',
         company_default_commission_grade: assignment.company?.default_commission_grade || assignment.company_default_commission_grade,
@@ -439,6 +449,7 @@ const downloadExcel = () => {
     '병의원 사업자등록번호': assignment.client_business_registration_number,
     원장명: assignment.owner_name,
     주소: assignment.address,
+    구분: assignment.company_group,
     업체명: assignment.company_name,
     '업체 사업자등록번호': assignment.company_business_registration_number,
     '기본 수수료 등급': assignment.company_default_commission_grade,

@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="병의원코드, 병의원명, 사업자등록번호, 약국명 검색"
+              placeholder="코드, 병의원명, 사업자번호, 원장명, 약국명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -285,6 +285,7 @@ function doSearch() {
       (c.name && c.name.toLowerCase().includes(keyword)) ||
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
+      (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.pharmacies && c.pharmacies.some(pharmacy => 
         pharmacy.name && pharmacy.name.toLowerCase().includes(keyword)
       ))
