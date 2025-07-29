@@ -167,6 +167,32 @@
             <span v-else>{{ slotProps.data.commission_rate_c !== undefined && slotProps.data.commission_rate_c !== null ? (slotProps.data.commission_rate_c * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
+        <Column header="수수료율 D" :headerStyle="{ width: columnWidths.commission_rate_d }" :sortable="true">
+          <template #body="slotProps">
+            <input
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.commission_rate_d"
+              type="number"
+              step="0.001"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`commission_rate_d_${slotProps.data.id}`"
+            />
+            <span v-else>{{ slotProps.data.commission_rate_d !== undefined && slotProps.data.commission_rate_d !== null ? (slotProps.data.commission_rate_d * 100).toFixed(1) + '%' : '-' }}</span>
+          </template>
+        </Column>
+        <Column header="수수료율 E" :headerStyle="{ width: columnWidths.commission_rate_e }" :sortable="true">
+          <template #body="slotProps">
+            <input
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.commission_rate_e"
+              type="number"
+              step="0.001"
+              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
+              :id="`commission_rate_e_${slotProps.data.id}`"
+            />
+            <span v-else>{{ slotProps.data.commission_rate_e !== undefined && slotProps.data.commission_rate_e !== null ? (slotProps.data.commission_rate_e * 100).toFixed(1) + '%' : '-' }}</span>
+          </template>
+        </Column>
         <Column
           field="standard_code"
           header="표준코드"
@@ -290,15 +316,17 @@ import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  product_name: '18%',
-  insurance_code: '8%',
-  price: '6%',
-  commission_rate_a: '8%',
-  commission_rate_b: '8%',
-  commission_rate_c: '8%',
+  product_name: '16%',
+  insurance_code: '7%',
+  price: '5%',
+  commission_rate_a: '7%',
+  commission_rate_b: '7%',
+  commission_rate_c: '7%',
+  commission_rate_d: '7%',
+  commission_rate_e: '7%',
   standard_code: '8%',
   unit_packaging_desc: '10%',
-  unit_quantity: '8%',
+  unit_quantity: '7%',
   created_at: '8%',
   status: '6%',
   actions: '8%'
@@ -492,6 +520,9 @@ const downloadTemplate = () => {
       약가: 1000,
       수수료A: 0.45,
       수수료B: 0.44,
+      수수료C: 0.30,
+      수수료D: 0.25,
+      수수료E: 0.20,
       표준코드: '8800123456789',
       단위포장형태: '정 10개',
       단위수량: 10,
@@ -505,6 +536,9 @@ const downloadTemplate = () => {
       약가: 2000,
       수수료A: 0.40,
       수수료B: 0.39,
+      수수료C: 0.35,
+      수수료D: 0.30,
+      수수료E: 0.25,
       표준코드: '8800987654321',
       단위포장형태: '캡슐 20개',
       단위수량: 20,
@@ -525,6 +559,9 @@ const downloadTemplate = () => {
     { width: 10 }, // 약가
     { width: 10 }, // 수수료A
     { width: 10 }, // 수수료B
+    { width: 10 }, // 수수료C
+    { width: 10 }, // 수수료D
+    { width: 10 }, // 수수료E
     { width: 16 }, // 표준코드
     { width: 16 }, // 단위포장형태
     { width: 10 }, // 단위수량
@@ -699,6 +736,28 @@ const handleFileUpload = async (event) => {
         row['수수료C'] = Math.round(commissionC * 1000) / 1000
       }
 
+      // 수수료율 D 검증 (0~1, 소수점 3자리)
+      if (row['수수료D'] !== undefined && row['수수료D'] !== null && row['수수료D'] !== '') {
+        const commissionD = Number(row['수수료D'])
+        if (isNaN(commissionD) || commissionD < 0 || commissionD > 1) {
+          errors.push(`${rowNum}행: 수수료율 D는 0~1 사이의 숫자여야 합니다.`)
+          return
+        }
+        // 소수점 3자리로 반올림
+        row['수수료D'] = Math.round(commissionD * 1000) / 1000
+      }
+
+      // 수수료율 E 검증 (0~1, 소수점 3자리)
+      if (row['수수료E'] !== undefined && row['수수료E'] !== null && row['수수료E'] !== '') {
+        const commissionE = Number(row['수수료E'])
+        if (isNaN(commissionE) || commissionE < 0 || commissionE > 1) {
+          errors.push(`${rowNum}행: 수수료율 E는 0~1 사이의 숫자여야 합니다.`)
+          return
+        }
+        // 소수점 3자리로 반올림
+        row['수수료E'] = Math.round(commissionE * 1000) / 1000
+      }
+
       const monthRegex = /^\d{4}-\d{2}$/
       if (!monthRegex.test(row['기준월'])) {
         errors.push(`${rowNum}행: 기준월은 YYYY-MM 형식이어야 합니다.`)
@@ -727,6 +786,8 @@ const handleFileUpload = async (event) => {
         commission_rate_a: Number(row['수수료A']) || 0,
         commission_rate_b: Number(row['수수료B']) || 0,
         commission_rate_c: Number(row['수수료C']) || 0,
+        commission_rate_d: Number(row['수수료D']) || 0,
+        commission_rate_e: Number(row['수수료E']) || 0,
         standard_code: row['표준코드'] || '',
         unit_packaging_desc: row['단위포장형태'] || '',
         unit_quantity: Number(row['단위수량']) || 0,
@@ -845,6 +906,8 @@ const downloadExcel = () => {
     수수료A: product.commission_rate_a || 0,
     수수료B: product.commission_rate_b || 0,
     수수료C: product.commission_rate_c || 0,
+    수수료D: product.commission_rate_d || 0,
+    수수료E: product.commission_rate_e || 0,
     표준코드: product.standard_code || '',
     단위포장형태: product.unit_packaging_desc || '',
     단위수량: product.unit_quantity || 0,
@@ -867,6 +930,8 @@ const downloadExcel = () => {
     { width: 10 }, // 수수료A
     { width: 10 }, // 수수료B
     { width: 10 }, // 수수료C
+    { width: 10 }, // 수수료D
+    { width: 10 }, // 수수료E
     { width: 12 }, // 표준코드
     { width: 15 }, // 단위포장형태
     { width: 10 }, // 단위수량
@@ -934,6 +999,8 @@ const isEditValid = (row) => {
                     row.commission_rate_a !== row.originalData.commission_rate_a ||
                     row.commission_rate_b !== row.originalData.commission_rate_b ||
                     row.commission_rate_c !== row.originalData.commission_rate_c ||
+                    row.commission_rate_d !== row.originalData.commission_rate_d ||
+                    row.commission_rate_e !== row.originalData.commission_rate_e ||
                     row.standard_code !== row.originalData.standard_code ||
                     row.unit_packaging_desc !== row.originalData.unit_packaging_desc ||
                     row.unit_quantity !== row.originalData.unit_quantity ||
@@ -1096,6 +1163,42 @@ const saveEdit = async (row) => {
       row.commission_rate_c = Math.round(commissionCValue * 1000) / 1000;
     }
 
+    // 수수료율 D 검증 (0~1, 소수점 3자리)
+    if (row.commission_rate_d && row.commission_rate_d.toString().trim() !== '') {
+      const commissionDValue = Number(row.commission_rate_d);
+      if (isNaN(commissionDValue) || commissionDValue < 0 || commissionDValue > 1) {
+        alert('수수료율 D는 0~1 사이의 숫자여야 합니다.');
+        setTimeout(() => {
+          const commissionDInput = document.getElementById(`commission_rate_d_${row.id}`);
+          if (commissionDInput) {
+            commissionDInput.focus();
+            commissionDInput.select();
+          }
+        }, 100);
+        return;
+      }
+      // 소수점 3자리로 반올림
+      row.commission_rate_d = Math.round(commissionDValue * 1000) / 1000;
+    }
+
+    // 수수료율 E 검증 (0~1, 소수점 3자리)
+    if (row.commission_rate_e && row.commission_rate_e.toString().trim() !== '') {
+      const commissionEValue = Number(row.commission_rate_e);
+      if (isNaN(commissionEValue) || commissionEValue < 0 || commissionEValue > 1) {
+        alert('수수료율 E는 0~1 사이의 숫자여야 합니다.');
+        setTimeout(() => {
+          const commissionEInput = document.getElementById(`commission_rate_e_${row.id}`);
+          if (commissionEInput) {
+            commissionEInput.focus();
+            commissionEInput.select();
+          }
+        }, 100);
+        return;
+      }
+      // 소수점 3자리로 반올림
+      row.commission_rate_e = Math.round(commissionEValue * 1000) / 1000;
+    }
+
     if (!['active', 'inactive'].includes(row.status)) {
       alert('상태는 active 또는 inactive여야 합니다.')
       return
@@ -1108,6 +1211,8 @@ const saveEdit = async (row) => {
       commission_rate_a: row.commission_rate_a === '' ? 0 : Number(row.commission_rate_a),
       commission_rate_b: row.commission_rate_b === '' ? 0 : Number(row.commission_rate_b),
       commission_rate_c: row.commission_rate_c === '' ? 0 : Number(row.commission_rate_c),
+      commission_rate_d: row.commission_rate_d === '' ? 0 : Number(row.commission_rate_d),
+      commission_rate_e: row.commission_rate_e === '' ? 0 : Number(row.commission_rate_e),
       standard_code: row.standard_code || '',
       unit_packaging_desc: row.unit_packaging_desc || '',
       unit_quantity: Number(row.unit_quantity) || 0,

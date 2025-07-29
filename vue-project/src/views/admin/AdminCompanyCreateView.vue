@@ -137,6 +137,8 @@ const commissionGradeOptions = [
   { label: 'A', value: 'A' },
   { label: 'B', value: 'B' },
   { label: 'C', value: 'C' },
+  { label: 'D', value: 'D' },
+  { label: 'E', value: 'E' },
 ]
 const approvalStatusOptions = [
   { label: '승인', value: '승인' },
