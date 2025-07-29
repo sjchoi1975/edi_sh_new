@@ -30,6 +30,26 @@
         <label>비고</label>
         <input :value="client.remarks || '-'" readonly disabled />
       </div>
+      <div class="form-group">
+        <label>정산용 비고</label>
+        <input :value="client.remarks_settlement || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>등록일시</label>
+        <input :value="formatDateTime(client.created_at)" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>등록자</label>
+        <input :value="client.created_by_name || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>수정일시</label>
+        <input :value="formatDateTime(client.updated_at)" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>수정자</label>
+        <input :value="client.updated_by_name || '-'" readonly disabled />
+      </div>
       <div class="button-area">
         <button class="btn-delete" @click="handleDelete">삭제</button>
         <button class="btn-edit" @click="goEdit">수정</button>
@@ -48,14 +68,53 @@ const route = useRoute();
 const router = useRouter();
 const client = ref({});
 
+// 날짜/시간 포맷팅 함수
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return '-';
+  return new Date(dateTime).toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
 onMounted(async () => {
   const { data, error } = await supabase
     .from('clients')
     .select('*')
     .eq('id', route.params.id)
     .single();
+  
   if (!error && data) {
-    client.value = data;
+    // 등록자와 수정자의 회사명 가져오기
+    const userIds = [...new Set([
+      data.created_by,
+      data.updated_by
+    ].filter(Boolean))];
+    
+    let companyMap = {};
+    if (userIds.length > 0) {
+      const { data: companies, error: companyError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', userIds);
+      
+      if (!companyError && companies) {
+        companyMap = companies.reduce((acc, company) => {
+          acc[company.user_id] = company.company_name;
+          return acc;
+        }, {});
+      }
+    }
+    
+    client.value = {
+      ...data,
+      created_by_name: data.created_by ? (companyMap[data.created_by] || '관리자') : '-',
+      updated_by_name: data.updated_by ? (companyMap[data.updated_by] || '관리자') : '-'
+    };
   }
 });
 

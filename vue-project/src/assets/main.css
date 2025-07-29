@@ -1778,11 +1778,11 @@ select option:focus {
 
 /* ------ 관리자 거래처 목록 (AdminClientsView.vue) ------ */
 /* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 등록일자, 상태, 작업) --- */
-.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(10)) {
+.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(11), :nth-child(13), :nth-child(14)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (병의원명, 주소, 비고) --- */
-.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7)) {
+.admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(3), :nth-child(6), :nth-child(7), :nth-child(8), :nth-child(10), :nth-child(12)) {
   text-align: left !important;
 }
 

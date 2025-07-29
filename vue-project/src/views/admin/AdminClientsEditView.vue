@@ -41,6 +41,10 @@
         <label>비고</label>
         <input v-model="remarks" type="text" />
       </div>
+      <div class="form-group">
+        <label>정산용 비고</label>
+        <input v-model="remarksSettlement" type="text" />
+      </div>
       <div class="button-area">
         <button class="btn-cancel" type="button" @click="goDetail">취소</button>
         <button class="btn-add" type="submit" :disabled="!isFormValid">수정</button>
@@ -63,6 +67,7 @@ const ownerName = ref('');
 const address = ref('');
 const status = ref('active');
 const remarks = ref('');
+const remarksSettlement = ref(''); // 정산용 비고 필드
 
 // 원본 데이터 저장
 const originalData = ref({
@@ -72,7 +77,8 @@ const originalData = ref({
   ownerName: '',
   address: '',
   status: '',
-  remarks: ''
+  remarks: '',
+  remarksSettlement: '' // 정산용 비고 필드 추가
 });
 
 // 필수 필드 검증 및 변경값 감지
@@ -88,7 +94,8 @@ const isFormValid = computed(() => {
                     ownerName.value !== originalData.value.ownerName ||
                     address.value !== originalData.value.address ||
                     status.value !== originalData.value.status ||
-                    remarks.value !== originalData.value.remarks;
+                    remarks.value !== originalData.value.remarks ||
+                    remarksSettlement.value !== originalData.value.remarksSettlement; // 정산용 비고 필드 추가
   
   return hasRequiredFields && hasChanges;
 });
@@ -159,6 +166,7 @@ onMounted(async () => {
     address.value = data.address;
     status.value = data.status;
     remarks.value = data.remarks;
+    remarksSettlement.value = data.remarks_settlement; // 정산용 비고 필드 추가
     
     // 원본 데이터 저장
     originalData.value.clientCode = data.client_code;
@@ -168,6 +176,7 @@ onMounted(async () => {
     originalData.value.address = data.address;
     originalData.value.status = data.status;
     originalData.value.remarks = data.remarks;
+    originalData.value.remarksSettlement = data.remarks_settlement; // 정산용 비고 필드 추가
   }
 });
 
@@ -211,6 +220,10 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 현재 로그인한 사용자 정보 가져오기
+  const { data: { session } } = await supabase.auth.getSession();
+  const currentUserId = session?.user?.id;
+
   const { error } = await supabase
     .from('clients')
     .update({
@@ -220,7 +233,10 @@ const handleSubmit = async () => {
       owner_name: ownerName.value,
       address: address.value,
       status: status.value,
-      remarks: remarks.value
+      remarks: remarks.value,
+      remarks_settlement: remarksSettlement.value, // 정산용 비고 필드 추가
+      updated_by: currentUserId,
+      updated_at: new Date().toISOString() // 명시적으로 수정 시간 설정
     })
     .eq('id', route.params.id);
   if (error) {

@@ -41,6 +41,10 @@
         <label>비고</label>
         <input v-model="remarks" type="text" />
       </div>
+      <div class="form-group">
+        <label>정산용 비고</label>
+        <input v-model="remarksSettlement" type="text" />
+      </div>
       <div class="button-area">
         <button class="btn-cancel" type="button" @click="goList">취소</button>
         <button class="btn-add" type="submit" :disabled="!isFormValid">등록</button>
@@ -61,6 +65,7 @@ const ownerName = ref('');
 const address = ref('');
 const status = ref('active');
 const remarks = ref('');
+const remarksSettlement = ref('');
 const router = useRouter();
 
 // 필수 필드 검증
@@ -161,6 +166,10 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 현재 로그인한 사용자 정보 가져오기
+  const { data: { session } } = await supabase.auth.getSession();
+  const currentUserId = session?.user?.id;
+
   const { error } = await supabase.from('clients').insert([{
     client_code: clientCode.value,
     name: name.value,
@@ -168,7 +177,9 @@ const handleSubmit = async () => {
     owner_name: ownerName.value,
     address: address.value,
     status: status.value,
-    remarks: remarks.value
+    remarks: remarks.value,
+    remarks_settlement: remarksSettlement.value,
+    created_by: currentUserId
   }]);
   if (error) {
     alert('등록 실패: ' + error.message);

@@ -148,6 +148,16 @@
             <span v-else>{{ slotProps.data.remarks }}</span>
           </template>
         </Column>
+        <Column field="remarks_settlement" header="정산용 비고" :headerStyle="{ width: columnWidths.remarks_settlement }" :sortable="true">
+          <template #body="slotProps">
+            <input
+              v-if="slotProps.data.isEditing"
+              v-model="slotProps.data.remarks_settlement"
+              class="inline-edit-input"
+            />
+            <span v-else>{{ slotProps.data.remarks_settlement }}</span>
+          </template>
+        </Column>
         <Column field="created_at" header="등록일자" :headerStyle="{ width: columnWidths.created_at }" :sortable="true">
           <template #body="slotProps">
             <span>{{
@@ -155,6 +165,25 @@
                 ? new Date(slotProps.data.created_at).toISOString().split('T')[0]
                 : ''
             }}</span>
+          </template>
+        </Column>
+        <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true">
+          <template #body="slotProps">
+            <span>{{ slotProps.data.created_by_name || '-' }}</span>
+          </template>
+        </Column>
+        <Column field="updated_at" header="수정일자" :headerStyle="{ width: columnWidths.updated_at }" :sortable="true">
+          <template #body="slotProps">
+            <span>{{
+              slotProps.data.updated_at
+                ? new Date(slotProps.data.updated_at).toISOString().split('T')[0]
+                : '-'
+            }}</span>
+          </template>
+        </Column>
+        <Column field="updated_by" header="수정자" :headerStyle="{ width: columnWidths.updated_by }" :sortable="true">
+          <template #body="slotProps">
+            <span>{{ slotProps.data.updated_by_name || '-' }}</span>
           </template>
         </Column>
         <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }" :sortable="true">
@@ -239,16 +268,20 @@ const filterBackup = ref(null)
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
-  no: '4%',
-  client_code: '7%',
-  name: '18%',
-  business_registration_number: '8%',
-  owner_name: '7%',
-  address: '24%',
-  remarks: '10%',
-  created_at: '8%',
-  status: '6%',
-  actions: '8%'
+  no: '3%',
+  client_code: '6%',
+  name: '12%',
+  business_registration_number: '7%',
+  owner_name: '6%',
+  address: '16%',
+  remarks: '8%',
+  remarks_settlement: '8%',
+  created_at: '6%',
+  created_by: '6%',
+  updated_at: '6%',
+  updated_by: '6%',
+  status: '5%',
+  actions: '7%'
 };
 
 const isAnyEditing = ref(false); // 편집 중인 행이 있는지 확인
@@ -265,19 +298,50 @@ function goToDetail(id) {
 const fetchClients = async () => {
   loading.value = true;
   try {
+    // 먼저 기본 데이터 가져오기
     const { data, error } = await supabase
       .from('clients')
       .select('*')
       .order('client_code', { ascending: true })
+    
+    console.log('fetchClients result:', { data, error });
+    
     if (!error && data) {
+      // created_by와 updated_by에 해당하는 회사명을 별도로 조회
+      const userIds = [...new Set([
+        ...data.filter(item => item.created_by).map(item => item.created_by),
+        ...data.filter(item => item.updated_by).map(item => item.updated_by)
+      ])];
+      
+      let companyMap = {};
+      if (userIds.length > 0) {
+        const { data: companies, error: companyError } = await supabase
+          .from('companies')
+          .select('user_id, company_name')
+          .in('user_id', userIds);
+        
+        if (!companyError && companies) {
+          companyMap = companies.reduce((acc, company) => {
+            acc[company.user_id] = company.company_name;
+            return acc;
+          }, {});
+        }
+      }
+      
       // 각 행에 편집 상태와 원본 데이터 백업 추가
       clients.value = data.map((item) => ({
         ...item,
+        created_by_name: item.created_by ? (companyMap[item.created_by] || '관리자') : '-',
+        updated_by_name: item.updated_by ? (companyMap[item.updated_by] || '관리자') : '-',
         isEditing: false,
         originalData: { ...item },
       }))
       filteredClients.value = clients.value;
+    } else if (error) {
+      console.error('fetchClients error:', error);
     }
+  } catch (err) {
+    console.error('fetchClients exception:', err);
   } finally {
     loading.value = false;
   }
@@ -316,7 +380,8 @@ const isEditValid = (row) => {
                     row.owner_name !== row.originalData.owner_name ||
                     row.address !== row.originalData.address ||
                     row.status !== row.originalData.status ||
-                    row.remarks !== row.originalData.remarks;
+                    row.remarks !== row.originalData.remarks ||
+                    row.remarks_settlement !== row.originalData.remarks_settlement;
   
   return hasRequiredFields && hasChanges;
 }
@@ -386,6 +451,10 @@ const saveEdit = async (row) => {
       return
     }
 
+    // 현재 로그인한 사용자 정보 가져오기
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserId = session?.user?.id;
+
     const updateData = {
       client_code: row.client_code || '',
       name: row.name,
@@ -393,7 +462,10 @@ const saveEdit = async (row) => {
       owner_name: row.owner_name || '',
       address: row.address || '',
       remarks: row.remarks || '',
+      remarks_settlement: row.remarks_settlement || '',
       status: row.status,
+      updated_by: currentUserId,
+      updated_at: new Date().toISOString() // 명시적으로 수정 시간 설정
     }
 
     const { error } = await supabase.from('clients').update(updateData).eq('id', row.id)
@@ -456,6 +528,7 @@ const downloadTemplate = () => {
       원장명: '홍길동',
       주소: '서울시 강남구 테헤란로 123',
       비고: '',
+      정산용비고: '',
       상태: '활성',
     },
     {
@@ -465,6 +538,7 @@ const downloadTemplate = () => {
       원장명: '김철수',
       주소: '서울시 서초구 서초대로 456',
       비고: '예시',
+      정산용비고: '예시',
       상태: '활성',
     },
   ]
@@ -481,6 +555,7 @@ const downloadTemplate = () => {
     { width: 12 }, // 원장명
     { width: 40 }, // 주소
     { width: 20 }, // 비고
+    { width: 10 }, // 정산용비고
     { width: 10 }, // 상태
   ]
 
@@ -501,7 +576,7 @@ const downloadTemplate = () => {
   // 워크시트 범위 업데이트 (1000행까지 확장)
   ws['!ref'] = XLSX.utils.encode_range({
     s: { c: 0, r: 0 },
-    e: { c: 6, r: maxRows - 1 }
+    e: { c: 7, r: maxRows - 1 }
   })
 
   XLSX.writeFile(wb, '병의원_엑셀등록_템플릿.xlsx')
@@ -610,6 +685,7 @@ const handleFileUpload = async (event) => {
         owner_name: row['원장명'] || '',
         address: row['주소'] || '',
         remarks: row['비고'] || '',
+        remarks_settlement: row['정산용비고'] || '',
         status: statusValue,
         rowNum: rowNum // 에러 표시용
       })
@@ -725,9 +801,12 @@ const downloadExcel = () => {
     원장명: client.owner_name || '',
     주소: client.address || '',
     비고: client.remarks || '',
+    정산용비고: client.remarks_settlement || '',
     상태: client.status === 'active' ? '활성' : '비활성',
     등록일: client.created_at ? new Date(client.created_at).toISOString().split('T')[0] : '',
     수정일: client.updated_at ? new Date(client.updated_at).toISOString().split('T')[0] : '',
+    등록자: client.created_by_name || '-',
+    수정자: client.updated_by_name || '-',
   }))
 
   const ws = XLSX.utils.json_to_sheet(excelData)
@@ -743,9 +822,12 @@ const downloadExcel = () => {
     { width: 12 }, // 원장명
     { width: 30 }, // 주소
     { width: 20 }, // 비고
+    { width: 10 }, // 정산용비고
     { width: 10 }, // 상태
     { width: 12 }, // 등록일
     { width: 12 }, // 수정일
+    { width: 10 }, // 등록자
+    { width: 10 }, // 수정자
   ]
 
   const range = XLSX.utils.decode_range(ws['!ref'])
