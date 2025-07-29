@@ -493,18 +493,41 @@
                         <h2>7. 실적 관리</h2>
                         
                         <h3>7.1 정산월 관리 <span class="path">/admin/settlement-months</span></h3>
-                        <p><strong>설명:</strong> 정산 작업을 수행할 기준 '정산월'을 생성하고 관리합니다. 정산월을 생성해야 해당 월의 실적 등록, 검수, 정산 절차를 시작할 수 있습니다.</p>
+                        <p><strong>설명:</strong> 정산 작업을 수행할 기준 '정산월'을 생성하고 관리합니다. 정산월을 생성해야 해당 월의 실적 등록, 검수, 정산 절차를 시작할 수 있습니다. <strong>실적입력기간을 설정하여 사용자들의 실적 등록을 제한할 수 있습니다.</strong></p>
                         <img src="img/admin_7_1_settlement_months.png" alt="정산월 관리" class="manual-image">
                         <h4>주요 기능:</h4>
                         <ul class="feature-list">
                             <li><strong>신규 정산월 생성</strong> - 정산월명, 시작일, 종료일, 공지사항 설정</li>
+                            <li><strong>실적입력기간 설정</strong> - 실적입력 시작일/종료일을 설정하여 사용자 실적 등록 제한</li>
                             <li><strong>정산월별 상태 관리</strong> - 'active'(활성), 'inactive'(비활성) 상태 관리</li>
                             <li><strong>정산월 정보 수정</strong> - 기존 정산월의 정보 수정 및 비고 추가</li>
                             <li><strong>정산월 삭제</strong> - 더 이상 필요하지 않은 정산월 삭제</li>
                         </ul>
 
+                        <h4>📅 실적입력기간 제한 시스템:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>일반 사용자 (CSO 업체)</strong><br>
+                                <em>제한 적용:</em> 실적입력기간 내에서만 실적 등록/수정 가능<br>
+                                <em>검증 로직:</em> 현재 시간과 start_date, end_date 비교<br>
+                                <em>UI 제어:</em> 실적입력기간 외에는 모든 입력 버튼 비활성화
+                            </div>
+                            <div class="step">
+                                <strong>관리자 (신일제약)</strong><br>
+                                <em>제한 없음:</em> 실적입력기간과 무관하게 언제든지 실적 등록/수정 가능<br>
+                                <em>우회 로직:</em> 관리자 권한 확인 후 제한 우회<br>
+                                <em>목적:</em> 긴급 상황이나 데이터 오류 수정 시 즉시 대응
+                            </div>
+                            <div class="step">
+                                <strong>동작 시나리오</strong><br>
+                                <em>기간 내:</em> 실적 등록/수정 버튼 활성화 → 정상 입력 가능<br>
+                                <em>기간 외:</em> 실적 등록/수정 버튼 비활성화 → 입력 불가<br>
+                                <em>기간 변경:</em> 관리자가 기간을 수정하면 즉시 반영
+                            </div>
+                        </div>
+
                         <h3>7.2 실적 등록 <span class="path">/admin/performance/register</span></h3>
-                        <p><strong>설명:</strong> 관리자가 CSO 업체 대신 실적 데이터를 직접 등록하거나, 기존 실적을 수정/추가/삭제할 수 있는 메뉴입니다. 주로 긴급 상황이나 데이터 오류 수정 시 사용됩니다.</p>
+                        <p><strong>설명:</strong> 관리자가 CSO 업체 대신 실적 데이터를 직접 등록하거나, 기존 실적을 수정/추가/삭제할 수 있는 메뉴입니다. 주로 긴급 상황이나 데이터 오류 수정 시 사용됩니다. <strong>관리자는 실적입력기간 제한을 우회하여 언제든지 실적 등록/수정이 가능합니다.</strong></p>
                         <img src="img/admin_7_2_performance_regist.png" alt="실적 등록" class="manual-image">
                         <h4>주요 기능:</h4>
                         <ul class="feature-list">
@@ -512,7 +535,53 @@
                             <li><strong>기존 실적 수정/삭제</strong> - 이미 등록된 실적 데이터를 검색하여 내용을 수정하거나 삭제</li>
                             <li><strong>파일 업로드 지원</strong> - 증빙 자료 등의 파일을 첨부</li>
                             <li><strong>유효성 검사</strong> - 데이터 입력 시 필수 항목 및 형식 유효성을 자동으로 검사</li>
+                            <li><strong>실적입력기간 제한 우회</strong> - 일반 사용자와 달리 실적입력기간과 무관하게 언제든지 실적 등록/수정 가능</li>
+                            <li><strong>고급 키보드 네비게이션</strong> - 마우스 없이도 효율적인 실적 등록을 위한 완전한 키보드 기반 인터페이스</li>
                         </ul>
+
+                        <h4>🔑 관리자 특별 권한:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>실적입력기간 제한 우회</strong><br>
+                                <em>일반 사용자:</em> 실적입력기간 내에서만 실적 등록/수정 가능<br>
+                                <em>관리자:</em> 실적입력기간과 무관하게 언제든지 실적 등록/수정 가능<br>
+                                <em>목적:</em> 긴급 상황이나 데이터 오류 수정 시 즉시 대응
+                            </div>
+                            <div class="step">
+                                <strong>상태별 편집 권한</strong><br>
+                                <em>일반 사용자:</em> '대기' 상태만 편집 가능<br>
+                                <em>관리자:</em> 모든 상태(대기, 검수중, 완료) 편집 가능<br>
+                                <em>목적:</em> 검수 과정에서도 데이터 수정 가능
+                            </div>
+                            <div class="step">
+                                <strong>실적 등록 시 초기 상태</strong><br>
+                                <em>일반 사용자:</em> review_status = '대기'로 저장<br>
+                                <em>관리자:</em> review_status = '완료'로 저장 (즉시 활용 가능)<br>
+                                <em>목적:</em> 관리자가 등록한 실적은 즉시 정산 대상에 포함
+                            </div>
+                        </div>
+
+                        <h4>⌨️ 고급 키보드 네비게이션 (관리자용):</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>화살표 키 네비게이션</strong><br>
+                                <em>↑↓:</em> 같은 열에서 위아래 행으로 이동<br>
+                                <em>←→:</em> 같은 행에서 좌우 열로 이동<br>
+                                <em>이동 순서:</em> 처방월 → 제품명 → 처방수량 → 처방구분 → 비고
+                            </div>
+                            <div class="step">
+                                <strong>Enter 키 특별 동작</strong><br>
+                                <em>제품명:</em> 선택된 제품 적용 후 처방수량으로 이동<br>
+                                <em>처방수량:</em> 다음 행 제품명으로 이동 (자동 행 추가)<br>
+                                <em>비고:</em> 다음 행 제품명으로 이동 (자동 행 추가)
+                            </div>
+                            <div class="step">
+                                <strong>특수 키 동작</strong><br>
+                                <em>Delete:</em> 현재 행 삭제 (최소 1행은 유지)<br>
+                                <em>Insert:</em> 현재 행 아래 새 행 추가<br>
+                                <em>Escape:</em> 현재 행 초기화
+                            </div>
+                        </div>
 
                         <h3>7.3 업체별 등록 현황 <span class="path">/admin/performance/companies</span></h3>
                         <p><strong>설명:</strong> 정산월을 기준으로 CSO 업체별 실적 등록 현황을 모니터링합니다. 어느 업체가 실적을 제출했고, 어떤 상태인지 한눈에 파악할 수 있습니다.</p>
@@ -544,7 +613,7 @@
                         <h2>8. 정산 관리</h2>
 
                         <h3>8.1 실적 검수 <span class="path">/admin/performance-review</span></h3>
-                        <p><strong>설명:</strong> CSO 업체들이 등록한 실적 데이터를 건별로 상세히 검토하고 수정/추가/삭제 작업을 수행합니다. 이 과정을 통해 데이터의 정합성을 확보하고 정산의 기초 자료를 마련합니다.</p>
+                        <p><strong>설명:</strong> CSO 업체들이 등록한 실적 데이터를 건별로 상세히 검토하고 수정/추가/삭제 작업을 수행합니다. 이 과정을 통해 데이터의 정합성을 확보하고 정산의 기초 자료를 마련합니다. <strong>고급 키보드 네비게이션과 실시간 검증을 통해 효율적인 검수 작업을 지원합니다.</strong></p>
                         <img src="img/admin_8_1_check.png" alt="실적 검수" class="manual-image">
                         <h4>주요 기능:</h4>
                         <ul class="feature-list">
@@ -553,7 +622,54 @@
                             <li><strong>실적 추가</strong> - 기존 실적 아래에 새로운 실적을 추가하여 등록</li>
                             <li><strong>검수 상태 관리</strong> - 검수 완료된 실적을 '완료' 상태로 변경하여 정산 대상에 포함</li>
                             <li><strong>변경 이력 추적</strong> - 모든 수정/추가 작업이 별도 테이블에 이력으로 기록되어 추적 가능</li>
+                            <li><strong>고급 키보드 네비게이션</strong> - 마우스 없이도 효율적인 검수 작업을 위한 완전한 키보드 기반 인터페이스</li>
+                            <li><strong>실시간 검증</strong> - 입력 시 즉시 피드백을 제공하여 데이터 품질 향상</li>
+                            <li><strong>성능 최적화</strong> - 대용량 데이터도 안정적으로 처리하는 캐싱 및 지연 로딩 시스템</li>
                         </ul>
+                        
+                        <h4>⌨️ 검수용 키보드 네비게이션:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>기본 이동 키</strong><br>
+                                <em>Tab:</em> 다음 필드로 이동<br>
+                                <em>Shift+Tab:</em> 이전 필드로 이동<br>
+                                <em>Enter:</em> 필드별 특별 동작
+                            </div>
+                            <div class="step">
+                                <strong>화살표 키 네비게이션</strong><br>
+                                <em>↑↓:</em> 같은 열에서 위아래 행으로 이동<br>
+                                <em>←→:</em> 같은 행에서 좌우 열로 이동<br>
+                                <em>이동 순서:</em> 검수상태 → 업체명 → 병의원명 → 제품명 → 처방수량 → 처방액 → 수수료율
+                            </div>
+                            <div class="step">
+                                <strong>Enter 키 특별 동작</strong><br>
+                                <em>제품명:</em> 선택된 제품 적용 후 처방수량으로 이동<br>
+                                <em>처방수량:</em> 수정 완료 후 다음 행으로 이동<br>
+                                <em>비고:</em> 수정 완료 후 다음 행으로 이동
+                            </div>
+                            <div class="step">
+                                <strong>특수 키 동작</strong><br>
+                                <em>Delete:</em> 현재 행 삭제 (실제 삭제가 아닌 '삭제' 상태로 변경)<br>
+                                <em>Insert:</em> 현재 행 아래 새 행 추가<br>
+                                <em>Escape:</em> 현재 행 수정 취소
+                            </div>
+                        </div>
+
+                        <h4>🔍 검수 상태별 정렬 규칙:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>정렬 우선순위</strong><br>
+                                <em>1순위:</em> 신규 > 검수중 > 완료<br>
+                                <em>2순위:</em> 각 그룹 내 가나다순 정렬<br>
+                                <em>목적:</em> 검수해야 할 데이터를 우선적으로 표시
+                            </div>
+                            <div class="step">
+                                <strong>상태 표시</strong><br>
+                                <em>신규:</em> review_status = '대기' → display_status = '신규'<br>
+                                <em>검수중:</em> review_status = '검수중' → display_status = '검수중'<br>
+                                <em>완료:</em> review_status = '완료' → display_status = '완료'
+                            </div>
+                        </div>
                         
                         <h4>검수 프로세스:</h4>
                         <div class="process-steps">
@@ -582,6 +698,22 @@
                                 <em>결과:</em> 완료된 실적은 흡수율 분석 및 정산 대상에 포함
                             </div>
                         </div>
+
+                        <h4>✅ 실시간 검증 및 피드백:</h4>
+                        <ul class="feature-list">
+                            <li><strong>입력 검증</strong> - 처방수량(숫자만, 0보다 큰 값), 제품 선택(필수), 처방액(자동 계산)</li>
+                            <li><strong>실시간 피드백</strong> - 처방액 자동 계산, 제품 정보 자동 업데이트, 상태 표시</li>
+                            <li><strong>변경 이력 추적</strong> - 모든 수정/추가 작업이 performance_records_absorption 테이블에 이력으로 기록</li>
+                            <li><strong>오류 처리</strong> - 네트워크 오류, 데이터 오류 처리 및 사용자 안내</li>
+                        </ul>
+
+                        <h4>⚡ 성능 최적화:</h4>
+                        <ul class="feature-list">
+                            <li><strong>데이터 캐싱</strong> - 제품 정보, 업체 정보 캐싱으로 빠른 검색</li>
+                            <li><strong>지연 로딩</strong> - 필요한 데이터만 로드하여 초기 로딩 속도 향상</li>
+                            <li><strong>키보드 이벤트 최적화</strong> - 전역 이벤트 처리로 성능 향상</li>
+                            <li><strong>실시간 정렬</strong> - computed 속성으로 실시간 정렬</li>
+                        </ul>
 
                         <h3>8.2 흡수율 분석 <span class="path">/admin/absorption-analysis</span></h3>
                         <p><strong>설명:</strong> 검수가 '완료'된 실적 데이터를 기준으로, 제품별 처방액 대비 실제 매출(도매+직거래)의 비율을 분석합니다. 이를 통해 실적 목표 달성률과 효율성을 파악할 수 있습니다.</p>

@@ -333,8 +333,126 @@
                     <div class="section">
                         <h2>4. 실적 등록</h2>
                         <h3>4.1 실적 등록 <span class="path">/performance/register</span></h3>
-                        <p><strong>설명:</strong> 병의원에서 발생한 제품 처방 실적을 등록할 수 있습니다.</p>
+                        <p><strong>설명:</strong> 병의원에서 발생한 제품 처방 실적을 등록할 수 있습니다. 고급 키보드 네비게이션과 실시간 검증을 통해 효율적이고 정확한 데이터 입력을 지원합니다.</p>
                         <img src="img/user_4_1_edi.png" alt="실적 등록" class="manual-image">
+                        
+                        <h4>📋 단계별 실적 등록 프로세스:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>1단계: 거래처 선택 및 화면 진입</strong><br>
+                                <em>정렬 규칙:</em> 처방건수 0건 → 1건 이상 (입력된 것이 아래로)<br>
+                                <em>선택 방법:</em> 거래처명 클릭 또는 키보드 네비게이션<br>
+                                <em>초기 상태:</em> 기존 실적이 있으면 로드, 없으면 빈 행 1개 생성
+                            </div>
+                            <div class="step">
+                                <strong>2단계: 처방월 설정</strong><br>
+                                <em>기본값:</em> 정산월 - 1개월 (예: 2025-01 정산 → 2024-12 처방)<br>
+                                <em>옵션:</em> 정산월 - 1~3개월 선택 가능<br>
+                                <em>자동 업데이트:</em> 처방월 변경 시 선택된 제품 정보 자동 업데이트
+                            </div>
+                            <div class="step">
+                                <strong>3단계: 제품 선택 (2가지 방식)</strong><br>
+                                <em>방식 1:</em> 제품명/보험코드 실시간 검색 → 드롭다운에서 선택<br>
+                                <em>방식 2:</em> 드롭다운 아이콘(▼) 클릭 → 해당 월의 모든 제품 표시<br>
+                                <em>유니크 처리:</em> 보험코드 기준 중복 제거
+                            </div>
+                            <div class="step">
+                                <strong>4단계: 처방수량 입력</strong><br>
+                                <em>자동 계산:</em> 수량 × 단가 = 처방액 실시간 계산<br>
+                                <em>포맷팅:</em> 천 단위 콤마 자동 적용<br>
+                                <em>검증:</em> 숫자만 입력 가능, 0보다 큰 값
+                            </div>
+                            <div class="step">
+                                <strong>5단계: 처방구분 설정</strong><br>
+                                <em>기본값:</em> 'EDI'<br>
+                                <em>옵션:</em> EDI, ERP직거래자료, 매출자료, 약국조제, 원내매출, 원외매출, 차감<br>
+                                <em>자동 복사:</em> 한 행의 처방구분 변경 시 아래 행들에 자동 적용
+                            </div>
+                            <div class="step">
+                                <strong>6단계: 비고 입력 (선택사항)</strong><br>
+                                <em>용도:</em> 추가 정보 입력<br>
+                                <em>자동 이동:</em> Enter 키로 다음 행으로 이동
+                            </div>
+                            <div class="step">
+                                <strong>7단계: 자동 행 관리</strong><br>
+                                <em>조건:</em> 마지막 행에 제품명 또는 처방수량 입력 시<br>
+                                <em>동작:</em> 자동으로 새 행 추가<br>
+                                <em>기본값:</em> 처방월(정산월-1M), 처방구분(EDI)
+                            </div>
+                            <div class="step">
+                                <strong>8단계: 저장 및 검수 대기</strong><br>
+                                <em>검증:</em> 제품명과 처방수량 필수 입력 확인<br>
+                                <em>상태:</em> review_status = '대기'로 저장<br>
+                                <em>이후:</em> 관리자 검수 대기
+                            </div>
+                        </div>
+
+                        <h4>⌨️ 고급 키보드 네비게이션 시스템:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>기본 이동 키</strong><br>
+                                <em>Tab:</em> 다음 필드로 이동<br>
+                                <em>Shift+Tab:</em> 이전 필드로 이동<br>
+                                <em>Enter:</em> 필드별 특별 동작
+                            </div>
+                            <div class="step">
+                                <strong>화살표 키 네비게이션</strong><br>
+                                <em>↑↓:</em> 같은 열에서 위아래 행으로 이동 (편집 가능한 행만)<br>
+                                <em>←→:</em> 같은 행에서 좌우 열로 이동 (제품 검색 중 차단)<br>
+                                <em>이동 순서:</em> 처방월 → 제품명 → 처방수량 → 처방구분 → 비고
+                            </div>
+                            <div class="step">
+                                <strong>Enter 키 특별 동작</strong><br>
+                                <em>제품명:</em> 선택된 제품 적용 후 처방수량으로 이동<br>
+                                <em>처방수량:</em> 다음 행 제품명으로 이동 (자동 행 추가)<br>
+                                <em>비고:</em> 다음 행 제품명으로 이동 (자동 행 추가)
+                            </div>
+                            <div class="step">
+                                <strong>특수 키 동작</strong><br>
+                                <em>Delete:</em> 현재 행 삭제 (최소 1행은 유지)<br>
+                                <em>Insert:</em> 현재 행 아래 새 행 추가<br>
+                                <em>Escape:</em> 현재 행 초기화
+                            </div>
+                            <div class="step">
+                                <strong>제품 검색 중 키보드 제어</strong><br>
+                                <em>허용 키:</em> ↑↓ (드롭다운 탐색), Enter (선택)<br>
+                                <em>차단 키:</em> ←→ (좌우 이동), Delete, Insert, Escape<br>
+                                <em>목적:</em> 드롭다운 탐색에 집중
+                            </div>
+                        </div>
+
+                        <h4>🔍 제품 선택 시스템 (2가지 방식):</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>방식 1: 제품명 실시간 검색</strong><br>
+                                <em>검색 방식:</em> 제품명 또는 보험코드로 실시간 검색<br>
+                                <em>드롭다운 표시:</em> 검색 결과를 드롭다운으로 표시 (제품명 + 보험코드)<br>
+                                <em>선택 방법:</em> 마우스 클릭 또는 키보드 상하 화살표로 탐색 후 Enter로 선택
+                            </div>
+                            <div class="step">
+                                <strong>방식 2: 드롭다운 아이콘 클릭</strong><br>
+                                <em>동작:</em> 드롭다운 아이콘(▼) 클릭 시 해당 처방월의 모든 제품 표시<br>
+                                <em>유니크 처리:</em> 보험코드 기준으로 중복 제거하여 유니크하게 표시<br>
+                                <em>표시 내용:</em> 제품명 + 보험코드
+                            </div>
+                        </div>
+
+                        <h4>✅ 실시간 검증 및 피드백:</h4>
+                        <ul class="feature-list">
+                            <li><strong>입력 검증</strong> - 제품명(제품 선택 필수), 처방수량(숫자만, 0보다 큰 값), 처방액(자동 계산, 수정 불가)</li>
+                            <li><strong>실시간 피드백</strong> - 처방액 자동 계산, 제품 정보 자동 업데이트, 상태 표시</li>
+                            <li><strong>상태별 편집 권한</strong> - '대기' 상태만 편집 가능, 검수중/완료 상태는 읽기 전용</li>
+                            <li><strong>오류 처리</strong> - 부족한 정보 확인, 중복 제품 처리, 네트워크 오류 처리</li>
+                        </ul>
+
+                        <h4>⚡ 성능 최적화:</h4>
+                        <ul class="feature-list">
+                            <li><strong>제품 데이터 캐싱</strong> - 월별 제품 목록 캐싱으로 빠른 검색</li>
+                            <li><strong>지연 로딩</strong> - 필요한 월의 제품만 로드</li>
+                            <li><strong>키보드 이벤트 최적화</strong> - 전역 이벤트 처리로 성능 향상</li>
+                            <li><strong>실시간 정렬</strong> - computed 속성으로 실시간 정렬</li>
+                        </ul>
+
                         <h4>주요 기능:</h4>
                         <ul class="feature-list">
                             <li><strong>정산월 선택</strong> - 실적을 등록할 정산월을 선택합니다. 활성화된 정산월만 선택 가능합니다.</li>
@@ -342,18 +460,39 @@
                             <li><strong>실적 정보 입력</strong> - 제품, 처방수량, 처방월, 처방유형, 비고 등의 정보를 입력합니다.</li>
                             <li><strong>파일 첨부</strong> - 실적 증빙 자료를 파일로 첨부할 수 있습니다.</li>
                             <li><strong>실적 저장</strong> - 입력한 실적 정보를 저장하여 검수 대기 상태로 전환합니다.</li>
+                            <li><strong>실적입력기간 제한</strong> - 관리자가 설정한 기간 내에서만 실적 등록/수정 가능합니다.</li>
                         </ul>
 
                         <h3>4.2 실적 수정 <span class="path">/performance/edit</span></h3>
-                        <p><strong>설명:</strong> 등록한 실적을 수정하거나 삭제할 수 있습니다.</p>
+                        <p><strong>설명:</strong> 등록한 실적을 수정하거나 삭제할 수 있습니다. 검수 상태에 따라 편집 권한이 제한됩니다.</p>
                         <img src="img/user_4_2_edi.png" alt="실적 수정" class="manual-image">
                         <h4>주요 기능:</h4>
                         <ul class="feature-list">
                             <li><strong>등록된 실적 조회</strong> - 본사가 등록한 실적 목록을 정산월, 병의원별로 조회할 수 있습니다.</li>
-                            <li><strong>실적 수정</strong> - 검수 대기 상태의 실적을 수정할 수 있습니다.</li>
+                            <li><strong>실적 수정</strong> - 검수 대기 상태의 실적만 수정할 수 있습니다.</li>
                             <li><strong>실적 삭제</strong> - 잘못 등록된 실적을 삭제할 수 있습니다.</li>
                             <li><strong>검수 상태 확인</strong> - 각 실적의 검수 상태(대기, 검수중, 완료)를 확인할 수 있습니다.</li>
+                            <li><strong>상태별 편집 제한</strong> - 검수중/완료 상태의 실적은 편집할 수 없습니다.</li>
                         </ul>
+
+                        <h4>🔒 상태별 편집 권한:</h4>
+                        <div class="process-steps">
+                            <div class="step">
+                                <strong>대기 상태</strong><br>
+                                <em>편집 가능:</em> 모든 키보드 기능 활성화<br>
+                                <em>설명:</em> 사용자가 등록한 실적, 관리자 검수 대기
+                            </div>
+                            <div class="step">
+                                <strong>검수중 상태</strong><br>
+                                <em>편집 불가:</em> 읽기 전용 모드<br>
+                                <em>설명:</em> 관리자가 검수 중인 실적, 수정 불가
+                            </div>
+                            <div class="step">
+                                <strong>완료 상태</strong><br>
+                                <em>편집 불가:</em> 읽기 전용 모드<br>
+                                <em>설명:</em> 검수가 완료된 최종 실적, 수정 불가
+                            </div>
+                        </div>
                     </div>
                 </div>
 
