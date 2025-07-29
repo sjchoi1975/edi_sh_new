@@ -60,12 +60,24 @@ onMounted(async () => {
 });
 
 function goEdit() {
-  router.push(`/admin/clients/${route.params.id}/edit`);
+  // from 쿼리 파라미터가 있으면 함께 전달
+  const from = route.query.from;
+  if (from) {
+    router.push(`/admin/clients/${route.params.id}/edit?from=${from}`);
+  } else {
+    router.push(`/admin/clients/${route.params.id}/edit`);
+  }
 }
 function goList() {
   // 이전 화면이 관리자 실적 등록인지 확인
   if (route.query.from === 'admin-performance-register') {
     router.push('/admin/performance/register');
+  } else if (route.query.from === 'admin-clients-assign-companies') {
+    router.push('/admin/clients/assign-companies');
+  } else if (route.query.from === 'admin-clients-commission-grades') {
+    router.push('/admin/clients/commission-grades');
+  } else if (route.query.from === 'admin-clients-assign-pharmacies') {
+    router.push('/admin/clients/assign-pharmacies');
   } else {
     router.push('/admin/clients');
   }

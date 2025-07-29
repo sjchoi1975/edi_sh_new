@@ -170,9 +170,9 @@
             :sortable="true"
           >
             <template #body="slotProps">
-
               <span 
                 :class="getStatusClass(slotProps.data.review_status)"
+                :title="getReviewStatusTooltip(slotProps.data.review_status)"
               >
                 {{ slotProps.data.review_status }}
               </span>
@@ -1754,4 +1754,19 @@ const removeOverflowClass = (event) => {
   element.classList.remove('overflowed');
   console.log('이용자 실적등록 오버플로우 클래스 제거됨');
 }
+
+// 검수 상태에 따른 툴팁 텍스트 반환
+function getReviewStatusTooltip(status) {
+  switch (status) {
+    case '완료':
+      return '검수가 완료된 실적입니다. 수정이 불가능합니다.'
+    case '대기':
+      return '아직 검수를 시작하지 않아 수정이 가능한 실적입니다.'
+    case '검수중':
+      return '검수를 진행중인 실적입니다. 수정이 불가능합니다.'
+    default:
+      return '검수 상태를 확인해주세요.'
+  }
+}
+
 </script>

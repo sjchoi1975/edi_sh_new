@@ -67,8 +67,12 @@
              엑셀 다운로드
            </button>
            <div style="display: flex; align-items: center; gap: 8px;">
-             <label>정렬</label>
-             <select v-model="sortCriteria" class="select_120px" @change="applySorting">
+             <label :class="{ 'disabled-label': isTableSorting }">정렬</label>
+             <select 
+               v-model="sortCriteria" 
+               class="select_120px" 
+               :class="{ 'disabled-select': isTableSorting }"
+             >
                <option v-for="option in sortOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
              </select>
            </div>
@@ -77,6 +81,7 @@
       
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
+          ref="dataTableRef"
           :value="displayRows" 
           :loading="loading"
           paginator
@@ -86,6 +91,10 @@
           scrollHeight="calc(100vh - 240px)"
           class="absorption-analysis-table"
           v-model:first="currentPageFirstIndex"
+          v-model:sortField="tableSortField"
+          v-model:sortOrder="tableSortOrder"
+          @sort="onTableSort"
+          @unsort="onTableUnsort"
 
           :pt="{
             wrapper: { style: 'min-width: 2900px;' },
@@ -272,6 +281,10 @@ const companyOptions = ref([]);
 const hospitalOptions = ref([]);
 const prescriptionOptions = ref([]);
 const currentPageFirstIndex = ref(0);
+const dataTableRef = ref(null); // DataTable ref 추가
+const tableSortField = ref(''); // 테이블 정렬 필드
+const tableSortOrder = ref(1); // 테이블 정렬 순서 (1: 오름차순, -1: 내림차순)
+const isTableSorting = ref(false); // 테이블 헤더 정렬 사용 중인지 여부
 
 // 필터 선택값
 const selectedSettlementMonth = ref('');
@@ -297,8 +310,8 @@ const changeInfo = ref({
 const sortCriteria = ref('alphabetical'); // 기본값: 가나다순
 const sortOptions = ref([
   { label: '가나다순', value: 'alphabetical' },
-  { label: '등록순', value: 'created' },
-  { label: '수정순', value: 'updated' }
+  { label: '최신등록순', value: 'created' },
+  { label: '최신수정순', value: 'updated' }
 ]);
 
 // --- 합계 계산 ---
@@ -338,31 +351,35 @@ const totalQuantity = computed(() => {
 const averageAbsorptionRate = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '- %';
 
-  const rates = displayRows.value
-    .map(row => parseFloat(row.absorption_rate))
-    .filter(rate => !isNaN(rate));
-    
-  if (rates.length === 0) return '- %';
+  // 합계 처방액과 합계 합산액 계산
+  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => 
+    sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
+  const totalCombinedRevenue = displayRows.value.reduce((sum, row) => 
+    sum + (row.total_revenue || 0), 0);
 
-  const total = rates.reduce((sum, rate) => sum + rate, 0);
-  const average = total / rates.length;
+  if (totalPrescriptionAmount === 0) return '- %';
+
+  // 흡수율 = (합계 합산액 ÷ 합계 처방액) × 100
+  const absorptionRate = (totalCombinedRevenue / totalPrescriptionAmount) * 100;
   
-  return `${average.toFixed(1)}%`;
+  return `${absorptionRate.toFixed(1)}%`;
 });
 
 const averageCommissionRate = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '- %';
 
-  const rates = displayRows.value
-    .map(row => parseFloat(row.commission_rate))
-    .filter(rate => !isNaN(rate));
-    
-  if (rates.length === 0) return '- %';
+  // 합계 처방액과 합계 지급액 계산
+  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => 
+    sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
+  const totalPaymentAmount = displayRows.value.reduce((sum, row) => 
+    sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
 
-  const total = rates.reduce((sum, rate) => sum + rate, 0);
-  const average = total / rates.length;
+  if (totalPrescriptionAmount === 0) return '- %';
 
-  return `${average.toFixed(1)}%`;
+  // 수수료율 = (합계 지급액 ÷ 합계 처방액) × 100
+  const commissionRate = (totalPaymentAmount / totalPrescriptionAmount) * 100;
+
+  return `${commissionRate.toFixed(1)}%`;
 });
 
 // --- 초기화 및 데이터 로딩 ---
@@ -779,6 +796,10 @@ watch(prescriptionOffset, async () => {
   }
 });
 
+watch(sortCriteria, () => {
+  applySorting();
+});
+
 // --- 유틸리티 함수 ---
 const calculateAbsorptionRates = async () => {
   if (!selectedSettlementMonth.value) {
@@ -957,9 +978,26 @@ function getActionSeverity(action) {
   return 'secondary';
 }
 
+// 테이블 헤더 정렬 이벤트 핸들러
+function onTableSort() {
+  // 테이블 헤더 정렬이 적용되면 상단 정렬을 비활성화 상태로 표시
+  isTableSorting.value = true;
+}
+
+// 테이블 헤더 정렬 해제 이벤트 핸들러
+function onTableUnsort() {
+  // 테이블 헤더 정렬이 해제되면 상단 정렬을 다시 활성화
+  isTableSorting.value = false;
+}
+
 // 정렬 함수
 function applySorting() {
   if (!displayRows.value || displayRows.value.length === 0) return;
+  
+  // 상단 정렬이 적용될 때는 테이블 헤더 정렬을 초기화
+  tableSortField.value = '';
+  tableSortOrder.value = 1;
+  isTableSorting.value = false;
   
   const sortedRows = [...displayRows.value];
   
@@ -1017,28 +1055,7 @@ async function downloadExcel() {
   }
 
   try {
-    // 1. 등록자/수정자 UUID -> company_name 매핑을 위한 companies 조회
-    const userIds = [...new Set(displayRows.value.map(row => row.registered_by).filter(id => id))];
-    if (displayRows.value.some(row => row.updated_by)) {
-      userIds.push(...displayRows.value.map(row => row.updated_by).filter(id => id));
-    }
-    
-    const { data: companies, error } = await supabase
-      .from('companies')
-      .select('user_id, company_name')
-      .in('user_id', userIds);
-    
-    if (error) throw error;
-    
-    // UUID -> company_name 매핑 객체 생성
-    const userCompanyMap = {};
-    companies.forEach(company => {
-      if (company.user_id) {
-        userCompanyMap[company.user_id] = company.company_name;
-      }
-    });
-
-    // 2. 데이터 변환
+    // 2. 데이터 변환 (이미 매핑된 데이터 사용)
     const dataToExport = displayRows.value.map((row, index) => ({
       'No': index + 1,
       '작업': row.review_action || '-',
@@ -1060,9 +1077,9 @@ async function downloadExcel() {
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
       '등록일시': row.created_date,
-      '등록자': userCompanyMap[row.registered_by] || row.registered_by || '-',
+      '등록자': row.created_by || '-',
       '수정일시': row.updated_date || '-',
-      '수정자': userCompanyMap[row.updated_by] || row.updated_by || '-'
+      '수정자': row.updated_by || '-'
     }));
 
     // 합계 행 추가
@@ -1082,8 +1099,8 @@ async function downloadExcel() {
       '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
       '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
       '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
-      '흡수율': '',
-      '수수료율': '',
+      '흡수율': (Number(totalCombinedRevenue.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) || 0,
+      '수수료율': (Number(totalPaymentAmount.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) || 0,
       '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
       '비고': '',
       '등록일시': '',
@@ -1242,5 +1259,16 @@ async function deleteFilteredAnalysisData() {
 :deep(.p-datatable-tfoot > tr > td) {
     background: #f8f9fa !important;
     font-weight: bold;
+}
+
+/* 비활성화된 정렬 컨트롤 스타일 */
+.disabled-label {
+  color: #6c757d !important;
+}
+
+.disabled-select {
+  background-color: #f8f9fa !important;
+  background-color: #e4e4e4 !important;
+  color: #495057 !important;
 }
 </style> 

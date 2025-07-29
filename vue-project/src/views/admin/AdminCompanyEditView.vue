@@ -357,8 +357,14 @@ onMounted(async () => {
 });
 
 function goDetail() {
-  const from = route.query.from === 'pending' ? 'pending' : 'approved';
-  router.push(`/admin/companies/${route.params.id}?from=${from}`);
+  // from 쿼리 파라미터가 있으면 함께 전달
+  const from = route.query.from;
+  if (from) {
+    router.push(`/admin/companies/${route.params.id}?from=${from}`);
+  } else {
+    const fromDefault = route.query.from === 'pending' ? 'pending' : 'approved';
+    router.push(`/admin/companies/${route.params.id}?from=${fromDefault}`);
+  }
 }
 
 const handleSubmit = async () => {
@@ -566,8 +572,7 @@ const handleSubmit = async () => {
 
     if (error) throw error;
     alert('수정되었습니다.');
-    const from = route.query.from === 'pending' ? 'pending' : 'approved';
-    router.push(`/admin/companies/${from}`);
+    goDetail();
   } catch (err) {
     console.error('업체 정보 수정 중 오류가 발생했습니다.', err);
     alert('업체 정보 수정에 실패했습니다.');
