@@ -429,7 +429,8 @@
 .status-completed,
 .status-pending_user,
 .status-reviewing_user,
-.status-completed_user {
+.status-completed_user,
+.registration-status-badge {
   padding: 0.25em 0 !important;
   font-size: 0.8rem !important;
   font-weight: 400 !important;
@@ -493,7 +494,37 @@
   border-radius: 2px !important;
 }
 
+/* 실적 등록 기간 상태 표시 */
+.registration-status-badge {
+  padding: 0.5em 0 !important;
+  min-width: 60px !important;
+  font-size: 0.9rem !important;
+  border-radius: 36px !important;
+}
 
+.registration-status-badge.status-active {
+  background-color: var(--primary-blue) !important;
+  color: var(--text-white) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+.registration-status-badge.status-closed {
+  background-color: var(--danger) !important;
+  color: var(--text-white) !important;
+  border-color: var(--danger) !important;
+}
+
+.registration-status-badge.status-upcoming {
+  background-color: var(--warning) !important;
+  color: var(--text-dark) !important;
+  border-color: var(--warning) !important;
+}
+
+.registration-status-badge.status-unknown {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
 
 
 

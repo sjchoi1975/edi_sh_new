@@ -5,6 +5,7 @@
 </template>
 
 <style>
+
 input,
 button,
 .p-inputtext,
@@ -12,4 +13,5 @@ button,
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
+
 </style>

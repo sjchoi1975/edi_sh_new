@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="코드, 병의원명, 사업자번호, 원장명, 구분, 업체명"
+              placeholder="병의원명, 사업자번호, 원장명, 주소, 구분, 업체명"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -88,7 +88,15 @@
           :sortable="true"
         >
           <template #body="slotProps">
-            <span class="ellipsis-cell" :title="slotProps.data.client_name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.client_name }}</span>
+            <span 
+              class="ellipsis-cell text-link" 
+              :title="slotProps.data.client_name" 
+              @mouseenter="checkOverflow" 
+              @mouseleave="removeOverflowClass"
+              @click="goToClientDetail(slotProps.data.client_id)"
+            >
+              {{ slotProps.data.client_name }}
+            </span>
           </template>
         </Column>
         <Column
@@ -125,7 +133,17 @@
           :headerStyle="{ width: columnWidths.company_name }"
           :style="{ fontWeight: '500 !important' }"
           :sortable="true"
-        />
+        >
+          <template #body="slotProps">
+            <span 
+              class="text-link" 
+              @click="goToCompanyDetail(slotProps.data.company_id)"
+              style="cursor: pointer;"
+            >
+              {{ slotProps.data.company_name }}
+            </span>
+          </template>
+        </Column>
         <Column
           field="company_business_registration_number"
           header="사업자등록번호"
@@ -175,6 +193,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -182,6 +201,7 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
+const router = useRouter()
 const assignments = ref([])
 const loading = ref(false)
 const excelLoading = ref(false)
@@ -203,7 +223,8 @@ function doSearch() {
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
       (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.company_name && c.company_name.toLowerCase().includes(keyword)) ||
-      (c.company_group && c.company_group.toLowerCase().includes(keyword))
+      (c.company_group && c.company_group.toLowerCase().includes(keyword)) ||
+      (c.address && c.address.toLowerCase().includes(keyword))
     );
   }
 }
@@ -251,6 +272,7 @@ const fetchAssignments = async () => {
         client_code: assignment.client?.client_code || '',
         client_name: assignment.client?.name || '',
         client_business_registration_number: assignment.client?.business_registration_number || '',
+        client_id: assignment.client?.id || null, // 상세화면으로 이동할 때 사용할 클라이언트 ID
         owner_name: assignment.client?.owner_name || '',
         address: assignment.client?.address || '',
         company_group: assignment.company?.company_group || '',
@@ -258,6 +280,7 @@ const fetchAssignments = async () => {
         company_business_registration_number: assignment.company?.business_registration_number || '',
         company_default_commission_grade: assignment.company?.default_commission_grade || assignment.company_default_commission_grade,
         modified_commission_grade: assignment.modified_commission_grade,
+        company_id: assignment.company?.id || null, // 업체 상세화면으로 이동할 때 사용할 업체 ID
       }))
     }
   } catch (err) {
@@ -532,6 +555,24 @@ const removeOverflowClass = (event) => {
   console.log('병의원 수수료등급 오버플로우 클래스 제거됨');
 }
 
+// 병의원 상세 화면으로 이동
+function goToClientDetail(clientId) {
+  router.push({
+    name: 'AdminClientDetail',
+    params: { id: clientId },
+    query: { from: 'admin-clients-commission-grades' }
+  })
+}
+
+// 업체 상세 화면으로 이동
+function goToCompanyDetail(companyId) {
+  router.push({
+    name: 'AdminCompanyDetail',
+    params: { id: companyId },
+    query: { from: 'admin-clients-commission-grades' }
+  })
+}
+
 onMounted(() => {
   fetchAssignments()
 })
@@ -563,6 +604,16 @@ onMounted(() => {
 .commission-grade-select option:checked {
   background-color: #3b82f6;
   color: white;
+}
+
+.text-link {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #3b82f6; /* 클릭 가능한 링크 색상 */
+}
+
+.text-link:hover {
+  color: #2563eb; /* 호버 시 색상 */
 }
 
 </style>

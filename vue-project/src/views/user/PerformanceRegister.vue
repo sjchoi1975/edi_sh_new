@@ -15,6 +15,19 @@
             </option>
           </select>
         </div>
+        
+        <!-- 실적 등록기간 및 구분 표시 -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-left: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="font-weight: 500; font-size: 1.05rem; color: var(--text-secondary);">실적 등록 기간 :</label>
+            <span style="font-weight: 500; font-size: 1.05rem; color: var(--text-primary);">
+              {{ registrationPeriod.startDate }} ~ {{ registrationPeriod.endDate }}
+            </span>
+          </div>
+          <div class="registration-status-badge" :class="registrationStatus.class">
+            {{ registrationStatus.label }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -440,6 +453,7 @@ const columnWidths = {
 }
 
 const availableMonths = ref([])
+const availableMonthsData = ref([]) // 정산월 관리 데이터 전체
 const selectedSettlementMonth = ref('')
 const clientList = ref([])
 const isInputPeriod = ref(false)
@@ -469,11 +483,12 @@ const formatNumber = (value) => {
 const fetchAvailableMonths = async () => {
   const { data, error } = await supabase
     .from('settlement_months')
-    .select('settlement_month')
+    .select('*')
     .eq('status', 'active')
     .order('settlement_month', { ascending: false })
   if (!error && data) {
-    availableMonths.value = data.map((m) => m.settlement_month)
+    availableMonthsData.value = data // 전체 데이터 저장
+    availableMonths.value = data.map((m) => m.settlement_month) // 드롭다운용 월 목록
     if (availableMonths.value.length > 0) {
       selectedSettlementMonth.value = availableMonths.value[0]
     }
@@ -606,6 +621,69 @@ const totalPrescriptionAmount = computed(() =>
 const totalEvidenceFilesCount = computed(() =>
   clientList.value.reduce((sum, c) => sum + (c.evidence_files_count || 0), 0),
 )
+
+// 실적 등록기간 계산
+const registrationPeriod = computed(() => {
+  if (!selectedSettlementMonth.value) {
+    return { startDate: '-', endDate: '-' }
+  }
+  
+  // 정산월 관리 테이블에서 설정된 기간을 가져오기
+  const settlementMonthData = availableMonthsData.value?.find(month => month.settlement_month === selectedSettlementMonth.value)
+  
+  if (settlementMonthData) {
+    // 날짜 형식을 YYYY-MM-DD로 변환
+    const startDate = new Date(settlementMonthData.start_date).toISOString().split('T')[0]
+    const endDate = new Date(settlementMonthData.end_date).toISOString().split('T')[0]
+    return { startDate, endDate }
+  }
+  
+  // 데이터가 없는 경우 기본값 (월의 시작일과 종료일)
+  const [year, month] = selectedSettlementMonth.value.split('-')
+  const startDate = `${year}-${month}-01`
+  const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
+  const endDate = `${year}-${month}-${lastDay.toString().padStart(2, '0')}`
+  
+  return { startDate, endDate }
+})
+
+// 실적 등록 구분 계산
+const registrationStatus = computed(() => {
+  if (!selectedSettlementMonth.value) {
+    return { label: '-', class: 'status-unknown' }
+  }
+  
+  const now = new Date()
+  const settlementMonthData = availableMonthsData.value?.find(month => month.settlement_month === selectedSettlementMonth.value)
+  
+  if (settlementMonthData) {
+    // 정산월 관리 테이블의 설정된 기간 사용
+    const startDate = new Date(settlementMonthData.start_date)
+    const endDate = new Date(settlementMonthData.end_date)
+    endDate.setHours(23, 59, 59, 999) // 종료일을 그날의 마지막 시간으로 설정
+    
+    if (now < startDate) {
+      return { label: '예정', class: 'status-upcoming' }
+    } else if (now > endDate) {
+      return { label: '마감', class: 'status-closed' }
+    } else {
+      return { label: '진행중', class: 'status-active' }
+    }
+  }
+  
+  // 데이터가 없는 경우 기본값 (월의 시작일과 종료일)
+  const [year, month] = selectedSettlementMonth.value.split('-')
+  const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+  const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999)
+  
+  if (now < startDate) {
+    return { label: '예정', class: 'status-upcoming' }
+  } else if (now > endDate) {
+    return { label: '마감', class: 'status-closed' }
+  } else {
+    return { label: '진행중', class: 'status-active' }
+  }
+})
 
 // 조회 모달 합계 계산
 const viewModalTotalQty = computed(() => {

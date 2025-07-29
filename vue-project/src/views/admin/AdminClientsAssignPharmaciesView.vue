@@ -9,7 +9,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="코드, 병의원, 사업자번호, 원장, 구분, 업체명, 약국명"
+              placeholder="병의원, 사업자번호, 원장, 주소, 구분, 업체, 약국"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -31,7 +31,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>병원 구분</label>
-          <select v-model="hospitalFilter" class="select_120px" @change="applyHospitalFilter">
+          <select v-model="hospitalFilter" class="select_180px" @change="applyHospitalFilter">
             <option v-for="option in hospitalFilterOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </div>
@@ -85,7 +85,15 @@
           :sortable="true" 
         >
           <template #body="slotProps">
-            <span class="ellipsis-cell" :title="slotProps.data.name" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.name }}</span>
+            <span 
+              class="ellipsis-cell text-link" 
+              :title="slotProps.data.name" 
+              @mouseenter="checkOverflow" 
+              @mouseleave="removeOverflowClass"
+              @click="goToClientDetail(slotProps.data.id)"
+            >
+              {{ slotProps.data.name }}
+            </span>
           </template>
         </Column>
         <Column
@@ -127,7 +135,13 @@
                 :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
               >
-                {{ company.company_name }}
+                <span 
+                  class="text-link" 
+                  @click="goToCompanyDetail(company.id)"
+                  style="cursor: pointer;"
+                >
+                  {{ company.company_name }}
+                </span>
               </div>
             </div>
             <div v-else style="min-height: 32px">-</div>
@@ -141,7 +155,13 @@
                 :key="pharmacy.id"
                 style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
               >
-                {{ pharmacy.name }}
+                <span 
+                  class="text-link" 
+                  @click="goToPharmacyDetail(pharmacy.id)"
+                  style="cursor: pointer;"
+                >
+                  {{ pharmacy.name }}
+                </span>
               </div>
             </div>
             <div v-else style="min-height: 32px">-</div>
@@ -245,6 +265,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -253,6 +274,7 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
+const router = useRouter()
 const clients = ref([])
 const loading = ref(false)
 const excelLoading = ref(false)
@@ -321,7 +343,7 @@ const filteredClients = ref([]);
 const hospitalFilter = ref('assigned'); // 기본값: 담당업체 지정
 const hospitalFilterOptions = ref([
   { label: '전체 병의원', value: 'all' },
-  { label: '담당업체 지정', value: 'assigned' }
+  { label: '담당업체 지정 병의원', value: 'assigned' }
 ]);
 
 function doSearch() {
@@ -362,6 +384,7 @@ function applyFilters() {
       (c.business_registration_number && c.business_registration_number.toLowerCase().includes(keyword)) ||
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
       (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
+      (c.address && c.address.toLowerCase().includes(keyword)) ||
       (c.pharmacies && c.pharmacies.some(pharmacy => 
         pharmacy.name && pharmacy.name.toLowerCase().includes(keyword)
       )) ||
@@ -679,6 +702,33 @@ const removeOverflowClass = (event) => {
   const element = event.target;
   element.classList.remove('overflowed');
   console.log('병의원 문전약국 오버플로우 클래스 제거됨');
+}
+
+// 병의원 상세 화면으로 이동
+function goToClientDetail(clientId) {
+  router.push({
+    name: 'AdminClientDetail',
+    params: { id: clientId },
+    query: { from: 'admin-clients-assign-pharmacies' }
+  })
+}
+
+// 약국 상세 화면으로 이동
+function goToPharmacyDetail(pharmacyId) {
+  router.push({
+    name: 'admin-pharmacies-detail',
+    params: { id: pharmacyId },
+    query: { from: 'admin-clients-assign-pharmacies' }
+  })
+}
+
+// 업체 상세 화면으로 이동
+function goToCompanyDetail(companyId) {
+  router.push({
+    name: 'AdminCompanyDetail',
+    params: { id: companyId },
+    query: { from: 'admin-clients-assign-pharmacies' }
+  })
 }
 
 onMounted(() => {

@@ -214,11 +214,17 @@ const handleSubmit = async () => {
     alert('수정 실패: ' + error.message);
   } else {
     alert('수정되었습니다.');
-    router.push(`/admin/pharmacies/${route.params.id}`);
+    goDetail();
   }
 };
 
 function goDetail() {
-  router.push(`/admin/pharmacies/${route.params.id}`);
+  // from 쿼리 파라미터가 있으면 함께 전달
+  const from = route.query.from;
+  if (from) {
+    router.push(`/admin/pharmacies/${route.params.id}?from=${from}`);
+  } else {
+    router.push(`/admin/pharmacies/${route.params.id}`);
+  }
 }
 </script>

@@ -278,6 +278,8 @@ select.input-editable {
 .select_100px,
 .select_110px,
 .select_120px,
+.select_180px,
+.select_200px,
 .select_240px {
   height: var(--input-height) !important;
   padding: 0 0.5rem !important;
@@ -291,6 +293,7 @@ select.input-editable {
 .select_100px { width: 100px !important; }
 .select_110px { width: 110px !important; }
 .select_120px { width: 120px !important; }
+.select_180px { width: 180px !important; }
 .select_200px { width: 200px !important; }
 .select_240px { width: 240px !important; }
 
@@ -301,6 +304,8 @@ select.input-editable {
 .select_100px,
 .select_110px,
 .select_120px,
+.select_180px,
+.select_200px,
 .select_240px { display: inline-block; }
 
 /* ========================================== */
@@ -319,6 +324,7 @@ select:hover,
 .select_100px:hover,
 .select_110px:hover,
 .select_120px:hover,
+.select_180px:hover,
 .select_200px:hover,
 .select_240px:hover {
   border-color: var(--primary-color) !important;
@@ -335,6 +341,7 @@ select:focus-within,
 .select_100px:focus,
 .select_110px:focus,
 .select_120px:focus,
+.select_180px:focus,
 .select_200px:focus,
 .select_240px:focus {
   border-color: var(--primary-color) !important;
@@ -854,6 +861,19 @@ select option:focus {
 .ellipsis-cell[title] {
   -webkit-tooltip: none !important;
   tooltip: none !important;
+  cursor: default;
+}
+
+.clickable-cell {
+  cursor: pointer !important;
+  color: var(--primary-color) !important;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.clickable-cell:hover {
+  color: var(--primary-color-dark) !important;
+  text-decoration: underline;
 }
 
 
@@ -2490,7 +2510,7 @@ select option:focus {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2498,8 +2518,8 @@ select option:focus {
 }
 
 .loading-content {
-  background-color: white;
-  padding: 2.4rem 2.4rem 2rem 2.4rem;
+  background-color: #f8f9fa;
+  padding: 3.4rem 2.4rem 2rem 2.4rem;
   border-radius: 8px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -2516,9 +2536,10 @@ select option:focus {
 }
 
 .loading-text {
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-size: 1.05rem;
+  font-weight: 400;
   color: #333;
+  margin-top: 2rem;
 }
 
 @keyframes spin {

@@ -98,13 +98,27 @@ onMounted(async () => {
 })
 
 function goEdit() {
-  const from = route.query.from === 'pending' ? 'pending' : 'approved';
-  router.push(`/admin/companies/${route.params.id}/edit?from=${from}`);
+  // from 쿼리 파라미터가 있으면 함께 전달
+  const from = route.query.from;
+  if (from) {
+    router.push(`/admin/companies/${route.params.id}/edit?from=${from}`);
+  } else {
+    const fromDefault = route.query.from === 'pending' ? 'pending' : 'approved';
+    router.push(`/admin/companies/${route.params.id}/edit?from=${fromDefault}`);
+  }
 }
 
 function goList() {
-  const from = route.query.from === 'pending' ? 'pending' : 'approved';
-  router.push(`/admin/companies/${from}`);
+  if (route.query.from === 'admin-clients-assign-companies') {
+    router.push('/admin/clients/assign-companies');
+  } else if (route.query.from === 'admin-clients-commission-grades') {
+    router.push('/admin/clients/commission-grades');
+  } else if (route.query.from === 'admin-clients-assign-pharmacies') {
+    router.push('/admin/clients/assign-pharmacies');
+  } else {
+    const from = route.query.from === 'pending' ? 'pending' : 'approved';
+    router.push(`/admin/companies/${from}`);
+  }
 }
 
 async function handleResetPassword() {
