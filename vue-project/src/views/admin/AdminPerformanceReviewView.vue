@@ -390,6 +390,7 @@ const rows = ref([]);
 const originalRows = ref([]);
 const selectedRows = ref([]);
 const activeEditingRowId = ref(null);
+const editingRows = ref([]); // DataTable의 editingRows 속성용 (Array)
 const products = ref([]);
 const productsByMonth = ref({}); // { '2025-06': [...], '2025-05': [...], ... }
 const productInputRefs = ref({});
@@ -643,34 +644,92 @@ async function loadPerformanceData() {
       const { data: pendingRecords, error: findError } = await findQuery;
       if (findError) throw findError;
 
+      console.log("pendingRecords 원본:", pendingRecords);
+
       if (pendingRecords && pendingRecords.length > 0) {
-        idsToFetch = pendingRecords.map(r => r.id);
+        // id가 유효한 값만 필터링 (더 강력한 검증)
+        const validRecords = pendingRecords.filter(r => {
+          const isValid = r && r.id !== null && r.id !== undefined && r.id !== '';
+          if (!isValid) {
+            console.warn("유효하지 않은 레코드 발견:", r);
+          }
+          return isValid;
+        });
+        
+        console.log("필터링 후 validRecords:", validRecords);
+        
+        if (validRecords.length === 0) {
+          console.log("유효한 ID를 가진 신규 데이터가 없습니다.");
+          rows.value = [];
+          originalRows.value = [];
+          loading.value = false;
+          return;
+        }
+        
+        idsToFetch = validRecords.map(r => r.id);
         shouldFetchByIds = true;
 
+        console.log("최종 idsToFetch:", idsToFetch);
         console.log(`${idsToFetch.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
         // review_status만 변경하므로 updated_at, updated_by는 갱신하지 않음
         // 먼저 현재 데이터를 조회하여 updated_at 값을 가져옴
         const { data: currentData, error: fetchError } = await supabase
           .from('performance_records')
-          .select('updated_at, updated_by')
+          .select('id, updated_at, updated_by')
           .in('id', idsToFetch);
         if (fetchError) throw fetchError;
         
-        // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
-        const updates = currentData.map(record => 
-          supabase
-            .from('performance_records')
-            .update({ 
-              review_status: '검수중',
-              updated_at: record.updated_at,  // 이전 값으로 유지
-              updated_by: record.updated_by   // 이전 값으로 유지
-            })
-            .eq('id', record.id)
-        );
+        console.log("=== PATCH 요청 진단 시작 ===");
+        console.log("currentData 조회 결과:", currentData);
+        console.log("currentData 길이:", currentData?.length || 0);
         
-        const results = await Promise.all(updates);
-        const errorResult = results.find(res => res.error);
-        if (errorResult) throw errorResult.error;
+        if (currentData && currentData.length > 0) {
+          console.log("currentData 각 레코드 ID:", currentData.map(r => r.id));
+        }
+        
+        // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
+        const updates = currentData
+          .filter(record => {
+            // record.id 유효성 검증
+            const isValid = record && record.id !== null && record.id !== undefined && record.id !== '';
+            console.log(`레코드 ${record?.id} 유효성 검사:`, isValid, record);
+            if (!isValid) {
+              console.warn("PATCH 요청에서 유효하지 않은 record 발견:", record);
+            }
+            return isValid;
+          })
+          .map(record => {
+            console.log(`PATCH 요청 준비: ID=${record.id}, updated_at=${record.updated_at}, updated_by=${record.updated_by}`);
+            return supabase
+              .from('performance_records')
+              .update({ 
+                review_status: '검수중',
+                updated_at: record.updated_at,  // 이전 값으로 유지
+                updated_by: record.updated_by   // 이전 값으로 유지
+              })
+              .eq('id', record.id);
+          });
+        
+        console.log("필터링 후 updates 배열 길이:", updates.length);
+        
+        if (updates.length === 0) {
+          console.log("유효한 PATCH 요청이 없습니다.");
+        } else {
+          console.log(`${updates.length}건의 PATCH 요청을 실행합니다.`);
+          const results = await Promise.all(updates);
+          
+          console.log("PATCH 요청 결과:", results);
+          
+          // 실패한 요청들만 별도로 로그 출력
+          const failedResults = results.filter(res => res.error);
+          if (failedResults.length > 0) {
+            console.error("PATCH 요청 실패:", failedResults);
+            throw new Error(`PATCH 요청 중 ${failedResults.length}건이 실패했습니다.`);
+          } else {
+            console.log("모든 PATCH 요청이 성공했습니다.");
+          }
+        }
+        console.log("=== PATCH 요청 진단 완료 ===");
       }
     } 
     // 2. '전체' 선택 시: 필터에 맞는 모든 데이터를 대상으로 '대기' 상태인 것을 '검수중'으로 업데이트하고, 전체를 불러옵니다.
@@ -684,32 +743,87 @@ async function loadPerformanceData() {
       const { data: pendingRecords, error: findError } = await findQuery;
       if (findError) throw findError;
       
+      console.log("전체 선택 - pendingRecords 원본:", pendingRecords);
+      
       if (pendingRecords && pendingRecords.length > 0) {
-          const idsToUpdate = pendingRecords.map(r => r.id);
-          console.log(`전체 데이터 중 ${idsToUpdate.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
-          // review_status만 변경하므로 updated_at, updated_by는 갱신하지 않음
-          // 먼저 현재 데이터를 조회하여 updated_at 값을 가져옴
-          const { data: currentData, error: fetchError } = await supabase
-            .from('performance_records')
-            .select('id, updated_at, updated_by')
-            .in('id', idsToUpdate);
-          if (fetchError) throw fetchError;
+          // id가 유효한 값만 필터링 (더 강력한 검증)
+          const validRecords = pendingRecords.filter(r => {
+            const isValid = r && r.id !== null && r.id !== undefined && r.id !== '';
+            if (!isValid) {
+              console.warn("전체 선택 - 유효하지 않은 레코드 발견:", r);
+            }
+            return isValid;
+          });
           
-          // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
-          const updates = currentData.map(record => 
-            supabase
+          console.log("전체 선택 - 필터링 후 validRecords:", validRecords);
+          
+          if (validRecords.length === 0) {
+            console.log("유효한 ID를 가진 신규 데이터가 없습니다.");
+            // 전체 데이터를 조회하므로 빈 배열로 설정하지 않고 계속 진행
+          } else {
+            const idsToUpdate = validRecords.map(r => r.id);
+            console.log("전체 선택 - 최종 idsToUpdate:", idsToUpdate);
+            console.log(`전체 데이터 중 ${idsToUpdate.length}건의 신규 데이터를 '검수중'으로 변경합니다.`);
+            // review_status만 변경하므로 updated_at, updated_by는 갱신하지 않음
+            // 먼저 현재 데이터를 조회하여 updated_at 값을 가져옴
+            const { data: currentData, error: fetchError } = await supabase
               .from('performance_records')
-              .update({ 
-                review_status: '검수중',
-                updated_at: record.updated_at,  // 이전 값으로 유지
-                updated_by: record.updated_by   // 이전 값으로 유지
+              .select('id, updated_at, updated_by')
+              .in('id', idsToUpdate);
+            if (fetchError) throw fetchError;
+            
+            console.log("=== 전체 선택 PATCH 요청 진단 시작 ===");
+            console.log("전체 선택 - currentData 조회 결과:", currentData);
+            console.log("전체 선택 - currentData 길이:", currentData?.length || 0);
+            
+            if (currentData && currentData.length > 0) {
+              console.log("전체 선택 - currentData 각 레코드 ID:", currentData.map(r => r.id));
+            }
+            
+            // 각 레코드별로 개별 업데이트 (updated_at을 이전 값으로 유지)
+            const updates = currentData
+              .filter(record => {
+                // record.id 유효성 검증
+                const isValid = record && record.id !== null && record.id !== undefined && record.id !== '';
+                console.log(`전체 선택 - 레코드 ${record?.id} 유효성 검사:`, isValid, record);
+                if (!isValid) {
+                  console.warn("전체 선택 - PATCH 요청에서 유효하지 않은 record 발견:", record);
+                }
+                return isValid;
               })
-              .eq('id', record.id)
-          );
-          
-          const results = await Promise.all(updates);
-          const errorResult = results.find(res => res.error);
-          if (errorResult) throw errorResult.error;
+              .map(record => {
+                console.log(`전체 선택 - PATCH 요청 준비: ID=${record.id}, updated_at=${record.updated_at}, updated_by=${record.updated_by}`);
+                return supabase
+                  .from('performance_records')
+                  .update({ 
+                    review_status: '검수중',
+                    updated_at: record.updated_at,  // 이전 값으로 유지
+                    updated_by: record.updated_by   // 이전 값으로 유지
+                  })
+                  .eq('id', record.id);
+              });
+            
+            console.log("전체 선택 - 필터링 후 updates 배열 길이:", updates.length);
+            
+            if (updates.length === 0) {
+              console.log("전체 선택 - 유효한 PATCH 요청이 없습니다.");
+            } else {
+              console.log(`전체 선택 - ${updates.length}건의 PATCH 요청을 실행합니다.`);
+              const results = await Promise.all(updates);
+              
+              console.log("전체 선택 - PATCH 요청 결과:", results);
+              
+              // 실패한 요청들만 별도로 로그 출력
+              const failedResults = results.filter(res => res.error);
+              if (failedResults.length > 0) {
+                console.error("전체 선택 - PATCH 요청 실패:", failedResults);
+                throw new Error(`전체 선택 - PATCH 요청 중 ${failedResults.length}건이 실패했습니다.`);
+              } else {
+                console.log("전체 선택 - 모든 PATCH 요청이 성공했습니다.");
+              }
+            }
+            console.log("=== 전체 선택 PATCH 요청 진단 완료 ===");
+          }
       }
     }
     // 3. '검수중' 또는 '완료' 선택 시: 상태 변경 없이 데이터만 불러옵니다.
@@ -724,13 +838,23 @@ async function loadPerformanceData() {
     `);
 
     if (shouldFetchByIds) {
-      if (idsToFetch.length === 0) {
+      console.log("shouldFetchByIds가 true입니다. idsToFetch:", idsToFetch);
+      if (!idsToFetch || idsToFetch.length === 0) {
+          console.log("idsToFetch가 비어있어 빈 결과를 반환합니다.");
           rows.value = [];
           originalRows.value = [];
           loading.value = false;
           return;
       }
-      query = query.in('id', idsToFetch);
+      
+      // idsToFetch에 undefined나 null이 있는지 한 번 더 확인
+      const validIds = idsToFetch.filter(id => id !== null && id !== undefined && id !== '');
+      if (validIds.length !== idsToFetch.length) {
+          console.warn("idsToFetch에 유효하지 않은 ID가 포함되어 있습니다:", idsToFetch);
+          console.log("유효한 ID만 사용합니다:", validIds);
+      }
+      
+      query = query.in('id', validIds);
     } else {
       query = query.eq('settlement_month', selectedSettlementMonth.value);
       if (selectedCompanyId.value) query = query.eq('company_id', selectedCompanyId.value);
@@ -942,6 +1066,13 @@ async function saveEdit(rowData) {
   } finally {
     loading.value = false;
   }
+}
+
+// DataTable의 row-edit-save 이벤트 핸들러
+function onRowEditSave(event) {
+  // DataTable의 기본 편집 기능은 사용하지 않고 커스텀 편집을 사용하므로
+  // 이 함수는 빈 함수로 두거나 기본 동작을 정의할 수 있습니다.
+  console.log('onRowEditSave called:', event);
 }
 
 function addRowBelow(referenceRow) {
