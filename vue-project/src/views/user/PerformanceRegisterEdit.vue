@@ -314,6 +314,9 @@ const inputRows = ref([{
   remarks: '',
   commission_rate_a: null,
   commission_rate_b: null,
+  commission_rate_c: null,
+  commission_rate_d: null,
+  commission_rate_e: null,
   review_status: '대기',
   selected: false, // 선택 체크박스
 }]);
@@ -340,7 +343,10 @@ function getValidRows(rows) {
       remarks: row.remarks || '',
       commission_rate: String(row.commission_rate || '').replace(/,/g, '').replace(/%/g, ''),
       commission_rate_a: row.commission_rate_a,
-      commission_rate_b: row.commission_rate_b
+      commission_rate_b: row.commission_rate_b,
+      commission_rate_c: row.commission_rate_c,
+      commission_rate_d: row.commission_rate_d,
+      commission_rate_e: row.commission_rate_e
     }));
 }
 
@@ -653,7 +659,7 @@ function navigateProductSearchList(direction) {
   });
 }
 
-function applySelectedProduct(product, rowIndex) {
+async function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].product_name_display = product.product_name;
   inputRows.value[rowIndex].product_id = product.id;
   inputRows.value[rowIndex].insurance_code = product.insurance_code;
@@ -661,14 +667,55 @@ function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].price = product.price ? Number(product.price).toLocaleString() : '';
   inputRows.value[rowIndex].commission_rate_a = product.commission_rate_a;
   inputRows.value[rowIndex].commission_rate_b = product.commission_rate_b;
+  inputRows.value[rowIndex].commission_rate_c = product.commission_rate_c;
+  inputRows.value[rowIndex].commission_rate_d = product.commission_rate_d;
+  inputRows.value[rowIndex].commission_rate_e = product.commission_rate_e;
   
-  // 수수료율 설정 (기본값은 A등급 수수료율)
-  if (product.commission_rate_a !== null && product.commission_rate_a !== undefined) {
-    // 0.48 -> 48.0% (x 100), 0 -> 0.0%
-    inputRows.value[rowIndex].commission_rate = (Number(product.commission_rate_a) * 100).toFixed(1) + '%';
+  // 등급에 맞는 수수료율 자동 설정
+  const clientId = route.query.clientId;
+  const companyId = route.query.companyId;
+  let myCompany;
+  
+  if (companyId) {
+    // 관리자가 특정 업체의 실적을 등록하는 경우
+    const { data } = await supabase.from('companies').select('id').eq('id', companyId).single();
+    myCompany = data;
   } else {
-    // 수수료율이 NULL이거나 undefined인 경우 빈 값으로 설정
-    inputRows.value[rowIndex].commission_rate = '';
+    // 일반 사용자가 자신의 실적을 등록하는 경우
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserUid = session?.user?.id;
+    const { data } = await supabase.from('companies').select('id').eq('user_id', currentUserUid).single();
+    myCompany = data;
+  }
+  
+  if (myCompany && clientId) {
+    const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
+    let commissionRate = 0;
+    
+    if (grade === 'A') {
+      commissionRate = product.commission_rate_a;
+    } else if (grade === 'B') {
+      commissionRate = product.commission_rate_b;
+    } else if (grade === 'C') {
+      commissionRate = product.commission_rate_c;
+    } else if (grade === 'D') {
+      commissionRate = product.commission_rate_d;
+    } else if (grade === 'E') {
+      commissionRate = product.commission_rate_e;
+    }
+    
+    if (commissionRate !== null && commissionRate !== undefined) {
+      inputRows.value[rowIndex].commission_rate = (Number(commissionRate) * 100).toFixed(1) + '%';
+    } else {
+      inputRows.value[rowIndex].commission_rate = '';
+    }
+  } else {
+    // 기본값은 A등급 수수료율
+    if (product.commission_rate_a !== null && product.commission_rate_a !== undefined) {
+      inputRows.value[rowIndex].commission_rate = (Number(product.commission_rate_a) * 100).toFixed(1) + '%';
+    } else {
+      inputRows.value[rowIndex].commission_rate = '';
+    }
   }
   
   // 제품 정보 설정 후 처방액과 지급액 계산
@@ -726,6 +773,9 @@ function clearProductRelatedFields(rowIndex) {
   row.payment_amount = '';
   row.commission_rate_a = null;
   row.commission_rate_b = null;
+  row.commission_rate_c = null;
+  row.commission_rate_d = null;
+  row.commission_rate_e = null;
 }
 
 function toggleProductDropdown(rowIndex) {
@@ -1174,6 +1224,12 @@ async function savePerformanceData() {
         commissionRate = row.commission_rate_a;
       } else if (grade === 'B') {
         commissionRate = row.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = row.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = row.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = row.commission_rate_e;
       }
 
       return {
@@ -1207,6 +1263,12 @@ async function savePerformanceData() {
         commissionRate = row.commission_rate_a;
       } else if (grade === 'B') {
         commissionRate = row.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = row.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = row.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = row.commission_rate_e;
       }
       return supabase
         .from('performance_records')
@@ -1392,6 +1454,9 @@ async function loadExistingData() {
         review_status: record.review_status || '대기',
         commission_rate_a: record.products?.commission_rate_a,
         commission_rate_b: record.products?.commission_rate_b,
+        commission_rate_c: record.products?.commission_rate_c,
+        commission_rate_d: record.products?.commission_rate_d,
+        commission_rate_e: record.products?.commission_rate_e,
       }));
       
       // *** MODIFICATION START ***
@@ -1425,6 +1490,9 @@ async function loadExistingData() {
         review_status: '대기',
         commission_rate_a: null,
         commission_rate_b: null,
+        commission_rate_c: null,
+        commission_rate_d: null,
+        commission_rate_e: null,
       });
     }
   } catch (err) {
@@ -1463,7 +1531,7 @@ const totalPaymentAmount = computed(() => {
 function addRowBelow(idx) {
   inputRows.value.splice(idx + 1, 0, {
     prescription_month: getDefaultPrescriptionMonth(),
-    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', commission_rate: '', payment_amount: '', prescription_type: 'EDI', remarks: '', review_status: '대기', commission_rate_a: null, commission_rate_b: null, selected: false,
+    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', commission_rate: '', payment_amount: '', prescription_type: 'EDI', remarks: '', review_status: '대기', commission_rate_a: null, commission_rate_b: null, commission_rate_c: null, commission_rate_d: null, commission_rate_e: null, selected: false,
   });
   nextTick(() => focusField(idx + 1, 'product_name'));
 }
@@ -1515,6 +1583,9 @@ function resetRow(rowIdx) {
   row.remarks = '';
   row.commission_rate_a = null;
   row.commission_rate_b = null;
+  row.commission_rate_c = null;
+  row.commission_rate_d = null;
+  row.commission_rate_e = null;
   row.selected = false;
   
   // 제품 검색 드롭다운 숨기기

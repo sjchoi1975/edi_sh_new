@@ -1316,6 +1316,12 @@ async function handleEditCalculations(rowData, field) {
             commissionRate = product.commission_rate_a;
           } else if (grade === 'B') {
             commissionRate = product.commission_rate_b;
+          } else if (grade === 'C') {
+            commissionRate = product.commission_rate_c;
+          } else if (grade === 'D') {
+            commissionRate = product.commission_rate_d;
+          } else if (grade === 'E') {
+            commissionRate = product.commission_rate_e;
           }
           rowData.commission_rate_modify = commissionRate;
       }
@@ -1367,6 +1373,12 @@ async function applySelectedProduct(product, rowData) {
       commissionRate = product.commission_rate_a;
     } else if (grade === 'B') {
       commissionRate = product.commission_rate_b;
+    } else if (grade === 'C') {
+      commissionRate = product.commission_rate_c;
+    } else if (grade === 'D') {
+      commissionRate = product.commission_rate_d;
+    } else if (grade === 'E') {
+      commissionRate = product.commission_rate_e;
     }
     reactiveRow.commission_rate_modify = commissionRate;
     

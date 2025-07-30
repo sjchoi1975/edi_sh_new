@@ -167,6 +167,9 @@
               <option value="">-</option>
               <option value="A">A</option>
               <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
             </select>
           </template>
         </Column>
@@ -395,8 +398,8 @@ const handleFileUpload = async (event) => {
         continue
       }
 
-      if (newGrade && !['A', 'B'].includes(newGrade)) {
-        errors.push(`${rowNum}행: 변경 수수료 등급은 'A' 또는 'B'만 가능합니다.`)
+      if (newGrade && !['A', 'B', 'C', 'D', 'E'].includes(newGrade)) {
+        errors.push(`${rowNum}행: 변경 수수료 등급은 'A', 'B', 'C', 'D', 'E' 중 하나여야 합니다.`)
         continue
       }
 
