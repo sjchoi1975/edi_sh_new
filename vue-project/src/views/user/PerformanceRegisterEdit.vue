@@ -20,35 +20,69 @@
       <div class="input-table-wrapper performance-edit-table">
         <div class="top-bar-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
           <div class="total-count-display">실적: {{ validRowCount }} 건</div>
-          <button class="btn-save" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:90px; margin-bottom:0rem !important;">저장</button>
+          <div v-if="clientSettlementRemarks && isAdminUser" 
+            class="settlement-remarks" 
+            style="background: #e3f2fd; 
+            color: #1976d2; 
+            padding: 0.25rem 1rem;
+            min-width: 240px;
+            text-align: center;
+            border-radius: 4px; 
+            border: 1px solid #bbdefb; 
+            font-size: 0.9rem; 
+            font-weight: 500;">
+            {{ clientSettlementRemarks }}
+          </div>
+          <div style="display:flex; gap: 0.5rem; align-items:center;">
+
+            <button class="btn-delete" @click="deleteSelected" :disabled="!hasSelectedItems" style="min-width:80px !important;">삭제</button>
+            <button class="btn-save" @click="onSave" :disabled="!canSave || !isInputEnabled" style="min-width:80px !important;">저장</button>
+          </div>
         </div>
         <div class="table-header-fixed">
-          <table>
+          <table style="table-layout: fixed; width: 100%;">
             <thead>
               <tr>
-
-                <th style="width:10%;">처방월</th>
-                <th style="width:5%;">No</th>
-                <th style="width:22%;">제품명</th>
-                <th style="width:9%;">보험코드</th>
-                <th style="width:9%;">단가</th>
-                <th style="width:9%;">처방수량</th>
-                <th style="width:10%;">처방액</th>
-                <th style="width:10%;">처방구분</th>
-                <th style="width:14%;">비고</th>
-                <th style="width:6%;">삭제</th>
-                <th style="width:6%;">추가</th>
-                <th style="width:8%;">검수상태</th>
+                <th style="width:3%;">
+                  <input 
+                    type="checkbox" 
+                    @change="toggleSelectAll" 
+                    :checked="isAllSelected"
+                  />
+                </th>
+                <th style="width:3%;">No</th>
+                <th style="width:7%;">처방월</th>
+                <th style="width:18%;">제품명</th>
+                <th style="width:6%;">보험코드</th>
+                <th style="width:6%;">단가</th>
+                <th style="width:6%;">처방수량</th>
+                <th style="width:7%;">처방액</th>
+                <th style="width:5%;">수수료율</th>
+                <th style="width:7%;">지급액</th>
+                <th style="width:8%;">처방구분</th>
+                <th style="width:12%;">비고</th>
+                <th style="width:4%;">삭제</th>
+                <th style="width:4%;">추가</th>
+                <th style="width:4%;">검수상태</th>
               </tr>
             </thead>
           </table>
         </div>
         
         <div class="table-body-scroll">
-          <table class="input-table prime-like-table">
+          <table class="input-table prime-like-table" style="table-layout: fixed; width: 100%;">
             <tbody>
               <tr v-for="(row, rowIdx) in inputRows" :key="rowIdx">
-                <td style="width:10%;text-align:center;">
+                <td style="text-align:center;width:3%;">
+                  <input 
+                    type="checkbox" 
+                    v-model="row.selected" 
+                    :disabled="!isRowEditable(row)"
+                    :class="{ 'disabled-area': !isRowEditable(row) }"
+                  />
+                </td>
+                <td style="text-align:center;width:3%;" :class="{ 'disabled-area': !isRowEditable(row) }">{{ rowIdx + 1 }}</td>
+                <td style="width:7%;text-align:center;">
                   <select
                     v-model="row.prescription_month"
                     :tabindex="isRowEditable(row) ? 0 : -1"
@@ -60,8 +94,7 @@
                     <option v-for="opt in prescriptionOptions" :key="opt.value" :value="opt.month">{{ opt.month }}</option>
                   </select>
                 </td>
-                <td style="text-align:center;width:5%;" :class="{ 'disabled-area': !isRowEditable(row) }">{{ rowIdx + 1 }}</td>
-                <td style="position:relative;text-align:left;width:22%;">
+                <td style="position:relative;text-align:left;width:18%;">
                   <div class="product-input-container">
                     <input
                       v-model="row.product_name_display"
@@ -105,20 +138,25 @@
                           @click="clickProductFromSearchList(product, rowIdx)"
                           :class="{ 'selected': productSearchForRow.selectedIndex === index }"
                         >
-                          <span class="product-name">{{ truncateText(product.product_name, 25) }}</span>
-                          <span class="insurance-code">{{ product.insurance_code }}</span>
+                          <div class="product-item">
+                            <span 
+                              class="product-name"
+                              :style="productSearchForRow.selectedIndex === index ? 'color: #fff !important;' : ''"
+                            >{{ truncateText(product.product_name, 25) }}</span>
+                            <span class="insurance-code">{{ product.insurance_code }}</span>
+                          </div>
                         </li>
                       </ul>
                     </div>
                   </teleport>
                 </td>
-                <td style="text-align:center;width:9%;">
+                <td style="text-align:center;width:6%;">
                   <span :class="['readonly-span', !isRowEditable(row) ? 'disabled-area' : '']">{{ row.insurance_code }}</span>
                 </td>
-                <td style="text-align:right;width:9%;">
+                <td style="text-align:right;width:6%;">
                   <span :class="['readonly-span', !isRowEditable(row) ? 'disabled-area' : '']">{{ row.price }}</span>
                 </td>
-                <td style="text-align:right;position:relative; width:9%;">
+                <td style="text-align:right;position:relative; width:6%;">
                   <input
                     v-model="row.prescription_qty"
                     :tabindex="isRowEditable(row) ? 0 : -1"
@@ -136,10 +174,30 @@
                     style="text-align:right;"
                   />
                 </td>
-                <td style="text-align:right;width:10%;">
+                <td style="text-align:right;width:7%;">
                   <span :class="['readonly-span', !isRowEditable(row) ? 'disabled-area' : '']">{{ row.prescription_amount }}</span>
                 </td>
-                <td style="text-align:center;width:10%;">
+                <td style="text-align:right;width:5%;">
+                  <input
+                    v-model="row.commission_rate"
+                    :tabindex="isRowEditable(row) && isAdminUser ? 0 : -1"
+                    :readonly="!isRowEditable(row) || !isAdminUser"
+                    @keydown="onArrowKey($event, rowIdx, 'commission_rate')"
+                    @input="onCommissionRateInput(rowIdx)"
+                    @focus="handleCommissionRateFocus(rowIdx)"
+                    @blur="formatCommissionRate(rowIdx)"
+                    :disabled="!isRowEditable(row) || !isAdminUser"
+                    :class="[
+                      cellClass(rowIdx, 'commission_rate'),
+                      { 'disabled-area': !isRowEditable(row) || !isRowEditable(row) || !isAdminUser }
+                    ]"
+                    style="text-align:center;"
+                  />
+                </td>
+                <td style="text-align:right;width:7%;">
+                  <span :class="['readonly-span', !isRowEditable(row) ? 'disabled-area' : '']">{{ formatPaymentAmount(row.payment_amount) }}</span>
+                </td>
+                <td style="text-align:center;width:8%;">
                   <select
                     v-model="row.prescription_type"
                     :tabindex="isRowEditable(row) ? 0 : -1"
@@ -157,7 +215,7 @@
                     <option v-for="type in prescriptionTypeOptions" :key="type" :value="type">{{ type }}</option>
                   </select>
                 </td>
-                <td style="text-align:left; width:14%;">
+                <td style="text-align:left; width:12%;">
                   <input
                     v-model="row.remarks"
                     :tabindex="isRowEditable(row) ? 0 : -1"
@@ -173,7 +231,7 @@
                     style="text-align:left;"
                   />
                 </td>
-                <td class="action-cell" style="width:6%;">
+                <td class="action-cell" style="width:4%;">
                   <button 
                     class="btn-delete-sm" 
                     @click="confirmDeleteRow(rowIdx)" 
@@ -182,7 +240,7 @@
                     :class="{ 'disabled-area': !isRowEditable(row) }"
                   >삭제</button>
                 </td>
-                <td class="action-cell" style="width:6%;">
+                <td class="action-cell" style="width:4%;">
                   <button 
                     class="btn-add-sm" 
                     @click="confirmAddRowBelow(rowIdx)" 
@@ -191,7 +249,7 @@
                     :class="{ 'disabled-area': !isRowEditable(row) }"
                   >추가</button>
                 </td>
-                <td style="width:8%;text-align:center;">
+                <td style="width:4%;text-align:center;">
                   <span :class="getStatusClass(row.review_status || '대기')">
                     {{ getStatusLabel(row.review_status) }}
                   </span>
@@ -209,12 +267,14 @@
         position:sticky;
         bottom:0;z-index:2;">
         <table style="width:100%;table-layout:fixed;">
-          <tr>
-            <td style="width:43%;text-align:center;font-weight:bold;">합계</td>
-            <td style="width:10%;text-align:right;font-weight:bold;">{{ totalQty }}</td>
-            <td style="width:8.5%;text-align:right;font-weight:bold;">{{ totalAmount }}</td>
-            <td style="width:38.5%;"></td>
-          </tr>
+                      <tr>
+              <td style="width:43%;text-align:center;font-weight:bold;">합계</td>
+              <td style="width:6%;text-align:right;font-weight:bold;">{{ totalQty }}</td>
+              <td style="width:7%;text-align:right;font-weight:bold;">{{ totalAmount }}</td>
+              <td style="width:5%;"></td>
+              <td style="width:7%;text-align:right;font-weight:bold;">{{ totalPaymentAmount }}</td>
+              <td style="width:32%;"></td>
+            </tr>
         </table>
       </div>
     </div>
@@ -248,11 +308,17 @@ const inputRows = ref([{
   price: '', 
   prescription_qty: '', 
   prescription_amount: '', 
+          commission_rate: '', // 수수료율
+  payment_amount: '', // 지급액
   prescription_type: 'EDI', 
   remarks: '',
   commission_rate_a: null,
   commission_rate_b: null,
+  commission_rate_c: null,
+  commission_rate_d: null,
+  commission_rate_e: null,
   review_status: '대기',
+  selected: false, // 선택 체크박스
 }]);
 
 // 편집 가능 여부 (review_status에 따라 결정)
@@ -275,8 +341,12 @@ function getValidRows(rows) {
       prescription_qty: String(row.prescription_qty || '').replace(/,/g, ''),
       prescription_type: row.prescription_type,
       remarks: row.remarks || '',
+      commission_rate: String(row.commission_rate || '').replace(/,/g, '').replace(/%/g, ''),
       commission_rate_a: row.commission_rate_a,
-      commission_rate_b: row.commission_rate_b
+      commission_rate_b: row.commission_rate_b,
+      commission_rate_c: row.commission_rate_c,
+      commission_rate_d: row.commission_rate_d,
+      commission_rate_e: row.commission_rate_e
     }));
 }
 
@@ -291,7 +361,8 @@ function isRowsChanged(current, original) {
       a.product_id !== b.product_id ||
       String(a.prescription_qty || '').replace(/,/g, '') !== String(b.prescription_qty || '').replace(/,/g, '') ||
       a.prescription_type !== b.prescription_type ||
-      (a.remarks || '') !== (b.remarks || '')
+      (a.remarks || '') !== (b.remarks || '') ||
+      String(a.commission_rate || '').replace(/,/g, '') !== String(b.commission_rate || '').replace(/,/g, '')
     ) {
       return true;
     }
@@ -550,6 +621,8 @@ function handleProductNameInput(rowIndex, event) {
   if (query.length < 1) {
     productSearchForRow.value.show = false;
     productSearchForRow.value.results = [];
+    // 제품명이 삭제되면 관련 필드들 초기화
+    clearProductRelatedFields(rowIndex);
     console.log('show:', productSearchForRow.value.show, 'results:', productSearchForRow.value.results);
     return;
   }
@@ -586,7 +659,7 @@ function navigateProductSearchList(direction) {
   });
 }
 
-function applySelectedProduct(product, rowIndex) {
+async function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].product_name_display = product.product_name;
   inputRows.value[rowIndex].product_id = product.id;
   inputRows.value[rowIndex].insurance_code = product.insurance_code;
@@ -594,6 +667,60 @@ function applySelectedProduct(product, rowIndex) {
   inputRows.value[rowIndex].price = product.price ? Number(product.price).toLocaleString() : '';
   inputRows.value[rowIndex].commission_rate_a = product.commission_rate_a;
   inputRows.value[rowIndex].commission_rate_b = product.commission_rate_b;
+  inputRows.value[rowIndex].commission_rate_c = product.commission_rate_c;
+  inputRows.value[rowIndex].commission_rate_d = product.commission_rate_d;
+  inputRows.value[rowIndex].commission_rate_e = product.commission_rate_e;
+  
+  // 등급에 맞는 수수료율 자동 설정
+  const clientId = route.query.clientId;
+  const companyId = route.query.companyId;
+  let myCompany;
+  
+  if (companyId) {
+    // 관리자가 특정 업체의 실적을 등록하는 경우
+    const { data } = await supabase.from('companies').select('id').eq('id', companyId).single();
+    myCompany = data;
+  } else {
+    // 일반 사용자가 자신의 실적을 등록하는 경우
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserUid = session?.user?.id;
+    const { data } = await supabase.from('companies').select('id').eq('user_id', currentUserUid).single();
+    myCompany = data;
+  }
+  
+  if (myCompany && clientId) {
+    const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(clientId));
+    let commissionRate = 0;
+    
+    if (grade === 'A') {
+      commissionRate = product.commission_rate_a;
+    } else if (grade === 'B') {
+      commissionRate = product.commission_rate_b;
+    } else if (grade === 'C') {
+      commissionRate = product.commission_rate_c;
+    } else if (grade === 'D') {
+      commissionRate = product.commission_rate_d;
+    } else if (grade === 'E') {
+      commissionRate = product.commission_rate_e;
+    }
+    
+    if (commissionRate !== null && commissionRate !== undefined) {
+      inputRows.value[rowIndex].commission_rate = (Number(commissionRate) * 100).toFixed(1) + '%';
+    } else {
+      inputRows.value[rowIndex].commission_rate = '';
+    }
+  } else {
+    // 기본값은 A등급 수수료율
+    if (product.commission_rate_a !== null && product.commission_rate_a !== undefined) {
+      inputRows.value[rowIndex].commission_rate = (Number(product.commission_rate_a) * 100).toFixed(1) + '%';
+    } else {
+      inputRows.value[rowIndex].commission_rate = '';
+    }
+  }
+  
+  // 제품 정보 설정 후 처방액과 지급액 계산
+  calculateAmounts(rowIndex);
+  
   productSearchForRow.value.show = false;
   productSearchForRow.value.activeRowIndex = -1;
   nextTick(() => {
@@ -628,10 +755,27 @@ function hideProductSearchList(rowIndex) {
   if (productSearchForRow.value.activeRowIndex === rowIndex) {
     if (!inputRows.value[rowIndex].product_id) {
       inputRows.value[rowIndex].product_name_display = '';
+      // 제품 정보가 없으면 관련 필드들 초기화
+      clearProductRelatedFields(rowIndex);
     }
     productSearchForRow.value.show = false;
     productSearchForRow.value.activeRowIndex = -1;
   }
+}
+
+// 제품 관련 필드들을 초기화하는 함수
+function clearProductRelatedFields(rowIndex) {
+  const row = inputRows.value[rowIndex];
+  row.insurance_code = '';
+  row.price = '';
+  row.prescription_amount = '';
+  row.commission_rate = '';
+  row.payment_amount = '';
+  row.commission_rate_a = null;
+  row.commission_rate_b = null;
+  row.commission_rate_c = null;
+  row.commission_rate_d = null;
+  row.commission_rate_e = null;
 }
 
 function toggleProductDropdown(rowIndex) {
@@ -693,6 +837,32 @@ function handleFieldFocus(rowIdx, col) {
   currentCell.value = { row: rowIdx, col: col };
 }
 
+// 수수료율 포커스 핸들러
+function handleCommissionRateFocus(rowIdx) {
+  if (!isInputEnabled.value) {
+    event.target.blur();
+    return;
+  }
+  
+  // 제품 검색 드롭다운이 열려있으면 포커스 차단
+  if (isProductSearchOpen.value) {
+    event.target.blur();
+    return;
+  }
+  
+  // 포커스 시 백분율 기호 제거하고 숫자만 표시 (42.0% -> 42)
+  const row = inputRows.value[rowIdx];
+  if (row.commission_rate) {
+    const rate = Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, ''));
+    if (!isNaN(rate)) {
+      // 백분율 형태에서 숫자만 추출하여 표시
+      row.commission_rate = rate.toFixed(0);
+    }
+  }
+  
+  currentCell.value = { row: rowIdx, col: 'commission_rate' };
+}
+
 // 처방수량 필드 포커스 핸들러
 function handlePrescriptionQtyFocus(rowIdx) {
   if (!isInputEnabled.value) { // Added .value
@@ -720,11 +890,12 @@ function focusField(rowIdx, col) {
     if (!row) return;
 
     let el = null;
-    if (col === 'prescription_month') el = row.querySelector('td:nth-child(1) select');
-    else if (col === 'product_name') el = row.querySelector('td:nth-child(3) input');
-    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(6) input');
-    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(8) select');
-    else if (col === 'remarks') el = row.querySelector('td:nth-child(9) input');
+    if (col === 'prescription_month') el = row.querySelector('td:nth-child(3) select');
+    else if (col === 'product_name') el = row.querySelector('td:nth-child(4) input');
+    else if (col === 'prescription_qty') el = row.querySelector('td:nth-child(7) input');
+    else if (col === 'commission_rate') el = row.querySelector('td:nth-child(9) input');
+    else if (col === 'prescription_type') el = row.querySelector('td:nth-child(11) select');
+    else if (col === 'remarks') el = row.querySelector('td:nth-child(12) input');
  
     if (el) {
       el.focus();
@@ -765,11 +936,14 @@ function addOrFocusNextRow(rowIdx) {
         price: '', 
         prescription_qty: '', 
         prescription_amount: '', 
+        commission_rate: '',
+        payment_amount: '',
         prescription_type: 'EDI',
         remarks: '',
         commission_rate_a: null,
         commission_rate_b: null,
         review_status: '대기',
+        selected: false,
       });
     }
     // 다음 행의 제품명으로 이동
@@ -793,11 +967,14 @@ function addOrFocusNextRow(rowIdx) {
         price: '', 
         prescription_qty: '', 
         prescription_amount: '', 
+        commission_rate: '',
+        payment_amount: '',
         prescription_type: 'EDI',
         remarks: '',
         commission_rate_a: null,
         commission_rate_b: null,
         review_status: '대기',
+        selected: false,
       });
     }
     // 다음 행의 제품명으로 이동
@@ -817,9 +994,102 @@ function onQtyInput(rowIdx) {
   const price = Number(inputRows.value[rowIdx].price.toString().replace(/,/g, ''));
   if (!isNaN(qty) && !isNaN(price) && price > 0) {
     inputRows.value[rowIdx].prescription_amount = (qty * price).toLocaleString();
+    // 처방액이 변경되면 지급액도 재계산
+    calculatePaymentAmount(rowIdx);
   } else {
     inputRows.value[rowIdx].prescription_amount = '';
+    inputRows.value[rowIdx].payment_amount = '';
   }
+}
+
+// 처방액과 지급액을 모두 계산하는 함수
+function calculateAmounts(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  const qty = Number(row.prescription_qty.toString().replace(/,/g, ''));
+  const price = Number(row.price.toString().replace(/,/g, ''));
+  
+  // 처방액 계산 (처방수량과 단가가 모두 있을 때만)
+  if (!isNaN(qty) && qty > 0 && !isNaN(price) && price > 0) {
+    row.prescription_amount = (qty * price).toLocaleString();
+  } else {
+    row.prescription_amount = '';
+  }
+  
+  // 지급액 계산
+  calculatePaymentAmount(rowIdx);
+}
+
+// 수수료율 입력 시 지급액 계산
+function onCommissionRateInput(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  // 백분율 기호 제거하고 숫자만 추출
+  let rate = row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '');
+  if (rate && !isNaN(Number(rate))) {
+    // 입력값을 그대로 저장 (포커스 아웃 시 변환)
+    row.commission_rate = rate;
+  }
+  calculateAmounts(rowIdx);
+}
+
+// 지급액 계산 함수
+function calculatePaymentAmount(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  const prescriptionAmount = Number(row.prescription_amount.toString().replace(/,/g, ''));
+  const commissionRate = Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, ''));
+  
+  console.log(`지급액 계산 - 행 ${rowIdx}:`, {
+    prescriptionAmount,
+    commissionRate,
+    commissionRateRaw: row.commission_rate
+  });
+  
+  // 지급액 계산 (처방액과 수수료율이 모두 있을 때만)
+  if (!isNaN(prescriptionAmount) && prescriptionAmount > 0 && !isNaN(commissionRate) && commissionRate >= 0) {
+    // commissionRate는 백분율 형태이므로 그대로 사용 (100배 계산)
+    const rateForCalculation = commissionRate;
+    const paymentAmount = (prescriptionAmount * rateForCalculation / 100);
+    row.payment_amount = paymentAmount.toLocaleString();
+    
+    console.log(`지급액 계산 결과:`, {
+      rateForCalculation,
+      paymentAmount,
+      formattedPaymentAmount: row.payment_amount
+    });
+  } else {
+    row.payment_amount = '';
+    console.log(`지급액 계산 실패:`, {
+      prescriptionAmountValid: !isNaN(prescriptionAmount),
+      commissionRateValid: !isNaN(commissionRate),
+      prescriptionAmountPositive: prescriptionAmount > 0
+    });
+  }
+}
+
+// 수수료율 포맷팅 함수 (백분율로 표시)
+function formatCommissionRate(rowIdx) {
+  const row = inputRows.value[rowIdx];
+  if (row.commission_rate) {
+    const rate = Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, ''));
+    if (!isNaN(rate)) {
+      // 입력값을 소수점으로 변환 (42 -> 0.42)
+      const decimalRate = (rate / 100).toFixed(3);
+      row.commission_rate = decimalRate;
+      
+      // 표시용으로 백분율로 변환 (0.42 -> 42.0%)
+      const displayRate = (Number(decimalRate) * 100).toFixed(1);
+      row.commission_rate = displayRate + '%';
+    }
+  }
+}
+
+// 지급액 포맷팅 함수 (정수로 표시)
+function formatPaymentAmount(paymentAmount) {
+  if (!paymentAmount) return '';
+  const amount = Number(paymentAmount.toString().replace(/,/g, ''));
+  if (!isNaN(amount)) {
+    return Math.round(amount).toLocaleString();
+  }
+  return paymentAmount;
 }
 
 function onArrowKey(e, rowIdx, col) {
@@ -834,7 +1104,7 @@ function onArrowKey(e, rowIdx, col) {
   if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
   e.preventDefault();
 
-  const cols = ["prescription_month", "product_name", "prescription_qty", "prescription_type", "remarks"];
+  const cols = ["prescription_month", "product_name", "prescription_qty", "commission_rate", "prescription_type", "remarks"];
   const currentColIdx = cols.indexOf(col);
 
   if (currentColIdx === -1) return;
@@ -933,7 +1203,8 @@ async function savePerformanceData() {
       currentRow.product_id !== originalRow.product_id ||
       currentRow.prescription_qty !== originalRow.prescription_qty ||
       currentRow.prescription_type !== originalRow.prescription_type ||
-      currentRow.remarks !== originalRow.remarks
+      currentRow.remarks !== originalRow.remarks ||
+      currentRow.commission_rate !== originalRow.commission_rate
     );
   });
 
@@ -953,6 +1224,12 @@ async function savePerformanceData() {
         commissionRate = row.commission_rate_a;
       } else if (grade === 'B') {
         commissionRate = row.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = row.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = row.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = row.commission_rate_e;
       }
 
       return {
@@ -966,7 +1243,7 @@ async function savePerformanceData() {
       remarks: row.remarks,
       registered_by: currentUserUid, // 실제 등록한 사용자 ID (관리자 또는 일반사용자)
         review_status: reviewStatus,
-        commission_rate: commissionRate
+        commission_rate: Number((Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100).toFixed(3)) || commissionRate
       };
     });
     const { error } = await supabase.from('performance_records').insert(dataToInsert);
@@ -986,6 +1263,12 @@ async function savePerformanceData() {
         commissionRate = row.commission_rate_a;
       } else if (grade === 'B') {
         commissionRate = row.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = row.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = row.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = row.commission_rate_e;
       }
       return supabase
         .from('performance_records')
@@ -995,7 +1278,7 @@ async function savePerformanceData() {
           prescription_qty: Number(row.prescription_qty),
           prescription_type: row.prescription_type,
           remarks: row.remarks,
-          commission_rate: commissionRate,
+          commission_rate: Number((Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100).toFixed(3)) || commissionRate,
           review_status: reviewStatus,
           updated_by: currentUserUid,
           updated_at: new Date().toISOString()
@@ -1076,6 +1359,35 @@ async function onSave() {
   // 저장 후에는 originalRows를 inputRows에서 입력된 행만 복사해서 동기화
   originalRows.value = getValidRows(inputRows.value).map(row => ({ ...row }));
   // canSave.value = false; // canSave is a computed property, no need to set it manually
+  
+  // 저장 성공 시 변경사항 플래그 리셋
+  hasUnsavedChanges.value = false;
+  isLeaving.value = false;
+}
+
+// 클라이언트 정산 비고 정보 가져오기
+async function loadClientSettlementRemarks() {
+  const clientId = route.query.clientId;
+  if (!clientId) return;
+  
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('remarks_settlement')
+      .eq('id', clientId)
+      .single();
+    
+    if (error) {
+      console.error('클라이언트 정산 비고 조회 오류:', error);
+      return;
+    }
+    
+    if (data && data.remarks_settlement) {
+      clientSettlementRemarks.value = data.remarks_settlement;
+    }
+  } catch (err) {
+    console.error('클라이언트 정산 비고 로드 오류:', err);
+  }
 }
 
 // 기존 실적 데이터 불러오기
@@ -1133,11 +1445,18 @@ async function loadExistingData() {
         prescription_amount: record.prescription_qty && record.products?.price 
           ? (record.prescription_qty * record.products.price).toLocaleString() 
           : '',
+        commission_rate: record.commission_rate !== null && record.commission_rate !== undefined ? (Number(record.commission_rate) * 100).toFixed(1) + '%' : '',
+        payment_amount: record.commission_rate !== null && record.commission_rate !== undefined && record.prescription_qty && record.products?.price
+          ? (record.prescription_qty * record.products.price * record.commission_rate).toLocaleString()
+          : (record.prescription_qty && record.products?.price ? '0' : ''),
         prescription_type: record.prescription_type || 'EDI',
         remarks: record.remarks || '',
         review_status: record.review_status || '대기',
         commission_rate_a: record.products?.commission_rate_a,
         commission_rate_b: record.products?.commission_rate_b,
+        commission_rate_c: record.products?.commission_rate_c,
+        commission_rate_d: record.products?.commission_rate_d,
+        commission_rate_e: record.products?.commission_rate_e,
       }));
       
       // *** MODIFICATION START ***
@@ -1171,6 +1490,9 @@ async function loadExistingData() {
         review_status: '대기',
         commission_rate_a: null,
         commission_rate_b: null,
+        commission_rate_c: null,
+        commission_rate_d: null,
+        commission_rate_e: null,
       });
     }
   } catch (err) {
@@ -1181,19 +1503,35 @@ async function loadExistingData() {
 // 합계 계산
 const totalQty = computed(() => {
   const total = inputRows.value.reduce((sum, row) => {
-    const qty = Number(row.prescription_qty.toString().replace(/,/g, '')) || 0;
+    const prescriptionQty = row.prescription_qty;
+    if (!prescriptionQty) return sum;
+    const qty = Number(prescriptionQty.toString().replace(/,/g, '')) || 0;
     return sum + qty;
   }, 0);
   return total.toLocaleString();
 });
 const totalAmount = computed(() => {
-  return inputRows.value.reduce((sum, row) => sum + (Number(row.prescription_amount.toString().replace(/,/g, '')) || 0), 0).toLocaleString();
+  return inputRows.value.reduce((sum, row) => {
+    const prescriptionAmount = row.prescription_amount;
+    if (!prescriptionAmount) return sum;
+    const amount = Number(prescriptionAmount.toString().replace(/,/g, '')) || 0;
+    return sum + amount;
+  }, 0).toLocaleString();
+});
+
+const totalPaymentAmount = computed(() => {
+  return inputRows.value.reduce((sum, row) => {
+    const paymentAmount = row.payment_amount;
+    if (!paymentAmount) return sum;
+    const amount = Number(paymentAmount.toString().replace(/,/g, '')) || 0;
+    return sum + amount;
+  }, 0).toLocaleString();
 });
 // 행 추가/행 삭제
 function addRowBelow(idx) {
   inputRows.value.splice(idx + 1, 0, {
     prescription_month: getDefaultPrescriptionMonth(),
-    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', prescription_type: 'EDI', remarks: '', review_status: '대기', commission_rate_a: null, commission_rate_b: null,
+    product_name_display: '', product_id: null, insurance_code: '', price: '', prescription_qty: '', prescription_amount: '', commission_rate: '', payment_amount: '', prescription_type: 'EDI', remarks: '', review_status: '대기', commission_rate_a: null, commission_rate_b: null, commission_rate_c: null, commission_rate_d: null, commission_rate_e: null, selected: false,
   });
   nextTick(() => focusField(idx + 1, 'product_name'));
 }
@@ -1239,10 +1577,16 @@ function resetRow(rowIdx) {
   row.price = '';
   row.prescription_qty = '';
   row.prescription_amount = '';
+  row.commission_rate = '';
+  row.payment_amount = '';
   row.prescription_type = 'EDI';
   row.remarks = '';
   row.commission_rate_a = null;
   row.commission_rate_b = null;
+  row.commission_rate_c = null;
+  row.commission_rate_d = null;
+  row.commission_rate_e = null;
+  row.selected = false;
   
   // 제품 검색 드롭다운 숨기기
   if (productSearchForRow.value.show && productSearchForRow.value.activeRowIndex === rowIdx) {
@@ -1258,30 +1602,31 @@ function resetRow(rowIdx) {
 
 // 단축키 처리
 function handleGlobalKeydown(e) {
-  // 제품 검색 드롭다운이 열려있으면 Insert/Delete/Escape 키 차단
+  // 제품 검색 드롭다운이 열려있으면 Insert/Escape 키 차단
   if (isProductSearchOpen.value) {
-    if (e.key === 'Delete' || e.key === 'Insert' || e.key === 'Escape') {
+    if (e.key === 'Insert' || e.key === 'Escape') {
       e.preventDefault();
       return;
     }
   }
   
-  if (e.key === 'Delete') {
-    e.preventDefault();
-    const currentRowIdx = currentCell.value.row;
-    if (inputRows.value.length > 1) {
-      confirmDeleteRow(currentRowIdx);
-    }
-  } else if (e.key === 'Insert') {
+  if (e.key === 'Insert') {
     e.preventDefault();
     const currentRowIdx = currentCell.value.row;
     confirmAddRowBelow(currentRowIdx);
   } else if (e.key === 'Escape') {
     e.preventDefault();
-    const currentRowIdx = currentCell.value.row;
-    // 편집 가능한 행만 초기화
-    if (isRowEditable(inputRows.value[currentRowIdx])) {
-      resetRow(currentRowIdx);
+    // 현재 포커스된 요소를 기반으로 행 인덱스 찾기
+    const activeElement = document.activeElement;
+    const table = document.querySelector('.input-table');
+    if (table && activeElement) {
+      const row = activeElement.closest('tr');
+      if (row) {
+        const rowIndex = Array.from(table.querySelectorAll('tbody tr')).indexOf(row);
+        if (rowIndex !== -1 && isRowEditable(inputRows.value[rowIndex])) {
+          resetRow(rowIndex);
+        }
+      }
     }
   }
 }
@@ -1302,8 +1647,33 @@ function handleGlobalClick(e) {
   }
 }
 
+// 이탈방지 핸들러
+function handleBeforeUnload(e) {
+  if (hasUnsavedChanges.value && !isLeaving.value) {
+    e.preventDefault();
+    e.returnValue = '저장하지 않고 나가시겠습니까?';
+    return '저장하지 않고 나가시겠습니까?';
+  }
+}
+
+// 이탈 확인 후 처리 함수
+function confirmAndLeave() {
+  if (confirm('저장하지 않고 나가시겠습니까?')) {
+    isLeaving.value = true;
+    return true;
+  }
+  return false;
+}
+
 // 사용자 권한 정보를 저장할 ref
 const isAdminUser = ref(false);
+
+// 클라이언트 정산 비고 정보
+const clientSettlementRemarks = ref('');
+
+// 이탈방지 관련 변수
+const hasUnsavedChanges = ref(false);
+const isLeaving = ref(false);
 
 function isRowEditable(row) {
   const status = row.review_status;
@@ -1340,14 +1710,23 @@ watch(inputRows, (rows) => {
       price: '',
       prescription_qty: '',
       prescription_amount: '',
+              commission_rate: '',
+      payment_amount: '',
       prescription_type: 'EDI',
       remarks: '',
       review_status: '대기',
       commission_rate_a: null,
       commission_rate_b: null,
+      selected: false,
     });
   }
 }, { deep: true });
+
+// 변경사항 추적
+watch(canSave, (newValue) => {
+  hasUnsavedChanges.value = newValue;
+});
+
 // 라이프사이클
 onMounted(async () => {
   // 사용자 권한 확인
@@ -1365,6 +1744,7 @@ onMounted(async () => {
     prescriptionMonth.value = getPrescriptionMonth(selectedSettlementMonth.value, 1);
   }
   await fetchProducts(prescriptionMonth.value);
+  await loadClientSettlementRemarks(); // 클라이언트 정산 비고 정보 로드
   await loadExistingData(); // 기존 실적 데이터 불러오기
   // 편집 상태 확인
   await checkPerformanceEditStatus();
@@ -1381,6 +1761,22 @@ onMounted(async () => {
   document.addEventListener('keydown', handleGlobalKeydown);
   document.addEventListener('click', handleGlobalClick);
 
+  // 이탈방지 이벤트 리스너 추가
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+  // Vue Router 네비게이션 가드 추가
+  const unregisterGuard = router.beforeEach((to, from, next) => {
+    if (from.path === route.path && hasUnsavedChanges.value && !isLeaving.value) {
+      if (confirmAndLeave()) {
+        next();
+      } else {
+        next(false);
+      }
+    } else {
+      next();
+    }
+  });
+
   // 최초 1행의 처방월 값
   const firstMonth = inputRows.value[0].prescription_month;
   if (firstMonth) {
@@ -1391,6 +1787,11 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalKeydown);
   document.removeEventListener('click', handleGlobalClick);
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  // 네비게이션 가드 제거
+  if (typeof unregisterGuard === 'function') {
+    unregisterGuard();
+  }
 });
 
 // 새 행 추가 시 prescription_month 기본값 적용
@@ -1402,13 +1803,82 @@ function getDefaultPrescriptionMonth() {
 // 유효 실적 건수
 const validRowCount = computed(() => getValidRows(inputRows.value).length);
 
+// 선택 관련 computed 속성들
+const isAllSelected = computed(() => {
+  const validRows = inputRows.value.filter(row => row.product_id && row.prescription_qty);
+  return validRows.length > 0 && validRows.every(row => row.selected);
+});
+
+const hasSelectedItems = computed(() => {
+  return inputRows.value.some(row => row.selected);
+});
+
+// 선택 관련 함수들
+function toggleSelectAll() {
+  const validRows = inputRows.value.filter(row => row.product_id && row.prescription_qty);
+  const newState = !isAllSelected.value;
+  validRows.forEach(row => {
+    row.selected = newState;
+  });
+}
+
+function deleteSelected() {
+  const selectedRows = inputRows.value.filter(row => row.selected);
+  if (selectedRows.length === 0) return;
+  
+  if (confirm(`선택된 ${selectedRows.length}건의 실적을 삭제하시겠습니까?`)) {
+    // 선택된 행들을 제거 (마지막 빈 행은 유지)
+    const rowsToRemove = selectedRows.filter(row => !row.product_id || !row.prescription_qty);
+    rowsToRemove.forEach(row => {
+      const index = inputRows.value.indexOf(row);
+      if (index > -1) {
+        inputRows.value.splice(index, 1);
+      }
+    });
+    
+    // 선택된 행들을 초기화
+    selectedRows.forEach(row => {
+      if (row.product_id || row.prescription_qty) {
+        row.prescription_month = getDefaultPrescriptionMonth();
+        row.product_name_display = '';
+        row.product_id = null;
+        row.insurance_code = '';
+        row.price = '';
+        row.prescription_qty = '';
+        row.prescription_amount = '';
+        row.commission_rate = '';
+        row.payment_amount = '';
+        row.prescription_type = 'EDI';
+        row.remarks = '';
+        row.commission_rate_a = null;
+        row.commission_rate_b = null;
+        row.selected = false;
+      }
+    });
+  }
+}
+
 function goBackToList() {
-  if (route.query.companyId) {
-    // 관리자가 대신 등록한 경우
-    router.push('/admin/performance/register');
+  // 변경사항이 있으면 확인 후 이동
+  if (hasUnsavedChanges.value) {
+    if (confirmAndLeave()) {
+      if (route.query.companyId) {
+        // 관리자가 대신 등록한 경우
+        router.push('/admin/performance/register');
+      } else {
+        // 일반 사용자가 등록한 경우
+        router.push('/performance/register');
+      }
+    }
   } else {
-    // 일반 사용자가 등록한 경우
-    router.push('/performance/register');
+    // 변경사항이 없으면 바로 이동
+    if (route.query.companyId) {
+      // 관리자가 대신 등록한 경우
+      router.push('/admin/performance/register');
+    } else {
+      // 일반 사용자가 등록한 경우
+      router.push('/performance/register');
+    }
   }
 }
 
@@ -1553,6 +2023,33 @@ async function handlePrescriptionMonthChange(rowIdx) {
   box-shadow: none !important;
 }
 
+/* 체크박스 스타일 */
+input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer !important;
+  accent-color: #1976d2 !important;
+}
+
+input[type="checkbox"]:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+/* 테이블 레이아웃 고정 */
+.table-header-fixed table,
+.table-body-scroll table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+.table-header-fixed th,
+.table-body-scroll td {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
 .status-warning {
   background: #fff3cd;
   color: #856404;
@@ -1563,5 +2060,88 @@ async function handlePrescriptionMonthChange(rowIdx) {
 .back-btn:hover {
   color: #1976d2;
   text-decoration: underline;
+}
+
+/* 제품 검색 드롭다운 스타일 */
+.product-search-dropdown {
+  position: absolute !important;
+  background: white !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1000 !important;
+  max-height: 480px !important; /* 기존보다 2배로 증가 */
+  overflow-y: auto !important;
+  width: 280px !important;
+}
+
+.product-search-dropdown ul {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.product-search-dropdown li {
+  cursor: pointer !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 2.0rem !important;
+}
+
+.product-search-dropdown li:hover,
+.product-search-dropdown li.selected {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+}
+
+.product-search-dropdown li.selected * {
+  color: #fff !important;
+}
+
+.product-search-dropdown li.selected .product-name {
+  color: #fff !important;
+  color: white !important;
+}
+
+.product-search-dropdown li:last-child {
+  border-bottom: none !important;
+}
+
+.product-item {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0 0.5rem !important;
+  min-height: 1.0rem !important;
+}
+
+.product-name {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  color: #222 !important;
+  text-align: left !important;
+}
+.product-name:hover,
+li.selected .product-name,
+.product-search-dropdown li.selected .product-name,
+.product-search-dropdown li.selected div .product-name {
+  color: #fff !important;
+}
+
+.insurance-code {
+  font-size: 0.85rem !important;
+  font-weight: 400 !important;
+  color: #444 !important;
+  text-align: right !important;
+  flex-shrink: 0 !important;
+}
+.insurance-code:hover,
+li.selected .insurance-code,
+.product-search-dropdown li.selected .insurance-code,
+.product-search-dropdown li.selected div .insurance-code {
+  color: #fff !important;
 }
 </style>

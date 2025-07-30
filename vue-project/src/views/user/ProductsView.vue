@@ -137,6 +137,12 @@ function getCommissionRate(product) {
     rate = product.commission_rate_a || 0;
   } else if (userCommissionGrade.value === 'B') {
     rate = product.commission_rate_b || 0;
+  } else if (userCommissionGrade.value === 'C') {
+    rate = product.commission_rate_c || 0;
+  } else if (userCommissionGrade.value === 'D') {
+    rate = product.commission_rate_d || 0;
+  } else if (userCommissionGrade.value === 'E') {
+    rate = product.commission_rate_e || 0;
   } else {
     rate = product.commission_rate_a || 0;
   }
