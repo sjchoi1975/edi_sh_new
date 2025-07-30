@@ -1022,7 +1022,7 @@ function formatCommissionRate(rowIdx) {
     const rate = Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, ''));
     if (!isNaN(rate)) {
       // 입력값을 소수점으로 변환 (42 -> 0.42)
-      const decimalRate = (rate / 100).toFixed(2);
+      const decimalRate = (rate / 100).toFixed(3);
       row.commission_rate = decimalRate;
       
       // 표시용으로 백분율로 변환 (0.42 -> 42.0%)
@@ -1187,7 +1187,7 @@ async function savePerformanceData() {
       remarks: row.remarks,
       registered_by: currentUserUid, // 실제 등록한 사용자 ID (관리자 또는 일반사용자)
         review_status: reviewStatus,
-        commission_rate: Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100 || commissionRate
+        commission_rate: Number((Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100).toFixed(3)) || commissionRate
       };
     });
     const { error } = await supabase.from('performance_records').insert(dataToInsert);
@@ -1216,7 +1216,7 @@ async function savePerformanceData() {
           prescription_qty: Number(row.prescription_qty),
           prescription_type: row.prescription_type,
           remarks: row.remarks,
-          commission_rate: Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100 || commissionRate,
+          commission_rate: Number((Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100).toFixed(3)) || commissionRate,
           review_status: reviewStatus,
           updated_by: currentUserUid,
           updated_at: new Date().toISOString()
