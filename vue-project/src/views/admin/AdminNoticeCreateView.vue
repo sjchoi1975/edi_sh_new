@@ -12,15 +12,15 @@
         <textarea v-model="content" ref="contentArea" rows="12" required @input="adjustTextareaHeight"></textarea>
       </div>
       <div class="form-group">
-        <label>필수</label>
+        <label style="margin-bottom:0.5rem !important;">필수</label>
         <input type="checkbox" v-model="isPinned" id="requiredCheck" style="width:16px; height:16px; vertical-align:middle;" />
       </div>
       <div class="form-group">
-        <label>파일 첨부</label>
+        <label style="margin-top:0.5rem !important; margin-bottom:0.5rem !important;">파일 첨부</label>
         <div>
-          <label class="file-upload-label" style="margin-top:1rem;">
+          <label class="file-upload-label" style="font-size:0.85rem !important;">
             파일 선택
-            <input type="file" multiple @change="onFileChange" style="display:none; margin-top:1rem;" />
+            <input type="file" multiple @change="onFileChange" style="display:none;" />
           </label>
           <div v-if="files.length" style="margin-top:1rem;">
             <div v-for="(f, idx) in files" :key="f.name + idx" style="display:flex;align-items:center;margin-bottom:0.5rem;">
@@ -101,13 +101,21 @@ const handleSubmit = async () => {
     fileUrls.push(url);
   }
 
+  // 현재 사용자 정보 가져오기
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
   const { error: insertError } = await supabase.from('notices').insert([
     {
       title: title.value,
       content: content.value,
       is_pinned: isPinned.value,
       view_count: 0,
-      file_url: fileUrls
+      file_url: fileUrls,
+      created_by: user.id
     }
   ]);
   if (insertError) {

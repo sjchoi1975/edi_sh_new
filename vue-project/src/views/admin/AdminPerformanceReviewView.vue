@@ -57,13 +57,11 @@
           필터 조건을 선택하고 '불러오기'를 클릭하세요.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
-           <button class="btn-secondary" @click="selectAll" :disabled="isAnyEditing" style="margin-right: 1rem;">전체 선택</button>
-           <button class="btn-secondary" @click="unselectAll" :disabled="isAnyEditing" style="margin-right: 1rem;">전체 해제</button>
            <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
              검수 상태 변경 ({{ selectedRows.length }}건)
            </button>
-           <button class="btn-primary" @click="openPrescriptionTypeModal" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
-             처방구분변경 ({{ selectedRows.length }}건)
+           <button class="btn-primary" @click="openBulkChangeModal" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
+             일괄 변경 ({{ selectedRows.length }}건)
            </button>
            <button class="btn-warning" @click="excludeFromReview" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing">
              검수 대상 제외 ({{ selectedRows.length }}건)
@@ -208,12 +206,28 @@
             </template>
           </Column>
 
-          <Column :headerStyle="{ width: columnWidths.checkbox }" :frozen="false">
+          <Column :headerStyle="{ width: columnWidths.checkbox, textAlign: 'center' }" :frozen="false">
             <template #header>
-              <span style="font-weight: 500 !important; text-align: center !important; margin-left: 10px !important;">선택</span>
+              <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+                <input 
+                  type="checkbox" 
+                  :checked="isAllSelected" 
+                  :indeterminate="isIndeterminate"
+                  @change="toggleAllSelection"
+                  class="share-checkbox"
+                />
+              </div>
             </template>
             <template #body="slotProps">
-              <Checkbox v-model="selectedRows" :value="slotProps.data" :disabled="slotProps.data.review_action === '삭제'" />
+              <div style="display: flex; justify-content: center; align-items: center;">
+                <input 
+                  type="checkbox" 
+                  :checked="selectedRows.includes(slotProps.data)"
+                  :disabled="slotProps.data.review_action === '삭제'"
+                  @change="toggleRowSelection(slotProps.data)"
+                  class="share-checkbox"
+                />
+              </div>
             </template>
           </Column>
 
@@ -289,15 +303,33 @@
       </div>
     </div>
   </div>
-  <div v-if="showPrescriptionTypeModal" class="modal-mask" style="position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+  <!-- 일괄 변경 항목 선택 모달 -->
+  <div v-if="showBulkChangeModal" class="modal-mask" style="position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
     <div class="modal-dialog" style="background: #fff; border-radius: 8px; padding: 32px 24px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15);">
-      <div style="font-size: 1.1em; margin-bottom: 16px;">처방구분을 일괄변경하시겠습니까?</div>
-      <select v-model="selectedPrescriptionType" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
-        <option v-for="type in prescriptionTypeOptionsForBulk" :key="type" :value="type">{{ type }}</option>
+      <div style="font-size: 1.1em; margin-bottom: 16px;">일괄 변경할 항목을 선택해주세요.</div>
+      <select v-model="selectedBulkChangeType" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
+        <option value="">항목을 선택하세요</option>
+        <option value="company_name">업체명</option>
+        <option value="prescription_type">처방구분</option>
       </select>
       <div style="display: flex; gap: 12px; justify-content: flex-end;">
-        <button class="btn-primary" @click="handleBulkPrescriptionTypeUpdate">확인</button>
-        <button class="btn-secondary" @click="closePrescriptionTypeModal">취소</button>
+        <button class="btn-primary" @click="openBulkChangeValueModal" :disabled="!selectedBulkChangeType">확인</button>
+        <button class="btn-secondary" @click="closeBulkChangeModal">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 일괄 변경 값 선택 모달 -->
+  <div v-if="showBulkChangeValueModal" class="modal-mask" style="position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="background: #fff; border-radius: 8px; padding: 32px 24px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15);">
+      <div style="font-size: 1.1em; margin-bottom: 16px;">일괄 변경할 {{ getBulkChangeTypeLabel() }}을 선택해주세요.</div>
+      <select v-model="selectedBulkChangeValue" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
+        <option value="">값을 선택하세요</option>
+        <option v-for="option in bulkChangeOptions" :key="option" :value="option">{{ option }}</option>
+      </select>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn-primary" @click="handleBulkChange">확인</button>
+        <button class="btn-secondary" @click="closeBulkChangeValueModal">취소</button>
       </div>
     </div>
   </div>
@@ -396,8 +428,46 @@ const productsByMonth = ref({}); // { '2025-06': [...], '2025-05': [...], ... }
 const productInputRefs = ref({});
 const currentPageFirstIndex = ref(0);
 
+// --- 일괄 변경 모달 관련 변수 ---
+const showBulkChangeModal = ref(false);
+const showBulkChangeValueModal = ref(false);
+const selectedBulkChangeType = ref('');
+const selectedBulkChangeValue = ref('');
+
 // --- Computed 속성 ---
 const isAnyEditing = computed(() => activeEditingRowId.value !== null);
+
+// --- 헤더 체크박스 상태 관리 ---
+const isAllSelected = computed(() => {
+  if (displayRows.value.length === 0) return false;
+  const selectableRows = displayRows.value.filter(row => row.review_action !== '삭제');
+  if (selectableRows.length === 0) return false;
+  return selectableRows.every(row => selectedRows.value.includes(row));
+});
+
+const isIndeterminate = computed(() => {
+  if (displayRows.value.length === 0) return false;
+  const selectableRows = displayRows.value.filter(row => row.review_action !== '삭제');
+  if (selectableRows.length === 0) return false;
+  const selectedCount = selectableRows.filter(row => selectedRows.value.includes(row)).length;
+  return selectedCount > 0 && selectedCount < selectableRows.length;
+});
+
+// --- 일괄 변경 관련 computed 속성 ---
+const bulkChangeOptions = computed(() => {
+  if (!selectedBulkChangeType.value) return [];
+  
+  switch (selectedBulkChangeType.value) {
+    case 'company_name':
+      // 현재 선택된 행들의 고유한 업체명 목록
+      const uniqueCompanies = [...new Set(monthlyCompanies.value.map(company => company.company_name))];
+      return uniqueCompanies;
+    case 'prescription_type':
+      return prescriptionTypeOptions;
+    default:
+      return [];
+  }
+});
 
 const displayRows = computed(() => {
   let filteredRows = rows.value;
@@ -1193,13 +1263,30 @@ const restoreRow = async (row) => {
   }
 };
 
-// --- 상단 버튼 액션 함수 ---
-function selectAll() {
-  selectedRows.value = displayRows.value.filter(record => record.review_action !== '삭제');
+// --- 헤더 체크박스 액션 함수 ---
+function toggleAllSelection() {
+  const selectableRows = displayRows.value.filter(record => record.review_action !== '삭제');
+  if (isAllSelected.value) {
+    // 전체 해제
+    selectedRows.value = [];
+  } else {
+    // 전체 선택
+    selectedRows.value = [...selectableRows];
+  }
 }
 
-function unselectAll() {
-  selectedRows.value = [];
+// --- 개별 행 체크박스 액션 함수 ---
+function toggleRowSelection(row) {
+  if (row.review_action === '삭제') return; // 삭제된 항목은 선택 불가
+  
+  const index = selectedRows.value.findIndex(selectedRow => selectedRow.id === row.id);
+  if (index > -1) {
+    // 이미 선택된 경우 제거
+    selectedRows.value.splice(index, 1);
+  } else {
+    // 선택되지 않은 경우 추가
+    selectedRows.value.push(row);
+  }
 }
 
 async function changeReviewStatus() {
@@ -1421,11 +1508,16 @@ function getPrescriptionMonth(settlementMonth, offset) {
 function formatDateTime(dateTimeString) {
     if (!dateTimeString) return '';
     const date = new Date(dateTimeString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+    const utcHours = date.getUTCHours();
+    const kstHours = (utcHours + 9) % 24;
+    
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(kstHours).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
@@ -1581,8 +1673,7 @@ async function updateProductInfoForMonthChange(rowData) {
   }
 }
 
-const showPrescriptionTypeModal = ref(false);
-const selectedPrescriptionType = ref('EDI');
+
 const prescriptionTypeOptionsForBulk = [
   'EDI',
   'ERP직거래자료',
@@ -1592,33 +1683,80 @@ const prescriptionTypeOptionsForBulk = [
   '원외매출',
   '차감'
 ];
-function openPrescriptionTypeModal() {
-  selectedPrescriptionType.value = 'EDI';
-  showPrescriptionTypeModal.value = true;
-}
-function closePrescriptionTypeModal() {
-  showPrescriptionTypeModal.value = false;
+// --- 일괄 변경 관련 함수들 ---
+function openBulkChangeModal() {
+  selectedBulkChangeType.value = '';
+  selectedBulkChangeValue.value = '';
+  showBulkChangeModal.value = true;
 }
 
-async function handleBulkPrescriptionTypeUpdate() {
-  if (!selectedRows.value || selectedRows.value.length === 0) return;
+function closeBulkChangeModal() {
+  showBulkChangeModal.value = false;
+  selectedBulkChangeType.value = '';
+  selectedBulkChangeValue.value = '';
+}
+
+function openBulkChangeValueModal() {
+  if (!selectedBulkChangeType.value) return;
+  selectedBulkChangeValue.value = '';
+  showBulkChangeValueModal.value = true;
+}
+
+function closeBulkChangeValueModal() {
+  showBulkChangeValueModal.value = false;
+  selectedBulkChangeValue.value = '';
+}
+
+function getBulkChangeTypeLabel() {
+  switch (selectedBulkChangeType.value) {
+    case 'company_name':
+      return '업체명';
+    case 'prescription_type':
+      return '처방구분';
+    default:
+      return '';
+  }
+}
+
+async function handleBulkChange() {
+  if (!selectedRows.value || selectedRows.value.length === 0 || !selectedBulkChangeType.value || !selectedBulkChangeValue.value) return;
+  
   const ids = selectedRows.value.map(row => row.id);
-  const newType = selectedPrescriptionType.value;
+  const updateData = {};
+  
   try {
+    switch (selectedBulkChangeType.value) {
+      case 'company_name':
+        // 업체명 변경 시 company_id도 함께 업데이트
+        const selectedCompany = monthlyCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
+        if (selectedCompany) {
+          updateData.company_id = selectedCompany.id;
+        }
+        break;
+      case 'prescription_type':
+        updateData.prescription_type = selectedBulkChangeValue.value;
+        break;
+    }
+    
+    // 모든 일괄 변경에 review_action을 '수정'으로 설정
+    updateData.review_action = '수정';
+    
     const { error } = await supabase
       .from('performance_records')
-      .update({ prescription_type: newType, review_action: '수정' })
+      .update(updateData)
       .in('id', ids);
+      
     if (error) {
-      alert('처방구분 변경 실패: ' + error.message);
+      alert(`${getBulkChangeTypeLabel()} 변경 실패: ${error.message}`);
     } else {
-      alert('처방구분이 성공적으로 변경되었습니다.');
+      alert(`${getBulkChangeTypeLabel()}이 성공적으로 변경되었습니다.`);
       await loadPerformanceData();
     }
   } catch (e) {
-    alert('처방구분 변경 중 오류 발생: ' + e.message);
+    alert(`${getBulkChangeTypeLabel()} 변경 중 오류 발생: ${e.message}`);
   } finally {
-    showPrescriptionTypeModal.value = false;
+    closeBulkChangeValueModal();
+    closeBulkChangeModal();
   }
 }
 </script>

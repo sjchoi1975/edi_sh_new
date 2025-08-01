@@ -196,6 +196,13 @@ const handleSubmit = async () => {
     // 소수점 3자리로 반올림
     commissionC.value = Math.round(commissionCValue * 1000) / 1000;
   }
+  // 현재 사용자 정보 가져오기
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
   const dataToInsert = {
     base_month: baseMonth.value,
     product_name: productName.value,
@@ -208,7 +215,8 @@ const handleSubmit = async () => {
     unit_packaging_desc: unitPackagingDesc.value,
     unit_quantity: unitQuantity.value === '' ? null : Number(unitQuantity.value),
     status: status.value,
-    remarks: remarks.value
+    remarks: remarks.value,
+    created_by: user.id
   };
   const { error } = await supabase.from('products').insert([dataToInsert]);
   if (error) {

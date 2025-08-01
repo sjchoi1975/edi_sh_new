@@ -371,22 +371,13 @@ const confirmApprovalChange = async (company, newStatus) => {
   if (!confirm(`${company.company_name} 업체를 ${actionText} 처리하시겠습니까?`)) return
   try {
     loading.value = true
-    const currentUser = await supabase.auth.getUser()
-    if (!currentUser.data.user) {
-      alert('로그인 정보가 없습니다. 다시 로그인해주세요.')
-      loading.value = false
-      return
-    }
-    const adminUserId = currentUser.data.user.id
-
-    const updatePayload = {
-      approval_status: newStatus,
-      updated_at: new Date().toISOString(),
-      updated_by: adminUserId,
-      // approved_at은 변경하지 않음 (최초 승인일 유지)
-    }
-
-    const { error } = await supabase.from('companies').update(updatePayload).eq('id', company.id)
+    
+    // 새로운 함수 호출로 승인 상태 변경
+    const { error } = await supabase.rpc('update_company_approval_status', {
+      company_id: company.id,
+      new_status: newStatus
+    })
+    
     if (error) throw error
     alert('업체 상태가 성공적으로 변경되었습니다.')
     await fetchCompanies()

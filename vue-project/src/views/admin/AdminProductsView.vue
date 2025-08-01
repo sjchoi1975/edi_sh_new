@@ -551,7 +551,7 @@ const downloadTemplate = () => {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '제품템플릿')
 
-  // 컬럼 너비 설정
+  // 컬럼 너비 설정 (단위수량, 비고, 상태 포함)
   ws['!cols'] = [
     { width: 12 }, // 기준월
     { width: 20 }, // 제품명
@@ -592,10 +592,10 @@ const downloadTemplate = () => {
     }
   }
   
-  // 워크시트 범위 업데이트 (1000행까지 확장)
+  // 워크시트 범위 업데이트 (1000행까지 확장) - 단위수량, 비고, 상태 컬럼 포함
   ws['!ref'] = XLSX.utils.encode_range({
     s: { c: 0, r: 0 },
-    e: { c: 10, r: maxRows - 1 }
+    e: { c: 13, r: maxRows - 1 }
   })
 
   XLSX.writeFile(wb, '제품_엑셀등록_템플릿.xlsx')
@@ -756,6 +756,15 @@ const handleFileUpload = async (event) => {
         }
         // 소수점 3자리로 반올림
         row['수수료E'] = Math.round(commissionE * 1000) / 1000
+      }
+
+      // 단위수량 검증 (숫자, 0 이상)
+      if (row['단위수량'] !== undefined && row['단위수량'] !== null && row['단위수량'] !== '') {
+        const unitQuantity = Number(row['단위수량'])
+        if (isNaN(unitQuantity) || unitQuantity < 0) {
+          errors.push(`${rowNum}행: 단위수량은 0 이상의 숫자여야 합니다.`)
+          return
+        }
       }
 
       const monthRegex = /^\d{4}-\d{2}$/

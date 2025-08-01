@@ -366,11 +366,16 @@ function formatDateTime(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return '-'
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcHours = d.getUTCHours();
+  const kstHours = (utcHours + 9) % 24;
+  
+  const yyyy = d.getUTCFullYear()
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(d.getUTCDate()).padStart(2, '0')
+  const hh = String(kstHours).padStart(2, '0')
+  const min = String(d.getUTCMinutes()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 

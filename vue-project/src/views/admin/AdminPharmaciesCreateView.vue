@@ -156,13 +156,21 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 현재 사용자 정보 가져오기
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
   const dataToInsert = {
     pharmacy_code: pharmacyCode.value,
     name: name.value,
     business_registration_number: businessNumber.value,
     address: address.value,
     status: status.value,
-    remarks: remarks.value
+    remarks: remarks.value,
+    created_by: user.id
   };
   const { error } = await supabase.from('pharmacies').insert([dataToInsert]);
   if (error) {

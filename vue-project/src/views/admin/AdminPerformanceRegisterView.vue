@@ -718,7 +718,17 @@ function truncateText(text, maxLength) {
 }
 function formatDate(dateString) {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('ko-KR')
+  const date = new Date(dateString)
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcYear = date.getUTCFullYear()
+  const utcMonth = date.getUTCMonth()
+  const utcDate = date.getUTCDate()
+  
+  // KST로 변환 (9시간 추가)
+  const kstDate = new Date(Date.UTC(utcYear, utcMonth, utcDate, 9, 0, 0))
+  
+  return kstDate.toLocaleDateString('ko-KR')
 }
 
 async function openDetailModal(client) {

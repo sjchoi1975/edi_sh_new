@@ -42,7 +42,7 @@
         />
       </div>
       <div class="form-group">
-        <label>담당자</label>
+        <label>업체 담당자</label>
         <input id="contactPerson" v-model="contactPerson" type="text" />
       </div>
       <div class="form-group">
@@ -85,7 +85,7 @@
         </select>
       </div>
       <div class="form-group">
-        <label>관리자</label>
+        <label>제약사 관리자</label>
         <input v-model="manager" type="text" />
       </div>
       <div class="form-group">

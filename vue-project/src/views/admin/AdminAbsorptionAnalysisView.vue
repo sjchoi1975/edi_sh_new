@@ -1043,9 +1043,17 @@ function applySorting() {
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return '-';
   const date = new Date(dateTimeString);
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstDate = new Date(date.getTime() + kstOffset);
-  return kstDate.toISOString().slice(0, 16).replace('T', ' ');
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcHours = date.getUTCHours();
+  const kstHours = (utcHours + 9) % 24;
+  
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(kstHours).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 async function downloadExcel() {

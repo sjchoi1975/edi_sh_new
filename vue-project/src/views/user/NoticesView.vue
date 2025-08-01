@@ -119,13 +119,17 @@ function goEdit(id) {
 function formatKST(dateStr) {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  // UTC → KST 변환
-  date.setHours(date.getHours() + 9);
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  const hh = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcHours = date.getUTCHours();
+  const kstHours = (utcHours + 9) % 24;
+  
+  const yyyy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const hh = String(kstHours).padStart(2, '0');
+  const min = String(date.getUTCMinutes()).padStart(2, '0');
+  
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
@@ -161,7 +165,12 @@ onMounted(async () => {
       let count = 0;
       try {
         const arr = JSON.parse(n.file_url || '[]');
-        count = Array.isArray(arr) ? arr.length : 0;
+        if (Array.isArray(arr)) {
+          // 유효한 URL만 카운트
+          count = arr.filter(url => url && url.trim() !== '').length;
+        } else {
+          count = 0;
+        }
       } catch {
         count = 0;
       }
