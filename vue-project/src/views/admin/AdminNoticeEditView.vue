@@ -12,15 +12,15 @@
         <textarea v-model="content" ref="contentArea" rows="12" required @input="adjustTextareaHeight"></textarea>
       </div>
       <div class="form-group">
-        <label>필수</label>
+        <label style="margin-bottom:0.5rem !important;">필수</label>
         <input type="checkbox" v-model="isPinned" id="requiredCheck" style="width:16px; height:16px; vertical-align:middle;" />
       </div>
       <div class="form-group">
-        <label>파일 첨부</label>
+        <label style="margin-top:0.5rem !important; margin-bottom:0.5rem !important;">파일 첨부</label>
         <div>
-          <label class="file-upload-label" style="margin-top:1rem;">
+          <label class="file-upload-label" style="font-size:0.85rem !important;">
             파일 선택
-            <input type="file" multiple @change="onFileChange" style="display:none; margin-top:1rem;" />
+            <input type="file" multiple @change="onFileChange" style="display:none;" />
           </label>
           <div v-if="files.length" style="margin-top:1rem;">
             <div v-for="(f, idx) in files" :key="f.name + idx" style="display: flex; align-items:center; margin-bottom:0.5rem;">
@@ -113,10 +113,15 @@ onMounted(async () => {
     } else if (Array.isArray(data.file_url)) {
       fileUrls = data.file_url;
     }
-    const fileObjects = fileUrls.map(url => ({
+    
+    // 유효한 URL만 필터링
+    const validFileUrls = fileUrls.filter(url => url && url.trim() !== '');
+    
+    const fileObjects = validFileUrls.map(url => ({
       name: getFileName(url),
       url: url
     }));
+    
     files.value = fileObjects;
     originalData.value.files = JSON.parse(JSON.stringify(fileObjects)); // 깊은 복사
   }

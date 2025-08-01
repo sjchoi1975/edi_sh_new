@@ -1332,6 +1332,45 @@ select option:focus {
   outline-offset: 2px;
 }
 
+/* ========================================== */
+/* 실적 등록 체크박스 스타일 (정산내역서 공유와 동일) */
+/* ========================================== */
+.performance-checkbox {
+  /* 1. 기본 체크박스 숨기기 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+  /* 2. 새로운 박스 모양 만들기 */
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1.5px solid var(--border-input);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-content);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  margin: 0;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* 3. 체크됐을 때 스타일 변경 */
+.performance-checkbox:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color-dark);
+  /* 4. 체크 표시(V) - SVG 이미지 사용 (색상: 흰색) */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 포커스 스타일 (웹 접근성을 위해) */
+.performance-checkbox:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
 /* 업체별 실적/흡수율 분석/모달/버튼/로딩/파일리스트 등 공통 스타일 */
 .file-link {
   color: #007bff;

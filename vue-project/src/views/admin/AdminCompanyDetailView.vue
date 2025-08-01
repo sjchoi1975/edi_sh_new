@@ -27,7 +27,7 @@
         <input :value="company.landline_phone || '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>담당자</label>
+        <label>업체 담당자</label>
         <input :value="company.contact_person_name || '-'" readonly disabled />
       </div>
       <div class="form-group">
@@ -51,7 +51,7 @@
         <input :value="company.default_commission_grade || '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>관리자</label>
+        <label>제약사 관리자</label>
         <input :value="company.assigned_pharmacist_contact || '-'" readonly disabled />
       </div>
       <div class="form-group">
@@ -61,6 +61,26 @@
       <div class="form-group">
         <label>비고</label>
         <input :value="company.remarks || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>등록일시</label>
+        <input :value="formatKST(company.created_at) || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>등록자</label>
+        <input :value="company.created_by_name || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>승인일시</label>
+        <input :value="formatKST(company.approved_at) || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>수정일시</label>
+        <input :value="formatKST(company.updated_at) || '-'" readonly disabled />
+      </div>
+      <div class="form-group">
+        <label>수정자</label>
+        <input :value="company.updated_by_name || '-'" readonly disabled />
       </div>
       <div class="button-area">        
         <button class="btn-reset-password" @click="handleResetPassword">비밀번호 재설정 이메일 발송</button>
@@ -81,6 +101,30 @@ const route = useRoute()
 const router = useRouter()
 const company = ref({})
 
+// KST 날짜 포맷 함수
+function formatKST(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcHours = date.getUTCHours();
+  const kstHours = (utcHours + 9) % 24;
+  
+  const yyyy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const hh = String(kstHours).padStart(2, '0');
+  const min = String(date.getUTCMinutes()).padStart(2, '0');
+  const sec = String(date.getUTCSeconds()).padStart(2, '0');
+  
+  // 오전/오후 구분
+  const ampm = kstHours >= 12 ? '오후' : '오전';
+  const displayHour = kstHours >= 12 ? kstHours - 12 : kstHours;
+  const displayHourStr = displayHour === 0 ? '12' : String(displayHour).padStart(2, '0');
+  
+  return `${yyyy}. ${mm}. ${dd}. ${ampm} ${displayHourStr}:${min}:${sec}`;
+}
+
 const breadcrumbSubMenu = computed(() => {
   if (route.query.from === 'pending') return '미승인 업체';
   return '승인 업체';
@@ -94,6 +138,46 @@ onMounted(async () => {
     .single()
   if (!error && data) {
     company.value = data
+    
+    // 등록자 정보 - companies 테이블에서 company_name 조회
+    if (data.created_by) {
+      try {
+        const { data: createdByCompany } = await supabase
+          .from('companies')
+          .select('company_name')
+          .eq('user_id', data.created_by)
+          .single();
+        
+        if (createdByCompany?.company_name) {
+          company.value.created_by_name = createdByCompany.company_name;
+        } else {
+          company.value.created_by_name = data.created_by; // UUID 표시
+        }
+      } catch (err) {
+        console.error('등록자 정보 조회 실패:', err);
+        company.value.created_by_name = data.created_by; // UUID 표시
+      }
+    }
+    
+    // 수정자 정보 - companies 테이블에서 company_name 조회
+    if (data.updated_by) {
+      try {
+        const { data: updatedByCompany } = await supabase
+          .from('companies')
+          .select('company_name')
+          .eq('user_id', data.updated_by)
+          .single();
+        
+        if (updatedByCompany?.company_name) {
+          company.value.updated_by_name = updatedByCompany.company_name;
+        } else {
+          company.value.updated_by_name = data.updated_by; // UUID 표시
+        }
+      } catch (err) {
+        console.error('수정자 정보 조회 실패:', err);
+        company.value.updated_by_name = data.updated_by; // UUID 표시
+      }
+    }
   }
 })
 

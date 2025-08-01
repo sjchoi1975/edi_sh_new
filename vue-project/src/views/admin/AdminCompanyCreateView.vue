@@ -49,7 +49,7 @@
         <input id="landline" v-model="landline" type="text" @input="formatPhoneNumber" @keypress="allowOnlyNumbers" @keydown="handleBackspace" />
       </div>
       <div class="form-group">
-        <label>담당자</label>
+        <label>업체 담당자</label>
         <input v-model="contactPerson" type="text" />
       </div>
       <div class="form-group">
@@ -78,7 +78,7 @@
         </select>
       </div>
       <div class="form-group">
-        <label>관리자</label>
+        <label>제약사 관리자</label>
         <input v-model="manager" type="text" />
       </div>
       <div class="form-group">
@@ -526,7 +526,6 @@ const handleSubmit = async () => {
       user_type: 'user',
       status: 'active',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
       created_by: userId,
     };
     if (approvalStatus.value === '승인') {

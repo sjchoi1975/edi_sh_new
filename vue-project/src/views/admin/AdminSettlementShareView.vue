@@ -17,14 +17,12 @@
     </div>
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
-      <div class="data-card-header" style="flex-shrink: 0;">
-        <div class="total-count-display">전체 {{ companySummary.length }} 건</div>
-        <div class="action-buttons-group">
-          <button class="btn-secondary" @click="toggleAllShares(true)" style="margin-right: 1rem;">전체 공유</button>
-          <button class="btn-secondary" @click="toggleAllShares(false)" style="margin-right: 1rem;">전체 해제</button>
-          <button class="btn-save" @click="saveShareStatus" :disabled="Object.keys(shareChanges).length === 0">저장</button>
+              <div class="data-card-header" style="flex-shrink: 0;">
+          <div class="total-count-display">전체 {{ companySummary.length }} 건</div>
+          <div class="action-buttons-group">
+            <button class="btn-save" @click="saveShareStatus" :disabled="Object.keys(shareChanges).length === 0">저장</button>
+          </div>
         </div>
-      </div>
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
         :value="companySummary" 
@@ -61,9 +59,22 @@
             <button class="btn-detail" @click="goDetail(slotProps.data)">상세</button>
           </template>
         </Column>
-        <Column header="공유" :headerStyle="{ width: columnWidths.share }">
+        <Column :headerStyle="{ width: columnWidths.share, textAlign: 'center' }">
+          <template #header>
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+              <input 
+                type="checkbox" 
+                :checked="isAllShared" 
+                :indeterminate="isIndeterminate"
+                @change="toggleAllShares"
+                class="share-checkbox"
+              />
+            </div>
+          </template>
           <template #body="slotProps">
-            <input type="checkbox" v-model="slotProps.data.is_shared" @change="onShareChange(slotProps.data, slotProps.data.is_shared)" class="share-checkbox" />
+            <div style="display: flex; justify-content: center; align-items: center;">
+              <input type="checkbox" v-model="slotProps.data.is_shared" @change="onShareChange(slotProps.data, slotProps.data.is_shared)" class="share-checkbox" />
+            </div>
           </template>
         </Column>
         <ColumnGroup type="footer">
@@ -144,6 +155,18 @@ const totalPrescriptionAmount = computed(() => {
 const totalPaymentAmount = computed(() => {
   const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_payment_amount || 0)), 0);
   return total.toLocaleString();
+});
+
+// --- 헤더 체크박스 상태 관리 ---
+const isAllShared = computed(() => {
+  if (companySummary.value.length === 0) return false;
+  return companySummary.value.every(company => company.is_shared);
+});
+
+const isIndeterminate = computed(() => {
+  if (companySummary.value.length === 0) return false;
+  const sharedCount = companySummary.value.filter(company => company.is_shared).length;
+  return sharedCount > 0 && sharedCount < companySummary.value.length;
 });
 
 
@@ -314,11 +337,12 @@ function onShareChange(companyData, isChecked) {
   };
 }
 
-// 전체 공유/해제
-function toggleAllShares(share) {
+// 전체 공유/해제 (헤더 체크박스용)
+function toggleAllShares() {
+  const newShareState = !isAllShared.value;
   companySummary.value.forEach(company => {
-    company.is_shared = share;
-    onShareChange(company, share);
+    company.is_shared = newShareState;
+    onShareChange(company, newShareState);
   });
 }
 
@@ -436,9 +460,17 @@ onBeforeRouteLeave((to, from, next) => {
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return '-';
   const date = new Date(dateTimeString);
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstDate = new Date(date.getTime() + kstOffset);
-  return kstDate.toISOString().slice(0, 16).replace('T', ' ');
+  
+  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+  const utcHours = date.getUTCHours();
+  const kstHours = (utcHours + 9) % 24;
+  
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(kstHours).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 </script>

@@ -94,13 +94,21 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 현재 사용자 정보 가져오기
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
   const { error } = await supabase.from('settlement_months').insert([{
     settlement_month: settlementMonth.value,
     start_date: startDate.value,
     end_date: endDate.value,
     notice: notice.value,
     status: status.value,
-    remarks: remarks.value
+    remarks: remarks.value,
+    created_by: user.id
   }]);
 
   if (error) {

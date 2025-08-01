@@ -46,6 +46,7 @@
                 <th style="width:3%;">
                   <input 
                     type="checkbox" 
+                    class="performance-checkbox"
                     @change="toggleSelectAll" 
                     :checked="isAllSelected"
                   />
@@ -76,6 +77,7 @@
                 <td style="text-align:center;width:3%;">
                   <input 
                     type="checkbox" 
+                    class="performance-checkbox"
                     v-model="row.selected" 
                     :disabled="!isRowEditable(row)"
                     :class="{ 'disabled-area': !isRowEditable(row) }"
@@ -2023,18 +2025,7 @@ async function handlePrescriptionMonthChange(rowIdx) {
   box-shadow: none !important;
 }
 
-/* 체크박스 스타일 */
-input[type="checkbox"] {
-  width: 16px !important;
-  height: 16px !important;
-  cursor: pointer !important;
-  accent-color: #1976d2 !important;
-}
 
-input[type="checkbox"]:disabled {
-  cursor: not-allowed !important;
-  opacity: 0.5 !important;
-}
 
 /* 테이블 레이아웃 고정 */
 .table-header-fixed table,
