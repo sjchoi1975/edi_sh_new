@@ -613,6 +613,13 @@ const handleFileUpload = async (event) => {
   excelLoading.value = true
 
   try {
+    // 현재 사용자 정보 가져오기
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
     const data = await file.arrayBuffer()
     const workbook = XLSX.read(data)
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
@@ -802,6 +809,7 @@ const handleFileUpload = async (event) => {
         unit_quantity: Number(row['단위수량']) || 0,
         remarks: row['비고'] || '',
         status: statusValue,
+        created_by: user.id, // 등록자 ID 추가
         rowNum: rowNum // 에러 표시용
       })
     })
