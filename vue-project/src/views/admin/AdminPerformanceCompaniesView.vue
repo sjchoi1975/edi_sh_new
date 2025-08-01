@@ -131,7 +131,11 @@
           :headerStyle="{ width: columnWidthsMain.review_completed, textAlign: 'center' }"
         >
           <template #body="slotProps">
-            <span v-if="slotProps.data.review_completed > 0" style="color: var(--primary-blue); font-weight: 500;">
+            <span 
+              v-if="slotProps.data.review_completed > 0" 
+              style="color: var(--primary-blue); font-weight: 500; text-decoration: underline; cursor: pointer;"
+              @click="navigateToReview(slotProps.data, '완료')"
+            >
               {{ slotProps.data.review_completed }}
             </span>
             <span v-else>-</span>
@@ -143,7 +147,11 @@
           :headerStyle="{ width: columnWidthsMain.review_in_progress, textAlign: 'center' }"
         >
           <template #body="slotProps">
-            <span v-if="slotProps.data.review_in_progress > 0" style="color: var(--primary-color); font-weight: 500;">
+            <span 
+              v-if="slotProps.data.review_in_progress > 0" 
+              style="color: var(--primary-color); font-weight: 500; text-decoration: underline; cursor: pointer;"
+              @click="navigateToReview(slotProps.data, '검수중')"
+            >
               {{ slotProps.data.review_in_progress }}
             </span>
             <span v-else>-</span>
@@ -155,7 +163,11 @@
           :headerStyle="{ width: columnWidthsMain.review_pending, textAlign: 'center' }"
         >
           <template #body="slotProps">
-            <span v-if="slotProps.data.review_pending > 0" style="color: var(--danger); font-weight: 500;">
+            <span 
+              v-if="slotProps.data.review_pending > 0" 
+              style="color: var(--danger); font-weight: 500; text-decoration: underline; cursor: pointer;"
+              @click="navigateToReview(slotProps.data, '대기')"
+            >
               {{ slotProps.data.review_pending }}
             </span>
             <span v-else>-</span>
@@ -305,6 +317,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import ColumnGroup from 'primevue/columngroup';
@@ -465,6 +478,7 @@ const fetchCompanyList = async () => {
         client_id, 
         review_status, 
         prescription_qty,
+        created_at,
         products ( price )
       `,
       )
@@ -1140,6 +1154,19 @@ const previewFile = async (file) => {
   } catch (err) {
     alert('미리보기 중 오류가 발생했습니다.')
   }
+}
+
+// 실적 검수 화면으로 이동
+const router = useRouter()
+const navigateToReview = (company, status) => {
+  router.push({
+    name: 'AdminPerformanceReview',
+    query: {
+      company: company.id,
+      status: status,
+      settlementMonth: selectedSettlementMonth.value
+    }
+  })
 }
 
 // 워치어

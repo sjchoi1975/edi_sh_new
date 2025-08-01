@@ -344,6 +344,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -552,6 +553,8 @@ watch(prescriptionOffset, async () => {
 });
 
 // --- 라이프사이클 훅 ---
+const route = useRoute();
+
 onMounted(async () => {
   console.log("1. onMounted 시작");
   await fetchAvailableMonths();
@@ -560,6 +563,26 @@ onMounted(async () => {
     console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
     await fetchFilterOptions(selectedSettlementMonth.value);
   }
+  
+  // URL 쿼리 파라미터 처리
+  if (route.query.settlementMonth) {
+    selectedSettlementMonth.value = route.query.settlementMonth;
+    await fetchFilterOptions(selectedSettlementMonth.value);
+  }
+  
+  if (route.query.company) {
+    selectedCompanyId.value = route.query.company;
+  }
+  
+  if (route.query.status) {
+    selectedStatus.value = route.query.status;
+  }
+  
+  // 쿼리 파라미터가 있으면 자동으로 데이터 로드
+  if (route.query.company || route.query.status) {
+    await loadPerformanceData();
+  }
+  
   // 실제 선택된 처방월 값으로 fetchProducts 호출
   if (prescriptionOffset.value !== null) {
     const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
