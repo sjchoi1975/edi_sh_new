@@ -203,6 +203,7 @@
               <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalPerformanceCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="Number(totalPrescriptionAmount).toLocaleString('ko-KR', { maximumFractionDigits: 0 })" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
               <Column :colspan="2" footerClass="footer-cell" />
               <Column :footer="totalEvidenceFilesCount.toString()" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :colspan="2" footerClass="footer-cell" />

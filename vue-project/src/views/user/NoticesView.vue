@@ -154,29 +154,69 @@ async function handleDelete(id) {
 
 onMounted(async () => {
   loading.value = true;
-  const { data, error } = await supabase
+  
+  // 1. 공지사항 기본 데이터 조회
+  const { data: noticesData, error: noticesError } = await supabase
     .from('notices')
     .select('id, title, content, created_at, is_pinned, view_count, file_url')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false });
-  console.log('공지사항 데이터:', data); // ← 이 줄만 추가!  
-      if (!error && data) {
-    notices.value = data.map(n => {
-      let count = 0;
+    
+  if (noticesError) {
+    console.error('공지사항 조회 오류:', noticesError);
+    loading.value = false;
+    return;
+  }
+  
+  console.log('공지사항 데이터:', noticesData);
+  
+  // 2. notice_views 테이블에서 실제 조회수 계산
+  const { data: viewsData, error: viewsError } = await supabase
+    .from('notice_views')
+    .select('notice_id');
+    
+  if (viewsError) {
+    console.error('조회수 조회 오류:', viewsError);
+  }
+  
+  // 3. 각 공지사항별 조회수 계산
+  const viewCounts = {};
+  if (viewsData) {
+    viewsData.forEach(view => {
+      if (view.notice_id) {
+        viewCounts[view.notice_id] = (viewCounts[view.notice_id] || 0) + 1;
+      }
+    });
+  }
+  
+  console.log('조회수 데이터:', viewCounts);
+  
+  if (noticesData) {
+    notices.value = noticesData.map(n => {
+      let fileCount = 0;
       try {
         const arr = JSON.parse(n.file_url || '[]');
         if (Array.isArray(arr)) {
           // 유효한 URL만 카운트
-          count = arr.filter(url => url && url.trim() !== '').length;
+          fileCount = arr.filter(url => url && url.trim() !== '').length;
         } else {
-          count = 0;
+          fileCount = 0;
         }
       } catch {
-        count = 0;
+        fileCount = 0;
       }
-      return { ...n, file_count: count };
+      
+      // 실제 조회수 사용 (notice_views 테이블 기준)
+      const actualViewCount = viewCounts[n.id] || 0;
+      
+      return { 
+        ...n, 
+        file_count: fileCount,
+        view_count: actualViewCount // 실제 조회수로 덮어쓰기
+      };
     });
   }
+  
   loading.value = false;
   const { data: { session } } = await supabase.auth.getSession();
   userType.value = session?.user?.user_metadata?.user_type || '';

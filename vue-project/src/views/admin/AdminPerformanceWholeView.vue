@@ -68,8 +68,8 @@
           :rowsPerPageOptions="[100, 200, 500, 1000]"
 
           :pt="{
-            wrapper: { style: 'min-width: 2200px;' },
-            table: { style: 'min-width: 2200px;' }
+            wrapper: { style: 'min-width: 2400px;' },
+            table: { style: 'min-width: 2400px;' }
           }"
           @page="onPageChange"
         >
@@ -116,6 +116,8 @@
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true"/>
           <Column field="created_date" header="등록일시" :headerStyle="{ width: columnWidths.created_date }" :sortable="true"/>
           <Column field="created_by" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true"/>
+          <Column field="updated_date" header="수정일시" :headerStyle="{ width: columnWidths.updated_date }" :sortable="true"/>
+          <Column field="updated_by" header="수정자" :headerStyle="{ width: columnWidths.updated_by }" :sortable="true"/>
           <Column field="assigned_pharmacist_contact" header="관리자" :headerStyle="{ width: columnWidths.assigned_pharmacist_contact }" :sortable="true">
             <template #body="slotProps">
               <span style="font-weight: 400;">{{ slotProps.data.assigned_pharmacist_contact }}</span>
@@ -162,10 +164,10 @@ const columnWidths = {
   no: '3%',
   review_status: '4%',
   company_group: '6%',
-  company_name: '9%',
-  client_name: '15%',
+  company_name: '8%',
+  client_name: '12%',
   prescription_month: '5%',
-  product_name_display: '13%',
+  product_name_display: '12%',
   insurance_code: '6%',
   price: '5%',
   prescription_qty: '6%',
@@ -174,6 +176,8 @@ const columnWidths = {
   remarks: '11%',
   created_date: '7%',
   created_by: '8%',
+  updated_date: '7%',
+  updated_by: '8%',
   assigned_pharmacist_contact: '5%'
 };
 
@@ -507,7 +511,9 @@ async function fetchPerformanceRecords() {
     }
 
     const registrarIds = [...new Set(allData.map(item => item.registered_by).filter(id => id))];
+    const updaterIds = [...new Set(allData.map(item => item.updated_by).filter(id => id))];
     let registrarMap = new Map();
+    let updaterMap = new Map();
 
     if (registrarIds.length > 0) {
       const { data: registrars, error: registrarError } = await supabase
@@ -519,6 +525,19 @@ async function fetchPerformanceRecords() {
         console.error("등록자 정보 조회 실패:", registrarError);
       } else {
         registrars.forEach(r => registrarMap.set(r.user_id, r.company_name));
+      }
+    }
+
+    if (updaterIds.length > 0) {
+      const { data: updaters, error: updaterError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', updaterIds);
+      
+      if (updaterError) {
+        console.error("수정자 정보 조회 실패:", updaterError);
+      } else {
+        updaters.forEach(u => updaterMap.set(u.user_id, u.company_name));
       }
     }
     
@@ -539,22 +558,46 @@ async function fetchPerformanceRecords() {
         prescription_amount: Math.round(prescriptionAmount).toLocaleString(),
         prescription_type: record.prescription_type || '',
         remarks: record.remarks || '',
-        created_date: new Date(record.created_at).toISOString().slice(0, 16).replace('T', ' '),
+        created_date: new Date(record.created_at).toLocaleString('ko-KR', { 
+          timeZone: 'Asia/Seoul',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(/\. /g, '-').replace('.', ' '),
         created_by: registrarMap.get(record.registered_by) || '관리자',
+        updated_date: record.updated_at ? new Date(record.updated_at).toLocaleString('ko-KR', { 
+          timeZone: 'Asia/Seoul',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(/\. /g, '-').replace('.', ' ') : '',
+        updated_by: record.updated_by ? (updaterMap.get(record.updated_by) || '관리자') : '',
         assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || '',
       };
     });
 
-    // 데이터 정렬
-    const statusOrder = { '대기': 1, '검수중': 2, '완료': 3 };
+    // 데이터 정렬 - 가나다순: 업체명 > 병의원명 > 제품명
     mappedData.sort((a, b) => {
-      const orderA = statusOrder[a.review_status] || 99;
-      const orderB = statusOrder[b.review_status] || 99;
-      if (orderA !== orderB) return orderA - orderB;
-      if (a.company_name !== b.company_name) return a.company_name.localeCompare(b.company_name, 'ko');
-      if (a.client_name !== b.client_name) return a.client_name.localeCompare(b.client_name, 'ko');
-      if (a.product_name_display !== b.product_name_display) return a.product_name_display.localeCompare(b.product_name_display, 'ko');
-      return (b.prescription_qty || 0) - (a.prescription_qty || 0);
+      // 1순위: 업체명 가나다순
+      if (a.company_name !== b.company_name) {
+        return a.company_name.localeCompare(b.company_name, 'ko');
+      }
+      // 2순위: 병의원명 가나다순
+      if (a.client_name !== b.client_name) {
+        return a.client_name.localeCompare(b.client_name, 'ko');
+      }
+      // 3순위: 제품명 가나다순
+      if (a.product_name_display !== b.product_name_display) {
+        return a.product_name_display.localeCompare(b.product_name_display, 'ko');
+      }
+      // 4순위: 등록일시 (최신순)
+      return new Date(b.created_date) - new Date(a.created_date);
     });
 
     rawRows.value = mappedData;
@@ -611,6 +654,8 @@ const downloadExcel = () => {
     '확인(검수)': row.review_status || '대기',
     '등록일시': new Date(row.created_date),
     '등록자': row.created_by,
+    '수정일시': row.updated_date ? new Date(row.updated_date) : '',
+    '수정자': row.updated_by || '',
     '관리자': row.assigned_pharmacist_contact
   }));
 
@@ -649,6 +694,11 @@ const downloadExcel = () => {
     const dateCell = ws[XLSX.utils.encode_cell({ r: row, c: 14 })];
     if (dateCell && dateCell.t === 'd') {
       dateCell.z = 'yyyy-mm-dd hh:mm';
+    }
+    // 수정일시 컬럼 (Q열)
+    const updatedDateCell = ws[XLSX.utils.encode_cell({ r: row, c: 16 })];
+    if (updatedDateCell && updatedDateCell.t === 'd') {
+      updatedDateCell.z = 'yyyy-mm-dd hh:mm';
     }
   }
 

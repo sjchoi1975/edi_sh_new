@@ -87,8 +87,8 @@
           v-model:first="currentPageFirstIndex"
 
           :pt="{
-            wrapper: { style: 'min-width: 2400px;' },
-            table: { style: 'min-width: 2400px;' }
+            wrapper: { style: 'min-width: 2600px;' },
+            table: { style: 'min-width: 2600px;' }
           }"
         >
           <template #empty>
@@ -277,6 +277,12 @@
             </template>
           </Column>
           <Column field="registered_by_name" header="등록자" :headerStyle="{ width: columnWidths.created_by }" :sortable="true" />
+          <Column field="updated_at" header="수정일시" :headerStyle="{ width: columnWidths.updated_date }" :sortable="true">
+            <template #body="slotProps">
+              {{ slotProps.data.updated_at ? formatDateTime(slotProps.data.updated_at) : '' }}
+            </template>
+          </Column>
+          <Column field="updated_by_name" header="수정자" :headerStyle="{ width: columnWidths.updated_by }" :sortable="true" />
 
           <ColumnGroup type="footer">
             <Row>
@@ -292,8 +298,9 @@
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
-
               <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
@@ -308,7 +315,7 @@
     <div class="modal-dialog" style="background: #fff; border-radius: 8px; padding: 32px 24px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15);">
       <div style="font-size: 1.1em; margin-bottom: 16px;">일괄 변경할 항목을 선택해주세요.</div>
       <select v-model="selectedBulkChangeType" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
-        <option value="">항목을 선택하세요</option>
+        <option value="">- 선택 -</option>
         <option value="company_name">업체명</option>
         <option value="prescription_type">처방구분</option>
       </select>
@@ -324,7 +331,7 @@
     <div class="modal-dialog" style="background: #fff; border-radius: 8px; padding: 32px 24px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15);">
       <div style="font-size: 1.1em; margin-bottom: 16px;">일괄 변경할 {{ getBulkChangeTypeLabel() }}을 선택해주세요.</div>
       <select v-model="selectedBulkChangeValue" style="width: 100%; margin-bottom: 24px; padding: 8px; font-size: 1em;">
-        <option value="">값을 선택하세요</option>
+        <option value="">- 선택 -</option>
         <option v-for="option in bulkChangeOptions" :key="option" :value="option">{{ option }}</option>
       </select>
       <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -358,20 +365,22 @@ const columnWidths = {
   review_action: '3%',
   actions: '6%',
   company_name: '8%',
-  client_name: '15%',
+  client_name: '14%',
   prescription_month: '5%',
-  product_name_display: '15%', 
+  product_name_display: '12%', 
   insurance_code: '5%', 
   price: '5%',
   prescription_qty: '5%', 
   prescription_amount: '6%', 
-  checkbox: '4%',
+  checkbox: '3%',
   prescription_type: '6%',
   commission_rate: '5%',
   payment_amount: '6%', 
   remarks: '10%',
   created_date: '7%',
-  created_by: '8%'
+  created_by: '8%',
+  updated_date: '7%',
+  updated_by: '8%'
 };
 const prescriptionTypeOptions = ['EDI', 'ERP직거래자료', '매출자료', '약국조제', '원내매출', '원외매출', '차감'];
 
@@ -966,7 +975,9 @@ async function loadPerformanceData() {
     }
 
     const registrarIds = [...new Set(allData.map(item => item.registered_by).filter(id => id))];
+    const updaterIds = [...new Set(allData.map(item => item.updated_by).filter(id => id))];
     let registrarMap = new Map();
+    let updaterMap = new Map();
 
     if (registrarIds.length > 0) {
       const { data: registrars, error: registrarError } = await supabase
@@ -978,6 +989,19 @@ async function loadPerformanceData() {
         console.error("등록자 정보 조회 실패:", registrarError);
       } else {
         registrars.forEach(r => registrarMap.set(r.user_id, r.company_name));
+      }
+    }
+
+    if (updaterIds.length > 0) {
+      const { data: updaters, error: updaterError } = await supabase
+        .from('companies')
+        .select('user_id, company_name')
+        .in('user_id', updaterIds);
+      
+      if (updaterError) {
+        console.error("수정자 정보 조회 실패:", updaterError);
+      } else {
+        updaters.forEach(u => updaterMap.set(u.user_id, u.company_name));
       }
     }
 
@@ -999,6 +1023,7 @@ async function loadPerformanceData() {
         prescription_amount: prescriptionAmount.toLocaleString(),
         payment_amount: paymentAmount.toLocaleString(),
         registered_by_name: registrarMap.get(item.registered_by) || '관리자',
+        updated_by_name: item.updated_by ? (updaterMap.get(item.updated_by) || '관리자') : '',
         display_status: item.review_status === '대기' ? '신규' : item.review_status,
       };
     });
@@ -1731,6 +1756,74 @@ async function handleBulkChange() {
         const selectedCompany = monthlyCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
         if (selectedCompany) {
           updateData.company_id = selectedCompany.id;
+          
+          // 선택된 실적 기록들의 client_id를 가져와서 매핑 관계 확인 및 추가
+          console.log('=== 매핑 관계 추가 시작 ===');
+          console.log('선택된 업체:', selectedCompany);
+          console.log('선택된 실적 기록 ID들:', ids);
+          
+          const { data: performanceRecords, error: fetchError } = await supabase
+            .from('performance_records')
+            .select('client_id')
+            .in('id', ids);
+          
+          if (fetchError) {
+            throw new Error(`실적 기록 조회 실패: ${fetchError.message}`);
+          }
+          
+          console.log('조회된 실적 기록들:', performanceRecords);
+          
+          // 고유한 client_id 목록 생성
+          const uniqueClientIds = [...new Set(performanceRecords.map(record => record.client_id).filter(id => id))];
+          console.log('고유한 client_id 목록:', uniqueClientIds);
+          
+          // 각 client_id에 대해 매핑 관계 확인 및 추가
+          for (const clientId of uniqueClientIds) {
+            console.log(`\n--- client_id ${clientId} 처리 시작 ---`);
+            
+            // 기존 매핑 관계 확인
+            const { data: existingMapping, error: mappingError } = await supabase
+              .from('client_company_assignments')
+              .select('id')
+              .eq('client_id', clientId)
+              .eq('company_id', selectedCompany.id)
+              .single();
+            
+            console.log('기존 매핑 관계 확인 결과:', { existingMapping, mappingError });
+            
+            if (mappingError && mappingError.code !== 'PGRST116') { // PGRST116는 결과가 없는 경우
+              console.error(`매핑 관계 확인 오류 (client_id: ${clientId}, company_id: ${selectedCompany.id}):`, mappingError);
+            }
+            
+            // 매핑 관계가 없으면 새로 추가
+            if (!existingMapping) {
+              console.log(`매핑 관계가 없으므로 새로 추가합니다. (client_id: ${clientId}, company_id: ${selectedCompany.id})`);
+              
+              const currentUser = await supabase.auth.getUser();
+              console.log('현재 사용자:', currentUser.data.user);
+              
+              const insertData = {
+                client_id: clientId,
+                company_id: selectedCompany.id,
+                created_by: currentUser.data.user?.id
+              };
+              console.log('삽입할 데이터:', insertData);
+              
+              const { error: insertError } = await supabase
+                .from('client_company_assignments')
+                .insert(insertData);
+              
+              if (insertError) {
+                console.error(`매핑 관계 추가 실패 (client_id: ${clientId}, company_id: ${selectedCompany.id}):`, insertError);
+                // 매핑 추가 실패해도 실적 기록 업데이트는 계속 진행
+              } else {
+                console.log(`매핑 관계 추가 완료 (client_id: ${clientId}, company_id: ${selectedCompany.id})`);
+              }
+            } else {
+              console.log(`이미 매핑 관계가 존재합니다. (client_id: ${clientId}, company_id: ${selectedCompany.id})`);
+            }
+          }
+          console.log('=== 매핑 관계 추가 완료 ===');
         }
         break;
       case 'prescription_type':
@@ -1738,8 +1831,10 @@ async function handleBulkChange() {
         break;
     }
     
-    // 모든 일괄 변경에 review_action을 '수정'으로 설정
+    // 모든 일괄 변경에 review_action을 '수정'으로 설정하고 updated_at, updated_by를 현재 시간과 사용자로 설정
     updateData.review_action = '수정';
+    updateData.updated_at = new Date().toISOString();
+    updateData.updated_by = (await supabase.auth.getUser()).data.user?.id;
     
     const { error } = await supabase
       .from('performance_records')
