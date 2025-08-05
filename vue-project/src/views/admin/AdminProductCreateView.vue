@@ -31,17 +31,14 @@
         <input v-model="commissionC" type="number" step="0.001" />
       </div>
       <div class="form-group">
-        <label>표준코드<span class="required">*</span></label>
-        <input id="standardCode" v-model="standardCode" type="text" maxlength="13" required @keypress="allowOnlyNumbers" />
+        <label>수수료율 D등급(%)</label>
+        <input v-model="commissionD" type="number" step="0.001" />
       </div>
       <div class="form-group">
-        <label>단위/포장형태</label>
-        <input v-model="unitPackagingDesc" type="text" />
+        <label>수수료율 E등급(%)</label>
+        <input v-model="commissionE" type="number" step="0.001" />
       </div>
-      <div class="form-group">
-        <label>단위수량</label>
-        <input v-model="unitQuantity" type="number" />
-      </div>
+
       <div class="form-group">
         <label>상태</label>
         <select v-model="status">
@@ -73,9 +70,9 @@ const price = ref('');
 const commissionA = ref('');
 const commissionB = ref('');
 const commissionC = ref('');
-const standardCode = ref('');
-const unitPackagingDesc = ref('');
-const unitQuantity = ref('');
+const commissionD = ref('');
+const commissionE = ref('');
+
 const status = ref('active');
 const remarks = ref('');
 const router = useRouter();
@@ -85,8 +82,7 @@ const isFormValid = computed(() => {
   return baseMonth.value && baseMonth.value.trim() !== '' &&
          productName.value && productName.value.trim() !== '' &&
          insuranceCode.value && insuranceCode.value.trim() !== '' &&
-         price.value && price.value.toString().trim() !== '' &&
-         standardCode.value && standardCode.value.trim() !== '';
+         price.value && price.value.toString().trim() !== '';
 });
 
 // 숫자만 입력 허용
@@ -211,9 +207,8 @@ const handleSubmit = async () => {
     commission_rate_a: commissionA.value === '' ? null : Number(commissionA.value),
     commission_rate_b: commissionB.value === '' ? null : Number(commissionB.value),
     commission_rate_c: commissionC.value === '' ? null : Number(commissionC.value),
-    standard_code: standardCode.value === '' ? null : standardCode.value,
-    unit_packaging_desc: unitPackagingDesc.value,
-    unit_quantity: unitQuantity.value === '' ? null : Number(unitQuantity.value),
+    commission_rate_d: commissionD.value === '' ? null : Number(commissionD.value),
+    commission_rate_e: commissionE.value === '' ? null : Number(commissionE.value),
     status: status.value,
     remarks: remarks.value,
     created_by: user.id

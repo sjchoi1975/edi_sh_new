@@ -931,7 +931,7 @@ const calculateAbsorptionRates = async () => {
     
     // 2단계: 흡수율 계산 (복사된 데이터에 대해서만)
     console.log(`2단계 시작: 복사된 ${insertedCount}건 데이터의 흡수율 계산`);
-    const { error: step2Error } = await supabase.rpc('calculate_absorption_rates_for_month', {
+    const { error: step2Error } = await supabase.rpc('calculate_absorption_rates', {
       p_settlement_month: selectedSettlementMonth.value
     });
      if (step2Error) {

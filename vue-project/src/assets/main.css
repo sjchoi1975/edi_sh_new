@@ -1667,6 +1667,7 @@ select option:focus {
   text-align: right !important;
 }
 
+
 /* ------ 거래처 목록 (ClientsView.vue) ------ */
 /* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명) --- */
 .clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5)) {
@@ -1690,6 +1691,7 @@ select option:focus {
 .performance-register-table .p-datatable-tbody > tr > td:nth-child(7) {
   text-align: right !important;
 }
+
 
 /* ------ 실적 입력 테이블 (PerformanceRegisterEdit.vue) ------ */
 /* --- 중앙 정렬 (No, 처방월, 보험코드, 처방구분, 작업) --- */
@@ -1813,6 +1815,21 @@ select option:focus {
 .admin-products-table .p-datatable-tbody > tr > td:is(:nth-child(4)) {
   text-align: right !important;
 }
+
+/* ------ 관리자 표준코드 목록 (AdminProductsStandardCodeView.vue) ------ */
+/* --- 중앙 정렬 (No, 보험코드, 표준코드, 단위/포장형태, 단위수량, 등록일자, 상태, 작업) --- */
+.admin-products-standard-code-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(3), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(8), :nth-child(9), :nth-child(10)) {
+  text-align: center !important;
+}
+/* --- 좌측 정렬 (제품명, 비고) --- */
+.admin-products-standard-code-table .p-datatable-tbody > tr > td:is(:nth-child(2), :nth-child(7)) {
+  text-align: left !important;
+}
+
+
+
+
+
 
 
 /* ------ 관리자 거래처 목록 (AdminClientsView.vue) ------ */

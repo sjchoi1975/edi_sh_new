@@ -1,6 +1,6 @@
-# 신일제약 실적관리 시스템 데이터 구조 상세 (v3.1)
+# 신일제약 실적관리 시스템 데이터 구조 상세 (v3.2)
 
-**문서 버전: 3.1 (2025-07-30)**
+**문서 버전: 3.2 (2025-08-01)**
 
 ## 1. 개요
 
@@ -97,36 +97,47 @@
     -   `assigned_pharmacist_contact`, `receive_email` (text)
     -   `created_by`, `approved_at`, `updated_by` (uuid, FK -> `auth.users.id`)
     -   `created_at`, `updated_at` (timestamptz)
+    -   **RLS 정책**: 관리자 전체 접근, 일반 사용자는 자신의 업체만 접근
 
 -   **`clients`**: 
     -   `id` (bigint, PK), `client_code` (text)
     -   `name`, `business_registration_number`, `owner_name`, `address`, `remarks`
     -   `status` (text, 'active' 기본값)
     -   `created_at`, `updated_at` (timestamptz)
+    -   `created_by`, `updated_by` (uuid, FK -> `auth.users.id`)
+    -   `remarks_settlement` (text): 정산 관련 비고
 
 -   **`products`**: 
     -   `id` (uuid, PK), `product_name`, `insurance_code`, `price` (integer)
     -   `commission_rate_a`, `commission_rate_b`, `commission_rate_c` (numeric)
+    -   `commission_rate_d`, `commission_rate_e` (numeric, 0 기본값)
     -   `standard_code`, `unit_packaging_desc`, `unit_quantity` (integer)
     -   `base_month` (text), `status` (text, 'active' 기본값)
     -   `created_at`, `updated_at` (timestamptz)
+    -   `created_by`, `updated_by` (uuid, FK -> `auth.users.id`)
+    -   **RLS 정책**: 관리자 전체 접근, 일반 사용자는 활성 제품만 조회
 
 -   **`pharmacies`**: 
     -   `id` (bigint, PK), `pharmacy_code` (text)
     -   `name`, `business_registration_number`, `address`, `remarks`
     -   `status` (text, 'active' 기본값)
     -   `created_at`, `updated_at` (timestamptz)
+    -   `created_by`, `updated_by` (uuid, FK -> `auth.users.id`)
 
 -   **`settlement_months`**: 
     -   `id` (bigint, PK), `settlement_month` (varchar)
     -   `start_date`, `end_date` (date), `notice` (text)
     -   `status` (varchar, 'active' 기본값), `remarks` (text)
     -   `created_at` (timestamptz)
+    -   `created_by`, `updated_by` (uuid, FK -> `auth.users.id`)
+    -   `updated_at` (timestamptz)
+    -   **RLS 정책**: 모든 인증된 사용자가 조회 가능
 
 -   **`settlement_share`**: 
     -   `id` (bigint, PK), `settlement_month` (text)
     -   `company_id` (uuid, FK -> `companies.id`)
     -   `share_enabled` (boolean), `created_at` (timestamptz)
+    -   **RLS 정책**: 인증된 사용자는 모든 작업 가능
 
 ### 4.4. 매핑 테이블
 
@@ -136,6 +147,7 @@
     -   `company_default_commission_grade` (text, 'A' 기본값)
     -   `modified_commission_grade` (text)
     -   `created_at` (timestamptz)
+    -   `created_by` (uuid, FK -> `auth.users.id`)
 
 -   **`client_pharmacy_assignments`**: 
     -   `id` (bigint, PK), `client_id` (bigint, FK -> `clients.id`)
@@ -163,9 +175,11 @@
 -   **`notices`**: 
     -   `id` (uuid, PK), `title`, `content`
     -   `is_pinned` (boolean, false 기본값), `view_count` (integer, 0 기본값)
-    -   `author_id` (uuid, FK -> `auth.users.id`)
+    -   `created_by` (uuid, FK -> `auth.users.id`)
     -   `file_url`, `links` (text)
     -   `created_at`, `updated_at` (timestamptz)
+    -   `updated_by` (uuid, FK -> `auth.users.id`)
+    -   **RLS 정책**: 관리자만 작성/수정/삭제, 모든 인증된 사용자가 조회
 
 -   **`performance_evidence_files`**: 
     -   `id` (uuid, PK), `company_id` (uuid, FK -> `companies.id`)
@@ -173,6 +187,13 @@
     -   `settlement_month` (text), `file_name`, `file_path`
     -   `file_size` (bigint), `uploaded_by` (uuid, FK -> `auth.users.id`)
     -   `uploaded_at`, `created_at` (timestamp)
+    -   **RLS 정책**: 관리자 전체 접근, 일반 사용자는 자신의 업체 파일만 관리
+
+-   **`notice_views`**: 
+    -   `id` (uuid, PK), `notice_id` (uuid, FK -> `notices.id`)
+    -   `user_id` (uuid, FK -> `auth.users.id`)
+    -   `viewed_at` (timestamptz, now() 기본값)
+    -   **용도**: 공지사항 조회 이력 추적
 
 -   **`absorption_analysis`**: 
     -   `id` (bigint, PK), `performance_record_id` (bigint, FK -> `performance_records.id`)
@@ -184,6 +205,7 @@
     -   `registered_add_by` (uuid, FK -> `auth.users.id`)
     -   `wholesale_revenue`, `direct_revenue`, `total_revenue`, `absorption_rate`
     -   `created_at`, `updated_at` (timestamptz)
+    -   **참고**: 이 테이블은 `performance_records_absorption`로 대체됨
 
 ---
 

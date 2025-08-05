@@ -1,10 +1,10 @@
--- 설명: 흡수율 분석을 실행하고, 각 실적별로 연결된 도매/직거래 매출액을 계산하는 함수입니다.
---      최신 review_details_view를 사용하도록 로직을 전면 수정합니다.
+-- 설명: 흡수율 분석 함수를 products_standard_code 테이블을 참조하도록 수정
+--      기존 products.standard_code 대신 products_standard_code.standard_code를 사용
 
 -- 1. 기존 함수가 존재하면 삭제
 DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
 
--- 2. 새로운 함수 정의
+-- 2. 새로운 함수 정의 (products_standard_code 테이블 참조)
 CREATE OR REPLACE FUNCTION public.calculate_absorption_rates(p_settlement_month text)
 RETURNS TABLE(
     analysis_id bigint, 

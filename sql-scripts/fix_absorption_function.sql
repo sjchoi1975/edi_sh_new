@@ -1,10 +1,10 @@
--- 설명: 흡수율 분석을 실행하고, 각 실적별로 연결된 도매/직거래 매출액을 계산하는 함수입니다.
---      최신 review_details_view를 사용하도록 로직을 전면 수정합니다.
+-- calculate_absorption_rates 함수를 Supabase RPC로 사용할 수 있도록 수정
+-- 기존 함수 삭제 후 다시 생성
 
--- 1. 기존 함수가 존재하면 삭제
+-- 1. 기존 함수 삭제
 DROP FUNCTION IF EXISTS public.calculate_absorption_rates(p_settlement_month text);
 
--- 2. 새로운 함수 정의
+-- 2. 새로운 함수 생성 (Supabase RPC 호환)
 CREATE OR REPLACE FUNCTION public.calculate_absorption_rates(p_settlement_month text)
 RETURNS TABLE(
     analysis_id bigint, 
@@ -12,24 +12,25 @@ RETURNS TABLE(
     direct_revenue numeric
 )
 LANGUAGE plpgsql
+SECURITY DEFINER -- Supabase RPC 호환을 위해 추가
 AS $$
 BEGIN
     RETURN QUERY
     WITH 
-    -- 1. 선택된 정산월에 해당하는 '완료' 상태의 모든 실적 데이터를 review_details_view에서 가져옴
+    -- 1. 선택된 정산월에 해당하는 '완료' 상태의 모든 실적 데이터를 performance_records_absorption에서 가져옴
     performance_base AS (
         SELECT 
-            rdv.absorption_analysis_id,
-            rdv.client_id,
-            rdv.product_id,
+            pra.id as absorption_analysis_id,
+            pra.client_id,
+            pra.product_id,
             p.insurance_code,
             psc.standard_code, -- 도매/직거래 매출 매칭을 위한 표준코드 (products_standard_code 테이블에서 가져옴)
-            rdv.prescription_month,
-            rdv.prescription_qty
-        FROM public.review_details_view rdv
-        JOIN products p ON rdv.product_id = p.id
+            pra.prescription_month,
+            pra.prescription_qty
+        FROM public.performance_records_absorption pra
+        JOIN products p ON pra.product_id = p.id
         LEFT JOIN products_standard_code psc ON p.insurance_code = psc.insurance_code
-        WHERE rdv.settlement_month = p_settlement_month AND rdv.review_status = '완료'
+        WHERE pra.settlement_month = p_settlement_month
     ),
     -- 2. 병원-약국 매핑 정보
     client_pharmacy_map AS (
@@ -57,7 +58,7 @@ BEGIN
     )
     -- 5. 최종 결과 계산
     SELECT 
-        pb.absorption_analysis_id AS record_id,
+        pb.absorption_analysis_id AS analysis_id,
         -- 도매 매출 계산
         SUM(
             COALESCE(ws.sales_amount, 0) * 
@@ -65,7 +66,7 @@ BEGIN
                 WHEN phc.hospital_count > 1 THEN (pb.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
                 ELSE 1 
             END)
-        ) AS calculated_wholesale,
+        ) AS wholesale_revenue,
         -- 직거래 매출 계산
         SUM(
             COALESCE(ds.sales_amount, 0) *
@@ -73,7 +74,7 @@ BEGIN
                 WHEN phc.hospital_count > 1 THEN (pb.prescription_qty::numeric / NULLIF(tdb.total_qty_for_distribution, 0))
                 ELSE 1 
             END)
-        ) AS calculated_direct
+        ) AS direct_revenue
     FROM performance_base pb
     -- 병원에 연결된 약국 정보 조인
     JOIN client_pharmacy_map cpm ON pb.client_id = cpm.client_id
@@ -96,4 +97,18 @@ BEGIN
         AND pb.prescription_month = tdb.prescription_month
     GROUP BY pb.absorption_analysis_id;
 END;
-$$; 
+$$;
+
+-- 3. 함수 권한 설정 (Supabase RPC 호환)
+GRANT EXECUTE ON FUNCTION public.calculate_absorption_rates(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.calculate_absorption_rates(text) TO anon;
+
+-- 4. 함수가 제대로 생성되었는지 확인
+SELECT 
+    p.proname as function_name,
+    pg_get_function_arguments(p.oid) as arguments,
+    pg_get_function_result(p.oid) as return_type
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = 'public' 
+AND p.proname = 'calculate_absorption_rates'; 

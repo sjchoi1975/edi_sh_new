@@ -119,15 +119,11 @@ const generateAvailableMonths = () => {
   availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
 }
 
-// 기준월 + 보험코드 기준 유니크 필터링
+// 기준월 필터링 (중복 보험코드 제거 로직 삭제)
 const filteredProducts = computed(() => {
   if (!selectedMonth.value) return [];
-  const seen = new Set();
   return products.value.filter((p) => {
-    if (p.base_month !== selectedMonth.value) return false;
-    if (seen.has(p.insurance_code)) return false;
-    seen.add(p.insurance_code);
-    return true;
+    return p.base_month === selectedMonth.value;
   });
 });
 
@@ -217,19 +213,47 @@ const fetchProducts = async () => {
   }
 }
 
-// 선택된 기준월의 제품만 불러오는 함수
+// 선택된 기준월의 제품만 불러오는 함수 (product_company_not_assignments 제외)
 const fetchProductsByMonth = async (month) => {
   if (!month) return;
   
   loading.value = true;
   try {
-    const { data, error } = await supabase
+    // 1. product_company_not_assignments에 있는 제품 ID들 가져오기
+    const { data: assignedProductIds, error: assignedError } = await supabase
+      .from('product_company_not_assignments')
+      .select(`
+        product_id,
+        companies!inner(
+          id,
+          user_type,
+          approval_status
+        )
+      `)
+      .eq('companies.user_type', 'user')
+      .eq('companies.approval_status', 'approved');
+
+    if (assignedError) {
+      console.error('할당된 제품 ID 조회 오류:', assignedError);
+      return;
+    }
+
+    const excludedProductIds = assignedProductIds.map(item => item.product_id);
+
+    // 2. products 테이블에서 해당 기준월의 모든 제품 조회 (할당된 제품 제외)
+    let query = supabase
       .from('products')
       .select('*')
-      .eq('status', 'active')
       .eq('base_month', month)
+      .eq('status', 'active')
       .order('product_name', { ascending: true })
-      .limit(1000); // 한 달에 423개이므로 1000개 제한으로 충분
+      .limit(1000);
+
+    if (excludedProductIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedProductIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       console.error('제품 데이터 로딩 오류:', error);

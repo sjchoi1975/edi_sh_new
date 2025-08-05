@@ -425,6 +425,7 @@ const selectedStatus = ref('대기');
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
 const monthlyHospitals = ref([]);
+const allApprovedCompanies = ref([]);
 
 // --- 상태 관리: 데이터 테이블 ---
 const loading = ref(false);
@@ -469,9 +470,8 @@ const bulkChangeOptions = computed(() => {
   
   switch (selectedBulkChangeType.value) {
     case 'company_name':
-      // 현재 선택된 행들의 고유한 업체명 목록
-      const uniqueCompanies = [...new Set(monthlyCompanies.value.map(company => company.company_name))];
-      return uniqueCompanies;
+      // 전체 업체 목록 (user_type = user & approval_status = approved)
+      return allApprovedCompanies.value.map(company => company.company_name);
     case 'prescription_type':
       return prescriptionTypeOptions;
     default:
@@ -558,6 +558,7 @@ const route = useRoute();
 onMounted(async () => {
   console.log("1. onMounted 시작");
   await fetchAvailableMonths();
+  await fetchAllApprovedCompanies();
   if (availableMonths.value.length > 0) {
     selectedSettlementMonth.value = availableMonths.value[0].settlement_month;
     console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
@@ -599,6 +600,23 @@ async function fetchAvailableMonths() {
   const { data, error } = await supabase.from('settlement_months').select('settlement_month').order('settlement_month', { ascending: false });
   if (error) console.error('정산월 로딩 실패:', error);
   else availableMonths.value = data;
+}
+
+async function fetchAllApprovedCompanies() {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, company_name')
+    .eq('user_type', 'user')
+    .eq('approval_status', 'approved')
+    .order('company_name', { ascending: true });
+  
+  if (error) {
+    console.error('전체 승인된 업체 로딩 실패:', error);
+    allApprovedCompanies.value = [];
+  } else {
+    allApprovedCompanies.value = data || [];
+    console.log(`전체 승인된 업체 ${allApprovedCompanies.value.length}개 로드 완료`);
+  }
 }
 
 async function fetchFilterOptions(settlementMonth) {
@@ -667,29 +685,25 @@ async function fetchProductsForMonth(month) {
     // 이미 불러온 월이면 캐시 사용
     if (productsByMonth.value[month]) return;
 
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .eq('base_month', month)
-        .range(0, 2999);
+    try {
+        // 관리자용이므로 모든 제품을 표시 (업체별 할당 상태와 관계없이)
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('status', 'active')
+            .eq('base_month', month)
+            .order('product_name', { ascending: true })
+            .range(0, 2999);
 
-    if (!error && data) {
-        // 보험코드 기준으로 유니크하게 처리
-        const uniqByMonthAndInsurance = {};
-        const noInsurance = [];
-        data.forEach(p => {
-            const key = `${p.base_month}_${p.insurance_code || ''}`;
-            if (p.insurance_code) {
-                if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
-            } else {
-                noInsurance.push(p);
-            }
-        });
-        productsByMonth.value[month] = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
-        console.log(`처방월 ${month} 제품 로드 완료:`, data.length, '개 → 유니크', productsByMonth.value[month].length, '개');
-    } else {
-        console.error('제품 목록 로딩 실패:', error);
+        if (!error && data) {
+            productsByMonth.value[month] = data;
+            console.log(`처방월 ${month} 제품 로드 완료:`, data.length, '개');
+        } else {
+            console.error('제품 목록 로딩 실패:', error);
+            productsByMonth.value[month] = [];
+        }
+    } catch (err) {
+        console.error('제품 데이터 로딩 오류:', err);
         productsByMonth.value[month] = [];
     }
 }
@@ -1776,7 +1790,7 @@ async function handleBulkChange() {
     switch (selectedBulkChangeType.value) {
       case 'company_name':
         // 업체명 변경 시 company_id도 함께 업데이트
-        const selectedCompany = monthlyCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
+        const selectedCompany = allApprovedCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
         if (selectedCompany) {
           updateData.company_id = selectedCompany.id;
           

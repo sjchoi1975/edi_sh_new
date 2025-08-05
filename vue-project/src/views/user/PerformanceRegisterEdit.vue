@@ -587,26 +587,64 @@ watch(
   }
 );
 async function fetchProducts(prescriptionMonth) {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('status', 'active')
-    .eq('base_month', prescriptionMonth)
-    .range(0, 2999);
+  try {
+    // 1. 현재 사용자/관리자의 업체 정보 확인
+    const clientId = route.query.clientId;
+    const companyId = route.query.companyId;
+    let currentCompanyId;
 
-  if (!error && data) {
-    const uniqByMonthAndInsurance = {};
-    const noInsurance = [];
-    data.forEach(p => {
-      const key = `${p.base_month}_${p.insurance_code || ''}`;
-      if (p.insurance_code) {
-        if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
-      } else {
-        noInsurance.push(p);
-      }
-    });
-    products.value = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
-    console.log('불러온 제품 개수:', data.length, '처방월:', prescriptionMonth);
+    if (companyId) {
+      // 관리자가 특정 업체의 실적을 등록하는 경우
+      currentCompanyId = companyId;
+    } else {
+      // 일반 사용자가 자신의 실적을 등록하는 경우
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (!company) return;
+      currentCompanyId = company.id;
+    }
+
+    // 2. product_company_not_assignments에서 현재 업체의 미할당 제품 ID 목록 조회
+    const { data: assignedProductIds, error: assignedError } = await supabase
+      .from('product_company_not_assignments')
+      .select('product_id')
+      .eq('company_id', currentCompanyId);
+
+    if (assignedError) {
+      console.error('미할당 제품 ID 조회 오류:', assignedError);
+      return;
+    }
+
+    const excludedProductIds = assignedProductIds.map(item => item.product_id);
+
+    // 3. 해당월의 모든 제품 조회 (미할당 제품 제외)
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('status', 'active')
+      .eq('base_month', prescriptionMonth)
+      .order('product_name', { ascending: true })
+      .range(0, 2999);
+
+    if (excludedProductIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedProductIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      products.value = data;
+      console.log('불러온 제품 개수:', data.length, '처방월:', prescriptionMonth);
+    }
+  } catch (err) {
+    console.error('제품 데이터 로딩 오류:', err);
   }
 }
 
@@ -1011,7 +1049,7 @@ function calculateAmounts(rowIdx) {
   const price = Number(row.price.toString().replace(/,/g, ''));
   
   // 처방액 계산 (처방수량과 단가가 모두 있을 때만)
-  if (!isNaN(qty) && qty > 0 && !isNaN(price) && price > 0) {
+  if (!isNaN(qty) && qty !== 0 && !isNaN(price) && price > 0) {
     row.prescription_amount = (qty * price).toLocaleString();
   } else {
     row.prescription_amount = '';
@@ -1021,7 +1059,7 @@ function calculateAmounts(rowIdx) {
   calculatePaymentAmount(rowIdx);
 }
 
-// 수수료율 입력 시 지급액 계산
+// 수수료율 입력 시 지급액만 계산 (처방액은 변경하지 않음)
 function onCommissionRateInput(rowIdx) {
   const row = inputRows.value[rowIdx];
   // 백분율 기호 제거하고 숫자만 추출
@@ -1030,7 +1068,8 @@ function onCommissionRateInput(rowIdx) {
     // 입력값을 그대로 저장 (포커스 아웃 시 변환)
     row.commission_rate = rate;
   }
-  calculateAmounts(rowIdx);
+  // 지급액만 계산 (처방액은 변경하지 않음)
+  calculatePaymentAmount(rowIdx);
 }
 
 // 지급액 계산 함수
@@ -1046,7 +1085,7 @@ function calculatePaymentAmount(rowIdx) {
   });
   
   // 지급액 계산 (처방액과 수수료율이 모두 있을 때만)
-  if (!isNaN(prescriptionAmount) && prescriptionAmount > 0 && !isNaN(commissionRate) && commissionRate >= 0) {
+  if (!isNaN(prescriptionAmount) && prescriptionAmount !== 0 && !isNaN(commissionRate) && commissionRate >= 0) {
     // commissionRate는 백분율 형태이므로 그대로 사용 (100배 계산)
     const rateForCalculation = commissionRate;
     const paymentAmount = (prescriptionAmount * rateForCalculation / 100);
@@ -1062,7 +1101,7 @@ function calculatePaymentAmount(rowIdx) {
     console.log(`지급액 계산 실패:`, {
       prescriptionAmountValid: !isNaN(prescriptionAmount),
       commissionRateValid: !isNaN(commissionRate),
-      prescriptionAmountPositive: prescriptionAmount > 0
+      prescriptionAmountNonZero: prescriptionAmount !== 0
     });
   }
 }
@@ -1892,27 +1931,67 @@ async function fetchProductsForMonth(month) {
   // 이미 불러온 월이면 캐시 사용
   if (productsByMonth.value[month]) return;
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('status', 'active')
-    .eq('base_month', month)
-    .range(0, 2999); // 필요시 더 크게
+  try {
+    // 1. 현재 사용자/관리자의 업체 정보 확인
+    const clientId = route.query.clientId;
+    const companyId = route.query.companyId;
+    let currentCompanyId;
 
-  if (!error && data) {
-    const uniqByMonthAndInsurance = {};
-    const noInsurance = [];
-    data.forEach(p => {
-      const key = `${p.base_month}_${p.insurance_code || ''}`;
-      if (p.insurance_code) {
-        if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
-      } else {
-        noInsurance.push(p);
-      }
-    });
-    productsByMonth.value[month] = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
-  } else {
-    productsByMonth.value[month] = []; // 에러 시 빈 배열
+    if (companyId) {
+      // 관리자가 특정 업체의 실적을 등록하는 경우
+      currentCompanyId = companyId;
+    } else {
+      // 일반 사용자가 자신의 실적을 등록하는 경우
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (!company) return;
+      currentCompanyId = company.id;
+    }
+
+    // 2. product_company_not_assignments에서 현재 업체의 미할당 제품 ID 목록 조회
+    const { data: assignedProductIds, error: assignedError } = await supabase
+      .from('product_company_not_assignments')
+      .select('product_id')
+      .eq('company_id', currentCompanyId);
+
+    if (assignedError) {
+      console.error('미할당 제품 ID 조회 오류:', assignedError);
+      productsByMonth.value[month] = [];
+      return;
+    }
+
+    const excludedProductIds = assignedProductIds.map(item => item.product_id);
+
+    // 3. 해당월의 모든 제품 조회 (미할당 제품 제외)
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('status', 'active')
+      .eq('base_month', month)
+      .order('product_name', { ascending: true })
+      .range(0, 2999);
+
+    if (excludedProductIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedProductIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      productsByMonth.value[month] = data;
+    } else {
+      productsByMonth.value[month] = []; // 에러 시 빈 배열
+    }
+  } catch (err) {
+    console.error('제품 데이터 로딩 오류:', err);
+    productsByMonth.value[month] = [];
   }
 }
 

@@ -22,7 +22,7 @@
           <span class="filter-item p-input-icon-left" style="position:relative; width:320px;">
             <InputText
               v-model="searchInput"
-              placeholder="제품명, 보험코드, 표준코드"
+              placeholder="제품명, 보험코드"
               class="search-input"
               @keyup.enter="doSearch"
               style="width:100%;"
@@ -193,53 +193,8 @@
             <span v-else>{{ slotProps.data.commission_rate_e !== undefined && slotProps.data.commission_rate_e !== null ? (slotProps.data.commission_rate_e * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
-        <Column
-          field="standard_code"
-          header="표준코드"
-          :headerStyle="{ width: columnWidths.standard_code }"
-          :sortable="true"
-        >
-          <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.standard_code"
-              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
-              :id="`standard_code_${slotProps.data.id}`"
-            />
-            <span v-else>{{ slotProps.data.standard_code }}</span>
-          </template>
-        </Column>
-        <Column
-          field="unit_packaging_desc"
-          header="단위 / 포장형태"
-          :headerStyle="{ width: columnWidths.unit_packaging_desc }"
-          :sortable="true"
-        >
-          <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.unit_packaging_desc"
-              class="p-inputtext p-component p-inputtext-sm inline-edit-input"
-            />
-            <span v-else>{{ slotProps.data.unit_packaging_desc }}</span>
-          </template>
-        </Column>
-        <Column
-          field="unit_quantity"
-          header="단위수량"
-          :headerStyle="{ width: columnWidths.unit_quantity }"
-          :sortable="true"
-        >
-          <template #body="slotProps">
-            <input
-              v-if="slotProps.data.isEditing"
-              v-model="slotProps.data.unit_quantity"
-              type="number"
-              class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
-            />
-            <span v-else>{{ slotProps.data.unit_quantity !== undefined && slotProps.data.unit_quantity !== null ? slotProps.data.unit_quantity.toLocaleString() : '' }}</span>
-          </template>
-        </Column>
+
+
         <Column
           field="created_at"
           header="등록일자"
@@ -248,6 +203,26 @@
         >
           <template #body="slotProps">
             <span>{{ slotProps.data.created_at ? new Date(slotProps.data.created_at).toISOString().split('T')[0] : '' }}</span>
+          </template>
+        </Column>
+        <Column header="업체" :headerStyle="{ width: columnWidths.companies }" :sortable="false">
+          <template #body="slotProps">
+            <div class="companies-cell">
+              <div 
+                class="companies-summary clickable"
+                @click="openCompanyAssignment(slotProps.data)"
+                title="업체 할당 관리"
+              >
+                <span v-if="isAllCompaniesAssigned(slotProps.data)" class="all-assigned">
+                  전체
+                </span>
+                <template v-else>
+                  <span class="active-count">{{ getValidActiveCount(slotProps.data) }}</span>
+                  <span class="separator">/</span>
+                  <span class="total-count">{{ slotProps.data.total_companies_count || 0 }}</span>
+                </template>
+              </div>
+            </div>
           </template>
         </Column>
         <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }" :sortable="true">
@@ -300,6 +275,8 @@
         <div class="loading-text">등록 진행중입니다...</div>
       </div>
     </div>
+
+
   </div>
 </template>
 
@@ -313,23 +290,22 @@ import { supabase } from '@/supabase'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 
+
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  product_name: '16%',
-  insurance_code: '7%',
+  product_name: '14%',
+  insurance_code: '6%',
   price: '5%',
-  commission_rate_a: '7%',
-  commission_rate_b: '7%',
-  commission_rate_c: '7%',
-  commission_rate_d: '7%',
-  commission_rate_e: '7%',
-  standard_code: '8%',
-  unit_packaging_desc: '10%',
-  unit_quantity: '7%',
-  created_at: '8%',
-  status: '6%',
-  actions: '8%'
+  commission_rate_a: '6%',
+  commission_rate_b: '6%',
+  commission_rate_c: '6%',
+  commission_rate_d: '6%',
+  commission_rate_e: '6%',
+  created_at: '7%',
+  companies: '8%',
+  status: '5%',
+  actions: '7%'
 };
 
 const products = ref([])
@@ -344,14 +320,15 @@ const router = useRouter()
 const fileInput = ref(null)
 const currentPageFirstIndex = ref(0)
 
+
+
 function doSearch() {
   if (searchInput.value.length >= 2) {
     searchKeyword.value = searchInput.value;
     const keyword = searchKeyword.value.toLowerCase();
     filteredProducts.value = products.value.filter(p =>
       (p.product_name && p.product_name.toLowerCase().includes(keyword)) ||
-      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword)) ||
-      (p.standard_code && p.standard_code.toLowerCase().includes(keyword))
+      (p.insurance_code && p.insurance_code.toLowerCase().includes(keyword))
     );
   }
 }
@@ -481,19 +458,68 @@ const fetchProductsByMonth = async (month) => {
   
   loading.value = true;
   try {
-    const { data, error } = await supabase
+    // 1. 제품 데이터 가져오기
+    const { data: productsData, error: productsError } = await supabase
       .from('products')
       .select('*')
       .eq('base_month', month)
       .order('product_name', { ascending: true })
-      .limit(1000); // 한 달에 423개이므로 1000개 제한으로 충분
+      .limit(1000);
     
-    if (error) {
-      console.error('제품 데이터 로딩 오류:', error);
+    if (productsError) {
+      console.error('제품 데이터 로딩 오류:', productsError);
       return;
     }
     
-    products.value = data || [];
+    // 2. 업체 할당 정보 가져오기 (product_company_not_assignments 테이블 사용)
+    const { data: assignmentData, error: assignmentError } = await supabase
+      .from('product_company_not_assignments')
+      .select(`
+        product_id,
+        company_id,
+        companies!inner(
+          id,
+          company_name,
+          approval_status,
+          user_type
+        )
+      `)
+      .eq('companies.user_type', 'user')
+      .eq('companies.approval_status', 'approved');
+    
+    if (assignmentError) {
+      console.error('업체 할당 데이터 로딩 오류:', assignmentError);
+      return;
+    }
+    
+    // 3. 전체 업체 수 계산 (승인된 업체만)
+    const { count: totalCompaniesCount } = await supabase
+      .from('companies')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_type', 'user')
+      .eq('approval_status', 'approved');
+    
+    // 4. 제품별 업체 할당 정보 매핑 (할당 안된 업체만 저장하는 방식)
+    const productsWithAssignments = productsData.map(product => {
+      const notAssignedCompanies = assignmentData.filter(
+        assignment => assignment.product_id === product.id
+      );
+      
+      // 할당 안된 업체 수
+      const notAssignedCount = notAssignedCompanies.length;
+      
+      // 활성 업체 수 = 전체 업체 수 - 할당 안된 업체 수
+      const activeCompaniesCount = Math.max(0, (totalCompaniesCount || 0) - notAssignedCount);
+      
+      return {
+        ...product,
+        active_companies_count: activeCompaniesCount,
+        total_companies_count: totalCompaniesCount || 0,
+        not_assigned_companies: notAssignedCompanies
+      };
+    });
+    
+    products.value = productsWithAssignments || [];
   } catch (err) {
     console.error('제품 데이터 로딩 오류:', err);
   } finally {
@@ -523,9 +549,6 @@ const downloadTemplate = () => {
       수수료C: 0.30,
       수수료D: 0.25,
       수수료E: 0.20,
-      표준코드: '8800123456789',
-      단위포장형태: '정 10개',
-      단위수량: 10,
       비고: '',
       상태: '활성',
     },
@@ -539,9 +562,6 @@ const downloadTemplate = () => {
       수수료C: 0.35,
       수수료D: 0.30,
       수수료E: 0.25,
-      표준코드: '8800987654321',
-      단위포장형태: '캡슐 20개',
-      단위수량: 20,
       비고: '예시',
       상태: '활성',
     },
@@ -551,7 +571,7 @@ const downloadTemplate = () => {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '제품템플릿')
 
-  // 컬럼 너비 설정 (단위수량, 비고, 상태 포함)
+  // 컬럼 너비 설정
   ws['!cols'] = [
     { width: 12 }, // 기준월
     { width: 20 }, // 제품명
@@ -562,9 +582,6 @@ const downloadTemplate = () => {
     { width: 10 }, // 수수료C
     { width: 10 }, // 수수료D
     { width: 10 }, // 수수료E
-    { width: 16 }, // 표준코드
-    { width: 16 }, // 단위포장형태
-    { width: 10 }, // 단위수량
     { width: 20 }, // 비고
     { width: 10 }, // 상태
   ]
@@ -592,10 +609,10 @@ const downloadTemplate = () => {
     }
   }
   
-  // 워크시트 범위 업데이트 (1000행까지 확장) - 단위수량, 비고, 상태 컬럼 포함
+  // 워크시트 범위 업데이트 (1000행까지 확장)
   ws['!ref'] = XLSX.utils.encode_range({
     s: { c: 0, r: 0 },
-    e: { c: 13, r: maxRows - 1 }
+    e: { c: 10, r: maxRows - 1 }
   })
 
   XLSX.writeFile(wb, '제품_엑셀등록_템플릿.xlsx')
@@ -698,11 +715,7 @@ const handleFileUpload = async (event) => {
         return
       }
 
-      // 표준코드 형식 검증 (13자리 숫자)
-      if (row['표준코드'] && (row['표준코드'].toString().length !== 13 || !/^\d{13}$/.test(row['표준코드'].toString()))) {
-        errors.push(`${rowNum}행: 표준코드는 13자리 숫자여야 합니다.`)
-        return
-      }
+
 
       // 약가 형식 검증 (숫자)
       if (row['약가'] && (isNaN(Number(row['약가'])) || Number(row['약가']) < 0)) {
@@ -765,14 +778,7 @@ const handleFileUpload = async (event) => {
         row['수수료E'] = Math.round(commissionE * 1000) / 1000
       }
 
-      // 단위수량 검증 (숫자, 0 이상)
-      if (row['단위수량'] !== undefined && row['단위수량'] !== null && row['단위수량'] !== '') {
-        const unitQuantity = Number(row['단위수량'])
-        if (isNaN(unitQuantity) || unitQuantity < 0) {
-          errors.push(`${rowNum}행: 단위수량은 0 이상의 숫자여야 합니다.`)
-          return
-        }
-      }
+
 
       const monthRegex = /^\d{4}-\d{2}$/
       if (!monthRegex.test(row['기준월'])) {
@@ -804,9 +810,6 @@ const handleFileUpload = async (event) => {
         commission_rate_c: Number(row['수수료C']) || 0,
         commission_rate_d: Number(row['수수료D']) || 0,
         commission_rate_e: Number(row['수수료E']) || 0,
-        standard_code: row['표준코드'] || '',
-        unit_packaging_desc: row['단위포장형태'] || '',
-        unit_quantity: Number(row['단위수량']) || 0,
         remarks: row['비고'] || '',
         status: statusValue,
         created_by: user.id, // 등록자 ID 추가
@@ -819,21 +822,21 @@ const handleFileUpload = async (event) => {
       return
     }
 
-    // 3단계: 추가 모드일 때만 표준코드 중복 체크
+    // 3단계: 추가 모드일 때만 보험코드 중복 체크
     if (hasExistingData && isAppendMode) {
       const duplicateErrors = []
       const duplicateProducts = []
       
       for (const newProduct of uploadData) {
-        if (newProduct.standard_code) {
-          // 기존 데이터에서 동일한 기준월의 표준코드 중복 확인
+        if (newProduct.insurance_code) {
+          // 기존 데이터에서 동일한 기준월의 보험코드 중복 확인
           const existingProduct = products.value.find(p => 
             p.base_month === newProduct.base_month && 
-            p.standard_code === newProduct.standard_code
+            p.insurance_code === newProduct.insurance_code
           )
           
           if (existingProduct) {
-            duplicateErrors.push(`${newProduct.rowNum}행: 이미 동일한 표준코드 제품이 등록되어 있습니다.`)
+            duplicateErrors.push(`${newProduct.rowNum}행: 이미 동일한 보험코드 제품이 등록되어 있습니다.`)
             duplicateProducts.push(newProduct)
           }
         }
@@ -846,7 +849,7 @@ const handleFileUpload = async (event) => {
         }
 
         // 5단계: 중복 해결 방법 선택
-        const shouldReplace = confirm('이미 동일한 표준코드 제품을 어떻게 처리하시겠습니까?\n\n확인: 기존 제품 정보를 신규 제품 정보로 교체하기\n취소: 기존 제품 정보는 그대로 두고 신규 제품 정보만 등록하기')
+        const shouldReplace = confirm('이미 동일한 보험코드 제품을 어떻게 처리하시겠습니까?\n\n확인: 기존 제품 정보를 신규 제품 정보로 교체하기\n취소: 기존 제품 정보는 그대로 두고 신규 제품 정보만 등록하기')
         
         if (shouldReplace) {
           // 교체 모드: 중복되는 기존 제품들 삭제
@@ -855,7 +858,7 @@ const handleFileUpload = async (event) => {
               .from('products')
               .delete()
               .eq('base_month', duplicateProduct.base_month)
-              .eq('standard_code', duplicateProduct.standard_code)
+              .eq('insurance_code', duplicateProduct.insurance_code)
             
             if (deleteError) {
               alert('기존 제품 삭제 실패: ' + deleteError.message)
@@ -866,7 +869,7 @@ const handleFileUpload = async (event) => {
           for (const duplicateProduct of duplicateProducts) {
             const index = products.value.findIndex(p => 
               p.base_month === duplicateProduct.base_month && 
-              p.standard_code === duplicateProduct.standard_code
+              p.insurance_code === duplicateProduct.insurance_code
             )
             if (index > -1) {
               products.value.splice(index, 1)
@@ -874,8 +877,8 @@ const handleFileUpload = async (event) => {
           }
         } else {
           // 기존 유지 모드: 중복되는 신규 제품들 제외
-          const duplicateStandardCodes = duplicateProducts.map(p => p.standard_code)
-          uploadData = uploadData.filter(item => !duplicateStandardCodes.includes(item.standard_code))
+          const duplicateInsuranceCodes = duplicateProducts.map(p => p.insurance_code)
+          uploadData = uploadData.filter(item => !duplicateInsuranceCodes.includes(item.insurance_code))
         }
       }
     }
@@ -925,9 +928,7 @@ const downloadExcel = () => {
     수수료C: product.commission_rate_c || 0,
     수수료D: product.commission_rate_d || 0,
     수수료E: product.commission_rate_e || 0,
-    표준코드: product.standard_code || '',
-    단위포장형태: product.unit_packaging_desc || '',
-    단위수량: product.unit_quantity || 0,
+
     비고: product.remarks || '',
     상태: product.status === 'active' ? '활성' : '비활성',
     등록일: product.created_at ? new Date(product.created_at).toISOString().split('T')[0] : '',
@@ -949,9 +950,6 @@ const downloadExcel = () => {
     { width: 10 }, // 수수료C
     { width: 10 }, // 수수료D
     { width: 10 }, // 수수료E
-    { width: 12 }, // 표준코드
-    { width: 15 }, // 단위포장형태
-    { width: 10 }, // 단위수량
     { width: 20 }, // 비고
     { width: 12 }, // 상태
     { width: 12 }, // 등록일
@@ -1006,8 +1004,7 @@ const isEditValid = (row) => {
   // 필수값 검증
   const hasRequiredFields = row.product_name && row.product_name.trim() !== '' && 
                            row.insurance_code && row.insurance_code.toString().trim() !== '' && 
-                           row.price && row.price.toString().trim() !== '' && 
-                           row.standard_code && row.standard_code.toString().trim() !== '';
+                           row.price && row.price.toString().trim() !== '';
   
   // 변경값 감지
   const hasChanges = row.product_name !== row.originalData.product_name ||
@@ -1018,9 +1015,6 @@ const isEditValid = (row) => {
                     row.commission_rate_c !== row.originalData.commission_rate_c ||
                     row.commission_rate_d !== row.originalData.commission_rate_d ||
                     row.commission_rate_e !== row.originalData.commission_rate_e ||
-                    row.standard_code !== row.originalData.standard_code ||
-                    row.unit_packaging_desc !== row.originalData.unit_packaging_desc ||
-                    row.unit_quantity !== row.originalData.unit_quantity ||
                     row.status !== row.originalData.status ||
                     row.remarks !== row.originalData.remarks;
   
@@ -1075,17 +1069,7 @@ const saveEdit = async (row) => {
       return;
     }
 
-    if (!row.standard_code || row.standard_code.toString().trim() === '') {
-      alert('표준코드는 필수 입력 항목입니다.');
-      setTimeout(() => {
-        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
-        if (standardCodeInput) {
-          standardCodeInput.focus();
-          standardCodeInput.select();
-        }
-      }, 100);
-      return;
-    }
+
 
     // 보험코드 형식 검증 (9자리 숫자)
     if (row.insurance_code.toString().length !== 9 || !/^\d{9}$/.test(row.insurance_code.toString())) {
@@ -1100,18 +1084,7 @@ const saveEdit = async (row) => {
       return;
     }
 
-    // 표준코드 형식 검증 (13자리 숫자)
-    if (row.standard_code.toString().length !== 13 || !/^\d{13}$/.test(row.standard_code.toString())) {
-      alert('표준코드는 13자리 숫자여야 합니다.');
-      setTimeout(() => {
-        const standardCodeInput = document.getElementById(`standard_code_${row.id}`);
-        if (standardCodeInput) {
-          standardCodeInput.focus();
-          standardCodeInput.select();
-        }
-      }, 100);
-      return;
-    }
+
 
     // 약가 형식 검증 (0 이상의 숫자)
     if (row.price && (isNaN(Number(row.price)) || Number(row.price) < 0)) {
@@ -1230,9 +1203,6 @@ const saveEdit = async (row) => {
       commission_rate_c: row.commission_rate_c === '' ? 0 : Number(row.commission_rate_c),
       commission_rate_d: row.commission_rate_d === '' ? 0 : Number(row.commission_rate_d),
       commission_rate_e: row.commission_rate_e === '' ? 0 : Number(row.commission_rate_e),
-      standard_code: row.standard_code || '',
-      unit_packaging_desc: row.unit_packaging_desc || '',
-      unit_quantity: Number(row.unit_quantity) || 0,
       remarks: row.remarks || '',
       status: row.status,
     }
@@ -1348,6 +1318,25 @@ const removeOverflowClass = (event) => {
   console.log('오버플로우 클래스 제거됨');
 }
 
+// 업체 할당 관련 함수들
+const openCompanyAssignment = (product) => {
+  router.push(`/admin/products/${product.id}/assignment`);
+}
+
+// 모든 업체가 할당되었는지 확인
+const isAllCompaniesAssigned = (product) => {
+  const activeCount = product.active_companies_count || 0;
+  const totalCount = product.total_companies_count || 0;
+  return activeCount >= totalCount && totalCount > 0;
+}
+
+// 유효한 활성 업체 수 반환 (전체 업체 수를 초과하지 않도록)
+const getValidActiveCount = (product) => {
+  const activeCount = product.active_companies_count || 0;
+  const totalCount = product.total_companies_count || 0;
+  return Math.min(activeCount, totalCount);
+}
+
 </script>
 
 <style scoped>
@@ -1355,4 +1344,60 @@ const removeOverflowClass = (event) => {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* 업체 컬럼 스타일 */
+.companies-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.companies-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.companies-summary.clickable {
+  cursor: pointer;
+  border: none !important;
+}
+
+.companies-summary.clickable:hover {
+  text-decoration: underline;
+  color: var(--primary-color) !important;
+}
+
+.active-count {
+  color: #495057;
+}
+
+.separator {
+  color: #495057;
+}
+
+.total-count {
+  color: #495057;
+}
+
+.all-assigned {
+  color: #495057;
+}
+
+.active-count:hover,
+.separator:hover,
+.total-count:hover,
+.all-assigned:hover {
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--primary-color) !important;
+  font-weight: 500;
+}
+
+
+
 </style>
