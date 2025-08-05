@@ -25,7 +25,7 @@
       </div>
       <DataTable
         :value="filteredSettlementMonths"
-        :loading="loading"
+        :loading="false"
         scrollable
         scrollHeight="calc(100vh - 250px)"
         class="admin-settlement-months-table"
@@ -36,7 +36,6 @@
         <template #empty>
           <div v-if="!loading">등록된 정산월이 없습니다.</div>
         </template>
-        <template #loading>정산월 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}

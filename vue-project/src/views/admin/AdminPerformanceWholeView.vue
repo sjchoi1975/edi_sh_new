@@ -58,7 +58,7 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           :value="displayRows" 
-          :loading="loading"
+          :loading="false"
           scrollable 
           scrollHeight="calc(100vh - 220px)"
           scrollDirection="both"
@@ -76,7 +76,6 @@
           <template #empty>
             <div v-if="!loading">등록된 실적이 없습니다.</div>
           </template>
-          <template #loading>전체 실적을 불러오는 중입니다...</template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
             <template #body="slotProps">

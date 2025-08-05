@@ -47,7 +47,7 @@
 
       <DataTable
         :value="filteredCompanies"
-        :loading="loading"
+        :loading="false"
         paginator :rows="50" :rowsPerPageOptions="[20, 50, 100]"
         editMode="cell" @cell-edit-complete="onCellEditComplete"
         scrollable scrollHeight="calc(100vh - 250px)" 
@@ -57,7 +57,6 @@
         <template #empty>
           <div v-if="!loading">승인 대기 중인 업체가 없습니다.</div>
         </template>
-        <template #loading> 승인 대기 업체 목록을 불러오는 중입니다... </template>
         
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>

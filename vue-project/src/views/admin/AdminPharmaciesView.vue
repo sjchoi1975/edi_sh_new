@@ -53,7 +53,7 @@
       </div>
       <DataTable
         :value="filteredPharmacies"
-        :loading="loading"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -65,7 +65,6 @@
         <template #empty>
           <div v-if="!loading">등록된 약국이 없습니다.</div>
         </template>
-        <template #loading>약국 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ slotProps.index + currentPageFirstIndex + 1 }}

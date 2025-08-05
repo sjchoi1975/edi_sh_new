@@ -37,15 +37,7 @@
             <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
-          <button 
-            class="btn-primary" 
-            @click="loadPerformanceData" 
-            :disabled="loading || isAnyEditing"
-          >
-            불러오기
-          </button>
-        </div>
+
       </div>
     </div>
 
@@ -54,7 +46,7 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div v-if="!loading && displayRows.length === 0" class="header-center-message">
-          필터 조건을 선택하고 '불러오기'를 클릭하세요.
+          해당 정산월의 실적 데이터가 없습니다.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
            <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
@@ -72,7 +64,7 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           :value="displayRows" 
-          :loading="loading"
+          :loading="false"
           v-model:editingRows="editingRows"
           editMode="row"
           @row-edit-save="onRowEditSave"
@@ -92,8 +84,7 @@
           }"
         >
           <template #empty>
-            <div v-if="loading">데이터를 불러오는 중입니다.</div>
-            <div v-else>필터 조건을 선택하고 '불러오기'를 클릭하세요.</div>
+            <div v-if="!loading">해당 정산월의 실적 데이터가 없습니다.</div>
           </template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
@@ -340,6 +331,14 @@
       </div>
     </div>
   </div>
+
+  <!-- 전체 화면 로딩 오버레이 - 메뉴 진입 시 -->
+  <div v-if="loading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">목록을 불러오는 중입니다...</div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -415,12 +414,12 @@ const selectedCompanyId = ref(null);
 const selectedHospitalId = ref(null);
 
 const statusOptions = ref([
-  { value: null, label: '전체' },
+  { value: null, label: '- 전체 -' },
   { value: '완료', label: '완료' },
   { value: '검수중', label: '검수중' },
   { value: '대기', label: '신규' },
 ]);
-const selectedStatus = ref('대기');
+const selectedStatus = ref(null);
 
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
@@ -428,7 +427,7 @@ const monthlyHospitals = ref([]);
 const allApprovedCompanies = ref([]);
 
 // --- 상태 관리: 데이터 테이블 ---
-const loading = ref(false);
+const loading = ref(true);
 const rows = ref([]);
 const originalRows = ref([]);
 const selectedRows = ref([]);
@@ -498,7 +497,7 @@ const displayRows = computed(() => {
 const prescriptionOptions = computed(() => {
   if (!selectedSettlementMonth.value) return [{ value: null, month: '전체' }];
   return [
-    { value: null, month: '전체' },
+    { value: null, month: '- 전체 -' },
     ...[1, 2, 3].map(offset => ({
       value: offset,
       month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
@@ -513,12 +512,12 @@ const prescriptionMonthOptionsForEdit = computed(() => {
 });
 
 const companyOptions = computed(() => {
-    return [{ id: null, company_name: '전체' }, ...monthlyCompanies.value];
+    return [{ id: null, company_name: '- 전체 -' }, ...monthlyCompanies.value];
 });
 
 const hospitalOptions = computed(() => {
     if (!selectedCompanyId.value) {
-        return [{ id: null, name: '전체' }, ...monthlyHospitals.value];
+        return [{ id: null, name: '- 전체 -' }, ...monthlyHospitals.value];
     }
     const relevantClientIds = monthlyPerformanceLinks.value
         .filter(link => link.company_id === selectedCompanyId.value)
@@ -533,11 +532,17 @@ watch(selectedSettlementMonth, async (newMonth) => {
         await fetchFilterOptions(newMonth);
         selectedCompanyId.value = null;
         selectedHospitalId.value = null;
+        // 정산월이 변경되면 자동으로 데이터 로드
+        await loadPerformanceData();
     }
 });
 
-watch(selectedCompanyId, () => {
+watch(selectedCompanyId, async () => {
     selectedHospitalId.value = null;
+    // 업체가 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
+    }
 });
 
 watch(prescriptionOffset, async () => {
@@ -549,6 +554,22 @@ watch(prescriptionOffset, async () => {
             // 처방월이 "전체"인 경우 제품 목록을 불러올 필요 없음
             products.value = [];
         }
+        // 처방월이 변경되면 자동으로 데이터 로드
+        await loadPerformanceData();
+    }
+});
+
+watch(selectedStatus, async () => {
+    // 상태가 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
+    }
+});
+
+watch(selectedHospitalId, async () => {
+    // 병의원이 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
     }
 });
 
@@ -579,8 +600,8 @@ onMounted(async () => {
     selectedStatus.value = route.query.status;
   }
   
-  // 쿼리 파라미터가 있으면 자동으로 데이터 로드
-  if (route.query.company || route.query.status) {
+  // 화면 진입 시 자동으로 데이터 로드
+  if (selectedSettlementMonth.value) {
     await loadPerformanceData();
   }
   

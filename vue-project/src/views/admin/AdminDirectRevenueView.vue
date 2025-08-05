@@ -8,14 +8,14 @@
         <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px">
           <label style="font-weight: 400">기간</label>
           <select v-model="fromMonth" class="select_month" @change="applyFilters">
-            <option value="">전체</option>
+            <option value="">- 전체 -</option>
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
             </option>
           </select>
           <span>~</span>
           <select v-model="toMonth" class="select_month" @change="applyFilters">
-            <option value="">전체</option>
+            <option value="">- 전체 -</option>
             <option v-for="month in availableMonths" :key="month" :value="month">
               {{ month }}
             </option>
@@ -69,7 +69,7 @@
       </div>
       <DataTable
         :value="revenues"
-        :loading="loading"
+        :loading="false"
         paginator
         :rows="pageSize"
         :totalRecords="totalCount"
@@ -85,7 +85,6 @@
         <template #empty>
           <div v-if="!loading">등록된 매출이 없습니다.</div>
         </template>
-        <template #loading>매출 목록을 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
             {{ (currentPage - 1) * pageSize + slotProps.index + 1 }}
@@ -278,7 +277,7 @@ const columnWidths = {
 }
 
 const revenues = ref([])
-const loading = ref(false)
+const loading = ref(true)
 const excelLoading = ref(false)
 const searchInput = ref('');
 const router = useRouter()

@@ -733,10 +733,10 @@ export default {
 }
 
 .empty-message {
-  padding: 1rem;
+  padding: 2rem 1rem;
   text-align: center;
   color: #6c757d;
-  font-style: italic;
+  font-size: var(--font-size-base);
 }
 
 /* 화살표 버튼 스타일 강화 */

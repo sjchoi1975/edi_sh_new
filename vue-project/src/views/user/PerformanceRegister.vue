@@ -48,12 +48,14 @@
       <div style="flex-grow: 1; overflow: auto;">
         <DataTable
           :value="clientList"
+          :loading="false"
           scrollable
           scrollHeight="calc(100vh - 220px)"
           class="custom-table performance-register-table"
         >
-          <template #empty>등록된 병의원이 없습니다.</template>
-          <template #loading>병의원 목록을 불러오는 중입니다...</template>
+          <template #empty>
+            <div v-if="!loading">등록된 병의원이 없습니다.</div>
+          </template>
 
           <!-- No 컬럼 -->
           <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
@@ -459,7 +461,7 @@ const selectedSettlementMonth = ref('')
 const clientList = ref([])
 const isInputPeriod = ref(false)
 const currentCompanyId = ref(null)
-const loading = ref(false)
+const loading = ref(true)
 const router = useRouter()
 const detailModalVisible = ref(false)
 const selectedClient = ref(null)
@@ -526,7 +528,6 @@ const fetchMyClientIds = async () => {
 // 거래처+실적 집계 fetch
 const fetchClientList = async () => {
   loading.value = true
-  clientList.value = []
   if (!selectedSettlementMonth.value || !currentCompanyId.value) {
     loading.value = false
     return

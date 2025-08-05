@@ -43,7 +43,7 @@
 
       <DataTable
         :value="filteredNotices"
-        :loading="loading"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -55,7 +55,6 @@
         <template #empty>
           <div v-if="!loading">등록된 공지사항이 없습니다.</div>
         </template>
-        <template #loading>공지사항 목록을 불러오는 중입니다...</template>
         
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>

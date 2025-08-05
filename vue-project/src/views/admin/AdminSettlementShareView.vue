@@ -26,7 +26,7 @@
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
         :value="companySummary" 
-        :loading="loading"
+        :loading="false"
         scrollable 
         scrollHeight="calc(100vh - 220px)"
         class="admin-settlement-share-table"
@@ -34,7 +34,6 @@
         <template #empty>
           <div v-if="!loading">조회된 데이터가 없습니다.</div>
         </template>
-        <template #loading>정산내역서를 불러오는 중입니다...</template>
 
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + 1 }}</template>
@@ -125,7 +124,7 @@ const columnWidths = {
   share: '6%'
 };
 
-const loading = ref(false);
+const loading = ref(true);
 const router = useRouter();
 
 // 필터

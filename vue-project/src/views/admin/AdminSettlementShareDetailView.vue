@@ -26,7 +26,7 @@
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
         :value="detailRows" 
-        :loading="loading"
+        :loading="false"
         paginator
         :rows="100"
         :rowsPerPageOptions="[100, 200, 500, 1000]"
@@ -37,7 +37,6 @@
         <template #empty>
           <div v-if="!loading">조회된 데이터가 없습니다.</div>
         </template>
-        <template #loading>정산 상세 데이터를 불러오는 중입니다...</template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
@@ -109,7 +108,7 @@ const companyId = ref(route.query.company_id);
 
 const companyInfo = ref({});
 const detailRows = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 const currentPageFirstIndex = ref(0);
 
 

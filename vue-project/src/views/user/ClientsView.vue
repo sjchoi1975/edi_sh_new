@@ -27,6 +27,7 @@
       </div>
       <DataTable
         :value="clients"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -37,8 +38,9 @@
         class="custom-table clients-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 병의원이 없습니다.</template>
-        <template #loading>병의원 목록을 불러오는 중입니다...</template>
+        <template #empty>
+          <div v-if="!loading">등록된 병의원이 없습니다.</div>
+        </template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
@@ -82,7 +84,7 @@ const clients = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 const currentPageFirstIndex = ref(0);
-const loading = ref(false);
+const loading = ref(true);
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {

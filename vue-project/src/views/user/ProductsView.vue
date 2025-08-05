@@ -35,6 +35,7 @@
       </div>
       <DataTable
         :value="filteredProducts"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -45,8 +46,9 @@
         class="custom-table products-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 제품이 없습니다.</template>
-        <template #loading>제품 목록을 불러오는 중입니다...</template>
+        <template #empty>
+          <div v-if="!loading">등록된 제품이 없습니다.</div>
+        </template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
@@ -96,7 +98,7 @@ const availableMonths = ref([]); // 기준월 목록
 const router = useRouter();
 const userCommissionGrade = ref('A');
 const currentPageFirstIndex = ref(0);
-const loading = ref(false); // 로딩 상태 추가
+const loading = ref(true); // 로딩 상태 추가
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {

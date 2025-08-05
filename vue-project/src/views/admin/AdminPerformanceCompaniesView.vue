@@ -34,7 +34,7 @@
       </div>
       <DataTable
         :value="companyList"
-        :loading="loading"
+        :loading="false"
         scrollable
         scrollHeight="calc(100vh - 250px)"
         class="admin-performance-companies-table"
@@ -44,7 +44,6 @@
             selectedSettlementMonth ? '등록된 실적이 없습니다.' : '정산월을 선택하세요.'
           }}</div>
         </template>
-        <template #loading>업체별 실적을 불러오는 중입니다...</template>
 
         <!-- No 컬럼 -->
         <Column header="No" :headerStyle="{ width: columnWidthsMain.no, textAlign: 'center' }">
@@ -361,7 +360,7 @@ const columnWidthsModal = {
 const availableMonths = ref([])
 const selectedSettlementMonth = ref('')
 const companyList = ref([])
-const loading = ref(false)
+const loading = ref(true)
 
 // 파일 모달 관련
 const showFileModal = ref(false)

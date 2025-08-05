@@ -57,7 +57,9 @@
           class="custom-table performance-list-table"
           style="table-layout: fixed; width: 100%"
         >
-          <template #empty>등록된 실적이 없습니다.</template>
+          <template #empty>
+            <div v-if="!loading">등록된 실적이 없습니다.</div>
+          </template>
           <Column header="No" :headerStyle="{ width: columnWidths.no }">
             <template #body="slotProps">
               {{ slotProps.index + 1 }}
@@ -245,7 +247,7 @@ const performanceRecords = ref([]) // DB에서 가져온 실적 데이터
 const displayRows = ref([]) // 화면에 표시할 행들
 const originalData = ref([]) // 원본 데이터 (변경 감지용)
 const hasChanges = ref(false) // 변경사항 여부
-const loading = ref(false) // 로딩 상태
+const loading = ref(true) // 로딩 상태
 
 // 편집 모드 관련
 const isEditMode = ref(false) // 편집 가능 여부

@@ -42,15 +42,15 @@
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
       <div class="data-card-header" style="flex-shrink: 0;">
-        <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
-         <div v-if="!loading && displayRows.length === 0" class="header-center-message">
+        <div class="total-count-display">전체 {{ (displayRows || []).length }} 건</div>
+         <div v-if="!loading && (displayRows || []).length === 0" class="header-center-message">
           흡수율 분석을 실행하세요.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
           <button 
             class="btn-delete" 
             @click="deleteFilteredAnalysisData" 
-            :disabled="displayRows.length === 0 || loading"
+            :disabled="(displayRows || []).length === 0 || loading"
             style="margin-right: 1rem;"
           >
             분석 데이터 삭제
@@ -63,7 +63,7 @@
            >
              흡수율 분석
            </button>
-           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0" style="margin-right: 1rem;">
+           <button class="btn-excell-download" @click="downloadExcel" :disabled="(displayRows || []).length === 0" style="margin-right: 1rem;">
              엑셀 다운로드
            </button>
            <div style="display: flex; align-items: center; gap: 8px;">
@@ -82,8 +82,8 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           ref="dataTableRef"
-          :value="displayRows" 
-          :loading="loading"
+          :value="displayRows || []" 
+          :loading="false"
           paginator
           :rows="100"
           :rowsPerPageOptions="[100, 200, 500, 1000]"
@@ -102,8 +102,7 @@
           }"
         >
           <template #empty>
-            <div v-if="loading">데이터를 불러오는 중입니다.</div>
-            <div v-else></div>
+            <div v-if="!loading">등록된 데이터가 없습니다.</div>
           </template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
@@ -274,8 +273,8 @@ const columnWidths = {
 };
 
 // --- 상태 변수 정의 ---
-const loading = ref(false);
-const displayRows = ref([]);
+const loading = ref(true);
+const displayRows = ref(null);
 const availableMonths = ref([]);
 const companyOptions = ref([]);
 const hospitalOptions = ref([]);
@@ -316,26 +315,31 @@ const sortOptions = ref([
 
 // --- 합계 계산 ---
 const totalPrescriptionAmount = computed(() => {
+  if (!displayRows.value) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
   return total.toLocaleString();
 });
 
 const totalWholesaleRevenue = computed(() => {
+  if (!displayRows.value) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.wholesale_revenue || 0), 0);
   return Math.floor(total).toLocaleString();
 });
 
 const totalDirectRevenue = computed(() => {
+  if (!displayRows.value) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.direct_revenue || 0), 0);
   return Math.floor(total).toLocaleString();
 });
 
 const totalCombinedRevenue = computed(() => {
+  if (!displayRows.value) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.total_revenue || 0), 0);
   return Math.floor(total).toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
+  if (!displayRows.value) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
   return total.toLocaleString();
 });
@@ -344,6 +348,7 @@ const totalPaymentAmount = computed(() => {
 
 // --- Computed 속성 (합계 계산) ---
 const totalQuantity = computed(() => {
+  if (!displayRows.value) return '0.0';
   const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
   return total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });

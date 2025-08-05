@@ -47,9 +47,8 @@
           class="custom-table performance-register-table"
         >
           <template #empty>
-            {{ !selectedCompanyId ? '업체를 선택해주세요.' : '등록된 병의원이 없습니다.' }}
+            <div v-if="!loading">{{ !selectedCompanyId ? '업체를 선택해주세요.' : '등록된 병의원이 없습니다.' }}</div>
           </template>
-          <template #loading>병의원 목록을 불러오는 중입니다...</template>
 
           <!-- No 컬럼 -->
           <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">

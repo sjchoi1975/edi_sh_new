@@ -46,7 +46,9 @@
           scrollHeight="calc(100vh - 220px)"
           class="user-settlement-detail-table"
           >
-          <template #empty>공유된 정산 내역이 없습니다.</template>
+          <template #empty>
+            <div v-if="!loading">공유된 정산 내역이 없습니다.</div>
+          </template>
           <Column header="No" :headerStyle="{ width: columnWidths.no }">
             <template #body="slotProps">{{ slotProps.index + 1 }}</template>
           </Column>
@@ -118,7 +120,7 @@ const availableClients = ref([]);
 const selectedClient = ref('');
 const detailRows = ref([]);
 const allDataForMonth = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 
 const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
 const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0).toLocaleString());
