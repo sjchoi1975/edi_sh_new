@@ -99,7 +99,7 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const route = useRoute();
 const router = useRouter();
@@ -280,7 +280,7 @@ function goBack() {
 
 
 
-function downloadExcel() {
+async function downloadExcel() {
   if (detailRows.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
@@ -303,11 +303,11 @@ function downloadExcel() {
 
   // 합계 행 추가
   excelData.push({
-    'No': '합계',
+    'No': '',
     '병의원명': '',
     '처방월': '',
     '제품명': '',
-    '보험코드': '',
+    '보험코드': '합계',
     '약가': '',
     '처방수량': Number(totalQty.value.replace(/,/g, '')),
     '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
@@ -316,53 +316,126 @@ function downloadExcel() {
     '비고': '',
   });
 
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '정산내역서상세');
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('정산내역서상세')
 
-  // 컬럼 너비 설정 (No 컬럼 추가로 인해 컬럼 수 증가)
-  ws['!cols'] = [ 
-    { wch: 5 },   // No
-    { wch: 20 },  // 병의원명
-    { wch: 10 },  // 처방월
-    { wch: 25 },  // 제품명
-    { wch: 12 },  // 보험코드
-    { wch: 10 },  // 약가
-    { wch: 10 },  // 처방수량
-    { wch: 12 },  // 처방액
-    { wch: 10 },  // 수수료율
-    { wch: 12 },  // 지급액
-    { wch: 20 }   // 비고
-  ];
-  
-  // 셀 서식 지정
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-    // 숫자 컬럼들 (천 단위 콤마, 소수점 없음)
-    const numberCols = [5, 7, 9]; // 약가, 처방액, 지급액
-    numberCols.forEach(col => {
-      const cell = ws[XLSX.utils.encode_cell({c: col, r: R})];
-      if (cell && typeof cell.v === 'number') {
-        cell.z = '#,##0';
+  // 헤더 정의
+  const headers = Object.keys(excelData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가 (합계 행 제외)
+  excelData.slice(0, -1).forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (No, 처방월, 보험코드)
+      if ([1, 3, 5, 9].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
       }
-    });
+      
+      // 숫자 컬럼들은 숫자 형식으로 설정
+      if ([6, 8, 10].includes(colNumber)) {
+        cell.numFmt = '#,##0'
+      }
+      
+      // 처방수량 컬럼은 소수점 1자리 형식으로 설정
+      if (colNumber === 7) {
+        cell.numFmt = '#,##0.0'
+      }
+      
+      // 수수료율 컬럼은 백분율 형식으로 설정
+      if (colNumber === 9) {
+        cell.numFmt = '0.0%'
+      }
+    })
+  })
 
-    // 처방수량 컬럼 (소수점 1자리)
-    const qtyCell = ws[XLSX.utils.encode_cell({c: 6, r: R})];
-    if (qtyCell && typeof qtyCell.v === 'number') {
-      qtyCell.z = '#,##0.0';
+  // 합계 행 추가
+  const totalRow = worksheet.addRow(Object.values(excelData[excelData.length - 1]))
+  
+  // 합계행 스타일 설정
+  totalRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, size: 11 };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'F0F0F0' } // 연한 그레이
+    };
+    cell.alignment = { vertical: 'middle' };
+    
+    // 합계 텍스트는 가운데 정렬
+    if (colNumber === 5) {
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
     }
+  });
+  
+  // 합계행 숫자 형식 설정
+  totalRow.getCell(7).numFmt = '#,##0.0'; // 처방수량
+  totalRow.getCell(8).numFmt = '#,##0'; // 처방액
+  totalRow.getCell(10).numFmt = '#,##0'; // 지급액
 
-    // 수수료율 컬럼 (백분율)
-    const rateCell = ws[XLSX.utils.encode_cell({c: 8, r: R})];
-    if (rateCell && typeof rateCell.v === 'number') {
-      rateCell.z = '0.0%';
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
+
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 8 },  // No
+    { width: 32 }, // 병의원명
+    { width: 10 }, // 처방월
+    { width: 32 }, // 제품명
+    { width: 12 }, // 보험코드
+    { width: 12 }, // 약가
+    { width: 12 }, // 처방수량
+    { width: 16 }, // 처방액
+    { width: 10 }, // 수수료율
+    { width: 16 }, // 지급액
+    { width: 24 }  // 비고
+  ]
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
     }
-  }
+  ]
 
   const today = new Date().toISOString().split('T')[0];
   const fileName = `정산내역서상세_${companyInfo.value.company_name || ''}_${month.value}_${today}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 // 오버플로우 감지 및 툴팁 제어 함수들

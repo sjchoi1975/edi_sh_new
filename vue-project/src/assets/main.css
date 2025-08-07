@@ -859,8 +859,8 @@ select option:focus {
 
 /* 브라우저 기본 툴팁 완전 비활성화 */
 .ellipsis-cell[title] {
-  -webkit-tooltip: none !important;
-  tooltip: none !important;
+  /* -webkit-tooltip: none !important; */
+  /* tooltip: none !important; */
   cursor: default;
 }
 
@@ -892,19 +892,41 @@ select option:focus {
 /* 모달 컨테이너 */
 .p-dialog {
   background: var(--bg-content) !important;
-  width: 960px !important;
-  max-width: 96vw !important;
-  height: 720px !important;
-  max-height: 72vh !important;
+  min-height: 25vh !important;
+  max-height: 90vh !important;
   box-shadow: var(--box-shadow-lg) !important;
   border-radius: var(--border-radius) !important;
 }
 
-/* 모달 헤더 */
 .p-dialog-header {
   background: none !important;
   padding: 1.5rem 2rem 1rem 2rem !important;
   border-radius: var(--border-radius) !important;
+}
+
+/* 모달 X 버튼 포커스 제거 */
+.p-dialog-header .p-dialog-header-icon {
+  outline: none !important;
+}
+
+.p-dialog-header .p-dialog-header-icon:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 모달 전체 포커스 제거 */
+.p-dialog:focus {
+  outline: none !important;
+}
+
+.p-dialog *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 모달 열릴 때 자동 포커스 방지 */
+.p-dialog-mask:focus-within .p-dialog {
+  outline: none !important;
 }
 
 .p-dialog-title {
@@ -913,18 +935,29 @@ select option:focus {
   color: var(--text-primary) !important;
 }
 
-/* 모달 내용 */
 .p-dialog-content {
-  min-height: 620px !important;
-  max-height: 620px !important;
   overflow-y: auto !important;
-  padding: 1rem 2rem 1rem 2rem !important;
+  padding: 1rem 2rem 0rem 2rem !important;
   background: transparent !important;
 }
 
+.p-dialog-footer {
+  background: var(--bg-content) !important;
+  margin: -0.5rem 0 0 0 !important;
+  padding: 2rem 2rem 2rem 2rem !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 1rem !important;
+}
+
+.btn-row {
+  display: flex !important;
+  gap: 1rem !important;
+  align-items: center !important;
+}
 
 
-/* 사용하는지??????????????????????????????????? */
+/* 미사용 예정 */
 
 .modal-overlay {
   position: fixed;
@@ -932,7 +965,7 @@ select option:focus {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -947,9 +980,9 @@ select option:focus {
   background: #fff !important;
   border-radius: 4px !important;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18) !important;
-  min-width: 480px !important;
-  max-width: 90vw !important;
-  max-height: 80vh !important;
+  width: 640px !important;
+  min-height: 20vh !important;
+  max-height: 90vh !important;
   overflow-y: auto !important;
   padding: 0 !important;
 }
@@ -965,7 +998,7 @@ select option:focus {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 1.5rem 2rem 1rem 2rem !important;
+  padding: 2rem 2rem 2rem 2rem !important;
   background: none !important;
   color: var(--text-dark) !important;
 }
@@ -975,17 +1008,6 @@ select option:focus {
   font-size: 1.4rem !important;
   font-weight: 600;
   color: var(--text-primary) !important;
-}
-
-.modal-body {
-  padding: 1rem 2rem 1rem 2rem !important;
-}
-
-.modal-footer {
-  display: flex !important;
-  justify-content: flex-end !important;
-  gap: 1rem !important;
-  padding: 1rem 2rem 2rem 2rem !important;
 }
 
 .modal-close {
@@ -999,16 +1021,29 @@ select option:focus {
 .modal-close-btn {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 2rem;
   cursor: pointer;
   color: #666;
+  font-weight: 400;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
+.modal-body {
+  padding: 0 2rem !important;
+}
+
+.modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 1rem !important;
+  padding: 2rem 2rem 2rem 2rem !important;
+}
+
 
 .modal-search-input {
   border: 1px solid var(--border-input) !important;
@@ -1827,11 +1862,6 @@ select option:focus {
 }
 
 
-
-
-
-
-
 /* ------ 관리자 거래처 목록 (AdminClientsView.vue) ------ */
 /* --- 중앙 정렬 (No, 거래처코드, 사업자등록번호, 원장명, 등록일자, 상태, 작업) --- */
 .admin-clients-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(9), :nth-child(11), :nth-child(13), :nth-child(14)) {
@@ -1941,11 +1971,11 @@ select option:focus {
 
 /* ------ 관리자 정산월관리 목록 (AdminSettlementMonthsView.vue) ------ */
 /* --- 중앙 정렬 (No, 정산월, 실적입력 시작일, 실적입력 종료일, 상태) --- */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(7)) {
+.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4), :nth-child(8)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (전달 사항, 비고) --- */
-.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6)) {
+.admin-settlement-months-table .p-datatable-tbody > tr > td:is(:nth-child(5), :nth-child(6), :nth-child(7)) {
   text-align: left !important;
 }
 
@@ -2070,7 +2100,7 @@ select option:focus {
 
 /* ------ 관리자 정산내역서 공유 (AdminSettlementShareView.vue) ------ */
 /* --- 중앙 정렬 (No, 사업자등록번호, 대표자, 관리자, 거래처수, 처방건수, 상세, 공유) --- */
-.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(11), :nth-child(12)) {
+.admin-settlement-share-table .p-datatable-tbody > tr > td:is(:nth-child(1), :nth-child(4), :nth-child(5), :nth-child(6), :nth-child(7), :nth-child(11), :nth-child(12), :nth-child(13)) {
   text-align: center !important;
 }
 /* --- 좌측 정렬 (구분, 업체명) --- */

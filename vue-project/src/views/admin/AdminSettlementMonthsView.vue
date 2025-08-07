@@ -50,7 +50,8 @@
         </Column>
         <Column field="start_date" header="실적입력 시작일" :headerStyle="{ width: columnWidths.start_date }" />
         <Column field="end_date" header="실적입력 종료일" :headerStyle="{ width: columnWidths.end_date }" />
-        <Column field="notice" header="전달 사항" :headerStyle="{ width: columnWidths.notice }" />
+        <Column field="notice" header="실적 등록 전달사항" :headerStyle="{ width: columnWidths.notice }" />
+        <Column field="notice_payment" header="정산내역서 전달사항" :headerStyle="{ width: columnWidths.notice_payment }" />
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" />
         <Column field="status" header="상태" :headerStyle="{ width: columnWidths.status }">
           <template #body="slotProps">
@@ -86,8 +87,9 @@ const columnWidths = {
   settlement_month: '6%',
   start_date: '8%',
   end_date: '8%',
-  notice: '48%',
-  remarks: '20%',
+  notice: '26%',
+  notice_payment: '26%',
+  remarks: '16%',
   status: '6%'
 };
 

@@ -112,9 +112,8 @@
     <Dialog
       v-model:visible="clientModalVisible" 
       header="담당 병의원" 
-      :modal="true" 
-      :style="{ width: '1200px', minWidth: '1200px', maxWidth: '1200px' }"
-      class="client-modal-dialog">
+      :modal="true"
+      :style="{ width: '60vw' }">
       <div>
         <DataTable
           :value="clientModalData"
@@ -163,10 +162,13 @@
             :sortable="true"
           />
         </DataTable>
-        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top: 1rem;">
+      </div>
+      
+      <template #footer>
+        <div class="btn-row">
           <button class="btn-cancel" @click="closeClientModal">닫기</button>
         </div>
-      </div>
+      </template>
     </Dialog>
 
     <!-- 전체 화면 로딩 오버레이 -->
@@ -189,7 +191,7 @@ import { supabase } from '@/supabase'
 import Textarea from 'primevue/textarea'
 import Password from 'primevue/password'
 import { useRouter } from 'vue-router'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
 import Dialog from 'primevue/dialog'
 import { generateExcelFileName } from '@/utils/excelUtils'
@@ -409,46 +411,130 @@ function goToDetail(id) {
   router.push(`/admin/companies/${id}?from=pending`)
 }
 
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (pendingCompanies.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  const dataToExport = pendingCompanies.value.map((company, index) => ({
-    ID: company.id,
-    No: index + 1 + currentPageFirstIndex.value,
-    '아이디(이메일)': company.email,
-    구분: company.company_group,
-    업체명: company.company_name,
-    사업자등록번호: company.business_registration_number,
-    대표자: company.representative_name,
-    사업장소재지: company.business_address,
-    유선전화: company.landline_phone,
-    담당자: company.contact_person_name,
-    '휴대폰 번호': company.mobile_phone,
-    '휴대폰 번호 2': company.mobile_phone_2,
-    '수신용 이메일': company.receive_email,
-    승인여부:
-      company.approval_status === 'approved'
-        ? '승인'
-        : company.approval_status === 'pending'
-          ? '미승인'
-          : company.approval_status,
-    '수수료 등급': company.default_commission_grade,
-    관리자: company.assigned_pharmacist_contact,
-    비고: company.remarks,
-    등록일자: company.created_at ? new Date(company.created_at).toLocaleString('ko-KR') : '',
-    승인일자: company.approved_at ? new Date(company.approved_at).toLocaleString('ko-KR') : '',
-    수정일자: company.updated_at ? new Date(company.updated_at).toLocaleString('ko-KR') : '',
-  }))
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('미승인업체목록')
 
-  const worksheet = XLSX.utils.json_to_sheet(dataToExport)
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, '미승인업체목록')
+  // 헤더 정의
+  const headers = [
+    'No', '아이디(이메일)', '구분', '업체명', '사업자등록번호', '대표자', 
+    '사업장소재지', '유선전화', '담당자', '휴대폰 번호', '휴대폰 번호 2', 
+    '수신용 이메일', '승인여부', '수수료 등급', '관리자', '비고', 
+    '등록일시', '승인일시', '수정일시'
+  ]
+  
+  // 헤더 추가
+  worksheet.addRow(headers)
 
-  const fileName = generateExcelFileName('미승인업체목록')
-  XLSX.writeFile(workbook, fileName)
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '76933C' } // RGB(118, 147, 60)
+    }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  pendingCompanies.value.forEach((company, index) => {
+    const dataRow = worksheet.addRow([
+      index + 1 + currentPageFirstIndex.value,
+      company.email || '',
+      company.company_group || '',
+      company.company_name || '',
+      company.business_registration_number || '',
+      company.representative_name || '',
+      company.business_address || '',
+      company.landline_phone || '',
+      company.contact_person_name || '',
+      company.mobile_phone || '',
+      company.mobile_phone_2 || '',
+      company.receive_email || '',
+      company.approval_status === 'approved' ? '승인' : 
+      company.approval_status === 'pending' ? '미승인' : company.approval_status || '',
+      company.default_commission_grade || '',
+      company.assigned_pharmacist_contact || '',
+      company.remarks || '',
+      company.created_at ? new Date(company.created_at).toISOString().slice(0, 16).replace('T', ' ') : '',
+      company.approved_at ? new Date(company.approved_at).toISOString().slice(0, 16).replace('T', ' ') : '',
+      company.updated_at ? new Date(company.updated_at).toISOString().slice(0, 16).replace('T', ' ') : ''
+    ])
+
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬이 필요한 컬럼들 (No, 구분, 사업자등록번호, 대표자, 승인여부, 수수료 등급)
+      if (colNumber === 1 || colNumber === 5 || colNumber === 6 || colNumber === 8 || colNumber === 9 || colNumber === 10 || colNumber === 11 || colNumber === 13 || colNumber === 14 || colNumber === 15 || colNumber === 17 || colNumber === 18 || colNumber === 19) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+    })
+  })
+
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 8 },   // No
+    { width: 24 },  // 아이디(이메일)
+    { width: 12 },   // 구분
+    { width: 24 },  // 업체명
+    { width: 16 },  // 사업자등록번호
+    { width: 12 },  // 대표자
+    { width: 48 },  // 사업장소재지
+    { width: 16 },  // 유선전화
+    { width: 12 },  // 담당자
+    { width: 16 },  // 휴대폰 번호
+    { width: 16 },  // 휴대폰 번호 2
+    { width: 24 },  // 수신용 이메일
+    { width: 8 },   // 승인여부
+    { width: 10 },  // 수수료 등급
+    { width: 12 },  // 관리자
+    { width: 24 },  // 비고
+    { width: 18 },  // 등록일시
+    { width: 18 },  // 승인일시
+    { width: 18 }   // 수정일시
+  ]
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  for (let row = 1; row <= worksheet.rowCount; row++) {
+    for (let col = 1; col <= headers.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    }
+  }
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    {
+      showGridLines: false,
+      state: 'frozen',
+      xSplit: 0,
+      ySplit: 1
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = generateExcelFileName('미승인업체목록')
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 // 오버플로우 감지 및 툴팁 제어 함수들

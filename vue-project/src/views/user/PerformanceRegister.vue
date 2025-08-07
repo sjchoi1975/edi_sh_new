@@ -27,6 +27,7 @@
           <div class="registration-status-badge" :class="registrationStatus.class">
             {{ registrationStatus.label }}
           </div>
+          <button class="btn-notice-filter" @click="openNoticeModal(true)">전달사항</button>
         </div>
       </div>
     </div>
@@ -427,6 +428,35 @@
         </div>
       </div>
     </teleport>
+
+    <!-- 전달사항 모달 -->
+    <div v-if="showNoticeModal" class="modal-overlay">
+      <div class="modal-content modal-center">
+        <div class="modal-header">
+          <h2>{{ selectedSettlementMonth }} 실적 등록 전달사항</h2>
+          <button class="modal-close-btn" @click="closeNoticeModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="noticeContent" style="padding: 20px; border-bottom: 1px solid #eee;">
+            <pre style="margin: 0; white-space: pre-wrap; font-family: inherit; line-height: 1.6; font-size: 14px;">{{ noticeContent }}</pre>
+          </div>
+          <div v-else style="text-align: center; color: #666; padding: 40px; border-bottom: 1px solid #eee;">
+            등록된 전달사항이 없습니다.
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 16px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #666; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              v-model="hideNoticeModal" 
+              style="width: 16px; height: 16px; cursor: pointer;"
+            >
+            다시 보지 않기
+          </label>
+          <button class="btn-close" @click="closeNoticeModal">확인</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -439,6 +469,8 @@ import Row from 'primevue/row';
 import { supabase } from '@/supabase'
 import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
+import { getNoticeModalHidePreference, setNoticeModalHidePreference } from '@/utils/userPreferences'
 
 const columnWidths = {
   no: '4%',
@@ -476,6 +508,12 @@ const viewModalVisible = ref(false)
 const viewModalData = ref([])
 const viewModalClient = ref(null)
 
+// 전달사항 모달 관련 변수
+const showNoticeModal = ref(false)
+const noticeContent = ref('')
+const hideNoticeModal = ref(false)
+const currentSettlementMonthId = ref(null)
+
 const formatNumber = (value) => {
   if (value === null || value === undefined) return '0'
   // 소수점 한자리까지 반올림해서 표기
@@ -494,6 +532,9 @@ const fetchAvailableMonths = async () => {
     availableMonths.value = data.map((m) => m.settlement_month) // 드롭다운용 월 목록
     if (availableMonths.value.length > 0) {
       selectedSettlementMonth.value = availableMonths.value[0]
+      // 현재 선택된 정산월의 ID 저장
+      const selectedMonthData = data.find(m => m.settlement_month === selectedSettlementMonth.value)
+      currentSettlementMonthId.value = selectedMonthData?.id || null
     }
   }
 }
@@ -951,10 +992,21 @@ async function uploadFiles() {
   }
 }
 
-// 정산월 변경 시 데이터 새로고침
+// 정산월 변경 시 데이터 새로고침 및 전달사항 모달 표시
 watch(selectedSettlementMonth, async () => {
+  // 현재 선택된 정산월의 ID 업데이트
+  const selectedMonthData = availableMonthsData.value.find(m => m.settlement_month === selectedSettlementMonth.value)
+  currentSettlementMonthId.value = selectedMonthData?.id || null
+  
   await checkInputPeriod()
   await fetchClientList()
+  
+  // 정산월 변경 시 전달사항 모달 자동 표시 (사용자 설정 확인 후)
+  if (selectedSettlementMonth.value) {
+    setTimeout(async () => {
+      await openNoticeModal()
+    }, 500); // 0.5초 후 표시
+  }
 })
 
 onMounted(async () => {
@@ -974,89 +1026,220 @@ function goToClientDetail(clientId) {
 }
 
 // 엑셀 다운로드 함수
-function downloadExcel() {
+async function downloadExcel() {
   if (!clientList.value || clientList.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  // 엑셀 데이터 준비
-  const excelData = clientList.value.map((client, index) => ({
-    No: index + 1,
-    병의원코드: client.client_code || '',
-    병의원명: client.name || '',
-    사업자등록번호: client.business_registration_number || '',
-    주소: client.address || '',
-    처방건수: client.performance_count || 0,
-    처방액: client.total_prescription_amount || 0,
-    증빙파일: client.evidence_files_count || 0,
-  }))
+  try {
+    // ExcelJS 워크북 생성
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('실적 등록 현황')
 
-  // 합계 행 추가
-  const totalCount = totalPerformanceCount.value
-  const totalAmount = totalPrescriptionAmount.value
-  const totalFiles = totalEvidenceFilesCount.value
+    // 헤더 정의
+    const headers = ['No', '병의원코드', '병의원명', '사업자등록번호', '주소', '처방건수', '처방액', '증빙파일']
+    worksheet.addRow(headers)
 
-  excelData.push({
-    No: '',
-    병의원코드: '',
-    병의원명: '',
-    사업자등록번호: '',
-    주소: '합계',
-    처방건수: totalCount,
-    처방액: totalAmount,
-    증빙파일: totalFiles,
-  })
+    // 헤더 스타일 설정
+    const headerRow = worksheet.getRow(1)
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+    })
 
-  // 워크북 생성
-  const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.json_to_sheet(excelData)
+    // 데이터 추가
+    clientList.value.forEach((client, index) => {
+      const dataRow = worksheet.addRow([
+        index + 1,
+        client.client_code || '',
+        client.name || '',
+        client.business_registration_number || '',
+        client.address || '',
+        client.performance_count || 0,
+        client.total_prescription_amount || 0,
+        client.evidence_files_count || 0
+      ])
 
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { wpx: 50 }, // No
-    { wpx: 100 }, // 병의원코드
-    { wpx: 200 }, // 병의원명
-    { wpx: 150 }, // 사업자등록번호
-    { wpx: 300 }, // 주소
-    { wpx: 100 }, // 처방건수
-    { wpx: 120 }, // 처방액
-    { wpx: 100 }, // 증빙파일
-  ]
+      // 데이터 행 스타일 설정
+      dataRow.eachCell((cell, colNumber) => {
+        cell.font = { size: 11 }
+        cell.alignment = { vertical: 'middle' }
+        
+        // 가운데 정렬이 필요한 컬럼들 (No, 병의원코드, 사업자등록번호)
+        if (colNumber === 1 || colNumber === 2 || colNumber === 4) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' }
+        }
+        
+        // 숫자 형식 적용 (처방건수, 처방액, 증빙파일)
+        if (colNumber === 6 || colNumber === 7 || colNumber === 8) {
+          cell.numFmt = '#,##0'
+        }
+      })
+    })
 
-  // 숫자 형식 설정
-  const range = XLSX.utils.decode_range(ws['!ref'])
-  for (let R = range.s.r + 1; R <= range.e.r; R++) {
-    // 처방건수 컬럼 (E열, 인덱스 4)
-    const countCell = XLSX.utils.encode_cell({ r: R, c: 4 })
-    if (ws[countCell] && typeof ws[countCell].v === 'number') {
-      ws[countCell].z = '#,##0'
+    // 합계 행 추가
+    const totalRow = worksheet.addRow([
+      '',
+      '',
+      '',
+      '',
+      '합계',
+      totalPerformanceCount.value,
+      totalPrescriptionAmount.value,
+      totalEvidenceFilesCount.value
+    ])
+
+    // 합계행 스타일 설정
+    totalRow.eachCell((cell, colNumber) => {
+      cell.font = { bold: true, size: 11 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'F0F0F0' } // 연한 그레이
+      };
+      cell.alignment = { vertical: 'middle' };
+      
+      // 합계 텍스트는 가운데 정렬
+      if (colNumber === 5) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+    });
+    
+    // 합계행 숫자 형식 설정
+    totalRow.getCell(6).numFmt = '#,##0'; // 처방건수
+    totalRow.getCell(7).numFmt = '#,##0'; // 처방액
+    totalRow.getCell(8).numFmt = '#,##0'; // 증빙파일
+
+    // 컬럼 너비 설정
+    worksheet.columns = [
+      { width: 8 },  // No
+      { width: 12 }, // 병의원코드
+      { width: 32 }, // 병의원명
+      { width: 16 }, // 사업자등록번호
+      { width: 64 }, // 주소
+      { width: 12 }, // 처방건수
+      { width: 16 }, // 처방액
+      { width: 12 }  // 증빙파일
+    ]
+
+    // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+    for (let row = 1; row <= worksheet.rowCount; row++) {
+      for (let col = 1; col <= 8; col++) {
+        const cell = worksheet.getCell(row, col);
+        cell.border = {
+          top: { style: 'thin', color: { argb: '000000' } },
+          bottom: { style: 'thin', color: { argb: '000000' } },
+          left: { style: 'thin', color: { argb: '000000' } },
+          right: { style: 'thin', color: { argb: '000000' } }
+        };
+      }
     }
-    // 처방액 컬럼 (F열, 인덱스 5)
-    const amountCell = XLSX.utils.encode_cell({ r: R, c: 5 })
-    if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
-      ws[amountCell].z = '#,##0'
+
+    // 헤더행 고정 및 눈금선 숨기기
+    worksheet.views = [
+      { 
+        state: 'frozen', 
+        xSplit: 0, 
+        ySplit: 1,
+        showGridLines: false
+      }
+    ]
+
+    // 파일명 생성
+    const today = new Date()
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
+    let fileName = '실적등록현황'
+    if (selectedSettlementMonth.value) {
+      fileName += `_${selectedSettlementMonth.value}`
     }
-    // 증빙파일 컬럼 (G열, 인덱스 6)
-    const filesCell = XLSX.utils.encode_cell({ r: R, c: 6 })
-    if (ws[filesCell] && typeof ws[filesCell].v === 'number') {
-      ws[filesCell].z = '#,##0'
+    fileName += `_${dateStr}.xlsx`
+
+    // 파일 다운로드
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+    window.URL.revokeObjectURL(url)
+
+  } catch (err) {
+    console.error('엑셀 다운로드 오류:', err)
+    alert('엑셀 다운로드 중 오류가 발생했습니다.')
+  }
+}
+
+// 전달사항 관련 함수들
+async function openNoticeModal(isManualClick = false) {
+  if (!selectedSettlementMonth.value || !currentSettlementMonthId.value) {
+    alert('정산월을 선택해주세요.');
+    return;
+  }
+  
+  // 수동 클릭이 아닌 경우에만 사용자 설정 확인 (자동 표시 시에만 숨김 처리)
+  if (!isManualClick) {
+    const shouldHide = await getNoticeModalHidePreference('performance', currentSettlementMonthId.value);
+    if (shouldHide) {
+      return; // 모달을 표시하지 않음
     }
   }
-
-  // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '실적 등록 현황')
-
-  // 파일명 생성
-  const today = new Date()
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
-  let fileName = '실적등록현황'
-  if (selectedSettlementMonth.value) {
-    fileName += `_${selectedSettlementMonth.value}`
+  
+  try {
+    const { data, error } = await supabase
+      .from('settlement_months')
+      .select('notice')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('전달사항 조회 오류:', error);
+      alert('전달사항을 불러오는 중 오류가 발생했습니다.');
+      return;
+    }
+    
+    noticeContent.value = data?.notice || '';
+    
+    // 사용자의 이전 설정 상태를 체크박스에 반영 (자동/수동 모두)
+    const shouldHide = await getNoticeModalHidePreference('performance', currentSettlementMonthId.value);
+    hideNoticeModal.value = shouldHide;
+    
+    showNoticeModal.value = true;
+  } catch (err) {
+    console.error('전달사항 조회 오류:', err);
+    alert('전달사항을 불러오는 중 오류가 발생했습니다.');
   }
-  fileName += `_${dateStr}.xlsx`
+}
 
-  // 파일 다운로드
-  XLSX.writeFile(wb, fileName)
+async function closeNoticeModal() {
+  // 새로운 심플한 체크 로직 적용
+  await setNoticeModalHidePreference('performance', hideNoticeModal.value, currentSettlementMonthId.value);
+  
+  showNoticeModal.value = false;
+  noticeContent.value = '';
+  hideNoticeModal.value = false; // 체크박스 초기화
 }
 </script>
+
+<style scoped>
+
+.btn-notice-filter {
+    background-color: var(--gray-100);
+    color: var(--text-dark);
+    border: 1px solid var(--gray-500);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-notice-filter:hover {
+    background-color: var(--gray-200);
+    color: var(--text-dark);
+    border: 1px solid var(--gray-500);
+}
+
+</style>

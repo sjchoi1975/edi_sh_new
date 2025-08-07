@@ -243,7 +243,7 @@ import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 
 const columnWidths = {
@@ -1071,7 +1071,7 @@ async function downloadExcel() {
     // 2. 데이터 변환 (이미 매핑된 데이터 사용)
     const dataToExport = displayRows.value.map((row, index) => ({
       'No': index + 1,
-      '작업': row.review_action || '-',
+      '작업': row.review_action || '',
       '구분': row.company_type,
       '업체명': row.company_name,
       '병의원명': row.client_name,
@@ -1085,19 +1085,19 @@ async function downloadExcel() {
       '도매매출': Math.round(row.wholesale_revenue || 0),
       '직거래매출': Math.round(row.direct_revenue || 0),
       '합산액': Math.round(row.total_revenue || 0),
-      '흡수율': parseFloat(row.absorption_rate) / 100 || 0,
-      '수수료율': parseFloat(String(row.commission_rate).replace('%', '')) / 100 || 0,
+      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) / 100 : 0),
+      '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
       '등록일시': row.created_date,
       '등록자': row.created_by || '-',
-      '수정일시': row.updated_date || '-',
-      '수정자': row.updated_by || '-'
+      '수정일시': row.updated_date || '',
+      '수정자': row.updated_by || ''
     }));
 
     // 합계 행 추가
     dataToExport.push({
-      'No': '합계',
+      'No': '',
       '작업': '',
       '구분': '',
       '업체명': '',
@@ -1105,61 +1105,190 @@ async function downloadExcel() {
       '처방월': '',
       '제품명': '',
       '보험코드': '',
-      '약가': '',
+      '약가': '합계',
       '수량': Number(totalQuantity.value.replace(/,/g, '')),
       '처방액': Number(totalPrescriptionAmount.value.replace(/,/g, '')),
       '처방구분': '',
       '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
       '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
       '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
-      '흡수율': (Number(totalCombinedRevenue.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) || 0,
-      '수수료율': (Number(totalPaymentAmount.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) || 0,
+      '흡수율': (Number(totalPrescriptionAmount.value.replace(/,/g, '')) > 0 ? (Number(totalCombinedRevenue.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) : 0),
+      '수수료율': (Number(totalPrescriptionAmount.value.replace(/,/g, '')) > 0 ? (Number(totalPaymentAmount.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) : 0),
       '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
       '비고': '',
       '등록일시': '',
       '등록자': ''
     });
 
-    // 3. 워크시트 생성
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    // ExcelJS 워크북 생성
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('흡수율 분석')
 
-    // 4. 셀 서식 지정
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
-    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-      // 숫자 컬럼들 (천 단위 콤마, 소수점 없음)
-      const numberCols = [8, 10, 12, 13, 14, 17]; // 약가, 처방액, 도매매출, 직거래매출, 합산액, 지급액
-      numberCols.forEach(col => {
-        const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
-        if (cell && typeof cell.v === 'number') {
-          cell.z = '#,##0';
+    // 헤더 정의
+    const headers = Object.keys(dataToExport[0])
+    worksheet.addRow(headers)
+
+    // 헤더 스타일 설정
+    const headerRow = worksheet.getRow(1)
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+    })
+
+    // 데이터 추가 (합계 행 제외)
+    dataToExport.slice(0, -1).forEach((row) => {
+      const dataRow = worksheet.addRow(Object.values(row))
+      
+      // 데이터 행 스타일 설정
+      dataRow.eachCell((cell, colNumber) => {
+        cell.font = { size: 11 }
+        cell.alignment = { vertical: 'middle' }
+        
+        // 가운데 정렬할 컬럼 지정 (No, 작업, 구분, 처방월, 보험코드, 처방구분, 등록일시, 등록자, 수정일시, 수정자)
+        if ([1, 2, 6, 8, 9, 12, 16, 17, 20, 22].includes(colNumber)) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' }
         }
-      });
-
-      // 수량 컬럼 (소수점 1자리)
-      const qtyCell = worksheet[XLSX.utils.encode_cell({c: 9, r: R})];
-      if (qtyCell && typeof qtyCell.v === 'number') {
-        qtyCell.z = '#,##0.0';
-      }
-
-      // 백분율 컬럼들 (소수점 1자리)
-      const percentCols = [15, 16]; // 흡수율, 수수료율
-      percentCols.forEach(col => {
-        const cell = worksheet[XLSX.utils.encode_cell({c: col, r: R})];
-        if (cell && typeof cell.v === 'number') {
-          cell.z = '0.0%';
+        
+        // 약가 (9번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 9) {
+          cell.numFmt = '#,##0'
         }
-      });
-    }
+        
+        // 수량 (10번째 컬럼): 천단위 콤마, 소수점 한자리
+        if (colNumber === 10) {
+          cell.numFmt = '#,##0.0'
+        }
+        
+        // 처방액 (11번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 11) {
+          cell.numFmt = '#,##0'
+        }
+        
+        // 도매매출 (13번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 13) {
+          cell.numFmt = '#,##0'
+        }
+        
+        // 직거래매출 (14번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 14) {
+          cell.numFmt = '#,##0'
+        }
+        
+        // 합산액 (15번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 15) {
+          cell.numFmt = '#,##0'
+        }
+        
+        // 흡수율 (16번째 컬럼): 백분율, 소수점 한자리
+        if (colNumber === 16) {
+          cell.numFmt = '0.0%'
+        }
+        
+        // 수수료율 (17번째 컬럼): 백분율, 소수점 한자리
+        if (colNumber === 17) {
+          cell.numFmt = '0.0%'
+        }
+        
+        // 지급액 (18번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 18) {
+          cell.numFmt = '#,##0'
+        }
+      })
+    })
 
-    // 5. 파일 다운로드
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '흡수율 분석');
+    // 합계 행 추가
+    const totalRow = worksheet.addRow(Object.values(dataToExport[dataToExport.length - 1]))
     
+    // 합계행 스타일 설정
+    totalRow.eachCell((cell, colNumber) => {
+      cell.font = { bold: true, size: 11 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'F0F0F0' } // 연한 그레이
+      };
+      cell.alignment = { vertical: 'middle' };
+      
+      // 합계 텍스트는 가운데 정렬
+      if (colNumber === 9) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+    });
+    
+    // 합계행 숫자 형식 설정
+    totalRow.getCell(9).numFmt = '#,##0'; // 약가
+    totalRow.getCell(10).numFmt = '#,##0.0'; // 수량
+    totalRow.getCell(11).numFmt = '#,##0'; // 처방액
+    totalRow.getCell(13).numFmt = '#,##0'; // 도매매출
+    totalRow.getCell(14).numFmt = '#,##0'; // 직거래매출
+    totalRow.getCell(15).numFmt = '#,##0'; // 합산액
+    totalRow.getCell(16).numFmt = '0.0%'; // 흡수율
+    totalRow.getCell(17).numFmt = '0.0%'; // 수수료율
+    totalRow.getCell(18).numFmt = '#,##0'; // 지급액
+
+    // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+    worksheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: '000000' } },
+          bottom: { style: 'thin', color: { argb: '000000' } },
+          left: { style: 'thin', color: { argb: '000000' } },
+          right: { style: 'thin', color: { argb: '000000' } }
+        }
+      })
+    })
+
+    // 컬럼 너비 설정
+    worksheet.columns = [
+      { width: 8 }, // No
+      { width: 10 }, // 작업
+      { width: 16 }, // 구분
+      { width: 24 }, // 업체명
+      { width: 32 }, // 병의원명
+      { width: 12 }, // 처방월
+      { width: 32 }, // 제품명
+      { width: 12 }, // 보험코드
+      { width: 12 }, // 약가
+      { width: 12 }, // 수량
+      { width: 16 }, // 처방액
+      { width: 12 }, // 처방구분
+      { width: 16 }, // 도매매출
+      { width: 16 }, // 직거래매출
+      { width: 16 }, // 합산액
+      { width: 12 }, // 흡수율
+      { width: 12 }, // 수수료율
+      { width: 16 }, // 지급액
+      { width: 24 }, // 비고
+      { width: 18 }, // 등록일시
+      { width: 16 }, // 등록자
+      { width: 18 }, // 수정일시
+      { width: 16 }, // 수정자
+    ]
+
+    // 헤더행 고정 및 눈금선 숨기기
+    worksheet.views = [
+      { 
+        state: 'frozen', 
+        xSplit: 0, 
+        ySplit: 1,
+        showGridLines: false
+      }
+    ]
+
     // 정산월 정보가 있으면 파일명에 포함
     const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null
     const fileName = generateExcelFileName('흡수율분석', monthInfo)
-    
-    XLSX.writeFile(workbook, fileName);
+
+    // 파일 다운로드
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+    window.URL.revokeObjectURL(url)
 
   } catch (err) {
     console.error('엑셀 다운로드 오류:', err);

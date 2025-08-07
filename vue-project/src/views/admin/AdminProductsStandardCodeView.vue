@@ -235,14 +235,15 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import ExcelJS from 'exceljs'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  product_name: '18%',
-  insurance_code: '10%',
+  product_name: '20%',
+  insurance_code: '8%',
   standard_code: '10%',
   unit_packaging_desc: '12%',
   unit_quantity: '8%',
@@ -322,10 +323,43 @@ const fetchStandardCodes = async () => {
       productsMap[product.insurance_code] = product.product_name;
     });
     
-    // 4. 표준코드 데이터에 product_name 추가
+    // 4. companies 테이블에서 업체명 가져오기 (user와 admin 모두 포함)
+    const { data: companiesData, error: companiesError } = await supabase
+      .from('companies')
+      .select('user_id, company_name')
+      .eq('approval_status', 'approved');
+    
+    if (companiesError) {
+      console.error('업체 데이터 로딩 오류:', companiesError);
+      return;
+    }
+    
+    // 5. user_id로 company_name 매핑
+    const companiesMap = {};
+    companiesData?.forEach(company => {
+      companiesMap[company.user_id] = company.company_name;
+    });
+    
+    // 디버깅: created_by, updated_by 값 확인
+    console.log('Companies data:', companiesData);
+    console.log('Companies map:', companiesMap);
+    if (standardCodesData && standardCodesData.length > 0) {
+      console.log('Sample standard code created_by:', standardCodesData[0].created_by);
+      console.log('Sample standard code updated_by:', standardCodesData[0].updated_by);
+      console.log('Sample standard code created_by type:', typeof standardCodesData[0].created_by);
+      console.log('Sample standard code updated_by type:', typeof standardCodesData[0].updated_by);
+      
+      // companiesMap에서 해당 값이 있는지 확인
+      console.log('created_by in companiesMap:', companiesMap[standardCodesData[0].created_by]);
+      console.log('updated_by in companiesMap:', companiesMap[standardCodesData[0].updated_by]);
+    }
+    
+    // 6. 표준코드 데이터에 product_name과 업체명 추가
     const mappedData = standardCodesData?.map(item => ({
       ...item,
-      product_name: productsMap[item.insurance_code] || null
+      product_name: productsMap[item.insurance_code] || null,
+      created_by_name: companiesMap[item.created_by] || '',
+      updated_by_name: companiesMap[item.updated_by] || ''
     })) || [];
     
     standardCodes.value = mappedData;
@@ -345,69 +379,92 @@ watch(standardCodes, (newVal) => {
   filteredStandardCodes.value = newVal;
 }, { immediate: true });
 
-const downloadTemplate = () => {
-  const templateData = [
-    {
-      보험코드: '0601234567',
-      표준코드: '8800123456789',
-      단위포장형태: '정 10개',
-      단위수량: 10,
-      비고: '',
-      상태: '활성',
-    },
-    {
-      보험코드: '601234567',
-      표준코드: '8800987654321',
-      단위포장형태: '캡슐 20개',
-      단위수량: 20,
-      비고: '예시',
-      상태: '활성',
-    },
+const downloadTemplate = async () => {
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('표준코드템플릿')
+
+  // 헤더 정의
+  const headers = [
+    '보험코드', '표준코드', '단위포장형태', '단위수량', '비고', '상태'
   ]
-
-  const ws = XLSX.utils.json_to_sheet(templateData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '표준코드템플릿')
-
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 15 }, // 보험코드
-    { width: 16 }, // 표준코드
-    { width: 16 }, // 단위포장형태
-    { width: 10 }, // 단위수량
-    { width: 20 }, // 비고
-    { width: 10 }, // 상태
-  ]
-
-  // A열과 B열 전체를 텍스트 형식으로 설정
-  const maxRows = 1000;
   
-  for (let row = 0; row < maxRows; row++) {
-    // A열 (보험코드) - 텍스트 형식으로 설정
-    const cellA = XLSX.utils.encode_cell({ r: row, c: 0 })
-    if (!ws[cellA]) {
-      ws[cellA] = { t: 's', v: '', z: '@' }
-    } else {
-      ws[cellA].t = 's'
-      ws[cellA].z = '@'
+  // 헤더 추가
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '76933C' } // RGB(118, 147, 60)
     }
-    
-    // B열 (표준코드) - 텍스트 형식으로 설정
-    const cellB = XLSX.utils.encode_cell({ r: row, c: 1 })
-    if (!ws[cellB]) {
-      ws[cellB] = { t: 's', v: '', z: '@' }
-    } else {
-      ws[cellB].t = 's'
-      ws[cellB].z = '@'
-    }
-  }
-  
-  ws['!ref'] = XLSX.utils.encode_range({
-    s: { c: 0, r: 0 },
-    e: { c: 5, r: maxRows - 1 }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
   })
 
-  XLSX.writeFile(wb, '표준코드_엑셀등록_템플릿.xlsx')
+  // 예시 데이터 추가
+  const exampleData = [
+    ['601234567', '8800123456789', '정 10개', 10, '', '활성'],
+  ]
+
+  exampleData.forEach((rowData) => {
+    const dataRow = worksheet.addRow(rowData)
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬이 필요한 컬럼들 (보험코드, 표준코드, 단위수량, 상태)
+      if (colNumber === 1 || colNumber === 2 || colNumber === 3 || colNumber === 4 || colNumber === 6) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+    })
+  })
+
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 12 }, // 보험코드
+    { width: 16 }, // 표준코드
+    { width: 16 }, // 단위포장형태
+    { width: 12 }, // 단위수량
+    { width: 24 }, // 비고
+    { width: 10 }  // 상태
+  ]
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  for (let row = 1; row <= worksheet.rowCount; row++) {
+    for (let col = 1; col <= headers.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    }
+  }
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    {
+      showGridLines: false,
+      state: 'frozen',
+      xSplit: 0,
+      ySplit: 1
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '표준코드_엑셀등록_템플릿.xlsx'
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 const triggerFileUpload = () => {
@@ -569,63 +626,134 @@ const handleFileUpload = async (event) => {
   }
 }
 
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (filteredStandardCodes.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  const excelData = filteredStandardCodes.value.map((item) => ({
-    제품명: item.product_name || '',
-    보험코드: item.insurance_code || '',
-    표준코드: item.standard_code || '',
-    단위포장형태: item.unit_packaging_desc || '',
-    단위수량: item.unit_quantity || 0,
-    비고: item.remarks || '',
-    상태: item.status === 'active' ? '활성' : '비활성',
-    등록일: item.created_at ? new Date(item.created_at).toISOString().split('T')[0] : '',
-    수정일: item.updated_at ? new Date(item.updated_at).toISOString().split('T')[0] : '',
-  }))
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('표준코드목록')
 
-  const ws = XLSX.utils.json_to_sheet(excelData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '표준코드목록')
+  // 헤더 정의
+  const headers = [
+    'No', '제품명', '보험코드', '표준코드', '단위포장형태', '단위수량', 
+    '비고', '상태', '등록일시', '등록자', '수정일시', '수정자'
+  ]
+  
+  // 헤더 추가
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '76933C' } // RGB(118, 147, 60)
+    }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  filteredStandardCodes.value.forEach((item, index) => {
+    const dataRow = worksheet.addRow([
+      index + 1,
+      item.product_name || '',
+      item.insurance_code || '',
+      item.standard_code || '',
+      item.unit_packaging_desc || '',
+      item.unit_quantity || 0,
+      item.remarks || '',
+      item.status === 'active' ? '활성' : '비활성',
+      item.created_at ? new Date(item.created_at).toLocaleString('ko-KR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '-').replace(/\./g, '').replace(/ /g, ' ') : '',
+      item.created_by_name || '',
+      item.updated_at ? new Date(item.updated_at).toLocaleString('ko-KR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '-').replace(/\./g, '').replace(/ /g, ' ') : '',
+      item.updated_by_name || ''
+    ])
+
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬이 필요한 컬럼들 (No, 보험코드, 표준코드, 단위수량, 상태, 등록일시, 등록자, 수정일시, 수정자)
+      if (colNumber === 1 || colNumber === 3 || colNumber === 4 || colNumber === 5 || colNumber === 6 || colNumber === 8 || 
+          colNumber === 9 || colNumber === 11) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+    })
+  })
 
   // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 20 }, // 제품명
-    { width: 15 }, // 보험코드
+  worksheet.columns = [
+    { width: 8 },  // No
+    { width: 32 }, // 제품명
+    { width: 12 }, // 보험코드
     { width: 16 }, // 표준코드
     { width: 16 }, // 단위포장형태
-    { width: 10 }, // 단위수량
-    { width: 20 }, // 비고
-    { width: 12 }, // 상태
-    { width: 12 }, // 등록일
-    { width: 12 }, // 수정일
+    { width: 12 }, // 단위수량
+    { width: 24 }, // 비고
+    { width: 10 },  // 상태
+    { width: 18 }, // 등록일시
+    { width: 16 }, // 등록자
+    { width: 18 }, // 수정일시
+    { width: 16 }  // 수정자
   ]
 
-  const range = XLSX.utils.decode_range(ws['!ref'])
-  
-  // 모든 행에 대해 형식 설정
-  for (let row = 0; row <= range.e.r; row++) {
-    // B열 (보험코드) - 텍스트 형식으로 설정
-    const cellB = XLSX.utils.encode_cell({ r: row, c: 1 })
-    if (ws[cellB]) {
-      ws[cellB].t = 's'
-      ws[cellB].z = '@'
-    }
-    
-    // C열 (표준코드) - 텍스트 형식으로 설정
-    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
-    if (ws[cellC]) {
-      ws[cellC].t = 's'
-      ws[cellC].z = '@'
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  for (let row = 1; row <= worksheet.rowCount; row++) {
+    for (let col = 1; col <= headers.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
     }
   }
 
-  const fileName = generateExcelFileName('표준코드목록')
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    {
+      showGridLines: false,
+      state: 'frozen',
+      xSplit: 0,
+      ySplit: 1
+    }
+  ]
+  
+  // 단위수량 컬럼에 천단위 콤마 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const cell = worksheet.getCell(row, 5) // E컬럼 (단위수량)
+    cell.numFmt = '#,##0'
+  }
 
-  XLSX.writeFile(wb, fileName)
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = generateExcelFileName('표준코드목록')
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 const startEdit = (row) => {

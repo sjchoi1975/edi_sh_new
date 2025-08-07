@@ -53,6 +53,16 @@
         <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }" :sortable="true">
             <template #body="slotProps">{{ Math.round(slotProps.data.total_payment_amount || 0).toLocaleString() }}</template>
         </Column>
+        <Column header="개별 전달사항" :headerStyle="{ width: columnWidths.notice_individual }">
+          <template #body="slotProps">
+            <button 
+              :class="['btn-notice', slotProps.data.notice_individual ? 'btn-notice-filled' : 'btn-notice-empty']" 
+              @click="openNoticeModal(slotProps.data)"
+            >
+              전달사항
+            </button>
+          </template>
+        </Column>
         <Column header="상세" :headerStyle="{ width: columnWidths.detail }">
           <template #body="slotProps">
             <button class="btn-detail" @click="goDetail(slotProps.data)">상세</button>
@@ -83,7 +93,7 @@
             <Column :footer="totalRecordsCount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalPrescriptionAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
             <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-            <Column :colspan="2" footerClass="footer-cell" />
+            <Column :colspan="3" footerClass="footer-cell" />
           </Row>
         </ColumnGroup>
       </DataTable>
@@ -95,6 +105,27 @@
       <div class="loading-content">
         <div class="loading-spinner"></div>
         <div class="loading-text">목록을 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 전달사항 모달 -->
+    <div v-if="showNoticeModal" class="modal-overlay" @click="closeNoticeModal">
+      <div class="modal-content modal-center" @click.stop>
+        <div class="modal-header">
+          <h2>{{ selectedCompany?.company_name }} - 개별 전달사항</h2>
+          <button class="modal-close-btn" @click="closeNoticeModal">×</button>
+        </div>
+        <div class="modal-body">
+          <textarea
+            v-model="noticeContent"
+            placeholder="전달사항을 입력하세요..."
+            style="width: 100%; height: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"
+          ></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-save" @click="saveNotice">저장</button>
+          <button class="btn-close" @click="closeNoticeModal">닫기</button>
+        </div>
       </div>
     </div>
   </div>
@@ -112,7 +143,7 @@ import { supabase } from '@/supabase';
 const columnWidths = {
   no: '4%',
   company_group: '8%',
-  company_name: '14%',
+  company_name: '12%',
   business_registration_number: '10%',
   representative_name: '8%',
   manager_name: '8%',
@@ -120,6 +151,7 @@ const columnWidths = {
   total_records: '9%',
   total_prescription_amount: '9%',
   total_payment_amount: '9%',
+  notice_individual: '8%',
   detail: '6%',
   share: '6%'
 };
@@ -134,6 +166,11 @@ const availableMonths = ref([]);
 // 데이터
 const companySummary = ref([]);
 const shareChanges = ref({}); // 공유 상태 변경 사항 추적
+
+// 전달사항 모달 관련
+const showNoticeModal = ref(false);
+const selectedCompany = ref(null);
+const noticeContent = ref('');
 
 // --- 계산된 속성 (합계) ---
 const totalClientCount = computed(() => {
@@ -266,7 +303,8 @@ async function loadSettlementData() {
           total_prescription_amount: 0,
           total_payment_amount: 0,
           is_shared: false, // 기본값
-          settlement_share_id: null // 기본값
+          settlement_share_id: null, // 기본값
+          notice_individual: null // 기본값
         });
       }
 
@@ -297,6 +335,7 @@ async function loadSettlementData() {
           const summary = summaryMap.get(share.company_id);
           summary.is_shared = share.share_enabled;
           summary.settlement_share_id = share.id;
+          summary.notice_individual = share.notice_individual;
         }
       }
     }
@@ -444,6 +483,45 @@ function goDetail(companyData) {
   });
 }
 
+// 전달사항 모달 관련 함수들
+function openNoticeModal(companyData) {
+  selectedCompany.value = companyData;
+  noticeContent.value = companyData.notice_individual || '';
+  showNoticeModal.value = true;
+}
+
+function closeNoticeModal() {
+  showNoticeModal.value = false;
+  selectedCompany.value = null;
+  noticeContent.value = '';
+}
+
+async function saveNotice() {
+  if (!selectedCompany.value) return;
+  
+  try {
+    const { error } = await supabase
+      .from('settlement_share')
+      .update({ notice_individual: noticeContent.value })
+      .eq('settlement_month', selectedMonth.value)
+      .eq('company_id', selectedCompany.value.company_id);
+    
+    if (error) throw error;
+    
+    // 로컬 데이터 업데이트
+    const company = companySummary.value.find(c => c.company_id === selectedCompany.value.company_id);
+    if (company) {
+      company.notice_individual = noticeContent.value;
+    }
+    
+    alert('전달사항이 저장되었습니다.');
+    closeNoticeModal();
+  } catch (err) {
+    console.error('전달사항 저장 오류:', err);
+    alert(`전달사항 저장 중 오류가 발생했습니다: ${err.message}`);
+  }
+}
+
 onBeforeRouteLeave((to, from, next) => {
   if (Object.keys(shareChanges.value).length > 0) {
     if (confirm('저장하지 않은 변경사항이 있습니다. 페이지를 떠나시겠습니까?')) {
@@ -478,4 +556,5 @@ function formatDateTime(dateTimeString) {
 .action-buttons-group {
     display: flex;
 }
+
 </style>

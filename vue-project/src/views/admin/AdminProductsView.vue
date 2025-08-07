@@ -286,6 +286,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import ExcelJS from 'exceljs'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 
@@ -293,18 +294,18 @@ import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
   no: '4%',
-  product_name: '14%',
-  insurance_code: '6%',
-  price: '5%',
-  commission_rate_a: '6%',
-  commission_rate_b: '6%',
-  commission_rate_c: '6%',
-  commission_rate_d: '6%',
-  commission_rate_e: '6%',
-  created_at: '7%',
-  companies: '8%',
-  status: '5%',
-  actions: '7%'
+  product_name: '20%',
+  insurance_code: '7%',
+  price: '6%',
+  commission_rate_a: '7%',
+  commission_rate_b: '7%',
+  commission_rate_c: '7%',
+  commission_rate_d: '7%',
+  commission_rate_e: '7%',
+  created_at: '8%',
+  companies: '6%',
+  status: '6%',
+  actions: '8%'
 };
 
 const products = ref([])
@@ -498,6 +499,37 @@ const fetchProductsByMonth = async (month) => {
       .eq('user_type', 'user')
       .eq('approval_status', 'approved');
     
+    // 4. companies 테이블에서 업체명 가져오기 (user와 admin 모두 포함)
+    const { data: companiesData, error: companiesError } = await supabase
+      .from('companies')
+      .select('user_id, company_name')
+      .eq('approval_status', 'approved');
+    
+    if (companiesError) {
+      console.error('업체 데이터 로딩 오류:', companiesError);
+      return;
+    }
+    
+    // 5. user_id로 company_name 매핑
+    const companiesMap = {};
+    companiesData?.forEach(company => {
+      companiesMap[company.user_id] = company.company_name;
+    });
+    
+    // 디버깅: created_by, updated_by 값 확인
+    console.log('Companies data:', companiesData);
+    console.log('Companies map:', companiesMap);
+    if (productsData && productsData.length > 0) {
+      console.log('Sample product created_by:', productsData[0].created_by);
+      console.log('Sample product updated_by:', productsData[0].updated_by);
+      console.log('Sample product created_by type:', typeof productsData[0].created_by);
+      console.log('Sample product updated_by type:', typeof productsData[0].updated_by);
+      
+      // companiesMap에서 해당 값이 있는지 확인
+      console.log('created_by in companiesMap:', companiesMap[productsData[0].created_by]);
+      console.log('updated_by in companiesMap:', companiesMap[productsData[0].updated_by]);
+    }
+    
     // 4. 제품별 업체 할당 정보 매핑 (할당 안된 업체만 저장하는 방식)
     const productsWithAssignments = productsData.map(product => {
       const notAssignedCompanies = assignmentData.filter(
@@ -512,6 +544,8 @@ const fetchProductsByMonth = async (month) => {
       
       return {
         ...product,
+        created_by_name: companiesMap[product.created_by] || '',
+        updated_by_name: companiesMap[product.updated_by] || '',
         active_companies_count: activeCompaniesCount,
         total_companies_count: totalCompaniesCount || 0,
         not_assigned_companies: notAssignedCompanies
@@ -535,86 +569,123 @@ watch(products, (newVal) => {
   filteredProducts.value = newVal;
 }, { immediate: true });
 
-const downloadTemplate = () => {
-  // 기준월과 보험코드에 예시 데이터 추가 (보험코드 앞에 0이 있는 예시)
-  const templateData = [
-    {
-      기준월: '2025-01',
-      제품명: '팜플정',
-      보험코드: '0601234567', // 앞자리 0이 있는 예시
-      약가: 1000,
-      수수료A: 0.45,
-      수수료B: 0.44,
-      수수료C: 0.30,
-      수수료D: 0.25,
-      수수료E: 0.20,
-      비고: '',
-      상태: '활성',
-    },
-    {
-      기준월: '2025-02',
-      제품명: '테스트약',
-      보험코드: '601234567',
-      약가: 2000,
-      수수료A: 0.40,
-      수수료B: 0.39,
-      수수료C: 0.35,
-      수수료D: 0.30,
-      수수료E: 0.25,
-      비고: '예시',
-      상태: '활성',
-    },
+const downloadTemplate = async () => {
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('제품템플릿')
+
+  // 헤더 정의
+  const headers = [
+    '기준월', '제품명', '보험코드', '약가', '수수료A', '수수료B', '수수료C', '수수료D', '수수료E', '비고', '상태'
   ]
-
-  const ws = XLSX.utils.json_to_sheet(templateData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '제품템플릿')
-
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 12 }, // 기준월
-    { width: 20 }, // 제품명
-    { width: 15 }, // 보험코드
-    { width: 10 }, // 약가
-    { width: 10 }, // 수수료A
-    { width: 10 }, // 수수료B
-    { width: 10 }, // 수수료C
-    { width: 10 }, // 수수료D
-    { width: 10 }, // 수수료E
-    { width: 20 }, // 비고
-    { width: 10 }, // 상태
-  ]
-
-  // A열과 C열 전체를 텍스트 형식으로 설정 (1000행까지 미리 설정)
-  const maxRows = 1000; // 충분한 행 수 설정
   
-  for (let row = 0; row < maxRows; row++) {
-    // A열 (기준월) - 빈 셀이라도 텍스트 형식으로 설정
-    const cellA = XLSX.utils.encode_cell({ r: row, c: 0 })
-    if (!ws[cellA]) {
-      ws[cellA] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
-    } else {
-      ws[cellA].t = 's' // 문자열 타입
-      ws[cellA].z = '@' // 텍스트 형식
+  // 헤더 추가
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '76933C' } // RGB(118, 147, 60)
     }
-    
-    // C열 (보험코드) - 빈 셀이라도 텍스트 형식으로 설정
-    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
-    if (!ws[cellC]) {
-      ws[cellC] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
-    } else {
-      ws[cellC].t = 's' // 문자열 타입
-      ws[cellC].z = '@' // 텍스트 형식
-    }
-  }
-  
-  // 워크시트 범위 업데이트 (1000행까지 확장)
-  ws['!ref'] = XLSX.utils.encode_range({
-    s: { c: 0, r: 0 },
-    e: { c: 10, r: maxRows - 1 }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
   })
 
-  XLSX.writeFile(wb, '제품_엑셀등록_템플릿.xlsx')
+  // 예시 데이터 추가
+  const exampleData = [
+    ['2025-01', '팜플정', '601234567', 1000, 0.45, 0.44, 0.30, 0.25, 0.20, '', '활성'],
+  ]
+
+  exampleData.forEach((rowData) => {
+    const dataRow = worksheet.addRow(rowData)
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬이 필요한 컬럼들 (기준월, 보험코드, 수수료A~E, 상태)
+      if (colNumber === 1 || colNumber === 3 || colNumber === 5 || 
+          colNumber === 6 || colNumber === 7 || colNumber === 8 || colNumber === 9 || colNumber === 11) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 약가 컬럼은 숫자형식이므로 오른쪽 정렬
+      if (colNumber === 4) {
+        cell.alignment = { horizontal: 'right', vertical: 'middle' }
+      }
+    })
+
+  })
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 12 }, // 기준월
+    { width: 32 }, // 제품명
+    { width: 12 }, // 보험코드
+    { width: 12 }, // 약가
+    { width: 12 }, // 수수료A
+    { width: 12 }, // 수수료B
+    { width: 12 }, // 수수료C
+    { width: 12 }, // 수수료D
+    { width: 12 }, // 수수료E
+    { width: 24 }, // 비고
+    { width: 10 }  // 상태
+  ]
+
+  // 약가 컬럼에 천단위 콤마 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const cell = worksheet.getCell(row, 4) // 약가 컬럼 (4번째)
+    cell.numFmt = '#,##0'
+  }
+
+  // 약가 컬럼에 천단위 콤마 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const cell = worksheet.getCell(row, 4) // 약가 컬럼 (4번째)
+    cell.numFmt = '#,##0'
+  }
+
+  // 수수료A~E 컬럼에 백분율 형식 적용 (소수점 한자리)
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    for (let col = 5; col <= 9; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.numFmt = '0.0%'
+    }
+  }
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  for (let row = 1; row <= worksheet.rowCount; row++) {
+    for (let col = 1; col <= headers.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    }
+  }
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    {
+      showGridLines: false,
+      state: 'frozen',
+      xSplit: 0,
+      ySplit: 1
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '제품_엑셀등록_템플릿.xlsx'
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 const triggerFileUpload = () => {
@@ -911,80 +982,160 @@ const handleFileUpload = async (event) => {
   }
 }
 
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (filteredProducts.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
-  const excelData = filteredProducts.value.map((product) => ({
-    기준월: product.base_month || '',
-    제품명: product.product_name || '',
-    보험코드: product.insurance_code || '',
-    약가: product.price || 0,
-    수수료A: product.commission_rate_a || 0,
-    수수료B: product.commission_rate_b || 0,
-    수수료C: product.commission_rate_c || 0,
-    수수료D: product.commission_rate_d || 0,
-    수수료E: product.commission_rate_e || 0,
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('제품목록')
 
-    비고: product.remarks || '',
-    상태: product.status === 'active' ? '활성' : '비활성',
-    등록일: product.created_at ? new Date(product.created_at).toISOString().split('T')[0] : '',
-    수정일: product.updated_at ? new Date(product.updated_at).toISOString().split('T')[0] : '',
-  }))
+  // 헤더 정의
+  const headers = [
+    'No', '기준월', '제품명', '보험코드', '약가', '수수료A', '수수료B', '수수료C', 
+    '수수료D', '수수료E', '비고', '상태', '등록일시', '등록자', '수정일시', '수정자'
+  ]
+  
+  // 헤더 추가
+  worksheet.addRow(headers)
+  // 헤더 스타일 설정
 
-  const ws = XLSX.utils.json_to_sheet(excelData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '제품목록')
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '76933C' } // RGB(118, 147, 60)
+    }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  filteredProducts.value.forEach((product, index) => {
+    const dataRow = worksheet.addRow([
+      index + 1,
+      product.base_month || '',
+      product.product_name || '',
+      product.insurance_code || '',
+      product.price || 0,
+      product.commission_rate_a || 0,
+      product.commission_rate_b || 0,
+      product.commission_rate_c || 0,
+      product.commission_rate_d || 0,
+      product.commission_rate_e || 0,
+      product.remarks || '',
+      product.status === 'active' ? '활성' : '비활성',
+      product.created_at ? new Date(product.created_at).toLocaleString('ko-KR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '-').replace(/\./g, '').replace(/ /g, ' ') : '',
+      product.created_by_name || '',
+      product.updated_at ? new Date(product.updated_at).toLocaleString('ko-KR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '-').replace(/\./g, '').replace(/ /g, ' ') : '',
+      product.updated_by_name || ''
+    ])
+
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬이 필요한 컬럼들 (No, 기준월, 보험코드, 수수료A~E, 상태, 등록일시, 수정일시)
+      if (colNumber === 1 || colNumber === 2 || colNumber === 4 || colNumber === 6 || 
+          colNumber === 7 || colNumber === 8 || colNumber === 9 || colNumber === 10 ||
+          colNumber === 12 || colNumber === 13 || colNumber === 15) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 약가 컬럼은 숫자형식이므로 오른쪽 정렬
+      if (colNumber === 5) {
+        cell.alignment = { horizontal: 'right', vertical: 'middle' }
+      }
+    })
+  })
 
   // 컬럼 너비 설정
-  ws['!cols'] = [
+  worksheet.columns = [
+    { width: 8 },  // No
     { width: 12 }, // 기준월
-    { width: 20 }, // 제품명
-    { width: 15 }, // 보험코드
-    { width: 10 }, // 약가
-    { width: 10 }, // 수수료A
-    { width: 10 }, // 수수료B
-    { width: 10 }, // 수수료C
-    { width: 10 }, // 수수료D
-    { width: 10 }, // 수수료E
-    { width: 20 }, // 비고
-    { width: 12 }, // 상태
-    { width: 12 }, // 등록일
-    { width: 12 }, // 수정일
+    { width: 32 }, // 제품명
+    { width: 12 }, // 보험코드
+    { width: 12 }, // 약가
+    { width: 12 }, // 수수료A
+    { width: 12 }, // 수수료B
+    { width: 12 }, // 수수료C
+    { width: 12 }, // 수수료D
+    { width: 12 }, // 수수료E
+    { width: 24 }, // 비고
+    { width: 10 },  // 상태
+    { width: 18 }, // 등록일시
+    { width: 16 }, // 등록자
+    { width: 18 }, // 수정일시
+    { width: 16 }  // 수정자
   ]
 
-  const range = XLSX.utils.decode_range(ws['!ref'])
+  // 수수료A~E 컬럼에 백분율 형식 적용 (소수점 한자리)
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    for (let col = 6; col <= 10; col++) { // F~J 컬럼 (수수료A~E)
+      const cell = worksheet.getCell(row, col)
+      cell.numFmt = '0.0%'
+    }
+  }
   
-  // 모든 행에 대해 형식 설정
-  for (let row = 0; row <= range.e.r; row++) {
-    // A열 (기준월) - 텍스트 형식으로 설정
-    const cellA = XLSX.utils.encode_cell({ r: row, c: 0 })
-    if (ws[cellA]) {
-      ws[cellA].t = 's' // 문자열 타입
-      ws[cellA].z = '@' // 텍스트 형식
-    }
-    
-    // C열 (보험코드) - 텍스트 형식으로 설정
-    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
-    if (ws[cellC]) {
-      ws[cellC].t = 's' // 문자열 타입
-      ws[cellC].z = '@' // 텍스트 형식
-    }
-    
-    // D열 (약가) - 숫자 천 단위 구분자 형식
-    const cellD = XLSX.utils.encode_cell({ r: row, c: 3 })
-    if (ws[cellD] && row > 0) { // 헤더 제외
-      ws[cellD].z = '#,##0'
+  // 약가 컬럼에 천단위 콤마 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const cell = worksheet.getCell(row, 5) // E컬럼 (약가)
+    cell.numFmt = '#,##0'
+  }
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  for (let row = 1; row <= worksheet.rowCount; row++) {
+    for (let col = 1; col <= headers.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
     }
   }
 
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    {
+      showGridLines: false,
+      state: 'frozen',
+      xSplit: 0,
+      ySplit: 1
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  
   // 기준월 정보가 있으면 파일명에 포함
   const monthInfo = selectedMonth.value ? formatMonthToKorean(selectedMonth.value) : null
-  const fileName = generateExcelFileName('제품목록', monthInfo)
-
-  XLSX.writeFile(wb, fileName)
+  link.download = generateExcelFileName('제품목록', monthInfo)
+  
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 const startEdit = (row) => {

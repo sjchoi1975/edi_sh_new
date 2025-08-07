@@ -237,7 +237,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
 // 컬럼 너비 한 곳에서 관리
@@ -455,61 +455,96 @@ const deletePharmacy = async (row) => {
 }
 
 // 엑셀 템플릿 다운로드
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
   const templateData = [
     {
-      약국코드: 'PH001',
+      약국코드: '',
       약국명: '예시약국',
       사업자등록번호: '123-45-67890',
       주소: '서울시 강남구 테헤란로 123',
       비고: '예시 비고',
       상태: '활성',
     },
-    {
-      약국코드: 'PH002',
-      약국명: '테스트약국',
-      사업자등록번호: '012-34-56789', // 앞자리 0이 있는 예시
-      주소: '서울시 서초구 서초대로 456',
-      비고: '예시',
-      상태: '활성',
-    },
   ]
 
-  const ws = XLSX.utils.json_to_sheet(templateData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '문전약국템플릿')
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('문전약국템플릿')
+
+  // 헤더 정의
+  const headers = Object.keys(templateData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  templateData.forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (약국코드, 상태)
+      if ([1, 3, 6].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 사업자등록번호 컬럼은 텍스트 형식으로 설정
+      if (colNumber === 3) {
+        cell.numFmt = '@'
+      }
+    })
+  })
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
 
   // 컬럼 너비 설정
-  ws['!cols'] = [
+  worksheet.columns = [
     { width: 12 }, // 약국코드
-    { width: 25 }, // 약국명
-    { width: 15 }, // 사업자등록번호
-    { width: 40 }, // 주소
-    { width: 20 }, // 비고
+    { width: 32 }, // 약국명
+    { width: 16 }, // 사업자등록번호
+    { width: 64 }, // 주소
+    { width: 24 }, // 비고
     { width: 10 }, // 상태
   ]
 
-  // 사업자등록번호(C열) 전체를 텍스트 형식으로 설정 (1000행까지)
-  const maxRows = 1000;
-  
-  for (let row = 0; row < maxRows; row++) {
-    // C열 (사업자등록번호) - 빈 셀이라도 텍스트 형식으로 설정
-    const cellC = XLSX.utils.encode_cell({ r: row, c: 2 })
-    if (!ws[cellC]) {
-      ws[cellC] = { t: 's', v: '', z: '@' } // 빈 텍스트 셀 생성
-    } else {
-      ws[cellC].t = 's' // 문자열 타입
-      ws[cellC].z = '@' // 텍스트 형식
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
     }
-  }
-  
-  // 워크시트 범위 업데이트 (1000행까지 확장)
-  ws['!ref'] = XLSX.utils.encode_range({
-    s: { c: 0, r: 0 },
-    e: { c: 5, r: maxRows - 1 }
-  })
+  ]
 
-  XLSX.writeFile(wb, '문전약국_엑셀등록_템플릿.xlsx')
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '문전약국_엑셀등록_템플릿.xlsx'
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 // 파일 업로드 트리거
@@ -714,57 +749,106 @@ const handleFileUpload = async (event) => {
 }
 
 // 엑셀 다운로드 (현재 목록)
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (pharmacies.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
   }
 
   // 데이터 변환
-  const excelData = pharmacies.value.map((pharmacy) => ({
-    ID: pharmacy.id,
+  const excelData = pharmacies.value.map((pharmacy, index) => ({
+    No: index + 1,
     약국코드: pharmacy.pharmacy_code || '',
     약국명: pharmacy.name || '',
     사업자등록번호: pharmacy.business_registration_number || '',
     주소: pharmacy.address || '',
     비고: pharmacy.remarks || '',
     상태: pharmacy.status === 'active' ? '활성' : '비활성',
-    등록일: pharmacy.created_at ? new Date(pharmacy.created_at).toISOString().split('T')[0] : '',
-    수정일: pharmacy.updated_at ? new Date(pharmacy.updated_at).toISOString().split('T')[0] : '',
+    등록일시: pharmacy.created_at ? new Date(pharmacy.created_at).toISOString().slice(0, 16).replace('T', ' ') : '',
+    수정일시: pharmacy.updated_at ? new Date(pharmacy.updated_at).toISOString().slice(0, 16).replace('T', ' ') : '',
   }))
 
-  const ws = XLSX.utils.json_to_sheet(excelData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '문전약국목록')
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('문전약국목록')
+
+  // 헤더 정의
+  const headers = Object.keys(excelData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  excelData.forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (No, 약국코드, 상태, 등록일시, 수정일시)
+      if ([1, 2, 4, 7, 8, 9].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 사업자등록번호 컬럼은 텍스트 형식으로 설정
+      if (colNumber === 4) {
+        cell.numFmt = '@'
+      }
+    })
+  })
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
 
   // 컬럼 너비 설정
-  ws['!cols'] = [
-    { width: 10 }, // ID
+  worksheet.columns = [
+    { width: 8 },  // No
     { width: 12 }, // 약국코드
-    { width: 20 }, // 약국명
-    { width: 15 }, // 사업자등록번호
-    { width: 30 }, // 주소
-    { width: 20 }, // 비고
+    { width: 32 }, // 약국명
+    { width: 16 }, // 사업자등록번호
+    { width: 64 }, // 주소
+    { width: 24 }, // 비고
     { width: 10 }, // 상태
-    { width: 12 }, // 등록일
-    { width: 12 }, // 수정일
+    { width: 18 }, // 등록일시
+    { width: 18 }, // 수정일시
   ]
 
-  const range = XLSX.utils.decode_range(ws['!ref'])
-  
-  // 모든 행에 대해 형식 설정
-  for (let row = 0; row <= range.e.r; row++) {
-    // D열 (사업자등록번호) - 텍스트 형식으로 설정
-    const cellD = XLSX.utils.encode_cell({ r: row, c: 3 })
-    if (ws[cellD]) {
-      ws[cellD].t = 's' // 문자열 타입
-      ws[cellD].z = '@' // 텍스트 형식
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
     }
-  }
+  ]
 
-  const fileName = generateExcelFileName('문전약국목록')
-
-  XLSX.writeFile(wb, fileName)
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = generateExcelFileName('문전약국목록')
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 async function deleteAllPharmacies() {
