@@ -419,7 +419,7 @@ const statusOptions = ref([
   { value: '검수중', label: '검수중' },
   { value: '대기', label: '신규' },
 ]);
-const selectedStatus = ref(null);
+const selectedStatus = ref('검수중');
 
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
