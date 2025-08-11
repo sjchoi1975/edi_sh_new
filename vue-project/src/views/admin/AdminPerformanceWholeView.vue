@@ -132,7 +132,7 @@
               <Column :colspan="2" footerClass="footer-cell" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-              <Column :colspan="5" footerClass="footer-cell" />
+              <Column :colspan="7" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -542,7 +542,12 @@ async function fetchPerformanceRecords() {
     
     // 데이터 변환
     let mappedData = allData.map(record => {
-      const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
+      // 삭제 처리된 건은 처방액을 0으로 표시
+      let prescriptionAmount = 0;
+      if (record.review_action !== '삭제') {
+        prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
+      }
+      
       return {
         id: record.id,
         review_status: record.review_status || '대기',

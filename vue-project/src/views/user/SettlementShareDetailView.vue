@@ -73,9 +73,21 @@
           <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
             <template #body="slotProps">{{ (slotProps.data._raw_qty || 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</template>
           </Column>
-          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
+            <template #body="slotProps">
+              <span :title="slotProps.data.review_action === '삭제' ? '0' : slotProps.data.prescription_amount">
+                {{ slotProps.data.review_action === '삭제' ? '0' : slotProps.data.prescription_amount }}
+              </span>
+            </template>
+          </Column>
           <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
-          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" />
+          <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
+            <template #body="slotProps">
+              <span :title="slotProps.data.review_action === '삭제' ? '0' : slotProps.data.payment_amount">
+                {{ slotProps.data.review_action === '삭제' ? '0' : slotProps.data.payment_amount }}
+              </span>
+            </template>
+          </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
               <span class="ellipsis-cell" :title="slotProps.data.remarks" @mouseenter="checkOverflow" @mouseleave="removeOverflowClass">{{ slotProps.data.remarks }}</span>
@@ -182,12 +194,26 @@ const noticeData = ref(null);
 const hideNoticeModal = ref(false);
 const currentSettlementMonthId = ref(null);
 
-const totalQty = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_qty || 0), 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
-const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount || 0), 0).toLocaleString());
-const totalPaymentAmount = computed(() => detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount || 0), 0).toLocaleString());
+const totalQty = computed(() => detailRows.value.reduce((sum, row) => {
+  // 삭제된 건은 수량을 0으로 계산
+  if (row.review_action === '삭제') return sum;
+  return sum + (row._raw_qty || 0);
+}, 0).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+const totalPrescriptionAmount = computed(() => detailRows.value.reduce((sum, row) => {
+  // 삭제된 건은 처방액을 0으로 계산
+  if (row.review_action === '삭제') return sum;
+  return sum + (row._raw_prescription_amount || 0);
+}, 0).toLocaleString());
+const totalPaymentAmount = computed(() => detailRows.value.reduce((sum, row) => {
+  // 삭제된 건은 지급액을 0으로 계산
+  if (row.review_action === '삭제') return sum;
+  return sum + (row._raw_payment_amount || 0);
+}, 0).toLocaleString());
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
+    // 삭제된 건은 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
     return sum + (row._raw_payment_amount || 0);
   }, 0);
 

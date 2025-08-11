@@ -1067,8 +1067,14 @@ async function loadPerformanceData() {
 
     // 데이터 가공: Join된 객체를 펼치고, 화면 표시에 필요한 값을 설정
     rows.value = allData.map(item => {
-      const prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
-      const paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+      // 삭제 처리된 건은 처방액과 지급액을 0으로 표시
+      let prescriptionAmount = 0;
+      let paymentAmount = 0;
+      
+      if (item.review_action !== '삭제') {
+        prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
+        paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+      }
       
       return {
         ...item,
@@ -1181,7 +1187,7 @@ async function saveEdit(rowData) {
       prescription_type: rowData.prescription_type_modify,
       commission_rate: Number(rowData.commission_rate_modify) || 0,
       remarks: rowData.remarks_modify,
-      review_status: '검수중', 
+      review_status: '완료', 
       updated_at: new Date().toISOString(),
       updated_by: adminUserId,
     };
@@ -1302,7 +1308,12 @@ const confirmDeleteRow = async (row) => {
 
       const { error } = await supabase
         .from('performance_records')
-        .update({ review_action: '삭제', updated_by: userUid, updated_at: new Date().toISOString() })
+        .update({ 
+          review_action: '삭제', 
+          review_status: '완료',
+          updated_by: userUid, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', row.id);
       
       if (error) throw error;
@@ -1311,9 +1322,13 @@ const confirmDeleteRow = async (row) => {
       const index = rows.value.findIndex(r => r.id === row.id);
       if (index !== -1) {
         rows.value[index].review_action = '삭제';
+        rows.value[index].review_status = '완료';
       }
       
       alert("해당 항목이 삭제 처리되었습니다. 되돌리기를 하시면 다시 검수 완료가 가능합니다.");
+      
+      // 데이터 다시 로드하여 화면 업데이트
+      await loadPerformanceData();
 
     } catch (error) {
       console.error('삭제 처리 중 오류:', error);
@@ -1330,7 +1345,12 @@ const restoreRow = async (row) => {
 
     const { error } = await supabase
       .from('performance_records')
-      .update({ review_action: null, updated_by: userUid, updated_at: new Date().toISOString() })
+      .update({ 
+        review_action: null, 
+        review_status: '검수중',
+        updated_by: userUid, 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', row.id);
     
     if (error) throw error;
@@ -1338,8 +1358,12 @@ const restoreRow = async (row) => {
     const index = rows.value.findIndex(r => r.id === row.id);
     if (index !== -1) {
       rows.value[index].review_action = null;
+      rows.value[index].review_status = '검수중'; // 복원 시 검수중으로 변경
     }
     alert('항목이 복원되었습니다.');
+    
+    // 데이터 다시 로드하여 화면 업데이트
+    await loadPerformanceData();
   } catch(error) {
     console.error('복원 중 오류:', error);
     alert(`복원 중 오류가 발생했습니다: ${error.message}`);

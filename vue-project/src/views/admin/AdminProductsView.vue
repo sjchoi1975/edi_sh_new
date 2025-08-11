@@ -127,7 +127,7 @@
             <span v-else>{{ slotProps.data.price?.toLocaleString() }}</span>
           </template>
         </Column>
-        <Column header="수수료율 A" :headerStyle="{ width: columnWidths.commission_rate_a }" :sortable="true">
+        <Column header="수수료율 A" :headerStyle="{ width: columnWidths.commission_rate_a }" :sortable="false">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -140,7 +140,7 @@
             <span v-else>{{ slotProps.data.commission_rate_a !== undefined && slotProps.data.commission_rate_a !== null ? (slotProps.data.commission_rate_a * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료율 B" :headerStyle="{ width: columnWidths.commission_rate_b }" :sortable="true">
+        <Column header="수수료율 B" :headerStyle="{ width: columnWidths.commission_rate_b }" :sortable="false">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -153,7 +153,7 @@
             <span v-else>{{ slotProps.data.commission_rate_b !== undefined && slotProps.data.commission_rate_b !== null ? (slotProps.data.commission_rate_b * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료율 C" :headerStyle="{ width: columnWidths.commission_rate_c }" :sortable="true">
+        <Column header="수수료율 C" :headerStyle="{ width: columnWidths.commission_rate_c }" :sortable="false">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -166,7 +166,7 @@
             <span v-else>{{ slotProps.data.commission_rate_c !== undefined && slotProps.data.commission_rate_c !== null ? (slotProps.data.commission_rate_c * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료율 D" :headerStyle="{ width: columnWidths.commission_rate_d }" :sortable="true">
+        <Column header="수수료율 D" :headerStyle="{ width: columnWidths.commission_rate_d }" :sortable="false">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -179,7 +179,7 @@
             <span v-else>{{ slotProps.data.commission_rate_d !== undefined && slotProps.data.commission_rate_d !== null ? (slotProps.data.commission_rate_d * 100).toFixed(1) + '%' : '-' }}</span>
           </template>
         </Column>
-        <Column header="수수료율 E" :headerStyle="{ width: columnWidths.commission_rate_e }" :sortable="true">
+        <Column header="수수료율 E" :headerStyle="{ width: columnWidths.commission_rate_e }" :sortable="false">
           <template #body="slotProps">
             <input
               v-if="slotProps.data.isEditing"
@@ -1506,7 +1506,6 @@ const getValidActiveCount = (product) => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s;

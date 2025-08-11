@@ -42,15 +42,12 @@
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
       <div class="data-card-header" style="flex-shrink: 0;">
-        <div class="total-count-display">전체 {{ (displayRows || []).length }} 건</div>
-         <div v-if="!loading && (displayRows || []).length === 0" class="header-center-message">
-          흡수율 분석을 실행하세요.
-        </div>
+        <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div class="data-card-buttons" style="margin-left: auto;">
           <button 
             class="btn-delete" 
             @click="deleteFilteredAnalysisData" 
-            :disabled="(displayRows || []).length === 0 || loading"
+            :disabled="displayRows.length === 0 || loading"
             style="margin-right: 1rem;"
           >
             분석 데이터 삭제
@@ -63,7 +60,7 @@
            >
              흡수율 분석
            </button>
-           <button class="btn-excell-download" @click="downloadExcel" :disabled="(displayRows || []).length === 0" style="margin-right: 1rem;">
+           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0" style="margin-right: 1rem;">
              엑셀 다운로드
            </button>
            <div style="display: flex; align-items: center; gap: 8px;">
@@ -82,7 +79,8 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           ref="dataTableRef"
-          :value="displayRows || []" 
+          :key="displayRows.length"
+          :value="displayRows" 
           :loading="false"
           paginator
           :rows="100"
@@ -128,34 +126,40 @@
               {{ Number(slotProps.data.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
             </template>
           </Column>
-          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" />
+          <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
+            <template #body="slotProps">
+              <span :title="slotProps.data.review_action === '삭제' ? '0' : slotProps.data.prescription_amount">
+                {{ slotProps.data.review_action === '삭제' ? '0' : slotProps.data.prescription_amount }}
+              </span>
+            </template>
+          </Column>
           <Column field="prescription_type" header="처방구분" :headerStyle="{ width: columnWidths.prescription_type }" :sortable="true" />
           
           <Column field="wholesale_revenue" header="도매매출" :headerStyle="{ width: columnWidths.wholesale_revenue }" :sortable="true">
             <template #body="slotProps">
-              <span :title="Math.floor(slotProps.data.wholesale_revenue || 0).toLocaleString()">
-                {{ Math.floor(slotProps.data.wholesale_revenue || 0).toLocaleString() }}
+              <span :title="Math.round(slotProps.data.wholesale_revenue || 0).toLocaleString()">
+                {{ Math.round(slotProps.data.wholesale_revenue || 0).toLocaleString() }}
               </span>
             </template>
           </Column>
           <Column field="direct_revenue" header="직거래매출" :headerStyle="{ width: columnWidths.direct_revenue }" :sortable="true">
              <template #body="slotProps">
-              <span :title="Math.floor(slotProps.data.direct_revenue || 0).toLocaleString()">
-                {{ Math.floor(slotProps.data.direct_revenue || 0).toLocaleString() }}
+              <span :title="Math.round(slotProps.data.direct_revenue || 0).toLocaleString()">
+                {{ Math.round(slotProps.data.direct_revenue || 0).toLocaleString() }}
               </span>
             </template>
           </Column>
           <Column field="total_revenue" header="합산액" :headerStyle="{ width: columnWidths.total_revenue }" :sortable="true">
              <template #body="slotProps">
-              <span :title="Math.floor(slotProps.data.total_revenue || 0).toLocaleString()">
-                {{ Math.floor(slotProps.data.total_revenue || 0).toLocaleString() }}
+              <span :title="Math.round(slotProps.data.total_revenue || 0).toLocaleString()">
+                {{ Math.round(slotProps.data.total_revenue || 0).toLocaleString() }}
               </span>
             </template>
           </Column>
           <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: columnWidths.absorption_rate }" :sortable="true">
              <template #body="slotProps">
-              <span :title="slotProps.data.absorption_rate + '%'">
-                {{ slotProps.data.absorption_rate }}%
+              <span :title="formatAbsorptionRate(slotProps.data.absorption_rate)">
+                {{ formatAbsorptionRate(slotProps.data.absorption_rate) }}
               </span>
             </template>
           </Column>
@@ -167,7 +171,9 @@
           </Column>
           <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true">
             <template #body="slotProps">
-              <span :title="slotProps.data.payment_amount">{{ slotProps.data.payment_amount }}</span>
+              <span :title="slotProps.data.review_action === '삭제' ? '0' : slotProps.data.payment_amount">
+                {{ slotProps.data.review_action === '삭제' ? '0' : slotProps.data.payment_amount }}
+              </span>
             </template>
           </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
@@ -234,7 +240,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
@@ -274,7 +280,7 @@ const columnWidths = {
 
 // --- 상태 변수 정의 ---
 const loading = ref(true);
-const displayRows = ref(null);
+const displayRows = ref([]);
 const availableMonths = ref([]);
 const companyOptions = ref([]);
 const hospitalOptions = ref([]);
@@ -305,6 +311,9 @@ const changeInfo = ref({
   updated_sales: 0
 });
 
+// 재분석 체크 관련 변수
+const latestAnalysisTime = ref(null);
+
 // 정렬 관련 변수들
 const sortCriteria = ref('alphabetical'); // 기본값: 가나다순
 const sortOptions = ref([
@@ -315,32 +324,40 @@ const sortOptions = ref([
 
 // --- 합계 계산 ---
 const totalPrescriptionAmount = computed(() => {
-  if (!displayRows.value) return '0';
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
+  const total = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 처방액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0);
+  }, 0);
   return total.toLocaleString();
 });
 
 const totalWholesaleRevenue = computed(() => {
-  if (!displayRows.value) return '0';
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.wholesale_revenue || 0), 0);
-  return Math.floor(total).toLocaleString();
+  return Math.round(total).toLocaleString();
 });
 
 const totalDirectRevenue = computed(() => {
-  if (!displayRows.value) return '0';
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.direct_revenue || 0), 0);
-  return Math.floor(total).toLocaleString();
+  return Math.round(total).toLocaleString();
 });
 
 const totalCombinedRevenue = computed(() => {
-  if (!displayRows.value) return '0';
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
   const total = displayRows.value.reduce((sum, row) => sum + (row.total_revenue || 0), 0);
-  return Math.floor(total).toLocaleString();
+  return Math.round(total).toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
-  if (!displayRows.value) return '0';
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
+  const total = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0);
+  }, 0);
   return total.toLocaleString();
 });
 
@@ -348,8 +365,12 @@ const totalPaymentAmount = computed(() => {
 
 // --- Computed 속성 (합계 계산) ---
 const totalQuantity = computed(() => {
-  if (!displayRows.value) return '0.0';
-  const total = displayRows.value.reduce((sum, row) => sum + (Number(row.prescription_qty) || 0), 0);
+  if (!displayRows.value || displayRows.value.length === 0) return '0.0';
+  const total = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 수량을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(row.prescription_qty) || 0);
+  }, 0);
   return total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });
 
@@ -357,27 +378,39 @@ const averageAbsorptionRate = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '- %';
 
   // 합계 처방액과 합계 합산액 계산
-  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => 
-    sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
-  const totalCombinedRevenue = displayRows.value.reduce((sum, row) => 
-    sum + (row.total_revenue || 0), 0);
+  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 처방액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0);
+  }, 0);
+  const totalCombinedRevenue = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 합산액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (row.total_revenue || 0);
+  }, 0);
 
   if (totalPrescriptionAmount === 0) return '- %';
 
   // 흡수율 = (합계 합산액 ÷ 합계 처방액) × 100
   const absorptionRate = (totalCombinedRevenue / totalPrescriptionAmount) * 100;
   
-  return `${absorptionRate.toFixed(1)}%`;
+  return `${absorptionRate.toFixed(3)}%`;
 });
 
 const averageCommissionRate = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '- %';
 
   // 합계 처방액과 합계 지급액 계산
-  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => 
-    sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0), 0);
-  const totalPaymentAmount = displayRows.value.reduce((sum, row) => 
-    sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0), 0);
+  const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 처방액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.prescription_amount).replace(/,/g, '')) || 0);
+  }, 0);
+  const totalPaymentAmount = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0);
+  }, 0);
 
   if (totalPrescriptionAmount === 0) return '- %';
 
@@ -535,10 +568,19 @@ watch(selectedSettlementMonth, checkAnalysisStatus, { immediate: true });
 
 // --- 핵심 데이터 처리 함수 ---
 async function loadAbsorptionAnalysisResults() {
-  if (!selectedSettlementMonth.value) return;
+  if (!selectedSettlementMonth.value) {
+    loading.value = false;
+    return;
+  }
   
   loading.value = true;
   displayRows.value = [];
+  
+  // 타임아웃 설정 (30초 후 자동으로 로딩 해제)
+  const timeoutId = setTimeout(() => {
+    console.warn('loadAbsorptionAnalysisResults 타임아웃 발생');
+    loading.value = false;
+  }, 30000);
   
   try {
     let allData = [];
@@ -550,61 +592,74 @@ async function loadAbsorptionAnalysisResults() {
       const availableCompanies = companyOptions.value.filter(company => company.id !== 'ALL');
       console.log(`처리할 업체 수: ${availableCompanies.length}개`);
       
-      for (const company of availableCompanies) {
-        console.log(`업체 처리 중: ${company.company_name} (ID: ${company.id})`);
-        
-        let companyQuery = supabase
-          .from('performance_records_absorption')
-          .select(`
-            *,
-            company:companies(company_name, company_group),
-            client:clients(name),
-            product:products(product_name, insurance_code, price)
-          `)
-          .eq('settlement_month', selectedSettlementMonth.value)
-          .eq('company_id', company.id);
-        
-        if (selectedHospitalId.value !== 'ALL') {
-          companyQuery = companyQuery.eq('client_id', selectedHospitalId.value);
-        }
-        
-        if (prescriptionOffset.value !== 0) {
-          const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
-          companyQuery = companyQuery.eq('prescription_month', prescriptionMonth);
-        }
-        
-        // 업체별 배치 처리
-        let companyData = [];
-        let from = 0;
-        const batchSize = 1000;
-        
-        while (true) {
-          const { data, error } = await companyQuery
-            .range(from, from + batchSize - 1)
-            .order('created_at', { ascending: false });
+      // 업체가 없으면 빈 배열로 처리
+      if (availableCompanies.length === 0) {
+        console.log('처리할 업체가 없습니다.');
+        allData = [];
+      } else {
+        for (const company of availableCompanies) {
+          console.log(`업체 처리 중: ${company.company_name} (ID: ${company.id})`);
           
-          if (error) throw error;
+          let companyQuery = supabase
+            .from('performance_records_absorption')
+            .select(`
+              *,
+              company:companies(company_name, company_group),
+              client:clients(name),
+              product:products(product_name, insurance_code, price)
+            `)
+            .eq('settlement_month', selectedSettlementMonth.value)
+            .eq('company_id', company.id);
           
-          if (!data || data.length === 0) {
-            break;
+          if (selectedHospitalId.value !== 'ALL') {
+            companyQuery = companyQuery.eq('client_id', selectedHospitalId.value);
           }
           
-          companyData = companyData.concat(data);
-          
-          if (data.length < batchSize) {
-            break;
+          if (prescriptionOffset.value !== 0) {
+            const prescriptionMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
+            companyQuery = companyQuery.eq('prescription_month', prescriptionMonth);
           }
           
-          from += batchSize;
+          // 업체별 배치 처리
+          let companyData = [];
+          let from = 0;
+          const batchSize = 1000;
+          
+          while (true) {
+            const { data, error } = await companyQuery
+              .range(from, from + batchSize - 1)
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            if (!data || data.length === 0) {
+              break;
+            }
+            
+            companyData = companyData.concat(data);
+            
+            if (data.length < batchSize) {
+              break;
+            }
+            
+            from += batchSize;
+          }
+          
+          console.log(`${company.company_name}: ${companyData.length}건`);
+          allData = allData.concat(companyData);
         }
-        
-        console.log(`${company.company_name}: ${companyData.length}건`);
-        allData = allData.concat(companyData);
       }
       
-      console.log(`전체 업체 합계: ${allData.length}건`);
-      console.log('=== 업체별 개별 쿼리 완료 ===');
-      
+          console.log(`전체 업체 합계: ${allData.length}건`);
+    console.log('=== 업체별 개별 쿼리 완료 ===');
+    
+    // 데이터가 없으면 바로 로딩 멈춤
+    if (allData.length === 0) {
+      console.log('performance_records_absorption에 데이터가 없습니다. 로딩을 멈춥니다.');
+      loading.value = false;
+      return;
+    }
+    
     } else {
       // === 개별 업체 조회 시: 기존 로직 ===
       console.log('=== 개별 업체 조회 시작 ===');
@@ -654,6 +709,13 @@ async function loadAbsorptionAnalysisResults() {
       }
       
       console.log(`개별 업체 조회 완료: ${allData.length}건`);
+      
+      // 데이터가 없으면 바로 로딩 멈춤
+      if (allData.length === 0) {
+        console.log('performance_records_absorption에 데이터가 없습니다. 로딩을 멈춥니다.');
+        loading.value = false;
+        return;
+      }
     }
 
     console.log('=== 데이터 매핑 전 검증 ===');
@@ -669,10 +731,9 @@ async function loadAbsorptionAnalysisResults() {
     console.log(`제품 정보 NULL: ${productNullCount}건`);
 
     // 사용자 ID를 업체명으로 변환하기 위한 매핑 생성
-    const userIds = [...new Set(allData.map(row => row.registered_by).filter(id => id))];
-    if (allData.some(row => row.updated_by)) {
-      userIds.push(...allData.map(row => row.updated_by).filter(id => id));
-    }
+    const userIds = [...new Set(allData.map(row => row.registered_by).filter(id => id && id !== null))];
+    const updatedByIds = allData.map(row => row.updated_by).filter(id => id && id !== null);
+    userIds.push(...updatedByIds);
     
     let userMap = new Map();
     if (userIds.length > 0) {
@@ -698,38 +759,122 @@ async function loadAbsorptionAnalysisResults() {
       console.log('사용자 매핑 결과:', Object.fromEntries(userMap));
     }
 
-    let mappedData = allData.map(row => {
-        const prescriptionAmount = Math.round((row.prescription_qty || 0) * (row.product?.price || 0));
-        const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
+    let mappedData = [];
+    
+    for (let i = 0; i < allData.length; i++) {
+        const row = allData[i];
+        try {
+            // null 체크 및 기본값 설정
+            const prescriptionQty = Number(row.prescription_qty) || 0;
+            const productPrice = Number(row.product?.price) || 0;
+            const commissionRate = Number(row.commission_rate) || 0;
+            const absorptionRate = Number(row.absorption_rate) || 0;
+            
+            const prescriptionAmount = Math.round(prescriptionQty * productPrice);
+            const paymentAmount = Math.round(prescriptionAmount * commissionRate);
 
-        return {
-            ...row,
-            company_type: row.company?.company_group || 'N/A',
-            company_name: row.company?.company_name || 'N/A',
-            client_name: row.client?.name || 'N/A',
-            product_name_display: row.product?.product_name || 'N/A',
-            insurance_code: row.product?.insurance_code || 'N/A',
-            price: row.product?.price ? Math.round(row.product.price).toLocaleString() : '0',
-            prescription_amount: prescriptionAmount.toLocaleString(),
-            payment_amount: paymentAmount.toLocaleString(),
-            commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
-            absorption_rate: ((row.absorption_rate || 0) * 100).toFixed(1),
-            created_date: formatDateTime(row.created_at),
-            created_by: userMap.get(row.registered_by) || '-', // 등록자를 업체명으로 표시
-            updated_date: row.updated_at ? formatDateTime(row.updated_at) : null,
-            updated_by: row.updated_by ? userMap.get(row.updated_by) || '-' : null, // 수정자를 업체명으로 표시
-        };
-    });
+            const mappedRow = {
+                id: row.id || null,
+                settlement_month: row.settlement_month || '',
+                company_id: row.company_id || null,
+                client_id: row.client_id || null,
+                product_id: row.product_id || null,
+                prescription_month: row.prescription_month || '',
+                prescription_qty: prescriptionQty,
+                prescription_type: row.prescription_type || '',
+                commission_rate: commissionRate,
+                remarks: row.remarks || '',
+                registered_by: row.registered_by || null,
+                created_at: row.created_at || null,
+                updated_at: row.updated_at || null,
+                updated_by: row.updated_by || null,
+                review_action: row.review_action || '',
+                wholesale_revenue: Number(row.wholesale_revenue) || 0,
+                direct_revenue: Number(row.direct_revenue) || 0,
+                total_revenue: Number(row.total_revenue) || 0,
+                absorption_rate: absorptionRate,
+                company_type: row.company?.company_group || 'N/A',
+                company_name: row.company?.company_name || 'N/A',
+                client_name: row.client?.name || 'N/A',
+                product_name_display: row.product?.product_name || 'N/A',
+                insurance_code: row.product?.insurance_code || 'N/A',
+                price: productPrice ? Math.round(productPrice).toLocaleString() : '0',
+                prescription_amount: prescriptionAmount.toLocaleString(),
+                payment_amount: paymentAmount.toLocaleString(),
+                commission_rate: `${(commissionRate * 100).toFixed(1)}%`,
+                absorption_rate: absorptionRate * 100,
+                created_date: formatDateTime(row.created_at),
+                created_by: userMap.get(row.registered_by) || '-',
+                updated_date: row.updated_at ? formatDateTime(row.updated_at) : null,
+                updated_by: row.updated_by ? userMap.get(row.updated_by) || '-' : null,
+            };
+            
+            mappedData.push(mappedRow);
+        } catch (error) {
+            console.error('데이터 매핑 오류 (행 ' + i + '):', error, row);
+            // 오류 발생 시 기본값으로 반환
+            const fallbackRow = {
+                id: row.id || null,
+                settlement_month: row.settlement_month || '',
+                company_id: row.company_id || null,
+                client_id: row.client_id || null,
+                product_id: row.product_id || null,
+                prescription_month: row.prescription_month || '',
+                prescription_qty: 0,
+                prescription_type: row.prescription_type || '',
+                commission_rate: 0,
+                remarks: row.remarks || '',
+                registered_by: row.registered_by || null,
+                created_at: row.created_at || null,
+                updated_at: row.updated_at || null,
+                updated_by: row.updated_by || null,
+                review_action: row.review_action || '',
+                wholesale_revenue: 0,
+                direct_revenue: 0,
+                total_revenue: 0,
+                absorption_rate: 0,
+                company_type: 'N/A',
+                company_name: 'N/A',
+                client_name: 'N/A',
+                product_name_display: 'N/A',
+                insurance_code: 'N/A',
+                price: '0',
+                prescription_amount: '0',
+                payment_amount: '0',
+                commission_rate: '0.0%',
+                absorption_rate: 0,
+                created_date: formatDateTime(row.created_at),
+                created_by: '-',
+                updated_date: null,
+                updated_by: null,
+            };
+            mappedData.push(fallbackRow);
+        }
+    }
     
     console.log(`매핑 후 데이터: ${mappedData.length}건`);
     console.log('=== 데이터 매핑 완료 ===');
 
     // 정렬은 applySorting 함수에서 처리
     
-    displayRows.value = mappedData;
-    
-    // 정렬 적용
-    applySorting();
+    // 데이터 설정 전에 안전성 검증
+    if (Array.isArray(mappedData) && mappedData.length > 0) {
+      console.log('데이터 설정 중...', mappedData.length + '건');
+      
+      // 로딩 상태 해제
+      loading.value = false;
+      
+      // 간단하게 데이터 설정
+      displayRows.value = mappedData;
+      
+      console.log('데이터 설정 완료');
+      console.log('첫 번째 행 absorption_rate:', mappedData[0]?.absorption_rate);
+      console.log('첫 번째 행 타입:', typeof mappedData[0]?.absorption_rate);
+    } else {
+      console.log('매핑된 데이터가 없거나 배열이 아닙니다:', mappedData);
+      loading.value = false;
+      displayRows.value = [];
+    }
 
     // === 업체별 개수 콘솔 로그 ===
     console.log('=== 흡수율 분석 결과 업체별 개수 ===');
@@ -754,50 +899,72 @@ async function loadAbsorptionAnalysisResults() {
     console.error('분석 결과 데이터 로딩 오류:', err);
     alert(`분석 결과 데이터 로딩 중 오류가 발생했습니다: ${err.message}`);
   } finally {
-    loading.value = false;
+    clearTimeout(timeoutId); // 타임아웃 제거
+    // 로딩 상태는 이미 위에서 해제했으므로 여기서는 제거
   }
 }
 
 // --- Watchers ---
 watch(selectedSettlementMonth, async (newMonth) => {
   if (newMonth) { 
-    await fetchCompaniesForMonth();
-    await fetchClientsForMonth(null);
-    updatePrescriptionOptions();
-    prescriptionOffset.value = 0;
-    await checkAnalysisStatus();
-    await loadAbsorptionAnalysisResults();
+    try {
+      await fetchCompaniesForMonth();
+      await fetchClientsForMonth(null);
+      updatePrescriptionOptions();
+      prescriptionOffset.value = 0;
+      await checkAnalysisStatus();
+      await checkReanalysisNeeded();
+      await loadAbsorptionAnalysisResults();
+    } catch (err) {
+      console.error('정산월 변경 처리 중 오류:', err);
+      loading.value = false; // 오류 발생 시 로딩 상태 해제
+    }
   }
 });
 
 watch(selectedCompanyId, async (newCompanyId) => {
-  await fetchClientsForMonth(newCompanyId === 'ALL' ? null : newCompanyId);
-  
-  // 업체 변경 시, 현재 선택된 병의원이 새 업체 목록에 없으면 병의원 선택을 '전체'로 초기화
-  if (selectedHospitalId.value !== 'ALL') {
-    const isHospitalInList = hospitalOptions.value.some(h => h.id === selectedHospitalId.value);
-    if (!isHospitalInList) {
-      selectedHospitalId.value = 'ALL';
+  try {
+    await fetchClientsForMonth(newCompanyId === 'ALL' ? null : newCompanyId);
+    
+    // 업체 변경 시, 현재 선택된 병의원이 새 업체 목록에 없으면 병의원 선택을 '전체'로 초기화
+    if (selectedHospitalId.value !== 'ALL') {
+      const isHospitalInList = hospitalOptions.value.some(h => h.id === selectedHospitalId.value);
+      if (!isHospitalInList) {
+        selectedHospitalId.value = 'ALL';
+      }
     }
-  }
-  
-  // 분석 데이터가 있으면 필터링된 결과 로딩
-  if (selectedSettlementMonth.value) {
-    await loadAbsorptionAnalysisResults();
+    
+    // 분석 데이터가 있으면 필터링된 결과 로딩
+    if (selectedSettlementMonth.value) {
+      await loadAbsorptionAnalysisResults();
+    }
+  } catch (err) {
+    console.error('업체 변경 처리 중 오류:', err);
+    loading.value = false;
   }
 });
 
 watch(selectedHospitalId, async () => {
-  // 분석 데이터가 있으면 필터링된 결과 로딩
-  if (selectedSettlementMonth.value) {
-    await loadAbsorptionAnalysisResults();
+  try {
+    // 분석 데이터가 있으면 필터링된 결과 로딩
+    if (selectedSettlementMonth.value) {
+      await loadAbsorptionAnalysisResults();
+    }
+  } catch (err) {
+    console.error('병의원 변경 처리 중 오류:', err);
+    loading.value = false;
   }
 });
 
 watch(prescriptionOffset, async () => {
-  // 분석 데이터가 있으면 필터링된 결과 로딩
-  if (selectedSettlementMonth.value) {
-    await loadAbsorptionAnalysisResults();
+  try {
+    // 분석 데이터가 있으면 필터링된 결과 로딩
+    if (selectedSettlementMonth.value) {
+      await loadAbsorptionAnalysisResults();
+    }
+  } catch (err) {
+    console.error('처방월 변경 처리 중 오류:', err);
+    loading.value = false;
   }
 });
 
@@ -812,14 +979,8 @@ const calculateAbsorptionRates = async () => {
     return;
   }
 
-  // 필터 조건 확인 메시지
-  const companyName = selectedCompanyId.value === 'ALL' ? '전체' : companyOptions.value.find(c => c.id === selectedCompanyId.value)?.company_name;
-  const hospitalName = selectedHospitalId.value === 'ALL' ? '전체' : hospitalOptions.value.find(h => h.id === selectedHospitalId.value)?.name;
-  const prescriptionMonthText = prescriptionOffset.value === 0 ? '전체' : getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value);
-
-  if (!confirm(`'${selectedSettlementMonth.value}'월의 흡수율 분석을 시작합니다.\n\n조건: ${companyName} / ${hospitalName} / ${prescriptionMonthText}\n\n1단계: 필터 조건에 맞는 분석 데이터 생성\n2단계: 흡수율 계산`)) {
-    return;
-  }
+  // 2번 모달 제거 - 바로 분석 시작
+  console.log(`'${selectedSettlementMonth.value}'월의 흡수율 분석을 시작합니다.`);
 
   loading.value = true;
   try {
@@ -906,24 +1067,32 @@ const calculateAbsorptionRates = async () => {
       
               const { error: insertError } = await supabase
         .from('performance_records_absorption')
-        .insert(batchData.map(record => ({
-          id: record.id, // 원본 performance_records의 id 사용
-          settlement_month: record.settlement_month,
-          company_id: record.company_id,
-          client_id: record.client_id,
-          product_id: record.product_id,
-          prescription_month: record.prescription_month,
-          prescription_qty: record.prescription_qty,
-          prescription_type: record.prescription_type,
-          commission_rate: record.commission_rate,
-          remarks: record.remarks,
-          registered_by: record.registered_by,
-          review_action: record.review_action, // review_action 필드 추가
-          created_at: record.created_at, // performance_records의 created_at 그대로 사용
-          // review_action이 '수정'인 경우에만 updated_at, updated_by 값을 가져옴
-          updated_at: record.review_action === '수정' ? record.updated_at : null,
-          updated_by: record.review_action === '수정' ? record.updated_by : null
-        })));
+        .insert(batchData.map(record => {
+          // 실제 데이터 수정 여부 판단
+          // review_action이 '수정'이거나 updated_at이 created_at보다 늦은 경우에만 updated_at, updated_by 사용
+          const isActuallyModified = record.review_action === '수정' || 
+            (record.updated_at && new Date(record.updated_at) > new Date(record.created_at));
+          
+          return {
+            id: record.id, // 원본 performance_records의 id 사용
+            settlement_month: record.settlement_month,
+            company_id: record.company_id,
+            client_id: record.client_id,
+            product_id: record.product_id,
+            prescription_month: record.prescription_month,
+            prescription_qty: record.prescription_qty,
+            prescription_type: record.prescription_type,
+            commission_rate: record.commission_rate,
+            remarks: record.remarks,
+            registered_by: record.registered_by,
+            review_action: record.review_action, // review_action 필드 추가
+            created_at: record.created_at, // performance_records의 created_at 그대로 사용
+            // 실제 수정된 데이터만 updated_at, updated_by 정보 가져옴
+            updated_at: isActuallyModified ? record.updated_at : null,
+            updated_by: isActuallyModified ? record.updated_by : null,
+            analysis_time: new Date().toISOString() // 데이터 복사 시점의 시간
+          };
+        }));
 
       if (insertError) throw insertError;
       
@@ -932,7 +1101,8 @@ const calculateAbsorptionRates = async () => {
     }
 
     console.log('1단계 완료.');
-    alert('1단계(필터링된 데이터 복사)가 완료되었습니다. 2단계(흡수율 계산)를 시작합니다.');
+    // 3번 모달 제거 - 바로 2단계 시작
+    console.log('1단계(필터링된 데이터 복사)가 완료되었습니다. 2단계(흡수율 계산)를 시작합니다.');
     
     // 2단계: 흡수율 계산 (복사된 데이터에 대해서만)
     console.log(`2단계 시작: 복사된 ${insertedCount}건 데이터의 흡수율 계산`);
@@ -945,6 +1115,7 @@ const calculateAbsorptionRates = async () => {
     }
     console.log('2단계 완료.');
 
+    // 4번 모달: alert (확인만 필요, 취소 없음)
     alert(`흡수율 분석이 완료되었습니다. (${insertedCount}건 처리)`);
     await checkAnalysisStatus();
     await loadAbsorptionAnalysisResults();
@@ -997,68 +1168,116 @@ function onTableUnsort() {
 
 // 정렬 함수
 function applySorting() {
-  if (!displayRows.value || displayRows.value.length === 0) return;
-  
-  // 상단 정렬이 적용될 때는 테이블 헤더 정렬을 초기화
-  tableSortField.value = '';
-  tableSortOrder.value = 1;
-  isTableSorting.value = false;
-  
-  const sortedRows = [...displayRows.value];
-  
-  switch (sortCriteria.value) {
-    case 'alphabetical':
-      // 가나다순: 업체명 > 병의원명 > 제품명 순
-      sortedRows.sort((a, b) => {
-        // 업체명 비교
-        const companyCompare = (a.company_name || '').localeCompare(b.company_name || '', 'ko');
-        if (companyCompare !== 0) return companyCompare;
+  try {
+    if (!displayRows.value || displayRows.value.length === 0) return;
+    
+    // 상단 정렬이 적용될 때는 테이블 헤더 정렬을 초기화
+    tableSortField.value = '';
+    tableSortOrder.value = 1;
+    isTableSorting.value = false;
+    
+    // 깊은 복사로 안전하게 처리
+    const sortedRows = JSON.parse(JSON.stringify(displayRows.value));
+    
+    switch (sortCriteria.value) {
+      case 'alphabetical':
+        // 가나다순: 업체명 > 병의원명 > 제품명 순
+        sortedRows.sort((a, b) => {
+          try {
+            // null 체크 강화
+            const aCompany = String(a?.company_name || '');
+            const bCompany = String(b?.company_name || '');
+            const companyCompare = aCompany.localeCompare(bCompany, 'ko');
+            if (companyCompare !== 0) return companyCompare;
+            
+            const aClient = String(a?.client_name || '');
+            const bClient = String(b?.client_name || '');
+            const clientCompare = aClient.localeCompare(bClient, 'ko');
+            if (clientCompare !== 0) return clientCompare;
+            
+            const aProduct = String(a?.product_name_display || '');
+            const bProduct = String(b?.product_name_display || '');
+            return aProduct.localeCompare(bProduct, 'ko');
+          } catch (error) {
+            console.error('정렬 비교 오류:', error);
+            return 0;
+          }
+        });
+        break;
         
-        // 병의원명 비교
-        const clientCompare = (a.client_name || '').localeCompare(b.client_name || '', 'ko');
-        if (clientCompare !== 0) return clientCompare;
+      case 'created':
+        // 등록순: created_at 기준 (최신순)
+        sortedRows.sort((a, b) => {
+          try {
+            const dateA = a?.created_at ? new Date(a.created_at) : new Date(0);
+            const dateB = b?.created_at ? new Date(b.created_at) : new Date(0);
+            return dateB.getTime() - dateA.getTime(); // 최신순
+          } catch (error) {
+            console.error('날짜 정렬 오류:', error);
+            return 0;
+          }
+        });
+        break;
         
-        // 제품명 비교
-        return (a.product_name_display || '').localeCompare(b.product_name_display || '', 'ko');
-      });
-      break;
-      
-    case 'created':
-      // 등록순: created_at 기준 (최신순)
-      sortedRows.sort((a, b) => {
-        const dateA = new Date(a.created_at || 0);
-        const dateB = new Date(b.created_at || 0);
-        return dateB - dateA; // 최신순
-      });
-      break;
-      
-    case 'updated':
-      // 수정순: updated_at 기준 (최신순)
-      sortedRows.sort((a, b) => {
-        const dateA = new Date(a.updated_at || a.created_at || 0);
-        const dateB = new Date(b.updated_at || b.created_at || 0);
-        return dateB - dateA; // 최신순
-      });
-      break;
+      case 'updated':
+        // 수정순: updated_at 기준 (최신순)
+        sortedRows.sort((a, b) => {
+          try {
+            const dateA = a?.updated_at ? new Date(a.updated_at) : (a?.created_at ? new Date(a.created_at) : new Date(0));
+            const dateB = b?.updated_at ? new Date(b.updated_at) : (b?.created_at ? new Date(b.created_at) : new Date(0));
+            return dateB.getTime() - dateA.getTime(); // 최신순
+          } catch (error) {
+            console.error('날짜 정렬 오류:', error);
+            return 0;
+          }
+        });
+        break;
+    }
+    
+    // nextTick을 사용하여 안전하게 업데이트
+    nextTick(() => {
+      displayRows.value = sortedRows;
+    });
+  } catch (error) {
+    console.error('정렬 함수 전체 오류:', error);
   }
-  
-  displayRows.value = sortedRows;
+}
+
+function formatAbsorptionRate(value) {
+  try {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.000%';
+    }
+    const numValue = Number(value);
+    return `${numValue.toFixed(3)}%`;
+  } catch (error) {
+    console.error('흡수율 포맷 오류:', error, value);
+    return '0.000%';
+  }
 }
 
 function formatDateTime(dateTimeString) {
-  if (!dateTimeString) return '-';
-  const date = new Date(dateTimeString);
-  
-  // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
-  const utcHours = date.getUTCHours();
-  const kstHours = (utcHours + 9) % 24;
-  
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const hours = String(kstHours).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  try {
+    if (!dateTimeString) return '-';
+    const date = new Date(dateTimeString);
+    
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) return '-';
+    
+    // UTC 기준으로 KST 계산 (브라우저 자동 변환 방지)
+    const utcHours = date.getUTCHours();
+    const kstHours = (utcHours + 9) % 24;
+    
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(kstHours).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  } catch (error) {
+    console.error('날짜 포맷 오류:', error, dateTimeString);
+    return '-';
+  }
 }
 
 async function downloadExcel() {
@@ -1085,7 +1304,7 @@ async function downloadExcel() {
       '도매매출': Math.round(row.wholesale_revenue || 0),
       '직거래매출': Math.round(row.direct_revenue || 0),
       '합산액': Math.round(row.total_revenue || 0),
-      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) / 100 : 0),
+      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) : 0),
       '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
@@ -1180,9 +1399,9 @@ async function downloadExcel() {
           cell.numFmt = '#,##0'
         }
         
-        // 흡수율 (16번째 컬럼): 백분율, 소수점 한자리
+        // 흡수율 (16번째 컬럼): 백분율, 소수점 세자리
         if (colNumber === 16) {
-          cell.numFmt = '0.0%'
+          cell.numFmt = '0.000%'
         }
         
         // 수수료율 (17번째 컬럼): 백분율, 소수점 한자리
@@ -1223,7 +1442,7 @@ async function downloadExcel() {
     totalRow.getCell(13).numFmt = '#,##0'; // 도매매출
     totalRow.getCell(14).numFmt = '#,##0'; // 직거래매출
     totalRow.getCell(15).numFmt = '#,##0'; // 합산액
-    totalRow.getCell(16).numFmt = '0.0%'; // 흡수율
+    totalRow.getCell(16).numFmt = '0.000%'; // 흡수율
     totalRow.getCell(17).numFmt = '0.0%'; // 수수료율
     totalRow.getCell(18).numFmt = '#,##0'; // 지급액
 
@@ -1383,6 +1602,132 @@ async function deleteFilteredAnalysisData() {
     alert(`흡수율 분석 데이터 삭제 중 오류가 발생했습니다: ${err.message}`);
   } finally {
     loading.value = false;
+  }
+}
+
+async function checkReanalysisNeeded() {
+  if (!selectedSettlementMonth.value) return;
+
+  try {
+    console.log('=== 재분석 필요성 체크 시작 ===');
+    console.log('선택된 정산월:', selectedSettlementMonth.value);
+    
+    // 1. performance_records_absorption에서 가장 최근 analysis_time 조회
+    const { data: latestAnalysisData, error: analysisError } = await supabase
+      .from('performance_records_absorption')
+      .select('analysis_time')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .not('analysis_time', 'is', null)
+      .order('analysis_time', { ascending: false })
+      .limit(1);
+
+    if (analysisError) throw analysisError;
+
+    console.log('최근 분석 데이터:', latestAnalysisData);
+
+    // 분석 데이터가 없으면 검수 완료한 실적 정보만 체크
+    if (!latestAnalysisData || latestAnalysisData.length === 0) {
+      console.log('분석 데이터가 없습니다. 검수 완료한 실적 정보만 체크합니다.');
+      
+      // 조건1: performance_records에서 해당 정산월, review_status 완료인 데이터
+      const { data: performanceData, error: perfError } = await supabase
+        .from('performance_records')
+        .select('id')
+        .eq('settlement_month', selectedSettlementMonth.value)
+        .eq('review_status', '완료')
+        .limit(1);
+
+      if (perfError) throw perfError;
+      console.log('검수 완료 실적 데이터:', performanceData);
+
+      if (performanceData && performanceData.length > 0) {
+        const modalMessage = '검수 완료한 실적 정보가 있습니다.\n\n흡수율 분석을 실행하시겠습니까?';
+        console.log('모달 메시지:', modalMessage);
+        const reanalyze = confirm(modalMessage);
+        
+        if (reanalyze) {
+          console.log('흡수율 분석 실행');
+          await calculateAbsorptionRates();
+        } else {
+          console.log('흡수율 분석 취소');
+        }
+      } else {
+        console.log('검수 완료한 실적 정보가 없습니다.');
+      }
+      
+      console.log('=== 재분석 필요성 체크 완료 ===');
+      // return 제거 - loadAbsorptionAnalysisResults가 호출되도록 함
+    }
+
+    // 분석 데이터가 있으면 기존 로직 실행 (변경사항 체크)
+    let latestAnalysisDate = null;
+    
+    if (latestAnalysisData && latestAnalysisData.length > 0 && latestAnalysisData[0]) {
+      // analysis_time을 기준으로 설정
+      latestAnalysisDate = new Date(latestAnalysisData[0].analysis_time);
+      
+      latestAnalysisTime.value = latestAnalysisDate.toISOString();
+      console.log('최근 분석 시간 (analysis_time):', latestAnalysisData[0].analysis_time);
+      console.log('기준 시간:', latestAnalysisTime.value);
+      console.log('최근 분석 날짜 객체:', latestAnalysisDate);
+    } else {
+      console.log('분석 데이터가 없어서 변경사항 체크를 건너뜁니다.');
+      loading.value = false;
+      return;
+    }
+
+    // 2. 핵심 조건 체크: performance_records의 review_completed_at vs analysis_time
+    const messages = [];
+
+    // 조건1: performance_records에서 해당 정산월, review_status 완료인 데이터의 review_completed_at 체크
+    console.log('조건1 체크 시작 - performance_records review_completed_at');
+    
+    const { data: performanceCompleted, error: perfCompletedError } = await supabase
+      .from('performance_records')
+      .select('id, review_completed_at')
+      .eq('settlement_month', selectedSettlementMonth.value)
+      .eq('review_status', '완료')
+      .not('review_completed_at', 'is', null)
+      .gte('review_completed_at', latestAnalysisDate.toISOString())
+      .limit(5);
+
+    if (perfCompletedError) throw perfCompletedError;
+    console.log('performance_records review_completed_at 체크 결과:', performanceCompleted);
+
+    if (performanceCompleted && performanceCompleted.length > 0) {
+      messages.push('분석 이후에 검수 완료된 실적이 있습니다.');
+      console.log('조건1 충족: 분석 이후 검수 완료 실적 발견');
+    }
+
+    // 조건2: 간단한 마스터 데이터 변경사항 체크 (선택사항)
+    console.log('조건2 체크 시작 - 간단한 마스터 데이터 체크');
+    
+    // 실제로는 performance_records의 review_completed_at만 체크하면 충분
+    // 마스터 데이터 변경은 흡수율 계산에 직접적인 영향을 주지 않음
+    console.log('마스터 데이터 변경사항 체크는 생략 (performance_records 체크로 충분)');
+
+    // 3. 메시지가 있으면 모달 표시
+    console.log('수집된 메시지:', messages);
+    
+    if (messages.length > 0) {
+      const modalMessage = messages.join('\n') + '\n\n흡수율 분석을 다시 실행하시겠습니까?';
+      console.log('모달 메시지:', modalMessage);
+      const reanalyze = confirm(modalMessage);
+      
+      if (reanalyze) {
+        console.log('재분석 실행');
+        await calculateAbsorptionRates();
+      } else {
+        console.log('재분석 취소');
+      }
+    } else {
+      console.log('변경사항이 없어서 모달을 표시하지 않습니다.');
+    }
+    
+    console.log('=== 재분석 필요성 체크 완료 ===');
+
+  } catch (err) {
+    console.error('재분석 필요성 체크 중 오류:', err);
   }
 }
 

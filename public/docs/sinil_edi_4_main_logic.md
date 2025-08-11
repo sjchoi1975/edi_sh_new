@@ -1,8 +1,14 @@
-# 신일제약 실적관리 시스템 주요 기능 및 핵심 로직 (v3.2)
+# 신일제약 실적관리 시스템 주요 로직 상세 (v3.3)
 
-**문서 버전: 3.2 (2025-08-01)**
+**문서 버전: 3.4 (2025-01-07)**
 
 ## 1. 개요
+
+본 문서는 신일제약 실적관리 시스템의 **핵심 기능 구현 로직을 상세히 기술**합니다. 주요 기능의 내부 동작 원리, Database Functions, 그리고 최신 추가 기능의 구현 방식을 포함합니다.
+
+**참고**: 주요 기능과 데이터 구조에 대한 상세 내용은 각각 `sinil_edi_2_main_features.md`와 `sinil_edi_3_data_structure.md`를 참조하세요.
+
+## 2. 핵심 기능 로직 분석
 
 본 문서는 신일제약 실적관리 시스템의 핵심 기능인 '실적 검수', '흡수율 분석', '정산내역서 공유'의 상세한 동작 방식과 내부 로직을 설명합니다. 각 기능은 데이터베이스의 뷰(View)와 함수(RPC)를 적극적으로 활용하여 프론트엔드의 복잡성을 낮추고, 시스템 전체의 안정성과 일관성을 확보하는 방향으로 설계되었습니다.
 
@@ -48,12 +54,35 @@
 -   **수정 로직 (`isNewRow === false`)**:
     1.  사용자가 수정한 값들(처방월, 제품, 수량 등)을 모아 `recordData` 객체를 생성합니다. 이 객체에는 **`..._modify`** 필드들만 포함됩니다.
     2.  `review_action` 필드를 **'수정'**으로 설정하여 변경 이력을 남깁니다.
-    3.  **핵심**: 이 로직에서는 `company_id_add`나 `client_id_add` 필드를 **절대 건드리지 않습니다.** 따라서 `NULL` 상태가 유지됩니다.
-    4.  `supabase.from('performance_records_absorption').update(recordData).eq('id', row.id)`를 호출하여 DB를 업데이트합니다.
+    3.  **핵심**: `review_status`를 **'완료'**로 자동 변경하여 검수 완료 상태로 만듭니다.
+    4.  **핵심**: 이 로직에서는 `company_id_add`나 `client_id_add` 필드를 **절대 건드리지 않습니다.** 따라서 `NULL` 상태가 유지됩니다.
+    5.  `supabase.from('performance_records_absorption').update(recordData).eq('id', row.id)`를 호출하여 DB를 업데이트합니다.
 -   **추가 로직 (`isNewRow === true`)**:
     1.  `review_action` 필드를 **'추가'**로 설정하여 신규 데이터임을 명시합니다.
-    2.  **핵심**: `company_id_add`와 `client_id_add` 필드에 **기준이 되었던 바로 위 행의 업체 ID (`row.company_id`)와 거래처 ID (`row.client_id`)**를 저장합니다.
-    3.  나머지 수정된 정보(`..._modify` 필드)와 함께 `supabase.from('performance_records_absorption').insert(recordData)`를 호출하여 DB에 삽입합니다.
+    2.  **핵심**: `review_status`를 **'완료'**로 자동 변경하여 검수 완료 상태로 만듭니다.
+    3.  **핵심**: `company_id_add`와 `client_id_add` 필드에 **기준이 되었던 바로 위 행의 업체 ID (`row.company_id`)와 거래처 ID (`row.client_id`)**를 저장합니다.
+    4.  나머지 수정된 정보(`..._modify` 필드)와 함께 `supabase.from('performance_records_absorption').insert(recordData)`를 호출하여 DB에 삽입합니다.
+
+### 2.5. 삭제 처리 (`confirmDeleteRow`)
+
+-   **역할**: 실적 데이터를 삭제 처리하는 함수. 실제 데이터 삭제가 아닌 논리적 삭제를 수행합니다.
+-   **삭제 로직**:
+    1.  사용자에게 삭제 확인 메시지를 표시합니다.
+    2.  `review_action` 필드를 **'삭제'**로 설정하여 삭제 이력을 남깁니다.
+    3.  **핵심**: `review_status`를 **'완료'**로 자동 변경하여 검수 완료 상태로 만듭니다.
+    4.  `updated_by`와 `updated_at` 필드를 현재 사용자 정보와 현재 시간으로 업데이트합니다.
+    5.  로컬 데이터를 업데이트하여 화면에 즉시 반영합니다.
+    6.  `loadPerformanceData()`를 호출하여 화면을 새로고침합니다.
+
+### 2.6. 복원 처리 (`restoreRow`)
+
+-   **역할**: 삭제 처리된 실적 데이터를 복원하는 함수.
+-   **복원 로직**:
+    1.  `review_action` 필드를 **`null`**로 설정하여 삭제 상태를 해제합니다.
+    2.  **핵심**: `review_status`를 **'검수중'**으로 변경하여 다시 검수 가능한 상태로 만듭니다.
+    3.  `updated_by`와 `updated_at` 필드를 현재 사용자 정보와 현재 시간으로 업데이트합니다.
+    4.  로컬 데이터를 업데이트하여 화면에 즉시 반영합니다.
+    5.  `loadPerformanceData()`를 호출하여 화면을 새로고침합니다.
 
 ---
 
@@ -68,7 +97,33 @@
         3.  각 실적의 `client_id`와 `product_id`를 기준으로, 관련된 도매/직거래 매출 테이블에서 해당 월의 매출 데이터를 찾아 합산합니다.
         4.  `(합산된 매출액 / 처방액) * 100` 공식을 통해 흡수율(%)을 계산합니다.
         5.  `performance_records_absorption`의 `id`와 계산된 결과를 함께 반환합니다.
+        6.  **핵심**: 데이터 복사 시점에 해당 정산월의 모든 `performance_records_absorption` 레코드의 `analysis_time`을 현재 시간으로 설정합니다.
     -   프론트엔드는 이 함수가 반환한 계산 결과를 기존에 `displayRows`에 있던 데이터와 `id` 기준으로 매핑하여 '합산액', '흡수율' 열을 업데이트합니다.
+
+### 3.1. 재분석 필요성 체크 (`checkReanalysisNeeded`)
+
+-   **역할**: 메뉴 진입 시 `analysis_time` 기준으로 데이터 변경사항을 확인하여 흡수율 재분석 필요성을 체크합니다.
+-   **체크 조건**:
+    1.  **조건1**: `performance_records` 테이블에서 해당 정산월의 '완료' 상태 데이터의 등록/수정
+    2.  **조건2**: `wholesale_sales`, `direct_sales` 테이블의 등록/수정
+    3.  **조건3**: `client_company_assignments`, `client_pharmacy_assignments` 테이블의 등록
+    4.  **조건4**: `clients`, `pharmacies` 테이블의 등록/수정
+    5.  **조건5**: `products`, `products_standard_code` 테이블의 등록/수정
+-   **동작 로직**:
+    1.  해당 정산월의 `performance_records_absorption` 테이블에서 가장 최근 `analysis_time`을 조회합니다.
+    2.  각 조건별로 최근 `analysis_time` 이후의 변경사항을 확인합니다.
+    3.  변경사항이 발견되면 사용자에게 재분석 필요성을 알리고 확인을 받습니다.
+    4.  사용자가 확인하면 `calculateAbsorptionRates()` 함수를 호출하여 재분석을 실행합니다.
+
+### 3.2. 삭제된 건 처리
+
+-   **역할**: `review_action`이 '삭제'인 건의 처방액과 지급액을 0으로 표시합니다.
+-   **처리 로직**:
+    1.  **화면 표시**: 처방액과 지급액 컬럼에서 `review_action === '삭제'`인 건은 '0'으로 표시
+    2.  **합계 계산**: 삭제된 건은 처방액, 지급액, 수량 합계에서 제외
+    3.  **평균 계산**: 흡수율과 수수료율 평균 계산 시에도 삭제된 건 제외
+
+---
 
 ---
 
@@ -77,13 +132,13 @@
 -   **역할**: 검수가 끝난 최종 실적을 **업체별로 합산**하여 보여주고, 각 업체에게 해당 내역을 공유할지 여부를 설정합니다.
 -   **핵심 로직**:
     1.  **데이터 조회 (`loadSettlementData`)**:
-        -   이 함수는 **`get_settlement_summary_by_company`** 라는 전용 데이터베이스 함수(RPC)를 호출하는 것이 전부입니다. 다른 프론트엔드 계산 로직이 전혀 없습니다.
-    2.  **`get_settlement_summary_by_company` 함수의 내부 동작**:
-        -   `performance_records_absorption`에서 특정 '정산월'과 `review_status`가 '완료'인 데이터를 모두 조회합니다.
-        -   **`GROUP BY company_id`** 구문을 사용하여, 다른 어떤 필드에도 방해받지 않고 오직 **업체 ID를 기준으로** 모든 데이터를 완벽하게 합산합니다.
-        -   합산 항목: `COUNT(DISTINCT client_id)`로 병의원 수를, `COUNT(*)`로 처방 건수를, `SUM()`으로 총 처방액/지급액을 계산합니다.
-        -   `company_name` 등 그룹화되지 않은 다른 문자열 필드는 `MAX()` 집계 함수를 사용하여 대표값을 선택합니다. (업체 ID가 동일하면 이 값들은 모두 동일하므로 어떤 집계 함수든 무방합니다.)
-        -   `settlement_share` 테이블과 `LEFT JOIN` 하여 현재 공유 상태까지 가져와 최종 결과를 한 번의 쿼리로 반환합니다.
+        -   `performance_records` 테이블에서 해당 정산월의 모든 데이터를 조회합니다.
+        -   **삭제된 건 처리**: 병의원 수와 처방건수는 삭제된 건도 포함, 총 처방액과 총 지급액은 삭제되지 않은 건만 포함하여 집계합니다.
+    2.  **집계 로직**:
+        -   **병의원 수**: `client_count.add(record.client_id)` - 모든 건에 대해 실행 (삭제된 건 포함)
+        -   **처방건수**: `total_records += 1` - 모든 건에 대해 실행 (삭제된 건 포함)
+        -   **총 처방액**: `record.review_action !== '삭제'` 조건 확인 후 계산 (삭제되지 않은 건만)
+        -   **총 지급액**: `record.review_action !== '삭제'` 조건 확인 후 계산 (삭제되지 않은 건만)
     3.  **공유 상태 저장 (`saveShareStatus`)**:
         -   사용자가 체크박스를 변경하면, 변경된 내용(`company_id`, `is_shared`, `settlement_share_id`)만 `shareChanges` 객체에 추적됩니다.
         -   '저장' 버튼을 누르면, `shareChanges`에 기록된 업체들만 `settlement_share` 테이블에 `INSERT` (기존 공유 기록이 없던 업체) 또는 `UPDATE` (기존 공유 기록이 있던 업체)를 수행하여 불필요한 DB 접근을 최소화합니다.
@@ -1137,4 +1192,541 @@ monthlyHospitals.value = clients.sort((a, b) =>
 - **API 응답 시간**: 데이터베이스 쿼리 성능 모니터링
 - **사용자 경험**: 사용자 인터랙션 시간 측정
 
-이러한 최신 기능들과 개선사항들을 통해 신일 PMS는 더욱 강력하고 사용자 친화적인 시스템으로 발전했습니다. 모든 기능은 데이터 무결성을 보장하면서 사용자 경험을 최적화하는 방향으로 설계되었습니다. 
+### 13.11. 전체 등록 현황 시스템 (`AdminPerformanceWholeView.vue`)
+
+#### 13.11.1. 시스템 개요
+- **목적**: 모든 업체의 실적 데이터를 통합 조회하고 관리
+- **접근 권한**: 관리자만 접근 가능
+- **데이터 범위**: 전체 업체의 모든 실적 데이터
+
+#### 13.11.2. 핵심 기능
+- **통합 조회**: 모든 업체의 실적 데이터를 한 화면에서 조회
+- **고급 필터링**: 정산월, 처방월, 업체, 병의원, 검수상태별 필터링
+- **대용량 데이터 처리**: 페이지네이션과 스크롤을 통한 효율적인 데이터 표시
+- **엑셀 다운로드**: 필터링된 데이터를 엑셀 형식으로 내보내기
+
+#### 13.11.3. 데이터 구조
+```javascript
+// 주요 상태 변수
+const displayRows = ref([]) // 화면에 표시되는 데이터 배열
+const selectedSettlementMonth = ref('') // 선택된 정산월
+const prescriptionOffset = ref(-1) // 처방월 오프셋 (-1, -2, -3개월)
+const selectedCompanyId = ref('') // 선택된 업체 ID
+const selectedHospitalId = ref('') // 선택된 병의원 ID
+const selectedReviewStatus = ref('') // 선택된 검수상태
+```
+
+#### 13.11.4. 성능 최적화
+- **페이지네이션**: 100건 단위로 데이터 로딩
+- **스크롤 최적화**: 가상 스크롤링으로 대용량 데이터 처리
+- **컬럼 고정**: 중요 컬럼(No, 검수, 업체명) 고정으로 사용성 향상
+
+#### 13.11.5. 필터링 로직
+```javascript
+// 필터링 조건 적용
+const filteredData = computed(() => {
+  return displayRows.value.filter(row => {
+    // 정산월 필터
+    if (selectedSettlementMonth.value && row.settlement_month !== selectedSettlementMonth.value) return false
+    
+    // 처방월 필터
+    if (prescriptionOffset.value !== null) {
+      const targetMonth = getPrescriptionMonth(selectedSettlementMonth.value, prescriptionOffset.value)
+      if (row.prescription_month !== targetMonth) return false
+    }
+    
+    // 업체 필터
+    if (selectedCompanyId.value && row.company_id !== selectedCompanyId.value) return false
+    
+    // 병의원 필터
+    if (selectedHospitalId.value && row.client_id !== selectedHospitalId.value) return false
+    
+    // 검수상태 필터
+    if (selectedReviewStatus.value && row.review_status !== selectedReviewStatus.value) return false
+    
+    return true
+  })
+})
+```
+
+### 13.12. 실적입력기간 제한 시스템
+
+#### 13.12.1. 시스템 개요
+- **목적**: 실적 등록을 관리자가 설정한 기간 내에서만 허용
+- **권한별 차이**: 일반 사용자는 기간 제한, 관리자는 제한 없음
+- **UI 제어**: 기간 외에는 모든 입력 버튼 비활성화
+
+#### 13.12.2. 핵심 로직
+```javascript
+// 실적입력기간 체크 함수
+const checkInputPeriod = async () => {
+  if (!selectedSettlementMonth.value) return
+  
+  const { data, error } = await supabase
+    .from('settlement_months')
+    .select('start_date, end_date')
+    .eq('settlement_month', selectedSettlementMonth.value)
+    .single()
+  
+  if (!error && data) {
+    const now = new Date()
+    const startDate = new Date(data.start_date)
+    const endDate = new Date(data.end_date)
+    endDate.setHours(23, 59, 59, 999) // 종료일을 그날의 마지막 시간으로 설정
+    isInputPeriod.value = now >= startDate && now <= endDate
+  } else {
+    isInputPeriod.value = false
+  }
+}
+```
+
+#### 13.12.3. 권한별 처리
+- **일반 사용자**: 실적입력기간 내에서만 실적 등록/수정 가능
+- **관리자**: 실적입력기간과 무관하게 언제든지 실적 등록/수정 가능
+
+### 13.13. 키보드 네비게이션 시스템
+
+#### 13.13.1. 시스템 개요
+- **목적**: 실적 등록 시 고급 키보드 조작 지원
+- **접근성**: 모든 기능을 키보드로 접근 가능
+- **사용자 경험**: 마우스 없이도 효율적인 데이터 입력
+
+#### 13.13.2. 핵심 기능
+- **셀 간 이동**: 화살표 키로 셀 간 이동
+- **자동 행 관리**: Enter 키로 자동 행 추가
+- **특수 키 지원**: Delete, Insert, Escape 키 지원
+- **제품 검색**: 키보드로 제품 검색 및 선택
+
+#### 13.13.3. 키보드 이벤트 처리
+```javascript
+// 전역 키보드 이벤트 핸들러
+function handleGlobalKeydown(e) {
+  // 제품 검색 드롭다운이 열려있으면 특정 키 차단
+  if (isProductSearchOpen.value) {
+    if (e.key === 'Delete' || e.key === 'Insert' || e.key === 'Escape') {
+      e.preventDefault()
+      return
+    }
+  }
+  
+  // 특수 키 처리
+  if (e.key === 'Delete') {
+    e.preventDefault()
+    const currentRowIdx = currentCell.value.row
+    if (inputRows.value.length > 1) {
+      confirmDeleteRow(currentRowIdx)
+    }
+  } else if (e.key === 'Insert') {
+    e.preventDefault()
+    const currentRowIdx = currentCell.value.row
+    confirmAddRowBelow(currentRowIdx)
+  } else if (e.key === 'Escape') {
+    e.preventDefault()
+    const currentRowIdx = currentCell.value.row
+    if (isRowEditable(inputRows.value[currentRowIdx])) {
+      resetRow(currentRowIdx)
+    }
+  }
+}
+```
+
+### 13.14. 제품 정보 자동 업데이트 시스템
+
+#### 13.14.1. 시스템 개요
+- **목적**: 처방월 변경 시 제품 정보(약가, 수수료율) 자동 업데이트
+- **검색 기준**: 보험코드를 사용한 제품 검색
+- **데이터 무결성**: 월별 제품 정보의 정확성 보장
+
+#### 13.14.2. 핵심 로직
+```javascript
+// 처방월 변경 시 제품 정보 자동 업데이트
+const updateProductInfoForMonthChange = async (rowIndex) => {
+  const row = inputRows.value[rowIndex]
+  const month = row.prescription_month
+  const insuranceCode = row.insurance_code
+  
+  if (!insuranceCode) return
+  
+  // 새 처방월에서 보험코드로 제품 검색
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .eq('base_month', month)
+    .eq('insurance_code', insuranceCode)
+    .limit(1)
+  
+  if (!error && data && data.length > 0) {
+    const product = data[0]
+    // 제품 정보 업데이트
+    row.product_name_display = product.product_name
+    row.product_id = product.id
+    row.insurance_code = product.insurance_code
+    row.price = product.price
+    row.commission_rate_a = product.commission_rate_a
+    row.commission_rate_b = product.commission_rate_b
+    
+    // 처방액 재계산
+    if (row.prescription_qty) {
+      row.prescription_amount = (row.prescription_qty * product.price).toLocaleString()
+    }
+  } else {
+    // 제품을 찾을 수 없으면 제품 선택 해제
+    resetProductInfo(rowIndex)
+  }
+}
+```
+
+이러한 최신 기능들과 개선사항들을 통해 신일 PMS는 더욱 강력하고 사용자 친화적인 시스템으로 발전했습니다. 모든 기능은 데이터 무결성을 보장하면서 사용자 경험을 최적화하는 방향으로 설계되었습니다.
+
+---
+
+## 14. 수수료율 계산 로직
+
+### 14.1. 수수료율 조회 및 적용 시스템
+
+#### 14.1.1. 수수료율 등급 조회 함수
+```javascript
+// 업체-거래처 매핑에서 수수료 등급 조회
+async function getCommissionGradeForClientCompany(companyId, clientId) {
+  const { data, error } = await supabase
+    .from('client_company_assignments')
+    .select('modified_commission_grade, company_default_commission_grade')
+    .eq('company_id', companyId)
+    .eq('client_id', clientId)
+    .single();
+  
+  if (error || !data) {
+    // 매핑 정보가 없으면 회사의 기본 등급 사용
+    const { data: company } = await supabase
+      .from('companies')
+      .select('default_commission_grade')
+      .eq('id', companyId)
+      .single();
+    return company?.default_commission_grade || 'A';
+  }
+  
+  // modified_commission_grade가 있으면 우선 사용, 없으면 company_default_commission_grade 사용
+  return data.modified_commission_grade || data.company_default_commission_grade || 'A';
+}
+```
+
+#### 14.1.2. 실적 입력 시 수수료율 자동 계산
+```javascript
+// 제품 선택 시 수수료율 자동 계산
+async function handleProductSelection(product, rowIndex) {
+  const row = inputRows.value[rowIndex];
+  row.product_id = product.id;
+  row.product_name_display = product.product_name;
+  row.insurance_code = product.insurance_code;
+  row.price = product.price;
+  
+  // 수수료율 등급 조회 및 적용
+  if (myCompany && row.client_id) {
+    const grade = await getCommissionGradeForClientCompany(myCompany.id, Number(row.client_id));
+    let commissionRate = 0;
+    
+    // 등급별 수수료율 적용
+    if (grade === 'A') {
+      commissionRate = product.commission_rate_a;
+    } else if (grade === 'B') {
+      commissionRate = product.commission_rate_b;
+    } else if (grade === 'C') {
+      commissionRate = product.commission_rate_c;
+    } else if (grade === 'D') {
+      commissionRate = product.commission_rate_d;
+    } else if (grade === 'E') {
+      commissionRate = product.commission_rate_e;
+    }
+    
+    // 수수료율 표시 및 계산
+    if (commissionRate !== null && commissionRate !== undefined) {
+      row.commission_rate = (Number(commissionRate) * 100).toFixed(1) + '%';
+    } else {
+      row.commission_rate = '';
+    }
+  } else {
+    // 기본값은 A등급 수수료율
+    if (product.commission_rate_a !== null && product.commission_rate_a !== undefined) {
+      row.commission_rate = (Number(product.commission_rate_a) * 100).toFixed(1) + '%';
+    } else {
+      row.commission_rate = '';
+    }
+  }
+  
+  // 처방액과 지급액 계산
+  calculateAmounts(rowIndex);
+}
+```
+
+#### 14.1.3. 검수 시 수수료율 변경 로직
+```javascript
+// 검수 시 수수료율 변경 처리
+async function handleEditCalculations(rowData, field) {
+  if (field === 'product') {
+    const product = products.value.find(p => p.id === rowData.product_id_modify);
+    if (product) {
+      rowData.price_for_calc = product.price;
+      
+      // 회사-거래처 매핑에서 수수료율 등급 조회
+      const grade = await getCommissionGradeForClientCompany(rowData.company_id, rowData.client_id);
+      let commissionRate = 0;
+      
+      // 등급별 수수료율 적용
+      if (grade === 'A') {
+        commissionRate = product.commission_rate_a;
+      } else if (grade === 'B') {
+        commissionRate = product.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = product.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = product.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = product.commission_rate_e;
+      }
+      
+      rowData.commission_rate_modify = commissionRate;
+    }
+  }
+  
+  // 처방액, 지급액 계산
+  const qty = Number(rowData.prescription_qty_modify) || 0;
+  const price = Number(rowData.price_for_calc) || 0;
+  const rate = Number(rowData.commission_rate_modify) || 0;
+  const prescriptionAmount = Math.round(qty * price);
+  rowData.prescription_amount_modify = prescriptionAmount;
+  rowData.payment_amount_modify = Math.round(prescriptionAmount * rate);
+}
+```
+
+### 14.2. 수수료율 관리 UI 로직
+
+#### 14.2.1. 거래처별 수수료 등급 관리
+```javascript
+// 수수료 등급 변경 처리
+async function onGradeChange(assignment, newValue) {
+  const oldValue = assignment.modified_commission_grade;
+  
+  if (confirm('해당 병의원의 수수료 등급을 변경하시겠습니까?')) {
+    try {
+      const { error } = await supabase
+        .from('client_company_assignments')
+        .update({ modified_commission_grade: newValue })
+        .eq('id', assignment.id);
+      
+      if (error) {
+        console.error('수수료 등급 변경 오류:', error);
+        alert('수수료 등급 변경 중 오류가 발생했습니다.');
+        assignment.modified_commission_grade = oldValue;
+      } else {
+        assignment.modified_commission_grade = newValue;
+      }
+    } catch (err) {
+      console.error('수수료 등급 변경 오류:', err);
+      alert('수수료 등급 변경 중 오류가 발생했습니다.');
+      assignment.modified_commission_grade = oldValue;
+    }
+  } else {
+    assignment.modified_commission_grade = oldValue;
+  }
+}
+```
+
+---
+
+## 15. 제품 노출 관리 로직
+
+### 15.1. 제품 노출 제어 시스템
+
+#### 15.1.1. 사용자용 제품 조회 (활성화된 제품만)
+```javascript
+// 사용자용 제품 조회 - 자신의 업체에 활성화된 제품만
+const fetchProductsByMonth = async (month) => {
+  if (!month) return;
+  
+  loading.value = true;
+  try {
+    // user_products 뷰를 통해 활성화된 제품만 조회
+    const { data, error } = await supabase
+      .from('user_products')  // 뷰 사용
+      .select('*')
+      .eq('base_month', month)
+      .eq('status', 'active')
+      .order('product_name', { ascending: true });
+    
+    if (error) {
+      console.error('제품 데이터 로딩 오류:', error);
+      return;
+    }
+    
+    products.value = data || [];
+  } catch (err) {
+    console.error('제품 데이터 로딩 오류:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+```
+
+#### 15.1.2. 관리자용 제품 조회 (전체 + 업체별 상태)
+```javascript
+// 관리자용 제품 조회 - 전체 제품 + 업체별 활성 상태
+const fetchAdminProducts = async (month) => {
+  if (!month) return;
+  
+  loading.value = true;
+  try {
+    // admin_products_with_company_status 뷰 사용
+    const { data, error } = await supabase
+      .from('admin_products_with_company_status')  // 뷰 사용
+      .select('*')
+      .eq('base_month', month)
+      .order('product_name', { ascending: true });
+    
+    if (error) {
+      console.error('제품 데이터 로딩 오류:', error);
+      return;
+    }
+    
+    // 업체별 할당 정보 파싱
+    const productsWithAssignments = data.map(product => {
+      const companyAssignments = product.company_assignments || [];
+      const activeCompanies = companyAssignments.filter(ca => ca.is_active);
+      
+      return {
+        ...product,
+        active_companies_count: activeCompanies.length,
+        total_companies_count: product.total_companies_count || 0,
+        company_assignments: companyAssignments
+      };
+    });
+    
+    products.value = productsWithAssignments || [];
+  } catch (err) {
+    console.error('제품 데이터 로딩 오류:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+```
+
+### 15.2. 업체별 제품 할당 관리
+
+#### 15.2.1. 제품별 업체 할당 현황 조회
+```javascript
+// 제품별 업체 할당 현황 조회 함수
+const getProductCompanyAssignments = async (productId) => {
+  const { data, error } = await supabase
+    .rpc('get_product_company_assignments', { product_uuid: productId });
+  
+  if (error) {
+    console.error('업체 할당 정보 조회 오류:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+```
+
+#### 15.2.2. 업체별 제품 할당 일괄 업데이트
+```javascript
+// 업체별 제품 할당 일괄 업데이트
+const updateProductAssignments = async (productId, assignments) => {
+  try {
+    const { error } = await supabase
+      .rpc('update_product_company_assignments', {
+        p_product_id: productId,
+        p_assignments: JSON.stringify(assignments)
+      });
+    
+    if (error) {
+      console.error('제품 할당 업데이트 오류:', error);
+      throw error;
+    }
+    
+    // 성공 시 제품 목록 새로고침
+    await fetchAdminProducts(selectedMonth.value);
+    
+  } catch (err) {
+    console.error('제품 할당 업데이트 오류:', err);
+    alert('제품 할당 업데이트 중 오류가 발생했습니다.');
+  }
+};
+```
+
+### 15.3. 제품 노출 필터링 로직
+
+#### 15.3.1. 제품 상태별 필터링
+```javascript
+// 제품 상태별 필터링
+const filterProductsByStatus = (products, status) => {
+  if (!status || status === 'all') return products;
+  return products.filter(product => product.status === status);
+};
+```
+
+#### 15.3.2. 업체별 활성화 상태 필터링
+```javascript
+// 업체별 활성화 상태 필터링
+const filterProductsByCompanyStatus = (products, companyStatus) => {
+  if (!companyStatus || companyStatus === 'all') return products;
+  
+  return products.filter(product => {
+    const activeCount = product.active_companies_count || 0;
+    const totalCount = product.total_companies_count || 0;
+    
+    if (companyStatus === 'active') {
+      return activeCount > 0;
+    } else if (companyStatus === 'inactive') {
+      return activeCount === 0 && totalCount > 0;
+    } else if (companyStatus === 'unassigned') {
+      return totalCount === 0;
+    }
+    
+    return true;
+  });
+};
+```
+
+### 15.4. 제품 노출 관리 UI 로직
+
+#### 15.4.1. 제품별 업체 할당 모달
+```javascript
+// 제품별 업체 할당 모달 열기
+const openCompanyAssignment = (product) => {
+  selectedProduct.value = product;
+  companyAssignments.value = product.company_assignments || [];
+  showCompanyAssignmentModal.value = true;
+};
+
+// 업체 할당 상태 변경
+const toggleCompanyAssignment = (companyId, isActive) => {
+  const assignment = companyAssignments.value.find(ca => ca.company_id === companyId);
+  if (assignment) {
+    assignment.is_active = isActive;
+  }
+};
+
+// 할당 변경사항 저장
+const saveCompanyAssignments = async () => {
+  if (!selectedProduct.value) return;
+  
+  const assignments = companyAssignments.value.map(ca => ({
+    company_id: ca.company_id,
+    is_active: ca.is_active
+  }));
+  
+  await updateProductAssignments(selectedProduct.value.id, assignments);
+  showCompanyAssignmentModal.value = false;
+};
+```
+
+---
+
+## 16. 참조 문서
+
+- **`sinil_edi_1_develop_summary.md`**: 시스템 개요 및 설계 철학
+- **`sinil_edi_2_main_features.md`**: 주요 기능 상세 (메뉴 구조, 화면별 기능)
+- **`sinil_edi_3_data_structure.md`**: 데이터 구조 상세 (테이블 정의, 관계, RLS 정책)
+
+각 문서는 상호 연관성을 고려하여 작성되었으며, 중복을 최소화하고 참조 관계를 명확히 표시했습니다. 

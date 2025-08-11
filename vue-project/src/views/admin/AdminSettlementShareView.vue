@@ -45,13 +45,25 @@
         <Column field="manager_name" header="관리자" :headerStyle="{ width: columnWidths.manager_name }" :sortable="true"/>
         <Column field="client_count" header="병의원 수" :headerStyle="{ width: columnWidths.client_count }" :sortable="true"/>
         <Column field="total_records" header="처방건수" :headerStyle="{ width: columnWidths.total_records }" :sortable="true">
-            <template #body="slotProps">{{ slotProps.data.total_records ? Number(slotProps.data.total_records).toLocaleString() : '0' }}</template>
+            <template #body="slotProps">
+              <span :title="slotProps.data.total_records ? Number(slotProps.data.total_records).toLocaleString() : '0'">
+                {{ slotProps.data.total_records ? Number(slotProps.data.total_records).toLocaleString() : '0' }}
+              </span>
+            </template>
         </Column>
         <Column field="total_prescription_amount" header="총 처방액" :headerStyle="{ width: columnWidths.total_prescription_amount }" :sortable="true">
-            <template #body="slotProps">{{ Math.round(slotProps.data.total_prescription_amount || 0).toLocaleString() }}</template>
+            <template #body="slotProps">
+              <span :title="Math.round(slotProps.data.total_prescription_amount || 0).toLocaleString()">
+                {{ Math.round(slotProps.data.total_prescription_amount || 0).toLocaleString() }}
+              </span>
+            </template>
         </Column>
         <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: columnWidths.total_payment_amount }" :sortable="true">
-            <template #body="slotProps">{{ Math.round(slotProps.data.total_payment_amount || 0).toLocaleString() }}</template>
+            <template #body="slotProps">
+              <span :title="Math.round(slotProps.data.total_payment_amount || 0).toLocaleString()">
+                {{ Math.round(slotProps.data.total_payment_amount || 0).toLocaleString() }}
+              </span>
+            </template>
         </Column>
         <Column header="개별 전달사항" :headerStyle="{ width: columnWidths.notice_individual }">
           <template #body="slotProps">
@@ -221,27 +233,25 @@ watch(selectedMonth, async (newMonth) => {
 async function fetchAvailableMonths() {
     try {
         const { data, error } = await supabase
-            .from('performance_records_absorption')
-            .select('settlement_month');
+            .from('settlement_months')
+            .select('settlement_month')
+            .order('settlement_month', { ascending: false });
             
         if (error) throw error;
         
-        // 월 목록에서 중복 제거
-        const uniqueMonths = [...new Set(data.map(item => item.settlement_month))];
-        const months = uniqueMonths.map(month => ({ settlement_month: month }));
-        months.sort((a, b) => b.settlement_month.localeCompare(a.settlement_month));
-        
-        availableMonths.value = months;
+        availableMonths.value = data || [];
 
-        if (months.length > 0) {
-            selectedMonth.value = months[0].settlement_month;
+        if (data && data.length > 0) {
+            selectedMonth.value = data[0].settlement_month;
         } else {
             // 데이터가 없을 경우에 대한 처리
             companySummary.value = [];
+            loading.value = false; // 로딩 상태 해제
         }
     } catch (err) {
         console.error('정산월 조회 오류', err);
         alert('정산월 목록을 불러오는 중 오류가 발생했습니다.');
+        loading.value = false; // 에러 발생 시에도 로딩 상태 해제
     }
 }
 
@@ -251,7 +261,7 @@ async function loadSettlementData() {
   shareChanges.value = {};
 
   try {
-    // 1. performance_records_absorption에서 해당 월의 모든 데이터를 가져옵니다.
+    // 1. performance_records_absorption에서 해당 월의 데이터를 가져옵니다.
     // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
     let allRecords = [];
     let from = 0;
@@ -261,7 +271,13 @@ async function loadSettlementData() {
     const { data: records, error: recordsError } = await supabase
       .from('performance_records_absorption')
       .select(`
-        *,
+        id,
+        company_id,
+        client_id,
+        settlement_month,
+        prescription_qty,
+        commission_rate,
+        review_action,
         company:companies(*),
         product:products(price)
       `)
@@ -309,14 +325,31 @@ async function loadSettlementData() {
       }
 
       const summary = summaryMap.get(companyId);
+      
+      // 병의원 수와 처방건수는 모든 건 포함 (삭제건도 포함)
       summary.client_count.add(record.client_id);
       summary.total_records += 1;
-
-      const prescriptionAmount = Math.round((record.prescription_qty || 0) * (record.product?.price || 0));
-      const paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0));
-
-      summary.total_prescription_amount += prescriptionAmount;
-      summary.total_payment_amount += paymentAmount;
+      
+      // 총 처방액과 총 지급액은 삭제되지 않은 건만 포함
+      if (record.review_action !== '삭제') {
+        // 처방액과 지급액을 계산 (개별 건을 먼저 원단위로 반올림)
+        const prescriptionAmount = Math.round((record.prescription_qty || 0) * (record.product?.price || 0));
+        // 수수료율이 퍼센트(%)인지 소수점인지 확인하여 계산
+        let paymentAmount;
+        if (record.commission_rate && record.commission_rate > 1) {
+          // 수수료율이 1보다 크면 퍼센트(%) 단위로 간주
+          paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0) / 100);
+        } else {
+          // 수수료율이 1 이하면 소수점 단위로 간주
+          paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0));
+        }
+        
+        summary.total_prescription_amount += prescriptionAmount;
+        summary.total_payment_amount += paymentAmount;
+        
+        // 디버깅용 로그
+        console.log(`회사: ${record.company.company_name}, 처방액: ${prescriptionAmount}, 지급액: ${paymentAmount}, 누적 처방액: ${summary.total_prescription_amount}, 누적 지급액: ${summary.total_payment_amount}`);
+      }
     }
 
     // 3. 공유 상태를 별도로 조회하여 병합합니다.
@@ -351,6 +384,12 @@ async function loadSettlementData() {
         return b.total_payment_amount - a.total_payment_amount;
       }
       return a.company_name.localeCompare(b.company_name, 'ko');
+    });
+    
+    // 디버깅용 로그: 최종 결과 확인
+    console.log('최종 정산내역서 요약:', companySummary.value);
+    companySummary.value.forEach(company => {
+      console.log(`${company.company_name}: 병의원수=${company.client_count}, 처방건수=${company.total_records}, 총처방액=${company.total_prescription_amount}, 총지급액=${company.total_payment_amount}`);
     });
 
   } catch (err) {

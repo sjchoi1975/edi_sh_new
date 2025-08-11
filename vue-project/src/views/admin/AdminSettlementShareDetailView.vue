@@ -59,11 +59,19 @@
           <template #body="slotProps">{{ (slotProps.data._raw_qty || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</template>
         </Column>
         <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true" >
-          <template #body="slotProps">{{ slotProps.data.prescription_amount || '0' }}</template>
+          <template #body="slotProps">
+            <span :title="slotProps.data.review_action === '삭제' ? '0' : (slotProps.data.prescription_amount || '0')">
+              {{ slotProps.data.review_action === '삭제' ? '0' : (slotProps.data.prescription_amount || '0') }}
+            </span>
+          </template>
         </Column>
         <Column field="commission_rate" header="수수료율" :headerStyle="{ width: columnWidths.commission_rate }" :sortable="true" />
         <Column field="payment_amount" header="지급액" :headerStyle="{ width: columnWidths.payment_amount }" :sortable="true" >
-          <template #body="slotProps">{{ slotProps.data.payment_amount || '0' }}</template>
+          <template #body="slotProps">
+            <span :title="slotProps.data.review_action === '삭제' ? '0' : (slotProps.data.payment_amount || '0')">
+              {{ slotProps.data.review_action === '삭제' ? '0' : (slotProps.data.payment_amount || '0') }}
+            </span>
+          </template>
         </Column>
         <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true" />
         <ColumnGroup type="footer">
@@ -247,20 +255,34 @@ async function loadDetailData() {
 
 // 합계 계산 (전체 데이터 기준)
 const totalQty = computed(() => {
-  const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_qty ?? 0), 0);
+  const sum = detailRows.value.reduce((sum, row) => {
+    // 삭제된 건은 수량을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (row._raw_qty ?? 0);
+  }, 0);
   return sum.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 });
 const totalPrescriptionAmount = computed(() => {
-  const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_prescription_amount ?? 0), 0);
+  const sum = detailRows.value.reduce((sum, row) => {
+    // 삭제된 건은 처방액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (row._raw_prescription_amount ?? 0);
+  }, 0);
   return sum.toLocaleString();
 });
 const totalPaymentAmount = computed(() => {
-  const sum = detailRows.value.reduce((sum, row) => sum + (row._raw_payment_amount ?? 0), 0);
+  const sum = detailRows.value.reduce((sum, row) => {
+    // 삭제된 건은 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (row._raw_payment_amount ?? 0);
+  }, 0);
   return sum.toLocaleString();
 });
 
 const settlementSummary = computed(() => {
   const totalPrice = detailRows.value.reduce((sum, row) => {
+    // 삭제된 건은 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
     return sum + (row._raw_payment_amount || 0);
   }, 0);
 
