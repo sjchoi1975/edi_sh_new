@@ -15,8 +15,12 @@
         <input v-model="endDate" type="date" required />
       </div>
       <div class="form-group">
-        <label>전달 사항</label>
+        <label>실적 등록 전달사항</label>
         <textarea v-model="notice" ref="noticeArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustTextareaHeight"></textarea>
+      </div>
+      <div class="form-group">
+        <label>정산내역서 전달사항</label>
+        <textarea v-model="noticePayment" ref="noticePaymentArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustNoticePaymentTextareaHeight"></textarea>
       </div>
       <div class="form-group">
         <label>비고</label>
@@ -48,9 +52,11 @@ const settlementMonth = ref('');
 const startDate = ref('');
 const endDate = ref('');
 const notice = ref('');
+const noticePayment = ref('');
 const status = ref('active');
 const remarks = ref('');
 const noticeArea = ref(null);
+const noticePaymentArea = ref(null);
 
 // 원본 데이터 저장
 const originalData = ref(null);
@@ -67,6 +73,7 @@ const isFormValid = computed(() => {
     startDate.value !== originalData.value.start_date ||
     endDate.value !== originalData.value.end_date ||
     notice.value !== originalData.value.notice ||
+    noticePayment.value !== originalData.value.notice_payment ||
     status.value !== originalData.value.status ||
     remarks.value !== originalData.value.remarks
   );
@@ -81,8 +88,19 @@ const adjustTextareaHeight = () => {
   }
 };
 
+const adjustNoticePaymentTextareaHeight = () => {
+  if (noticePaymentArea.value) {
+    noticePaymentArea.value.style.height = 'auto';
+    noticePaymentArea.value.style.height = `${noticePaymentArea.value.scrollHeight}px`;
+  }
+};
+
 watch(notice, () => {
   nextTick(adjustTextareaHeight);
+});
+
+watch(noticePayment, () => {
+  nextTick(adjustNoticePaymentTextareaHeight);
 });
 
 onMounted(async () => {
@@ -96,6 +114,7 @@ onMounted(async () => {
     startDate.value = data.start_date;
     endDate.value = data.end_date;
     notice.value = data.notice;
+    noticePayment.value = data.notice_payment;
     status.value = data.status;
     remarks.value = data.remarks;
     
@@ -105,6 +124,7 @@ onMounted(async () => {
       start_date: data.start_date,
       end_date: data.end_date,
       notice: data.notice,
+      notice_payment: data.notice_payment,
       status: data.status,
       remarks: data.remarks
     };
@@ -132,6 +152,7 @@ const handleSubmit = async () => {
       start_date: startDate.value,
       end_date: endDate.value,
       notice: notice.value,
+      notice_payment: noticePayment.value,
       status: status.value,
       remarks: remarks.value
     })

@@ -1,0 +1,54 @@
+-- 관리자용 제품 조회 뷰 수정 (업체 수 계산 개선)
+-- 2025-01-07
+
+-- 기존 뷰 삭제 후 재생성
+DROP VIEW IF EXISTS admin_products_with_company_status;
+
+CREATE VIEW admin_products_with_company_status AS
+SELECT 
+    p.id,
+    p.product_name,
+    p.insurance_code,
+    p.price,
+    p.commission_rate_a,
+    p.commission_rate_b,
+    p.commission_rate_c,
+    p.commission_rate_d,
+    p.commission_rate_e,
+    p.standard_code,
+    p.unit_packaging_desc,
+    p.unit_quantity,
+    p.base_month,
+    p.status as product_status,
+    p.created_at,
+    p.updated_at,
+    p.created_by,
+    p.updated_by,
+    -- 업체별 활성 상태 정보
+    COALESCE(
+        json_agg(
+            json_build_object(
+                'company_id', c.id,
+                'company_name', c.company_name,
+                'is_active', pca.is_active,
+                'assignment_id', pca.id
+            ) ORDER BY c.company_name
+        ) FILTER (WHERE c.id IS NOT NULL),
+        '[]'::json
+    ) as company_assignments,
+    -- 활성화된 업체 수 (중복 제거)
+    COUNT(DISTINCT pca.company_id) FILTER (WHERE pca.is_active = true) as active_companies_count,
+    -- 전체 업체 수 (user 타입만)
+    (SELECT COUNT(*) FROM companies WHERE status = 'active' AND user_type = 'user') as total_companies_count
+FROM products p
+LEFT JOIN product_company_assignments pca ON p.id = pca.product_id
+LEFT JOIN companies c ON pca.company_id = c.id
+WHERE p.status = 'active'
+GROUP BY p.id, p.product_name, p.insurance_code, p.price, 
+         p.commission_rate_a, p.commission_rate_b, p.commission_rate_c,
+         p.commission_rate_d, p.commission_rate_e, p.standard_code,
+         p.unit_packaging_desc, p.unit_quantity, p.base_month, p.status,
+         p.created_at, p.updated_at, p.created_by, p.updated_by;
+
+-- 권한 설정
+GRANT SELECT ON admin_products_with_company_status TO authenticated; 

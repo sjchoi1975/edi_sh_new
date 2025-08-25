@@ -27,6 +27,7 @@
       </div>
       <DataTable
         :value="clients"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -37,8 +38,9 @@
         class="custom-table clients-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 병의원이 없습니다.</template>
-        <template #loading>병의원 목록을 불러오는 중입니다...</template>
+        <template #empty>
+          <div v-if="!loading">등록된 병의원이 없습니다.</div>
+        </template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
@@ -77,12 +79,13 @@ import InputText from 'primevue/inputtext';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const clients = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
 const router = useRouter();
 const currentPageFirstIndex = ref(0);
-const loading = ref(false);
+const loading = ref(true);
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -149,48 +152,109 @@ const fetchClients = async () => {
 };
 
 // 엑셀 다운로드 함수
-function downloadExcel() {
+async function downloadExcel() {
   if (!clients.value || clients.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
 
-  // 엑셀 데이터 준비
-  const excelData = clients.value.map((client, index) => ({
-    'No': index + 1,
-    '병의원코드': client.client_code || '',
-    '병의원명': client.name || '',
-    '사업자등록번호': client.business_registration_number || '',
-    '원장명': client.owner_name || '',
-    '주소': client.address || '',
-    '비고': client.remarks || ''
-  }));
-
-  // 워크북 생성
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
-
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { wpx: 50 },  // No
-    { wpx: 100 }, // 병의원코드
-    { wpx: 180 }, // 병의원명
-    { wpx: 120 }, // 사업자등록번호
-    { wpx: 100 }, // 원장명
-    { wpx: 300 }, // 주소
-    { wpx: 120 }  // 비고
-  ];
-
-  // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '병의원 목록');
-
-  // 파일명 생성
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  const fileName = `병의원목록_${dateStr}.xlsx`;
-
-  // 파일 다운로드
-  XLSX.writeFile(wb, fileName);
+  try {
+    // ExcelJS 워크북 생성
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('병의원 목록');
+    
+    // 헤더 추가
+    const headers = ['No', '병의원코드', '병의원명', '사업자등록번호', '원장명', '주소', '비고'];
+    worksheet.addRow(headers);
+    
+    // 헤더 스타일 설정
+    const headerRow = worksheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '76933C' } // RGB(118, 147, 60)
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    
+    // 데이터 추가
+    clients.value.forEach((client, index) => {
+      const dataRow = worksheet.addRow([
+        index + 1,
+        client.client_code || '',
+        client.name || '',
+        client.business_registration_number || '',
+        client.owner_name || '',
+        client.address || '',
+        client.remarks || ''
+      ]);
+      
+      // 데이터 행 스타일 설정
+      dataRow.eachCell((cell, colNumber) => {
+        cell.font = { size: 11 };
+        cell.alignment = { vertical: 'middle' };
+        
+        // 가운데 정렬이 필요한 컬럼들 (No, 병의원코드, 사업자등록번호, 원장명)
+        if (colNumber === 1 || colNumber === 2 || colNumber === 4 || colNumber === 5) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+    
+    // 컬럼 너비 설정
+    worksheet.columns = [
+      { width: 8 },   // No
+      { width: 12 },  // 병의원코드
+      { width: 32 },  // 병의원명
+      { width: 16 },  // 사업자등록번호
+      { width: 12 },  // 원장명
+      { width: 64 },  // 주소
+      { width: 24 }   // 비고
+    ];
+    
+    // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+    for (let row = 1; row <= worksheet.rowCount; row++) {
+      for (let col = 1; col <= 7; col++) {
+        const cell = worksheet.getCell(row, col);
+        cell.border = {
+          top: { style: 'thin', color: { argb: '000000' } },
+          bottom: { style: 'thin', color: { argb: '000000' } },
+          left: { style: 'thin', color: { argb: '000000' } },
+          right: { style: 'thin', color: { argb: '000000' } }
+        };
+      }
+    }
+    
+    // 헤더행 고정 및 눈금선 숨기기
+    worksheet.views = [
+      {
+        showGridLines: false,
+        state: 'frozen',
+        xSplit: 0,
+        ySplit: 1
+      }
+    ];
+    
+    // 파일 다운로드
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const fileName = `병의원목록_${dateStr}.xlsx`;
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    
+  } catch (err) {
+    console.error('엑셀 다운로드 오류:', err);
+    alert('엑셀 다운로드 중 오류가 발생했습니다.');
+  }
 }
 
 // 오버플로우 감지 및 툴팁 제어 함수들

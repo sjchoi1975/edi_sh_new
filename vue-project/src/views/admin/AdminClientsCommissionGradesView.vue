@@ -51,7 +51,7 @@
 
       <DataTable
         :value="filteredClients"
-        :loading="loading"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -63,7 +63,6 @@
         <template #empty>
           <div v-if="!loading">등록된 병의원이 없습니다.</div>
         </template>
-        <template #loading>병의원 목록을 불러오는 중입니다...</template>
 
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">
@@ -201,7 +200,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { supabase } from '@/supabase'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
 const router = useRouter()
@@ -324,16 +323,82 @@ async function onGradeChange(assignment, newValue) {
   }
 }
 
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
   const templateData = [
     { '병의원 사업자등록번호': '123-45-67890', '업체 사업자등록번호': '111-22-33333', '변경 수수료 등급': 'A' },
     { '병의원 사업자등록번호': '987-65-43210', '업체 사업자등록번호': '444-55-66666', '변경 수수료 등급': 'B' },
   ]
-  const ws = XLSX.utils.json_to_sheet(templateData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '수수료등급설정템플릿')
-  ws['!cols'] = [{ width: 20 }, { width: 20 }, { width: 15 }] // 컬럼 너비 조정
-  XLSX.writeFile(wb, '수수료등급설정_엑셀등록_템플릿.xlsx') // 파일명 변경
+
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('수수료등급설정템플릿')
+
+  // 헤더 정의
+  const headers = Object.keys(templateData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  templateData.forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      
+      // 사업자등록번호 컬럼은 텍스트 형식으로 설정
+      if (colNumber === 1 || colNumber === 2) {
+        cell.numFmt = '@'
+      }
+    })
+  })
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
+
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 20 }, // 병의원 사업자등록번호
+    { width: 20 }, // 업체 사업자등록번호
+    { width: 15 }, // 변경 수수료 등급
+  ]
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '수수료등급설정_엑셀등록_템플릿.xlsx'
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 const triggerFileUpload = () => {
@@ -463,7 +528,7 @@ const handleFileUpload = async (event) => {
   }
 }
 
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (filteredClients.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
@@ -472,21 +537,98 @@ const downloadExcel = () => {
   const excelData = filteredClients.value.map((assignment) => ({
     병의원코드: assignment.client_code,
     병의원명: assignment.client_name,
-    '병의원 사업자등록번호': assignment.client_business_registration_number,
+    '사업자등록번호': assignment.client_business_registration_number,
     원장명: assignment.owner_name,
     주소: assignment.address,
     구분: assignment.company_group,
     업체명: assignment.company_name,
-    '업체 사업자등록번호': assignment.company_business_registration_number,
+    '업체 사업자번호': assignment.company_business_registration_number,
     '기본 수수료 등급': assignment.company_default_commission_grade,
     '변경 수수료 등급': assignment.modified_commission_grade || '-',
   }))
 
-  const ws = XLSX.utils.json_to_sheet(excelData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '수수료등급설정현황')
-  const fileName = generateExcelFileName('병의원-수수료등급')
-  XLSX.writeFile(wb, fileName)
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('수수료등급설정현황')
+
+  // 헤더 정의
+  const headers = Object.keys(excelData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  excelData.forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (병의원코드, 원장명, 구분, 기본 수수료 등급, 변경 수수료 등급)
+      if ([1, 3, 4, 8, 9, 10].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 사업자등록번호 컬럼은 텍스트 형식으로 설정
+      if (colNumber === 3 || colNumber === 8) {
+        cell.numFmt = '@'
+      }
+    })
+  })
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
+
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 12 }, // 병의원코드
+    { width: 32 }, // 병의원명
+    { width: 16 }, // 병의원 사업자등록번호
+    { width: 12 }, // 원장명
+    { width: 64 }, // 주소
+    { width: 16 }, // 구분
+    { width: 24 }, // 업체명
+    { width: 16 }, // 업체 사업자등록번호
+    { width: 16 }, // 기본 수수료 등급
+    { width: 16 }, // 변경 수수료 등급
+  ]
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
+    }
+  ]
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = generateExcelFileName('병의원-수수료등급')
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 async function deleteAllGrades() {

@@ -31,17 +31,14 @@
         <input id="commissionC" v-model="commissionC" type="number" step="0.001" />
       </div>
       <div class="form-group">
-        <label>표준코드<span class="required">*</span></label>
-        <input id="standardCode" v-model="standardCode" type="text" maxlength="13" required />
+        <label>수수료율 D등급(%)</label>
+        <input id="commissionD" v-model="commissionD" type="number" step="0.001" />
       </div>
       <div class="form-group">
-        <label>단위/포장형태</label>
-        <input v-model="unitPackagingDesc" type="text" />
+        <label>수수료율 E등급(%)</label>
+        <input id="commissionE" v-model="commissionE" type="number" step="0.001" />
       </div>
-      <div class="form-group">
-        <label>단위수량</label>
-        <input v-model="unitQuantity" type="number" />
-      </div>
+
       <div class="form-group">
         <label>상태</label>
         <select v-model="status">
@@ -75,9 +72,9 @@ const price = ref('');
 const commissionA = ref('');
 const commissionB = ref('');
 const commissionC = ref('');
-const standardCode = ref('');
-const unitPackagingDesc = ref('');
-const unitQuantity = ref('');
+const commissionD = ref('');
+const commissionE = ref('');
+
 const status = ref('active');
 const remarks = ref('');
 
@@ -90,9 +87,8 @@ const originalData = ref({
   commissionA: '',
   commissionB: '',
   commissionC: '',
-  standardCode: '',
-  unitPackagingDesc: '',
-  unitQuantity: '',
+  commissionD: '',
+  commissionE: '',
   status: '',
   remarks: ''
 });
@@ -103,8 +99,7 @@ const isFormValid = computed(() => {
   const hasRequiredFields = baseMonth.value && baseMonth.value.trim() !== '' && 
                            productName.value && productName.value.trim() !== '' && 
                            insuranceCode.value && insuranceCode.value.toString().trim() !== '' && 
-                           price.value && price.value.toString().trim() !== '' && 
-                           standardCode.value && standardCode.value.toString().trim() !== '';
+                           price.value && price.value.toString().trim() !== '';
   
   // 변경값 감지
   const hasChanges = baseMonth.value !== originalData.value.baseMonth ||
@@ -114,9 +109,8 @@ const isFormValid = computed(() => {
                     commissionA.value !== originalData.value.commissionA ||
                     commissionB.value !== originalData.value.commissionB ||
                     commissionC.value !== originalData.value.commissionC ||
-                    standardCode.value !== originalData.value.standardCode ||
-                    unitPackagingDesc.value !== originalData.value.unitPackagingDesc ||
-                    unitQuantity.value !== originalData.value.unitQuantity ||
+                    commissionD.value !== originalData.value.commissionD ||
+                    commissionE.value !== originalData.value.commissionE ||
                     status.value !== originalData.value.status ||
                     remarks.value !== originalData.value.remarks;
   
@@ -137,9 +131,9 @@ onMounted(async () => {
     commissionA.value = data.commission_rate_a ? data.commission_rate_a : '';
     commissionB.value = data.commission_rate_b ? data.commission_rate_b : '';
     commissionC.value = data.commission_rate_c ? data.commission_rate_c : '';
-    standardCode.value = data.standard_code;
-    unitPackagingDesc.value = data.unit_packaging_desc;
-    unitQuantity.value = data.unit_quantity;
+    commissionD.value = data.commission_rate_d ? data.commission_rate_d : '';
+    commissionE.value = data.commission_rate_e ? data.commission_rate_e : '';
+
     status.value = data.status;
     remarks.value = data.remarks;
     
@@ -151,9 +145,9 @@ onMounted(async () => {
     originalData.value.commissionA = data.commission_rate_a ? data.commission_rate_a : '';
     originalData.value.commissionB = data.commission_rate_b ? data.commission_rate_b : '';
     originalData.value.commissionC = data.commission_rate_c ? data.commission_rate_c : '';
-    originalData.value.standardCode = data.standard_code;
-    originalData.value.unitPackagingDesc = data.unit_packaging_desc;
-    originalData.value.unitQuantity = data.unit_quantity;
+    originalData.value.commissionD = data.commission_rate_d ? data.commission_rate_d : '';
+    originalData.value.commissionE = data.commission_rate_e ? data.commission_rate_e : '';
+
     originalData.value.status = data.status;
     originalData.value.remarks = data.remarks;
   }
@@ -209,17 +203,7 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (!standardCode.value || standardCode.value.toString().trim() === '') {
-    alert('표준코드는 필수 입력 항목입니다.');
-    setTimeout(() => {
-      const standardCodeInput = document.getElementById('standardCode');
-      if (standardCodeInput) {
-        standardCodeInput.focus();
-        standardCodeInput.select();
-      }
-    }, 100);
-    return;
-  }
+
 
   // 기준월 형식 검증 (YYYY-MM)
   const monthRegex = /^\d{4}-\d{2}$/;
@@ -328,6 +312,42 @@ const handleSubmit = async () => {
     commissionC.value = Math.round(commissionCValue * 1000) / 1000;
   }
 
+  // 수수료율 D 검증 (0~1, 소수점 3자리)
+  if (commissionD.value && commissionD.value.toString().trim() !== '') {
+    const commissionDValue = Number(commissionD.value);
+    if (isNaN(commissionDValue) || commissionDValue < 0 || commissionDValue > 1) {
+      alert('수수료율 D는 0~1 사이의 숫자여야 합니다.');
+      setTimeout(() => {
+        const commissionDInput = document.getElementById('commissionD');
+        if (commissionDInput) {
+          commissionDInput.focus();
+          commissionDInput.select();
+        }
+      }, 100);
+      return;
+    }
+    // 소수점 3자리로 반올림
+    commissionD.value = Math.round(commissionDValue * 1000) / 1000;
+  }
+
+  // 수수료율 E 검증 (0~1, 소수점 3자리)
+  if (commissionE.value && commissionE.value.toString().trim() !== '') {
+    const commissionEValue = Number(commissionE.value);
+    if (isNaN(commissionEValue) || commissionEValue < 0 || commissionEValue > 1) {
+      alert('수수료율 E는 0~1 사이의 숫자여야 합니다.');
+      setTimeout(() => {
+        const commissionEInput = document.getElementById('commissionE');
+        if (commissionEInput) {
+          commissionEInput.focus();
+          commissionEInput.select();
+        }
+      }, 100);
+      return;
+    }
+    // 소수점 3자리로 반올림
+    commissionE.value = Math.round(commissionEValue * 1000) / 1000;
+  }
+
   const dataToUpdate = {
     base_month: baseMonth.value,
     product_name: productName.value,
@@ -336,9 +356,8 @@ const handleSubmit = async () => {
     commission_rate_a: commissionA.value === '' ? 0 : Number(commissionA.value),
     commission_rate_b: commissionB.value === '' ? 0 : Number(commissionB.value),
     commission_rate_c: commissionC.value === '' ? 0 : Number(commissionC.value),
-    standard_code: standardCode.value === '' ? null : standardCode.value,
-    unit_packaging_desc: unitPackagingDesc.value,
-    unit_quantity: unitQuantity.value === '' ? null : Number(unitQuantity.value),
+    commission_rate_d: commissionD.value === '' ? 0 : Number(commissionD.value),
+    commission_rate_e: commissionE.value === '' ? 0 : Number(commissionE.value),
     status: status.value,
     remarks: remarks.value
   };

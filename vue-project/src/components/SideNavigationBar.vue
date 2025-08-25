@@ -63,8 +63,10 @@ const adminMenuTree = [
     { label: '미승인 업체', path: '/admin/companies/pending' }
   ]},
   { label: '제품 관리', icon: 'pi pi-box', children: [
-    { label: '제품 목록', path: '/admin/products' }
+    { label: '제품 목록', path: '/admin/products' },
+    { label: '표준코드 목록', path: '/admin/products-standard-code' }
   ]},
+
   { label: '병의원 관리', icon: 'pi pi-building', children: [
     { label: '병의원 목록', path: '/admin/clients' },
     { label: '담당업체 지정', path: '/admin/clients/assign-companies' },

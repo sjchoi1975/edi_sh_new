@@ -37,15 +37,7 @@
             <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
-          <button 
-            class="btn-primary" 
-            @click="loadPerformanceData" 
-            :disabled="loading || isAnyEditing"
-          >
-            불러오기
-          </button>
-        </div>
+
       </div>
     </div>
 
@@ -54,7 +46,7 @@
       <div class="data-card-header" style="flex-shrink: 0;">
         <div class="total-count-display">전체 {{ displayRows.length }} 건</div>
         <div v-if="!loading && displayRows.length === 0" class="header-center-message">
-          필터 조건을 선택하고 '불러오기'를 클릭하세요.
+          해당 정산월의 실적 데이터가 없습니다.
         </div>
         <div class="data-card-buttons" style="margin-left: auto;">
            <button class="btn-primary" @click="changeReviewStatus" :disabled="!selectedRows || selectedRows.length === 0 || isAnyEditing" style="margin-right: 1rem;">
@@ -72,7 +64,7 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           :value="displayRows" 
-          :loading="loading"
+          :loading="false"
           v-model:editingRows="editingRows"
           editMode="row"
           @row-edit-save="onRowEditSave"
@@ -92,8 +84,7 @@
           }"
         >
           <template #empty>
-            <div v-if="loading">데이터를 불러오는 중입니다.</div>
-            <div v-else>필터 조건을 선택하고 '불러오기'를 클릭하세요.</div>
+            <div v-if="!loading">해당 정산월의 실적 데이터가 없습니다.</div>
           </template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
@@ -340,6 +331,14 @@
       </div>
     </div>
   </div>
+
+  <!-- 전체 화면 로딩 오버레이 - 메뉴 진입 시 -->
+  <div v-if="loading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">목록을 불러오는 중입니다...</div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -415,19 +414,20 @@ const selectedCompanyId = ref(null);
 const selectedHospitalId = ref(null);
 
 const statusOptions = ref([
-  { value: null, label: '전체' },
+  { value: null, label: '- 전체 -' },
   { value: '완료', label: '완료' },
   { value: '검수중', label: '검수중' },
   { value: '대기', label: '신규' },
 ]);
-const selectedStatus = ref('대기');
+const selectedStatus = ref('검수중');
 
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
 const monthlyHospitals = ref([]);
+const allApprovedCompanies = ref([]);
 
 // --- 상태 관리: 데이터 테이블 ---
-const loading = ref(false);
+const loading = ref(true);
 const rows = ref([]);
 const originalRows = ref([]);
 const selectedRows = ref([]);
@@ -469,9 +469,8 @@ const bulkChangeOptions = computed(() => {
   
   switch (selectedBulkChangeType.value) {
     case 'company_name':
-      // 현재 선택된 행들의 고유한 업체명 목록
-      const uniqueCompanies = [...new Set(monthlyCompanies.value.map(company => company.company_name))];
-      return uniqueCompanies;
+      // 전체 업체 목록 (user_type = user & approval_status = approved)
+      return allApprovedCompanies.value.map(company => company.company_name);
     case 'prescription_type':
       return prescriptionTypeOptions;
     default:
@@ -498,7 +497,7 @@ const displayRows = computed(() => {
 const prescriptionOptions = computed(() => {
   if (!selectedSettlementMonth.value) return [{ value: null, month: '전체' }];
   return [
-    { value: null, month: '전체' },
+    { value: null, month: '- 전체 -' },
     ...[1, 2, 3].map(offset => ({
       value: offset,
       month: getPrescriptionMonth(selectedSettlementMonth.value, offset)
@@ -513,12 +512,12 @@ const prescriptionMonthOptionsForEdit = computed(() => {
 });
 
 const companyOptions = computed(() => {
-    return [{ id: null, company_name: '전체' }, ...monthlyCompanies.value];
+    return [{ id: null, company_name: '- 전체 -' }, ...monthlyCompanies.value];
 });
 
 const hospitalOptions = computed(() => {
     if (!selectedCompanyId.value) {
-        return [{ id: null, name: '전체' }, ...monthlyHospitals.value];
+        return [{ id: null, name: '- 전체 -' }, ...monthlyHospitals.value];
     }
     const relevantClientIds = monthlyPerformanceLinks.value
         .filter(link => link.company_id === selectedCompanyId.value)
@@ -533,11 +532,17 @@ watch(selectedSettlementMonth, async (newMonth) => {
         await fetchFilterOptions(newMonth);
         selectedCompanyId.value = null;
         selectedHospitalId.value = null;
+        // 정산월이 변경되면 자동으로 데이터 로드
+        await loadPerformanceData();
     }
 });
 
-watch(selectedCompanyId, () => {
+watch(selectedCompanyId, async () => {
     selectedHospitalId.value = null;
+    // 업체가 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
+    }
 });
 
 watch(prescriptionOffset, async () => {
@@ -549,6 +554,22 @@ watch(prescriptionOffset, async () => {
             // 처방월이 "전체"인 경우 제품 목록을 불러올 필요 없음
             products.value = [];
         }
+        // 처방월이 변경되면 자동으로 데이터 로드
+        await loadPerformanceData();
+    }
+});
+
+watch(selectedStatus, async () => {
+    // 상태가 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
+    }
+});
+
+watch(selectedHospitalId, async () => {
+    // 병의원이 변경되면 자동으로 데이터 로드
+    if (selectedSettlementMonth.value) {
+        await loadPerformanceData();
     }
 });
 
@@ -558,6 +579,7 @@ const route = useRoute();
 onMounted(async () => {
   console.log("1. onMounted 시작");
   await fetchAvailableMonths();
+  await fetchAllApprovedCompanies();
   if (availableMonths.value.length > 0) {
     selectedSettlementMonth.value = availableMonths.value[0].settlement_month;
     console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
@@ -578,8 +600,8 @@ onMounted(async () => {
     selectedStatus.value = route.query.status;
   }
   
-  // 쿼리 파라미터가 있으면 자동으로 데이터 로드
-  if (route.query.company || route.query.status) {
+  // 화면 진입 시 자동으로 데이터 로드
+  if (selectedSettlementMonth.value) {
     await loadPerformanceData();
   }
   
@@ -599,6 +621,23 @@ async function fetchAvailableMonths() {
   const { data, error } = await supabase.from('settlement_months').select('settlement_month').order('settlement_month', { ascending: false });
   if (error) console.error('정산월 로딩 실패:', error);
   else availableMonths.value = data;
+}
+
+async function fetchAllApprovedCompanies() {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, company_name')
+    .eq('user_type', 'user')
+    .eq('approval_status', 'approved')
+    .order('company_name', { ascending: true });
+  
+  if (error) {
+    console.error('전체 승인된 업체 로딩 실패:', error);
+    allApprovedCompanies.value = [];
+  } else {
+    allApprovedCompanies.value = data || [];
+    console.log(`전체 승인된 업체 ${allApprovedCompanies.value.length}개 로드 완료`);
+  }
 }
 
 async function fetchFilterOptions(settlementMonth) {
@@ -667,29 +706,25 @@ async function fetchProductsForMonth(month) {
     // 이미 불러온 월이면 캐시 사용
     if (productsByMonth.value[month]) return;
 
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .eq('base_month', month)
-        .range(0, 2999);
+    try {
+        // 관리자용이므로 모든 제품을 표시 (업체별 할당 상태와 관계없이)
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('status', 'active')
+            .eq('base_month', month)
+            .order('product_name', { ascending: true })
+            .range(0, 2999);
 
-    if (!error && data) {
-        // 보험코드 기준으로 유니크하게 처리
-        const uniqByMonthAndInsurance = {};
-        const noInsurance = [];
-        data.forEach(p => {
-            const key = `${p.base_month}_${p.insurance_code || ''}`;
-            if (p.insurance_code) {
-                if (!uniqByMonthAndInsurance[key]) uniqByMonthAndInsurance[key] = p;
-            } else {
-                noInsurance.push(p);
-            }
-        });
-        productsByMonth.value[month] = [...Object.values(uniqByMonthAndInsurance), ...noInsurance];
-        console.log(`처방월 ${month} 제품 로드 완료:`, data.length, '개 → 유니크', productsByMonth.value[month].length, '개');
-    } else {
-        console.error('제품 목록 로딩 실패:', error);
+        if (!error && data) {
+            productsByMonth.value[month] = data;
+            console.log(`처방월 ${month} 제품 로드 완료:`, data.length, '개');
+        } else {
+            console.error('제품 목록 로딩 실패:', error);
+            productsByMonth.value[month] = [];
+        }
+    } catch (err) {
+        console.error('제품 데이터 로딩 오류:', err);
         productsByMonth.value[month] = [];
     }
 }
@@ -1032,8 +1067,14 @@ async function loadPerformanceData() {
 
     // 데이터 가공: Join된 객체를 펼치고, 화면 표시에 필요한 값을 설정
     rows.value = allData.map(item => {
-      const prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
-      const paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+      // 삭제 처리된 건은 처방액과 지급액을 0으로 표시
+      let prescriptionAmount = 0;
+      let paymentAmount = 0;
+      
+      if (item.review_action !== '삭제') {
+        prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
+        paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+      }
       
       return {
         ...item,
@@ -1146,7 +1187,7 @@ async function saveEdit(rowData) {
       prescription_type: rowData.prescription_type_modify,
       commission_rate: Number(rowData.commission_rate_modify) || 0,
       remarks: rowData.remarks_modify,
-      review_status: '검수중', 
+      review_status: '완료', 
       updated_at: new Date().toISOString(),
       updated_by: adminUserId,
     };
@@ -1267,7 +1308,12 @@ const confirmDeleteRow = async (row) => {
 
       const { error } = await supabase
         .from('performance_records')
-        .update({ review_action: '삭제', updated_by: userUid, updated_at: new Date().toISOString() })
+        .update({ 
+          review_action: '삭제', 
+          review_status: '완료',
+          updated_by: userUid, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', row.id);
       
       if (error) throw error;
@@ -1276,9 +1322,13 @@ const confirmDeleteRow = async (row) => {
       const index = rows.value.findIndex(r => r.id === row.id);
       if (index !== -1) {
         rows.value[index].review_action = '삭제';
+        rows.value[index].review_status = '완료';
       }
       
       alert("해당 항목이 삭제 처리되었습니다. 되돌리기를 하시면 다시 검수 완료가 가능합니다.");
+      
+      // 데이터 다시 로드하여 화면 업데이트
+      await loadPerformanceData();
 
     } catch (error) {
       console.error('삭제 처리 중 오류:', error);
@@ -1295,7 +1345,12 @@ const restoreRow = async (row) => {
 
     const { error } = await supabase
       .from('performance_records')
-      .update({ review_action: null, updated_by: userUid, updated_at: new Date().toISOString() })
+      .update({ 
+        review_action: null, 
+        review_status: '검수중',
+        updated_by: userUid, 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', row.id);
     
     if (error) throw error;
@@ -1303,8 +1358,12 @@ const restoreRow = async (row) => {
     const index = rows.value.findIndex(r => r.id === row.id);
     if (index !== -1) {
       rows.value[index].review_action = null;
+      rows.value[index].review_status = '검수중'; // 복원 시 검수중으로 변경
     }
     alert('항목이 복원되었습니다.');
+    
+    // 데이터 다시 로드하여 화면 업데이트
+    await loadPerformanceData();
   } catch(error) {
     console.error('복원 중 오류:', error);
     alert(`복원 중 오류가 발생했습니다: ${error.message}`);
@@ -1776,7 +1835,7 @@ async function handleBulkChange() {
     switch (selectedBulkChangeType.value) {
       case 'company_name':
         // 업체명 변경 시 company_id도 함께 업데이트
-        const selectedCompany = monthlyCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
+        const selectedCompany = allApprovedCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
         if (selectedCompany) {
           updateData.company_id = selectedCompany.id;
           

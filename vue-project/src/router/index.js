@@ -126,6 +126,37 @@ const router = createRouter({
       component: () => import('../views/admin/AdminProductEditView.vue'),
       meta: { menu: '제품 관리', submenu: '제품 수정', requiresAuth: true, isAdmin: true }
     },
+              {
+      path: '/admin/products/:productId/assignment',
+      name: 'AdminProductsAssignmentCompany',
+      component: () => import('../views/admin/AdminProductsAssignmentCompanyView.vue'),
+      meta: { menu: '제품 관리', submenu: '업체 할당', requiresAuth: true, isAdmin: true }
+      },
+    {
+      path: '/admin/products-standard-code',
+      name: 'AdminProductsStandardCode',
+      component: () => import('@/views/admin/AdminProductsStandardCodeView.vue'),
+      meta: { menu: '제품 관리', submenu: '표준코드 목록', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/products-standard-code/create',
+      name: 'AdminProductsStandardCodeCreate',
+      component: () => import('@/views/admin/AdminProductsStandardCodeCreateView.vue'),
+      meta: { menu: '제품 관리', submenu: '표준코드 등록', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/products-standard-code/:id',
+      name: 'AdminProductsStandardCodeDetail',
+      component: () => import('@/views/admin/AdminProductsStandardCodeDetailView.vue'),
+      meta: { menu: '제품 관리', submenu: '표준코드 상세', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/products-standard-code/:id/edit',
+      name: 'AdminProductsStandardCodeEdit',
+      component: () => import('@/views/admin/AdminProductsStandardCodeEditView.vue'),
+      meta: { menu: '제품 관리', submenu: '표준코드 수정', requiresAuth: true, isAdmin: true },
+    },
+
     {
       path: '/admin/clients',
       name: 'AdminClients',

@@ -58,7 +58,7 @@
       <div style="flex-grow: 1; overflow: hidden;">
         <DataTable 
           :value="displayRows" 
-          :loading="loading"
+          :loading="false"
           scrollable 
           scrollHeight="calc(100vh - 220px)"
           scrollDirection="both"
@@ -76,7 +76,6 @@
           <template #empty>
             <div v-if="!loading">등록된 실적이 없습니다.</div>
           </template>
-          <template #loading>전체 실적을 불러오는 중입니다...</template>
           
           <Column header="No" :headerStyle="{ width: columnWidths.no }" :frozen="true">
             <template #body="slotProps">
@@ -133,7 +132,7 @@
               <Column :colspan="2" footerClass="footer-cell" />
               <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-              <Column :colspan="5" footerClass="footer-cell" />
+              <Column :colspan="7" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -157,7 +156,7 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import { supabase } from '@/supabase';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 
 const columnWidths = {
@@ -543,7 +542,12 @@ async function fetchPerformanceRecords() {
     
     // 데이터 변환
     let mappedData = allData.map(record => {
-      const prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
+      // 삭제 처리된 건은 처방액을 0으로 표시
+      let prescriptionAmount = 0;
+      if (record.review_action !== '삭제') {
+        prescriptionAmount = (record.prescription_qty || 0) * (record.products?.price || 0);
+      }
+      
       return {
         id: record.id,
         review_status: record.review_status || '대기',
@@ -566,7 +570,7 @@ async function fetchPerformanceRecords() {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
-        }).replace(/\. /g, '-').replace('.', ' '),
+        }).replace(/\. /g, '-').replace(/\./g, '').replace(/-(\d{2}):(\d{2})$/, ' $1:$2'),
         created_by: registrarMap.get(record.registered_by) || '관리자',
         updated_date: record.updated_at ? new Date(record.updated_at).toLocaleString('ko-KR', { 
           timeZone: 'Asia/Seoul',
@@ -576,7 +580,7 @@ async function fetchPerformanceRecords() {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
-        }).replace(/\. /g, '-').replace('.', ' ') : '',
+        }).replace(/\. /g, '-').replace(/\./g, '').replace(/-(\d{2}):(\d{2})$/, ' $1:$2') : '',
         updated_by: record.updated_by ? (updaterMap.get(record.updated_by) || '관리자') : '',
         assigned_pharmacist_contact: record.companies?.assigned_pharmacist_contact || '',
       };
@@ -630,86 +634,179 @@ function onPageChange(event) {
 }
 
 // 엑셀 다운로드
-const downloadExcel = () => {
+const downloadExcel = async () => {
   if (displayRows.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
 
-  // 엑셀용 데이터 준비
-  const excelData = displayRows.value.map((row, index) => ({
-    'No': index + 1,
-    '검수상태': row.review_status,
-    '구분': row.company_group || '',
-    '업체명': row.company_name || '',
-    '병의원명': row.client_name || '',
-    '처방월': row.prescription_month || '',
-    '제품명': row.product_name_display || '',
-    '보험코드': row.insurance_code || '',
-    '약가': Number(String(row.price).replace(/,/g, '')) || 0,
-    '처방수량': Number(String(row.prescription_qty).replace(/,/g, '')) || 0,
-    '처방액': Number(String(row.prescription_amount).replace(/,/g, '')) || 0,
-    '처방구분': row.prescription_type || '',
-    '비고': row.remarks || '',
-    '확인(검수)': row.review_status || '대기',
-    '등록일시': new Date(row.created_date),
-    '등록자': row.created_by,
-    '수정일시': row.updated_date ? new Date(row.updated_date) : '',
-    '수정자': row.updated_by || '',
-    '관리자': row.assigned_pharmacist_contact
-  }));
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('전체 등록 현황')
+
+  // 헤더 정의
+  const headers = [
+    'No', '검수상태', '구분', '업체명', '병의원명', '처방월', '제품명', '보험코드', 
+    '약가', '처방수량', '처방액', '처방구분', '비고', 
+    '등록일시', '등록자', '수정일시', '수정자', '관리자'
+  ]
+  
+  // 헤더 추가
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가
+  displayRows.value.forEach((row, index) => {
+    const dataRow = worksheet.addRow([
+      index + 1,
+      row.review_status || '',
+      row.company_group || '',
+      row.company_name || '',
+      row.client_name || '',
+      row.prescription_month || '',
+      row.product_name_display || '',
+      row.insurance_code || '',
+      Number(String(row.price).replace(/,/g, '')) || 0,
+      Number(String(row.prescription_qty).replace(/,/g, '')) || 0,
+      Number(String(row.prescription_amount).replace(/,/g, '')) || 0,
+      row.prescription_type || '',
+      row.remarks || '',
+      row.created_date || '',
+      row.created_by || '',
+      row.updated_date || '',
+      row.updated_by || '',
+      row.assigned_pharmacist_contact || ''
+    ])
+
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (No, 검수상태, 구분, 보험코드, 처방구분, 등록일시, 등록자, 수정일시, 수정자)
+      if ([1, 2, 6, 8, 12, 14, 16].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 숫자 컬럼은 오른쪽 정렬
+      if ([9, 10, 11].includes(colNumber)) {
+        cell.alignment = { horizontal: 'right', vertical: 'middle' }
+      }
+    })
+  })
 
   // 합계 행 추가
-  excelData.push({
-    'No': '합계',
-    '처방수량': Number(totalQty.value.replace(/,/g, '')),
-    '처방액': Number(totalAmount.value.replace(/,/g, ''))
+  const totalRow = worksheet.addRow([
+    '', '', '', '', '', '', '', '', '합계', 
+    Number(totalQty.value.replace(/,/g, '')),
+    Number(totalAmount.value.replace(/,/g, '')),
+    '', '', '', '', '', '', ''
+  ])
+
+  // 합계행 스타일 설정
+  totalRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, size: 11 };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'F0F0F0' } // 연한 그레이
+    };
+    cell.alignment = { vertical: 'middle' };
+    
+    // 합계 텍스트는 가운데 정렬
+    if (colNumber === 9) {
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    
+    // 숫자 컬럼들은 우측 정렬
+    if ([10, 11].includes(colNumber)) {
+      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    }
   });
+  
+  // 합계행 숫자 형식 설정
+  totalRow.getCell(10).numFmt = '#,##0.0'; // 처방수량
+  totalRow.getCell(11).numFmt = '#,##0'; // 처방액
 
-  // 워크북 생성
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
 
-  // 숫자 형식 지정 (천 단위 구분)
-  const numberFormat = '#,##0';
-  const numberFormatDecimal = '#,##0.0'; // 소수점 한 자리
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let row = 1; row <= range.e.r; row++) {
-    // 약가 컬럼 (I열)
-    const priceCell = ws[XLSX.utils.encode_cell({ r: row, c: 8 })];
-    if (priceCell && typeof priceCell.v === 'number') {
-      priceCell.z = numberFormat;
+  // 컬럼 너비 설정
+  worksheet.columns = [
+    { width: 8 },  // No
+    { width: 12 }, // 검수상태
+    { width: 12 }, // 구분
+    { width: 24 }, // 업체명
+    { width: 32 }, // 병의원명
+    { width: 12 }, // 처방월
+    { width: 32 }, // 제품명
+    { width: 12 }, // 보험코드
+    { width: 12 }, // 약가
+    { width: 12 }, // 처방수량
+    { width: 16 }, // 처방액
+    { width: 16 }, // 처방구분
+    { width: 24 }, // 비고
+    { width: 18 }, // 등록일시
+    { width: 16 }, // 등록자
+    { width: 18 }, // 수정일시
+    { width: 16 }, // 수정자
+    { width: 16 }  // 관리자
+  ]
+
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
     }
-    // 처방수량 컬럼 (J열) - 소수점 한 자리 표시
-    const qtyCell = ws[XLSX.utils.encode_cell({ r: row, c: 9 })];
-    if (qtyCell && typeof qtyCell.v === 'number') {
-      qtyCell.z = numberFormatDecimal;
-    }
-    // 처방액 컬럼 (K열)
-    const amountCell = ws[XLSX.utils.encode_cell({ r: row, c: 10 })];
-    if (amountCell && typeof amountCell.v === 'number') {
-      amountCell.z = numberFormat;
-    }
-     // 등록일시 컬럼 (O열)
-    const dateCell = ws[XLSX.utils.encode_cell({ r: row, c: 14 })];
-    if (dateCell && dateCell.t === 'd') {
-      dateCell.z = 'yyyy-mm-dd hh:mm';
-    }
-    // 수정일시 컬럼 (Q열)
-    const updatedDateCell = ws[XLSX.utils.encode_cell({ r: row, c: 16 })];
-    if (updatedDateCell && updatedDateCell.t === 'd') {
-      updatedDateCell.z = 'yyyy-mm-dd hh:mm';
-    }
+  ]
+
+  // 약가, 처방액 컬럼에 천단위 콤마 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const priceCell = worksheet.getCell(row, 9) // I컬럼 (약가)
+    priceCell.numFmt = '#,##0'
+    
+    const amountCell = worksheet.getCell(row, 11) // K컬럼 (처방액)
+    amountCell.numFmt = '#,##0'
   }
 
-  XLSX.utils.book_append_sheet(wb, ws, '전체 등록 현황');
+  // 처방수량 컬럼에 소수점 한 자리 형식 적용
+  for (let row = 2; row <= worksheet.rowCount; row++) {
+    const qtyCell = worksheet.getCell(row, 10) // J컬럼 (처방수량)
+    qtyCell.numFmt = '#,##0.0'
+  }
 
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  
   // 정산월 정보가 있으면 파일명에 포함
   const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null
-  const fileName = generateExcelFileName('전체등록현황', monthInfo)
-
-  // 다운로드
-  XLSX.writeFile(wb, fileName);
+  link.download = generateExcelFileName('전체등록현황', monthInfo)
+  
+  link.click()
+  window.URL.revokeObjectURL(url)
 };
 
 // 마운트

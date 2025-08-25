@@ -35,6 +35,7 @@
       </div>
       <DataTable
         :value="filteredProducts"
+        :loading="false"
         paginator
         :rows="50"
         :rowsPerPageOptions="[20, 50, 100]"
@@ -45,8 +46,9 @@
         class="custom-table products-table"
         v-model:first="currentPageFirstIndex"
       >
-        <template #empty>등록된 제품이 없습니다.</template>
-        <template #loading>제품 목록을 불러오는 중입니다...</template>
+        <template #empty>
+          <div v-if="!loading">등록된 제품이 없습니다.</div>
+        </template>
         <Column header="No" :headerStyle="{ width: columnWidths.no }">
           <template #body="slotProps">{{ slotProps.index + currentPageFirstIndex + 1 }}</template>
         </Column>
@@ -88,6 +90,7 @@ import InputText from 'primevue/inputtext';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const products = ref([]);
 const filters = ref({ 'global': { value: null, matchMode: 'contains' } });
@@ -96,7 +99,7 @@ const availableMonths = ref([]); // 기준월 목록
 const router = useRouter();
 const userCommissionGrade = ref('A');
 const currentPageFirstIndex = ref(0);
-const loading = ref(false); // 로딩 상태 추가
+const loading = ref(true); // 로딩 상태 추가
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -119,15 +122,11 @@ const generateAvailableMonths = () => {
   availableMonths.value = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
 }
 
-// 기준월 + 보험코드 기준 유니크 필터링
+// 기준월 필터링 (중복 보험코드 제거 로직 삭제)
 const filteredProducts = computed(() => {
   if (!selectedMonth.value) return [];
-  const seen = new Set();
   return products.value.filter((p) => {
-    if (p.base_month !== selectedMonth.value) return false;
-    if (seen.has(p.insurance_code)) return false;
-    seen.add(p.insurance_code);
-    return true;
+    return p.base_month === selectedMonth.value;
   });
 });
 
@@ -217,19 +216,47 @@ const fetchProducts = async () => {
   }
 }
 
-// 선택된 기준월의 제품만 불러오는 함수
+// 선택된 기준월의 제품만 불러오는 함수 (product_company_not_assignments 제외)
 const fetchProductsByMonth = async (month) => {
   if (!month) return;
   
   loading.value = true;
   try {
-    const { data, error } = await supabase
+    // 1. product_company_not_assignments에 있는 제품 ID들 가져오기
+    const { data: assignedProductIds, error: assignedError } = await supabase
+      .from('product_company_not_assignments')
+      .select(`
+        product_id,
+        companies!inner(
+          id,
+          user_type,
+          approval_status
+        )
+      `)
+      .eq('companies.user_type', 'user')
+      .eq('companies.approval_status', 'approved');
+
+    if (assignedError) {
+      console.error('할당된 제품 ID 조회 오류:', assignedError);
+      return;
+    }
+
+    const excludedProductIds = assignedProductIds.map(item => item.product_id);
+
+    // 2. products 테이블에서 해당 기준월의 모든 제품 조회 (할당된 제품 제외)
+    let query = supabase
       .from('products')
       .select('*')
-      .eq('status', 'active')
       .eq('base_month', month)
+      .eq('status', 'active')
       .order('product_name', { ascending: true })
-      .limit(1000); // 한 달에 423개이므로 1000개 제한으로 충분
+      .limit(1000);
+
+    if (excludedProductIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedProductIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       console.error('제품 데이터 로딩 오류:', error);
@@ -270,62 +297,118 @@ const fetchUserCommissionGrade = async () => {
 };
 
 // 엑셀 다운로드 함수
-function downloadExcel() {
+async function downloadExcel() {
   if (!filteredProducts.value || filteredProducts.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.');
     return;
   }
 
-  // 엑셀 데이터 준비
-  const excelData = filteredProducts.value.map((product, index) => ({
-    'No': index + 1,
-    '기준월': product.base_month || '',
-    '제품명': product.product_name || '',
-    '보험코드': product.insurance_code || '',
-    '약가': product.price || 0,
-    '수수료율(%)': getCommissionRate(product),
-    '비고': product.remarks || ''
-  }));
-
-  // 워크북 생성
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(excelData);
-
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { wpx: 50 },  // No
-    { wpx: 80 },  // 기준월
-    { wpx: 200 }, // 제품명
-    { wpx: 120 }, // 보험코드
-    { wpx: 80 },  // 약가
-    { wpx: 100 }, // 수수료율
-    { wpx: 150 }  // 비고
-  ];
-
-  // 숫자 형식 설정
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let R = range.s.r + 1; R <= range.e.r; R++) {
-    // 약가 컬럼 (E열, 인덱스 4)
-    const priceCell = XLSX.utils.encode_cell({ r: R, c: 4 });
-    if (ws[priceCell] && typeof ws[priceCell].v === 'number') {
-      ws[priceCell].z = '#,##0';
+  try {
+    // ExcelJS 워크북 생성
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('제품목록');
+    
+    // 헤더 추가
+    const headers = ['No', '기준월', '제품명', '보험코드', '약가', '수수료율(%)', '비고'];
+    worksheet.addRow(headers);
+    
+    // 헤더 스타일 설정
+    const headerRow = worksheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '76933C' } // RGB(118, 147, 60)
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    
+    // 데이터 추가
+    filteredProducts.value.forEach((product, index) => {
+      const dataRow = worksheet.addRow([
+        index + 1,
+        product.base_month || '',
+        product.product_name || '',
+        product.insurance_code || '',
+        product.price || 0,
+        getCommissionRate(product),
+        product.remarks || ''
+      ]);
+      
+      // 데이터 행 스타일 설정
+      dataRow.eachCell((cell, colNumber) => {
+        cell.font = { size: 11 };
+        cell.alignment = { vertical: 'middle' };
+        
+        // 가운데 정렬이 필요한 컬럼들 (No, 기준월, 보험코드)
+        if (colNumber === 1 || colNumber === 2 || colNumber === 4 || colNumber === 6) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+        
+        // 숫자 형식 설정
+        if (colNumber === 5) { // 약가
+          cell.numFmt = '#,##0';
+        }
+      });
+    });
+    
+    // 컬럼 너비 설정
+    worksheet.columns = [
+      { width: 8 },   // No
+      { width: 12 },  // 기준월
+      { width: 32 },  // 제품명
+      { width: 12 },  // 보험코드
+      { width: 12 },  // 약가
+      { width: 12 },  // 수수료율
+      { width: 24 }   // 비고
+    ];
+    
+        // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+    for (let row = 1; row <= worksheet.rowCount; row++) {
+      for (let col = 1; col <= 7; col++) {
+        const cell = worksheet.getCell(row, col);
+        cell.border = {
+          top: { style: 'thin', color: { argb: '000000' } },
+          bottom: { style: 'thin', color: { argb: '000000' } },
+          left: { style: 'thin', color: { argb: '000000' } },
+          right: { style: 'thin', color: { argb: '000000' } }
+        };
+      }
     }
+
+    // 헤더행 고정 및 눈금선 숨기기
+    worksheet.views = [
+      {
+        showGridLines: false,
+        state: 'frozen',
+        xSplit: 0,
+        ySplit: 1
+      }
+    ];
+    
+    // 파일 다운로드
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    let fileName = '제품목록';
+    if (selectedMonth.value) {
+      fileName += `_${selectedMonth.value}`;
+    }
+    fileName += `_${dateStr}.xlsx`;
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    
+  } catch (err) {
+    console.error('엑셀 다운로드 오류:', err);
+    alert('엑셀 다운로드 중 오류가 발생했습니다.');
   }
-
-  // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '제품 목록');
-
-  // 파일명 생성
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-  let fileName = '제품목록';
-  if (selectedMonth.value) {
-    fileName += `_${selectedMonth.value}`;
-  }
-  fileName += `_${dateStr}.xlsx`;
-
-  // 파일 다운로드
-  XLSX.writeFile(wb, fileName);
 }
 
 onMounted(async () => {

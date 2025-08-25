@@ -31,17 +31,14 @@
         <input :value="product.commission_rate_c !== undefined && product.commission_rate_c !== null ? (product.commission_rate_c * 100).toFixed(1) : '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>표준코드</label>
-        <input :value="product.standard_code || '-'" readonly disabled />
+        <label>수수료율 D등급(%)</label>
+        <input :value="product.commission_rate_d !== undefined && product.commission_rate_d !== null ? (product.commission_rate_d * 100).toFixed(1) : '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>단위/포장형태</label>
-        <input :value="product.unit_packaging_desc || '-'" readonly disabled />
+        <label>수수료율 E등급(%)</label>
+        <input :value="product.commission_rate_e !== undefined && product.commission_rate_e !== null ? (product.commission_rate_e * 100).toFixed(1) : '-'" readonly disabled />
       </div>
-      <div class="form-group">
-        <label>단위수량</label>
-        <input :value="product.unit_quantity || '-'" readonly disabled />
-      </div>
+
       <div class="form-group">
         <label>상태</label>
         <input :value="product.status === 'active' ? '활성' : (product.status === 'inactive' ? '비활성' : '-')" readonly disabled />

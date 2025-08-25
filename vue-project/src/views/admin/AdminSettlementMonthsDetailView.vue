@@ -15,8 +15,12 @@
         <input :value="month.end_date || '-'" readonly disabled />
       </div>
       <div class="form-group">
-        <label>전달 사항</label>
+        <label>실적 등록 전달사항</label>
         <div class="input-readonly-detail" style="white-space: pre-wrap;">{{ month.notice || '-' }}</div>
+      </div>
+      <div class="form-group">
+        <label>정산내역서 전달사항</label>
+        <div class="input-readonly-detail" style="white-space: pre-wrap;">{{ month.notice_payment || '-' }}</div>
       </div>
       <div class="form-group">
         <label>비고</label>

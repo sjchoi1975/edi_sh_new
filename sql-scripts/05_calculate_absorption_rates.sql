@@ -23,11 +23,12 @@ BEGIN
             rdv.client_id,
             rdv.product_id,
             p.insurance_code,
-            p.standard_code, -- 도매/직거래 매출 매칭을 위한 표준코드
+            psc.standard_code, -- 도매/직거래 매출 매칭을 위한 표준코드 (products_standard_code 테이블에서 가져옴)
             rdv.prescription_month,
             rdv.prescription_qty
         FROM public.review_details_view rdv
         JOIN products p ON rdv.product_id = p.id
+        LEFT JOIN products_standard_code psc ON p.insurance_code = psc.insurance_code
         WHERE rdv.settlement_month = p_settlement_month AND rdv.review_status = '완료'
     ),
     -- 2. 병원-약국 매핑 정보

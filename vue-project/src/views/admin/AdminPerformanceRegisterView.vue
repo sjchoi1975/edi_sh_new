@@ -47,9 +47,8 @@
           class="custom-table performance-register-table"
         >
           <template #empty>
-            {{ !selectedCompanyId ? '업체를 선택해주세요.' : '등록된 병의원이 없습니다.' }}
+            <div v-if="!loading">{{ !selectedCompanyId ? '업체를 선택해주세요.' : '등록된 병의원이 없습니다.' }}</div>
           </template>
-          <template #loading>병의원 목록을 불러오는 중입니다...</template>
 
           <!-- No 컬럼 -->
           <Column header="No" :headerStyle="{ width: columnWidths.no, textAlign: 'center' }">
@@ -431,7 +430,7 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 import { supabase } from '@/supabase'
 import { useRouter } from 'vue-router'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 const columnWidths = {
   no: '4%',
@@ -926,7 +925,7 @@ function goToClientDetail(clientId) {
 }
 
 // 엑셀 다운로드 함수
-function downloadExcel() {
+async function downloadExcel() {
   if (!clientList.value || clientList.value.length === 0) {
     alert('다운로드할 데이터가 없습니다.')
     return
@@ -960,44 +959,105 @@ function downloadExcel() {
     증빙파일: totalFiles,
   })
 
-  // 워크북 생성
-  const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.json_to_sheet(excelData)
+  // ExcelJS 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('실적 등록 현황')
+
+  // 헤더 정의
+  const headers = Object.keys(excelData[0])
+  worksheet.addRow(headers)
+
+  // 헤더 스타일 설정
+  const headerRow = worksheet.getRow(1)
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '76933C' } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 추가 (합계 행 제외)
+  excelData.slice(0, -1).forEach((row) => {
+    const dataRow = worksheet.addRow(Object.values(row))
+    
+    // 데이터 행 스타일 설정
+    dataRow.eachCell((cell, colNumber) => {
+      cell.font = { size: 11 }
+      cell.alignment = { vertical: 'middle' }
+      
+      // 가운데 정렬할 컬럼 지정 (No, 병의원코드, 처방건수, 증빙파일)
+      if ([1, 2, 4].includes(colNumber)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      }
+      
+      // 사업자등록번호 컬럼은 텍스트 형식으로 설정
+      if (colNumber === 4) {
+        cell.numFmt = '@'
+      }
+      
+      // 숫자 컬럼들은 숫자 형식으로 설정
+      if ([6, 7, 8].includes(colNumber)) {
+        cell.numFmt = '#,##0'
+      }
+    })
+  })
+
+  // 합계 행 추가
+  const totalRow = worksheet.addRow(Object.values(excelData[excelData.length - 1]))
+  
+  // 합계행 스타일 설정
+  totalRow.eachCell((cell, colNumber) => {
+    cell.font = { bold: true, size: 11 };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'F0F0F0' } // 연한 그레이
+    };
+    cell.alignment = { vertical: 'middle' };
+    
+    // 합계 텍스트는 가운데 정렬
+    if (colNumber === 5) {
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+  });
+  
+  // 합계행 숫자 형식 설정
+  totalRow.getCell(6).numFmt = '#,##0'; // 처방건수
+  totalRow.getCell(7).numFmt = '#,##0'; // 처방액
+  totalRow.getCell(8).numFmt = '#,##0'; // 증빙파일
+
+  // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
+  worksheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: '000000' } },
+        bottom: { style: 'thin', color: { argb: '000000' } },
+        left: { style: 'thin', color: { argb: '000000' } },
+        right: { style: 'thin', color: { argb: '000000' } }
+      }
+    })
+  })
 
   // 컬럼 너비 설정
-  ws['!cols'] = [
-    { wpx: 50 }, // No
-    { wpx: 100 }, // 병의원코드
-    { wpx: 200 }, // 병의원명
-    { wpx: 150 }, // 사업자등록번호
-    { wpx: 300 }, // 주소
-    { wpx: 100 }, // 처방건수
-    { wpx: 120 }, // 처방액
-    { wpx: 100 }, // 증빙파일
+  worksheet.columns = [
+    { width: 8 }, // No
+    { width: 12 }, // 병의원코드
+    { width: 32 }, // 병의원명
+    { width: 16 }, // 사업자등록번호
+    { width: 64 }, // 주소
+    { width: 12 }, // 처방건수
+    { width: 16 }, // 처방액
+    { width: 12 }, // 증빙파일
   ]
 
-  // 숫자 형식 설정
-  const range = XLSX.utils.decode_range(ws['!ref'])
-  for (let R = range.s.r + 1; R <= range.e.r; R++) {
-    // 처방건수 컬럼 (F열, 인덱스 5)
-    const countCell = XLSX.utils.encode_cell({ r: R, c: 5 })
-    if (ws[countCell] && typeof ws[countCell].v === 'number') {
-      ws[countCell].z = '#,##0'
+  // 헤더행 고정 및 눈금선 숨기기
+  worksheet.views = [
+    { 
+      state: 'frozen', 
+      xSplit: 0, 
+      ySplit: 1,
+      showGridLines: false
     }
-    // 처방액 컬럼 (G열, 인덱스 6)
-    const amountCell = XLSX.utils.encode_cell({ r: R, c: 6 })
-    if (ws[amountCell] && typeof ws[amountCell].v === 'number') {
-      ws[amountCell].z = '#,##0'
-    }
-    // 증빙파일 컬럼 (H열, 인덱스 7)
-    const filesCell = XLSX.utils.encode_cell({ r: R, c: 7 })
-    if (ws[filesCell] && typeof ws[filesCell].v === 'number') {
-      ws[filesCell].z = '#,##0'
-    }
-  }
-
-  // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(wb, ws, '실적 등록 현황')
+  ]
 
   // 파일명 생성
   const today = new Date()
@@ -1009,6 +1069,13 @@ function downloadExcel() {
   fileName += `_${dateStr}.xlsx`
 
   // 파일 다운로드
-  XLSX.writeFile(wb, fileName)
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 </script> 

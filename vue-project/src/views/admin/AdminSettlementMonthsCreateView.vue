@@ -15,8 +15,12 @@
         <input v-model="endDate" type="date" required />
       </div>
       <div class="form-group">
-        <label>전달 사항</label>
+        <label>실적 등록 전달사항</label>
         <textarea v-model="notice" ref="noticeArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustTextareaHeight"></textarea>
+      </div>
+      <div class="form-group">
+        <label>정산내역서 전달사항</label>
+        <textarea v-model="noticePayment" ref="noticePaymentArea" rows="6" style="resize:vertical; min-height:80px; height:120px; white-space: pre-wrap;" @input="adjustNoticePaymentTextareaHeight"></textarea>
       </div>
       <div class="form-group">
         <label>비고</label>
@@ -46,10 +50,12 @@ const settlementMonth = ref('');
 const startDate = ref('');
 const endDate = ref('');
 const notice = ref('');
+const noticePayment = ref('');
 const status = ref('active');
 const remarks = ref('');
 const router = useRouter();
 const noticeArea = ref(null);
+const noticePaymentArea = ref(null);
 
 // 필수값 검증
 const isFormValid = computed(() => {
@@ -65,9 +71,20 @@ const adjustTextareaHeight = () => {
   }
 };
 
+const adjustNoticePaymentTextareaHeight = () => {
+  if (noticePaymentArea.value) {
+    noticePaymentArea.value.style.height = 'auto';
+    noticePaymentArea.value.style.height = `${noticePaymentArea.value.scrollHeight}px`;
+  }
+};
+
 import { watch } from 'vue';
 watch(notice, () => {
   nextTick(adjustTextareaHeight);
+});
+
+watch(noticePayment, () => {
+  nextTick(adjustNoticePaymentTextareaHeight);
 });
 
 const handleSubmit = async () => {
@@ -106,6 +123,7 @@ const handleSubmit = async () => {
     start_date: startDate.value,
     end_date: endDate.value,
     notice: notice.value,
+    notice_payment: noticePayment.value,
     status: status.value,
     remarks: remarks.value,
     created_by: user.id
