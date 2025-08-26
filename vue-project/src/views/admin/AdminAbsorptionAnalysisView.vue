@@ -1304,7 +1304,7 @@ async function downloadExcel() {
       '도매매출': Math.round(row.wholesale_revenue || 0),
       '직거래매출': Math.round(row.direct_revenue || 0),
       '합산액': Math.round(row.total_revenue || 0),
-      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) * 100 : 0),
+      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) : 0),
       '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
