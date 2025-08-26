@@ -394,7 +394,7 @@ const averageAbsorptionRate = computed(() => {
   // 흡수율 = (합계 합산액 ÷ 합계 처방액) × 100
   const absorptionRate = (totalCombinedRevenue / totalPrescriptionAmount) * 100;
   
-  return `${absorptionRate.toFixed(3)}%`;
+  return `${absorptionRate.toFixed(1)}%`;
 });
 
 const averageCommissionRate = computed(() => {
@@ -802,7 +802,7 @@ async function loadAbsorptionAnalysisResults() {
                 prescription_amount: prescriptionAmount.toLocaleString(),
                 payment_amount: paymentAmount.toLocaleString(),
                 commission_rate: `${(commissionRate * 100).toFixed(1)}%`,
-                absorption_rate: absorptionRate * 100,
+                absorption_rate: absorptionRate,
                 created_date: formatDateTime(row.created_at),
                 created_by: userMap.get(row.registered_by) || '-',
                 updated_date: row.updated_at ? formatDateTime(row.updated_at) : null,
@@ -1246,13 +1246,13 @@ function applySorting() {
 function formatAbsorptionRate(value) {
   try {
     if (value === null || value === undefined || isNaN(value)) {
-      return '0.000%';
+      return '0.0%';
     }
-    const numValue = Number(value);
-    return `${numValue.toFixed(3)}%`;
+    const numValue = Number(value) * 100;  // 소수점 형태를 퍼센트로 변환
+    return `${numValue.toFixed(1)}%`;
   } catch (error) {
     console.error('흡수율 포맷 오류:', error, value);
-    return '0.000%';
+    return '0.0%';
   }
 }
 
@@ -1304,7 +1304,7 @@ async function downloadExcel() {
       '도매매출': Math.round(row.wholesale_revenue || 0),
       '직거래매출': Math.round(row.direct_revenue || 0),
       '합산액': Math.round(row.total_revenue || 0),
-      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) : 0),
+      '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) * 100 : 0),
       '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
@@ -1331,7 +1331,7 @@ async function downloadExcel() {
       '도매매출': Number(totalWholesaleRevenue.value.replace(/,/g, '')),
       '직거래매출': Number(totalDirectRevenue.value.replace(/,/g, '')),
       '합산액': Number(totalCombinedRevenue.value.replace(/,/g, '')),
-      '흡수율': (Number(totalPrescriptionAmount.value.replace(/,/g, '')) > 0 ? (Number(totalCombinedRevenue.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) : 0),
+      '흡수율': (Number(totalPrescriptionAmount.value.replace(/,/g, '')) > 0 ? (Number(totalCombinedRevenue.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, '')) * 100) : 0),
       '수수료율': (Number(totalPrescriptionAmount.value.replace(/,/g, '')) > 0 ? (Number(totalPaymentAmount.value.replace(/,/g, '')) / Number(totalPrescriptionAmount.value.replace(/,/g, ''))) : 0),
       '지급액': Number(totalPaymentAmount.value.replace(/,/g, '')),
       '비고': '',
