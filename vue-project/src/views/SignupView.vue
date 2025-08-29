@@ -297,7 +297,7 @@ const handleSignup = async () => {
     }
   }
   try {
-    // 1단계: Supabase Auth로 직접 사용자 계정 생성
+    // 1단계: Supabase Auth로 직접 사용자 계정 생성 (자동 로그인 비활성화)
     const { data, error } = await supabase.auth.signUp({
       email: formData.value.email,
       password: formData.value.password,
@@ -311,6 +311,17 @@ const handleSignup = async () => {
         emailConfirm: false
       }
     });
+
+    // 회원가입 후 자동 로그인 방지 - 세션 강제 제거
+    if (data.session) {
+      await supabase.auth.signOut();
+    }
+    
+    // 추가로 현재 세션 상태 확인 및 제거
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (currentSession) {
+      await supabase.auth.signOut();
+    }
 
     if (error) {
       console.error('Supabase Auth 오류:', error);
@@ -366,9 +377,20 @@ const handleSignup = async () => {
             contact_person_name: formData.value.contactPersonName,
             mobile_phone: formData.value.mobilePhone,
             user_type: 'user',
-                    approval_status: 'pending',
-        created_by: testData.user.id,
-      };
+            approval_status: 'pending',
+            created_by: testData.user.id,
+          };
+
+          // 테스트 이메일 회원가입 후 자동 로그인 방지 - 세션 강제 제거
+          if (testData.session) {
+            await supabase.auth.signOut();
+          }
+          
+          // 추가로 현재 세션 상태 확인 및 제거
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (currentSession) {
+            await supabase.auth.signOut();
+          }
           
           const { error: companyInsertError } = await supabase
             .from('companies')
@@ -479,7 +501,12 @@ const handleSignup = async () => {
       console.log('회사 정보 등록 성공');
     }
     
-    // 회원가입 완료
+    // 회원가입 완료 - 최종 세션 확인 및 제거
+    const { data: { session: finalSession } } = await supabase.auth.getSession();
+    if (finalSession) {
+      await supabase.auth.signOut();
+    }
+    
     alert('회원가입이 완료되었습니다. 로그인 페이지에서 로그인해주세요.');
     router.push('/login');
     
