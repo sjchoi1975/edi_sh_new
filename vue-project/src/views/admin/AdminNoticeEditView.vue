@@ -164,6 +164,8 @@ const handleSubmit = async () => {
     alert('내용은 필수 입력 항목입니다.');
     return;
   }
+
+  // 1단계: 새 파일 업로드
   let fileUrls = files.value.map(f => f.url || '');
   for (const f of files.value) {
     if (!f.url) {
@@ -182,16 +184,21 @@ const handleSubmit = async () => {
       fileUrls.push(url);
     }
   }
+
+  // 2단계: 공지사항 수정 (RLS 정책 수정 후 직접 접근)
   const { error: updateError } = await supabase
     .from('notices')
     .update({
       title: title.value,
       content: content.value,
       is_pinned: isPinned.value,
-      file_url: fileUrls
+      file_url: fileUrls,
+      updated_at: new Date().toISOString()
     })
     .eq('id', route.params.id);
+
   if (updateError) {
+    console.error('Update error:', updateError);
     alert('수정 실패: ' + updateError.message);
   } else {
     alert('수정되었습니다.');
