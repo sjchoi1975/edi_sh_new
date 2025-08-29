@@ -137,8 +137,39 @@ const breadcrumbSubMenu = computed(() => {
 });
 
 const handleLogout = async () => {
-  await supabase.auth.signOut();
-  router.push('/login');
+  try {
+    // 모든 Supabase 관련 스토리지 항목 삭제
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes('sb-')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // sessionStorage도 정리
+    const sessionKeysToRemove = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.includes('sb-')) {
+        sessionKeysToRemove.push(key);
+      }
+    }
+    sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+    
+    // Supabase 로그아웃 시도 (에러 무시)
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.warn('Supabase signOut failed, but continuing with local cleanup:', signOutError);
+    }
+    
+  } catch (error) {
+    console.error('로그아웃 중 오류:', error);
+  } finally {
+    router.push('/login');
+  }
 };
 
 const titleTemplate = (row) => {

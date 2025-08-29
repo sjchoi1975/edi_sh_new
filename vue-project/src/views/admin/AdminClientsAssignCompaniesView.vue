@@ -81,14 +81,14 @@
           field="name"
           header="병의원명"
           :headerStyle="{ width: columnWidths.name }"
-          :style="{ fontWeight: '500 !important' }"  
+          :style="{ fontWeight: '500 !important' }"
           :sortable="true"
         >
           <template #body="slotProps">
-            <span 
-              class="ellipsis-cell text-link" 
-              :title="slotProps.data.name" 
-              @mouseenter="checkOverflow" 
+            <span
+              class="ellipsis-cell text-link"
+              :title="slotProps.data.name"
+              @mouseenter="checkOverflow"
               @mouseleave="removeOverflowClass"
               @click="goToClientDetail(slotProps.data.id)"
             >
@@ -140,8 +140,8 @@
                 :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
               >
-                <span 
-                  class="text-link" 
+                <span
+                  class="text-link"
                   @click="goToCompanyDetail(company.id)"
                   style="cursor: pointer;"
                 >
@@ -244,7 +244,7 @@
           />
         </DataTable>
       </div>
-      
+
       <template #footer>
         <div class="btn-row">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
@@ -280,7 +280,7 @@ import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import { supabase } from '@/supabase'
 import ExcelJS from 'exceljs'
-import * as XLSX from 'xlsx'
+import { read, utils } from 'xlsx'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
 const router = useRouter()
@@ -319,7 +319,6 @@ const fetchClients = async () => {
         `*, companies:client_company_assignments(created_at, company:companies(id, company_name, business_registration_number, company_group))`,
       )
       .eq('status', 'active')
-    console.log('clientsData:', clientsData, 'error:', error); // ← 추가
     if (!error && clientsData) {
       clients.value = clientsData.map((client) => {
         const companiesArr = client.companies.map((c) => ({
@@ -360,7 +359,7 @@ function doSearch() {
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
       (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.address && c.address.toLowerCase().includes(keyword)) ||
-      (c.companies && c.companies.some(company => 
+      (c.companies && c.companies.some(company =>
         (company.company_name && company.company_name.toLowerCase().includes(keyword)) ||
         (company.company_group && company.company_group.toLowerCase().includes(keyword))
       ))
@@ -401,6 +400,7 @@ async function assignCompanies() {
   const assignments = selectedCompanies.value.map((company) => ({
     client_id: selectedClient.value.id,
     company_id: company.id,
+    company_default_commission_grade: company.default_commission_grade
   }))
   await supabase
     .from('client_company_assignments')
@@ -440,7 +440,7 @@ const downloadTemplate = async () => {
   // 데이터 추가
   templateData.forEach((row) => {
     const dataRow = worksheet.addRow(Object.values(row))
-    
+
     // 데이터 행 스타일 설정
     dataRow.eachCell((cell, colNumber) => {
       cell.font = { size: 11 }
@@ -469,9 +469,9 @@ const downloadTemplate = async () => {
 
   // 헤더행 고정 및 눈금선 숨기기
   worksheet.views = [
-    { 
-      state: 'frozen', 
-      xSplit: 0, 
+    {
+      state: 'frozen',
+      xSplit: 0,
       ySplit: 1,
       showGridLines: false
     }
@@ -503,9 +503,9 @@ const handleFileUpload = async (event) => {
 
   try {
     const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data)
+    const workbook = read(data)
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const jsonData = XLSX.utils.sheet_to_json(worksheet)
+    const jsonData = utils.sheet_to_json(worksheet)
 
     if (jsonData.length === 0) {
       alert('엑셀 파일에 데이터가 없습니다.')
@@ -644,17 +644,17 @@ const downloadExcel = async () => {
   // 데이터 추가
   excelData.forEach((row) => {
     const dataRow = worksheet.addRow(Object.values(row))
-    
+
     // 데이터 행 스타일 설정
     dataRow.eachCell((cell, colNumber) => {
       cell.font = { size: 11 }
       cell.alignment = { vertical: 'middle' }
-      
+
       // 가운데 정렬할 컬럼 지정 (병의원코드, 사업자등록번호, 원장명, 업체 사업자등록번호, 지정일시)
       if ([1, 3, 4, 8, 9].includes(colNumber)) {
         cell.alignment = { horizontal: 'center', vertical: 'middle' }
       }
-      
+
       // 사업자등록번호 컬럼은 텍스트 형식으로 설정
       if (colNumber === 4) {
         cell.numFmt = '@'
@@ -689,9 +689,9 @@ const downloadExcel = async () => {
 
   // 헤더행 고정 및 눈금선 숨기기
   worksheet.views = [
-    { 
-      state: 'frozen', 
-      xSplit: 0, 
+    {
+      state: 'frozen',
+      xSplit: 0,
       ySplit: 1,
       showGridLines: false
     }

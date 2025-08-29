@@ -132,6 +132,7 @@ const route = useRoute()
 const loading = ref(false)
 const showPassword = ref(false)
 const showPassword2 = ref(false)
+const currentUser = ref(null)
 
 const commissionGradeOptions = [
   { label: 'A', value: 'A' },
@@ -155,6 +156,17 @@ const isFormValid = computed(() => {
          representative.value && representative.value.trim() !== '' &&
          password.value === confirmPassword.value;
 });
+
+// 현재 로그인된 사용자 정보 가져오기
+const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (user) {
+    currentUser.value = user
+  }
+}
+
+// 컴포넌트 마운트 시 현재 사용자 정보 가져오기
+getCurrentUser()
 
 // 필드 검증 (focus 이벤트용)
 const checkValidations = (event) => {
@@ -462,17 +474,16 @@ const handleSubmit = async () => {
   loading.value = true;
   try {
     // 사업자등록번호 중복 검증
-    const { data: existingCompany, error: checkError } = await supabase
+    const { data: existingCompanies, error: checkError } = await supabase
       .from('companies')
-      .select('id')
-      .eq('business_registration_number', businessNumber.value)
-      .single();
+      .select('id, business_registration_number')
+      .eq('business_registration_number', businessNumber.value);
     
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116는 결과가 없는 경우
+    if (checkError) {
       throw checkError;
     }
     
-    if (existingCompany) {
+    if (existingCompanies && existingCompanies.length > 0) {
       alert('동일한 사업자등록번호로 이미 가입된 이력이 있습니다.');
       setTimeout(() => {
         const businessNumberInput = document.getElementById('businessNumber');
@@ -483,65 +494,71 @@ const handleSubmit = async () => {
       }, 100);
       return;
     }
-    
-    // 1. 서버리스 함수로 회원가입 (자동 로그인 없음)
-    const response = await fetch('/api/create-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-        company_name: companyName.value,
-      }),
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      alert('회원가입 실패: ' + (result.error || '알 수 없는 오류'));
-      return;
-    }
-    const userId = result.user?.id;
-    if (!userId) {
-      alert('회원가입 실패: 사용자 ID를 가져올 수 없습니다.');
-      return;
-    }
 
-    // 2. companies 테이블에 데이터 저장
-    const companyDataToInsert = {
-      email: email.value,
-      company_name: companyName.value,
-      business_registration_number: businessNumber.value,
-      representative_name: representative.value,
-      business_address: address.value,
-      landline_phone: landline.value,
-      contact_person_name: contactPerson.value,
-      mobile_phone: mobile.value,
-      mobile_phone_2: mobile2.value,
-      receive_email: receiveEmail.value,
-      company_group: companyGroup.value,
-      default_commission_grade: commissionGrade.value,
-      assigned_pharmacist_contact: manager.value,
-      approval_status: approvalStatus.value === '승인' ? 'approved' : 'pending',
-      remarks: remarks.value,
-      user_id: userId,
-      user_type: 'user',
-      status: 'active',
-      created_at: new Date().toISOString(),
-      created_by: userId,
-    };
-    if (approvalStatus.value === '승인') {
-      companyDataToInsert.approved_at = new Date().toISOString();
-    }
-    const { error: insertError } = await supabase.from('companies').insert(companyDataToInsert);
-    if (insertError) {
-      alert('업체 등록 실패: ' + insertError.message);
-      return;
-    }
+                        // 1. Edge Function을 통해 관리자 권한으로 사용자 계정과 회사 정보 생성
+            const { data, error } = await supabase.functions.invoke('admin-create-company', {
+              body: {
+                 email: email.value,
+                 password: password.value,
+                 company_name: companyName.value,
+                 business_registration_number: businessNumber.value,
+                 representative_name: representative.value,
+                 business_address: address.value,
+                 landline_phone: landline.value,
+                 contact_person_name: contactPerson.value,
+                 mobile_phone: mobile.value,
+                 mobile_phone_2: mobile2.value,
+                 receive_email: receiveEmail.value,
+                 company_group: companyGroup.value,
+                 default_commission_grade: commissionGrade.value,
+                 assigned_pharmacist_contact: manager.value,
+                 approval_status: approvalStatus.value,
+                 remarks: remarks.value,
+                 created_by: currentUser.value?.id || null
+               }
+             });
+            
+            if (error) {
+              let errorMessage = '사용자 계정 생성에 실패했습니다.';
+              
+              if (error.message.includes('already been registered')) {
+                errorMessage = '이미 등록된 이메일 주소입니다.';
+              } else if (error.message.includes('invalid')) {
+                errorMessage = '이메일 주소 형식이 올바르지 않습니다.';
+              } else if (error.message) {
+                errorMessage = `사용자 계정 생성 실패: ${error.message}`;
+              }
+              
+              alert(errorMessage);
+              return;
+            }
+            
+            if (!data.user || !data.company) {
+              alert('사용자 계정 또는 회사 정보 생성에 실패했습니다.');
+              return;
+            }
+            
+            console.log('✅ 사용자 계정 생성됨:', data.user.id);
+            console.log('✅ 회사 정보 생성됨:', data.company.id);
+    
     alert('등록되었습니다.');
     const from = route.query.from === 'pending' ? 'pending' : 'approved';
     router.push(`/admin/companies/${from}`);
   } catch (err) {
-    console.error('업체 등록 중 오류가 발생했습니다.', err);
-    alert('업체 등록에 실패했습니다.');
+    let errorMessage = '업체 등록 중 오류가 발생했습니다.';
+    
+    // 구체적인 오류 메시지 처리
+    if (err.message && err.message.includes('fetch')) {
+      errorMessage = '서버 연결에 실패했습니다. 네트워크 연결을 확인해주세요.';
+    } else if (err.message && err.message.includes('JSON')) {
+      errorMessage = '서버 응답을 처리할 수 없습니다. 다시 시도해주세요.';
+    } else if (err.message && err.message.includes('timeout')) {
+      errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
+    } else if (err.message) {
+      errorMessage = `업체 등록 실패: ${err.message}`;
+    }
+    
+    alert(errorMessage);
   } finally {
     loading.value = false;
   }

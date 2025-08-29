@@ -643,27 +643,121 @@ const handleFileUpload = async (event) => {
     const hasExistingData = clients.value.length > 0
 
     // 1단계: 기존 데이터 존재 시 확인
-    let isAppendMode = false
+    let uploadMode = 'cancel' // 'append', 'replace', 'cancel'
     if (hasExistingData) {
       if (!confirm('기존 데이터가 있습니다.\n계속 등록하시겠습니까?')) {
         event.target.value = ''
         return
       }
 
-      // 2단계: 추가 vs 대체 선택
-      isAppendMode = confirm('기존 데이터에 추가하시겠습니까? 대체하시겠습니까?\n\n확인: 기존 데이터는 그대로 추가 등록\n취소: 기존 데이터를 모두 지우고 등록')
+      // 2단계: 3개 옵션 선택 (버튼 방식)
+      const choice = await showUploadChoiceModal()
       
-      if (!isAppendMode) {
-        // 대체 모드: 기존 데이터 삭제
-        const { error: deleteError } = await supabase.from('clients').delete().neq('id', 0)
-        
-        if (deleteError) {
-          alert('기존 데이터 삭제 실패: ' + deleteError.message)
-          event.target.value = ''
-          return
+      if (choice === 'append') {
+        uploadMode = 'append'
+      } else if (choice === 'replace') {
+        uploadMode = 'replace'
+      } else {
+        // cancel이거나 잘못된 입력
+        event.target.value = ''
+        return
+      }
+      
+      if (uploadMode === 'replace') {
+        // 대체 모드: 기존 데이터 삭제 (외래키 제약조건 고려)
+        try {
+          // 1. 먼저 기존 병의원 ID들을 조회
+          const { data: existingClients, error: fetchError } = await supabase
+            .from('clients')
+            .select('id')
+            .neq('id', 0);
+          
+          if (fetchError) {
+            alert('기존 데이터 조회 실패: ' + fetchError.message);
+            event.target.value = '';
+            return;
+          }
+          
+          if (existingClients && existingClients.length > 0) {
+            const clientIds = existingClients.map(c => c.id);
+            
+            // 2. performance_records_absorption에서 해당 병의원들을 참조하는 데이터 삭제
+            const { error: absorptionError } = await supabase
+              .from('performance_records_absorption')
+              .delete()
+              .in('client_id', clientIds);
+            
+            if (absorptionError) {
+              console.error('실적 데이터 삭제 오류:', absorptionError);
+              // 실적 데이터 삭제 실패해도 계속 진행
+            }
+            
+            // 3. performance_records에서 해당 병의원들을 참조하는 데이터 삭제
+            const { error: recordsError } = await supabase
+              .from('performance_records')
+              .delete()
+              .in('client_id', clientIds);
+            
+            if (recordsError) {
+              console.error('실적 기록 삭제 오류:', recordsError);
+              // 실적 기록 삭제 실패해도 계속 진행
+            }
+            
+            // 4. client_company_assignments에서 해당 병의원들을 참조하는 데이터 삭제
+            const { error: assignmentError } = await supabase
+              .from('client_company_assignments')
+              .delete()
+              .in('client_id', clientIds);
+            
+            if (assignmentError) {
+              console.error('업체 할당 데이터 삭제 오류:', assignmentError);
+              // 할당 데이터 삭제 실패해도 계속 진행
+            }
+            
+            // 5. client_pharmacy_assignments에서 해당 병의원들을 참조하는 데이터 삭제
+            const { error: pharmacyAssignmentError } = await supabase
+              .from('client_pharmacy_assignments')
+              .delete()
+              .in('client_id', clientIds);
+            
+            if (pharmacyAssignmentError) {
+              console.error('약국 할당 데이터 삭제 오류:', pharmacyAssignmentError);
+              // 약국 할당 데이터 삭제 실패해도 계속 진행
+            }
+            
+            // 6. performance_evidence_files에서 해당 병의원들을 참조하는 데이터 삭제
+            const { error: evidenceFilesError } = await supabase
+              .from('performance_evidence_files')
+              .delete()
+              .in('client_id', clientIds);
+            
+            if (evidenceFilesError) {
+              console.error('증빙 파일 데이터 삭제 오류:', evidenceFilesError);
+              // 증빙 파일 데이터 삭제 실패해도 계속 진행
+            }
+          }
+          
+          // 7. 마지막으로 병의원들 삭제
+          const { error: deleteError } = await supabase
+            .from('clients')
+            .delete()
+            .neq('id', 0);
+          
+          if (deleteError) {
+            alert('기존 데이터 삭제 실패: ' + deleteError.message);
+            event.target.value = '';
+            return;
+          }
+          
+          // 로컬 데이터도 초기화
+          clients.value = [];
+          
+        } catch (error) {
+          console.error('삭제 중 예외 발생:', error);
+          alert('기존 데이터 삭제 실패: ' + error.message);
+          event.target.value = '';
+          return;
         }
-        // 로컬 데이터도 초기화
-        clients.value = []
       }
     }
 
@@ -730,7 +824,7 @@ const handleFileUpload = async (event) => {
     }
 
     // 3단계: 추가 모드일 때만 사업자등록번호 중복 체크
-    if (hasExistingData && isAppendMode) {
+    if (hasExistingData && uploadMode === 'append') {
       const duplicateErrors = []
       const duplicateClients = []
       
@@ -754,10 +848,10 @@ const handleFileUpload = async (event) => {
           return
         }
 
-        // 5단계: 중복 해결 방법 선택
-        const shouldReplace = confirm('이미 동일한 사업자등록번호 병의원을 어떻게 처리하시겠습니까?\n\n확인: 기존 병의원 정보를 신규 병의원 정보로 교체하기\n취소: 기존 병의원 정보는 그대로 두고 신규 병의원만 등록하기')
+        // 5단계: 중복 해결 방법 선택 (버튼 모달)
+        const duplicateChoice = await showDuplicateChoiceModal()
         
-        if (shouldReplace) {
+        if (duplicateChoice === 'replace') {
           // 교체 모드: 중복되는 기존 병의원들 삭제
           for (const duplicateClient of duplicateClients) {
             const { error: deleteError } = await supabase
@@ -779,10 +873,13 @@ const handleFileUpload = async (event) => {
               clients.value.splice(index, 1)
             }
           }
-        } else {
+        } else if (duplicateChoice === 'keep') {
           // 기존 유지 모드: 중복되는 신규 병의원들 제외
           const duplicateBusinessNumbers = duplicateClients.map(c => c.business_registration_number)
           uploadData = uploadData.filter(item => !duplicateBusinessNumbers.includes(item.business_registration_number))
+        } else {
+          // cancel 모드: 업로드 취소
+          return
         }
       }
     }
@@ -1063,6 +1160,208 @@ const handleBackspace = (event) => {
     }
   }
 };
+
+// 중복 선택 모달 함수
+function showDuplicateChoiceModal() {
+  return new Promise((resolve) => {
+    // 모달 컨테이너 생성
+    const modal = document.createElement('div')
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    `
+    
+    // 모달 내용 생성
+    const modalContent = document.createElement('div')
+    modalContent.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    `
+    
+    modalContent.innerHTML = `
+      <h3 style="margin: 0 0 20px 0; color: #333;">이미 동일한 사업자등록번호 병의원을 어떻게 처리하시겠습니까?</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="replace-btn" style="
+          padding: 12px 20px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#da190b'" onmouseout="this.style.background='#f44336'">
+          기존 병의원 정보를 신규 병의원 정보로 교체하기
+        </button>
+        <button id="keep-btn" style="
+          padding: 12px 20px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'">
+          기존 병의원 정보는 그대로 두고 신규 병의원만 등록하기
+        </button>
+        <button id="cancel-btn" style="
+          padding: 12px 20px;
+          background: #9e9e9e;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#757575'" onmouseout="this.style.background='#9e9e9e'">
+          취소
+        </button>
+      </div>
+    `
+    
+    modal.appendChild(modalContent)
+    document.body.appendChild(modal)
+    
+    // 버튼 이벤트 리스너
+    document.getElementById('replace-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('replace')
+    })
+    
+    document.getElementById('keep-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('keep')
+    })
+    
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('cancel')
+    })
+    
+    // 모달 외부 클릭 시 취소
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal)
+        resolve('cancel')
+      }
+    })
+  })
+}
+
+// 업로드 선택 모달 함수
+function showUploadChoiceModal() {
+  return new Promise((resolve) => {
+    // 모달 컨테이너 생성
+    const modal = document.createElement('div')
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    `
+    
+    // 모달 내용 생성
+    const modalContent = document.createElement('div')
+    modalContent.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    `
+    
+    modalContent.innerHTML = `
+      <h3 style="margin: 0 0 20px 0; color: #333;">어떤 방식으로 등록하시겠습니까?</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="append-btn" style="
+          padding: 12px 20px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'">
+          기존 데이터는 그대로 두고 추가 등록
+        </button>
+        <button id="replace-btn" style="
+          padding: 12px 20px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#da190b'" onmouseout="this.style.background='#f44336'">
+          기존 데이터 모두 지우고 등록
+        </button>
+        <button id="cancel-btn" style="
+          padding: 12px 20px;
+          background: #9e9e9e;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.3s;
+        " onmouseover="this.style.background='#757575'" onmouseout="this.style.background='#9e9e9e'">
+          취소
+        </button>
+      </div>
+    `
+    
+    modal.appendChild(modalContent)
+    document.body.appendChild(modal)
+    
+    // 버튼 이벤트 리스너
+    document.getElementById('append-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('append')
+    })
+    
+    document.getElementById('replace-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('replace')
+    })
+    
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      document.body.removeChild(modal)
+      resolve('cancel')
+    })
+    
+    // 모달 외부 클릭 시 취소
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal)
+        resolve('cancel')
+      }
+    })
+  })
+}
 
 onMounted(() => {
   fetchClients()
