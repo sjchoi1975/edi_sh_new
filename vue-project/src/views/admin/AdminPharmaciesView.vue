@@ -114,11 +114,11 @@
               v-model="slotProps.data.business_registration_number"
               class="inline-edit-input"
               :id="`business_registration_number_${slotProps.data.id}`"
-              @input="formatBusinessNumber"
+              @input="formatBusinessNumberInput"
               @keypress="allowOnlyNumbers"
               @keydown="handleBackspace"
             />
-            <span v-else>{{ slotProps.data.business_registration_number }}</span>
+            <span v-else>{{ formatBusinessNumber(slotProps.data.business_registration_number) }}</span>
           </template>
         </Column>
         <Column
@@ -607,37 +607,19 @@ const handleFileUpload = async (event) => {
     const hasExistingData = pharmacies.value.length > 0
 
     // 1단계: 기존 데이터 존재 시 확인
-    let uploadMode = 'cancel' // 'append', 'replace', 'cancel'
     if (hasExistingData) {
       if (!confirm('기존 데이터가 있습니다.\n계속 등록하시겠습니까?')) {
         event.target.value = ''
         return
       }
 
-      // 2단계: 3개 옵션 선택 (버튼 방식)
+      // 2단계: 추가 등록 확인
       const choice = await showUploadChoiceModal()
       
-      if (choice === 'append') {
-        uploadMode = 'append'
-      } else if (choice === 'replace') {
-        uploadMode = 'replace'
-      } else {
+      if (choice !== 'append') {
         // cancel이거나 잘못된 입력
         event.target.value = ''
         return
-      }
-      
-      if (uploadMode === 'replace') {
-        // 대체 모드: 기존 데이터 삭제
-        const { error: deleteError } = await supabase.from('pharmacies').delete().neq('id', 0)
-        
-        if (deleteError) {
-          alert('기존 데이터 삭제 실패: ' + deleteError.message)
-          event.target.value = ''
-          return
-        }
-        // 로컬 데이터도 초기화
-        pharmacies.value = []
       }
     }
 
@@ -701,8 +683,8 @@ const handleFileUpload = async (event) => {
       return
     }
 
-    // 3단계: 추가 모드일 때만 사업자등록번호 중복 체크
-    if (hasExistingData && uploadMode === 'append') {
+    // 3단계: 기존 데이터가 있을 때만 사업자등록번호 중복 체크
+    if (hasExistingData) {
       const duplicateErrors = []
       const duplicatePharmacies = []
       
@@ -793,15 +775,35 @@ const handleFileUpload = async (event) => {
   }
 }
 
-// 엑셀 다운로드 (현재 목록)
+// 엑셀 다운로드 (전체 목록)
 const downloadExcel = async () => {
-  if (pharmacies.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.')
-    return
-  }
+  try {
+    // 전체 데이터 조회 (페이징 없이)
+    let query = supabase
+      .from('pharmacies')
+      .select('*')
+      .order('pharmacy_code', { ascending: true })
 
-  // 데이터 변환
-  const excelData = pharmacies.value.map((pharmacy, index) => ({
+    // 검색 조건이 있으면 적용
+    if (searchKeyword.value.length >= 2) {
+      const keyword = searchKeyword.value.toLowerCase();
+      query = query.or(`name.ilike.%${keyword}%,business_registration_number.ilike.%${keyword}%,pharmacy_code.ilike.%${keyword}%`)
+    }
+
+    const { data: allPharmacies, error } = await query
+
+    if (error) {
+      alert('데이터 조회 실패: ' + error.message)
+      return
+    }
+
+    if (!allPharmacies || allPharmacies.length === 0) {
+      alert('다운로드할 데이터가 없습니다.')
+      return
+    }
+
+    // 데이터 변환
+    const excelData = allPharmacies.map((pharmacy, index) => ({
     No: index + 1,
     약국코드: pharmacy.pharmacy_code || '',
     약국명: pharmacy.name || '',
@@ -894,6 +896,10 @@ const downloadExcel = async () => {
   link.download = generateExcelFileName('문전약국목록')
   link.click()
   window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('엑셀 다운로드 오류:', error)
+    alert('엑셀 다운로드 중 오류가 발생했습니다.')
+  }
 }
 
 async function deleteAllPharmacies() {
@@ -962,8 +968,8 @@ const allowOnlyNumbers = (event) => {
   }
 };
 
-// 사업자등록번호 형식 변환
-const formatBusinessNumber = (event) => {
+// 사업자등록번호 형식 변환 (입력용)
+const formatBusinessNumberInput = (event) => {
   const target = event.target;
   let value = target.value.replace(/[^0-9]/g, ''); // 숫자만 추출
   
@@ -1133,15 +1139,15 @@ function showUploadChoiceModal() {
       padding: 30px;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      max-width: 500px;
+      max-width: 400px;
       width: 90%;
       text-align: center;
     `
     
     modalContent.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: #333;">어떤 방식으로 등록하시겠습니까?</h3>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="append-btn" style="
+      <h3 style="margin: 0 0 20px 0; color: #333;">기존 데이터는 그대로 두고 추가 등록하시겠습니까?</h3>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="confirm-btn" style="
           padding: 12px 20px;
           background: #4CAF50;
           color: white;
@@ -1151,19 +1157,7 @@ function showUploadChoiceModal() {
           font-size: 14px;
           transition: background 0.3s;
         " onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'">
-          기존 데이터는 그대로 두고 추가 등록
-        </button>
-        <button id="replace-btn" style="
-          padding: 12px 20px;
-          background: #f44336;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          transition: background 0.3s;
-        " onmouseover="this.style.background='#da190b'" onmouseout="this.style.background='#f44336'">
-          기존 데이터 모두 지우고 등록
+          확인
         </button>
         <button id="cancel-btn" style="
           padding: 12px 20px;
@@ -1184,14 +1178,9 @@ function showUploadChoiceModal() {
     document.body.appendChild(modal)
     
     // 버튼 이벤트 리스너
-    document.getElementById('append-btn').addEventListener('click', () => {
+    document.getElementById('confirm-btn').addEventListener('click', () => {
       document.body.removeChild(modal)
       resolve('append')
-    })
-    
-    document.getElementById('replace-btn').addEventListener('click', () => {
-      document.body.removeChild(modal)
-      resolve('replace')
     })
     
     document.getElementById('cancel-btn').addEventListener('click', () => {
@@ -1207,6 +1196,20 @@ function showUploadChoiceModal() {
       }
     })
   })
+}
+
+// 사업자번호 형식 변환 함수 (표시용)
+function formatBusinessNumber(businessNumber) {
+  if (!businessNumber) return '-';
+  
+  // 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+  
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+  
+  // 형식 변환: ###-##-#####
+  return numbers.substring(0, 3) + '-' + numbers.substring(3, 5) + '-' + numbers.substring(5);
 }
 
 onMounted(() => {

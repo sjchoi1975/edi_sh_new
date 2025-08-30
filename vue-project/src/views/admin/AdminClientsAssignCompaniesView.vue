@@ -96,12 +96,16 @@
             </span>
           </template>
         </Column>
-        <Column
-          field="business_registration_number"
-          header="사업자등록번호"
-          :headerStyle="{ width: columnWidths.business_registration_number }"
-          :sortable="true"
-        />
+                    <Column
+              field="business_registration_number"
+              header="사업자등록번호"
+              :headerStyle="{ width: columnWidths.business_registration_number }"
+              :sortable="true"
+            >
+              <template #body="slotProps">
+                {{ formatBusinessNumber(slotProps.data.business_registration_number) }}
+              </template>
+            </Column>
         <Column
           field="owner_name"
           header="원장명"
@@ -590,10 +594,11 @@ const handleFileUpload = async (event) => {
 }
 
 const downloadExcel = async () => {
-  if (filteredClients.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.')
-    return
-  }
+  try {
+    if (filteredClients.value.length === 0) {
+      alert('다운로드할 데이터가 없습니다.')
+      return
+    }
   const excelData = []
   filteredClients.value.forEach((client) => {
     if (client.companies && client.companies.length > 0) {
@@ -706,6 +711,10 @@ const downloadExcel = async () => {
   link.download = generateExcelFileName('병의원-업체목록')
   link.click()
   window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('엑셀 다운로드 오류:', error)
+    alert('엑셀 다운로드 중 오류가 발생했습니다.')
+  }
 }
 
 onMounted(() => {
@@ -729,5 +738,19 @@ function goToCompanyDetail(companyId) {
     params: { id: companyId },
     query: { from: 'admin-clients-assign-companies' }
   })
+}
+
+// 사업자번호 형식 변환 함수
+function formatBusinessNumber(businessNumber) {
+  if (!businessNumber) return '-';
+  
+  // 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+  
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+  
+  // 형식 변환: ###-##-#####
+  return numbers.substring(0, 3) + '-' + numbers.substring(3, 5) + '-' + numbers.substring(5);
 }
 </script>
