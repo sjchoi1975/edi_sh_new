@@ -38,7 +38,7 @@
           <button class="btn-excell-template" @click="downloadTemplate" style="margin-right: 1rem;">엑셀 템플릿</button>
           <button class="btn-excell-upload" @click="triggerFileUpload" style="margin-right: 1rem;">엑셀 등록</button>
           <button class="btn-excell-download" @click="downloadExcel" style="margin-right: 1rem;">엑셀 다운로드</button>
-          <button class="btn-delete" @click="deleteAllAssignments">모두 삭제</button>
+<!--          <button class="btn-delete" @click="deleteAllAssignments">모두 삭제</button>-->
           <input
             ref="fileInput"
             type="file"
@@ -81,14 +81,14 @@
           field="name"
           header="병의원명"
           :headerStyle="{ width: columnWidths.name }"
-          :style="{ fontWeight: '500 !important' }"  
+          :style="{ fontWeight: '500 !important' }"
           :sortable="true"
         >
           <template #body="slotProps">
-            <span 
-              class="ellipsis-cell text-link" 
-              :title="slotProps.data.name" 
-              @mouseenter="checkOverflow" 
+            <span
+              class="ellipsis-cell text-link"
+              :title="slotProps.data.name"
+              @mouseenter="checkOverflow"
               @mouseleave="removeOverflowClass"
               @click="goToClientDetail(slotProps.data.id)"
             >
@@ -96,12 +96,16 @@
             </span>
           </template>
         </Column>
-        <Column
-          field="business_registration_number"
-          header="사업자등록번호"
-          :headerStyle="{ width: columnWidths.business_registration_number }"
-          :sortable="true"
-        />
+                    <Column
+              field="business_registration_number"
+              header="사업자등록번호"
+              :headerStyle="{ width: columnWidths.business_registration_number }"
+              :sortable="true"
+            >
+              <template #body="slotProps">
+                {{ formatBusinessNumber(slotProps.data.business_registration_number) }}
+              </template>
+            </Column>
         <Column
           field="owner_name"
           header="원장명"
@@ -140,8 +144,8 @@
                 :key="company.id"
                 style="min-height: 32px; display: flex; align-items: center !important; font-weight: 500 !important;"
               >
-                <span 
-                  class="text-link" 
+                <span
+                  class="text-link"
                   @click="goToCompanyDetail(company.id)"
                   style="cursor: pointer;"
                 >
@@ -244,7 +248,7 @@
           />
         </DataTable>
       </div>
-      
+
       <template #footer>
         <div class="btn-row">
           <button class="btn-cancel" @click="closeAssignModal">취소</button>
@@ -280,7 +284,7 @@ import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import { supabase } from '@/supabase'
 import ExcelJS from 'exceljs'
-import * as XLSX from 'xlsx'
+import { read, utils } from 'xlsx'
 import { generateExcelFileName } from '@/utils/excelUtils'
 
 const router = useRouter()
@@ -319,7 +323,6 @@ const fetchClients = async () => {
         `*, companies:client_company_assignments(created_at, company:companies(id, company_name, business_registration_number, company_group))`,
       )
       .eq('status', 'active')
-    console.log('clientsData:', clientsData, 'error:', error); // ← 추가
     if (!error && clientsData) {
       clients.value = clientsData.map((client) => {
         const companiesArr = client.companies.map((c) => ({
@@ -360,7 +363,7 @@ function doSearch() {
       (c.client_code && c.client_code.toLowerCase().includes(keyword)) ||
       (c.owner_name && c.owner_name.toLowerCase().includes(keyword)) ||
       (c.address && c.address.toLowerCase().includes(keyword)) ||
-      (c.companies && c.companies.some(company => 
+      (c.companies && c.companies.some(company =>
         (company.company_name && company.company_name.toLowerCase().includes(keyword)) ||
         (company.company_group && company.company_group.toLowerCase().includes(keyword))
       ))
@@ -401,6 +404,7 @@ async function assignCompanies() {
   const assignments = selectedCompanies.value.map((company) => ({
     client_id: selectedClient.value.id,
     company_id: company.id,
+    company_default_commission_grade: company.default_commission_grade
   }))
   await supabase
     .from('client_company_assignments')
@@ -409,6 +413,10 @@ async function assignCompanies() {
   await fetchClients()
 }
 async function deleteAssignment(client, company = null) {
+  if (!confirm('정말 삭제하시겠습니까?')) {
+    return
+  }
+
   let query = supabase.from('client_company_assignments').delete().eq('client_id', client.id)
   if (company) query = query.eq('company_id', company.id)
   await query
@@ -440,7 +448,7 @@ const downloadTemplate = async () => {
   // 데이터 추가
   templateData.forEach((row) => {
     const dataRow = worksheet.addRow(Object.values(row))
-    
+
     // 데이터 행 스타일 설정
     dataRow.eachCell((cell, colNumber) => {
       cell.font = { size: 11 }
@@ -469,9 +477,9 @@ const downloadTemplate = async () => {
 
   // 헤더행 고정 및 눈금선 숨기기
   worksheet.views = [
-    { 
-      state: 'frozen', 
-      xSplit: 0, 
+    {
+      state: 'frozen',
+      xSplit: 0,
       ySplit: 1,
       showGridLines: false
     }
@@ -503,9 +511,9 @@ const handleFileUpload = async (event) => {
 
   try {
     const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data)
+    const workbook = read(data)
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const jsonData = XLSX.utils.sheet_to_json(worksheet)
+    const jsonData = utils.sheet_to_json(worksheet)
 
     if (jsonData.length === 0) {
       alert('엑셀 파일에 데이터가 없습니다.')
@@ -590,10 +598,11 @@ const handleFileUpload = async (event) => {
 }
 
 const downloadExcel = async () => {
-  if (filteredClients.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.')
-    return
-  }
+  try {
+    if (filteredClients.value.length === 0) {
+      alert('다운로드할 데이터가 없습니다.')
+      return
+    }
   const excelData = []
   filteredClients.value.forEach((client) => {
     if (client.companies && client.companies.length > 0) {
@@ -644,17 +653,17 @@ const downloadExcel = async () => {
   // 데이터 추가
   excelData.forEach((row) => {
     const dataRow = worksheet.addRow(Object.values(row))
-    
+
     // 데이터 행 스타일 설정
     dataRow.eachCell((cell, colNumber) => {
       cell.font = { size: 11 }
       cell.alignment = { vertical: 'middle' }
-      
+
       // 가운데 정렬할 컬럼 지정 (병의원코드, 사업자등록번호, 원장명, 업체 사업자등록번호, 지정일시)
       if ([1, 3, 4, 8, 9].includes(colNumber)) {
         cell.alignment = { horizontal: 'center', vertical: 'middle' }
       }
-      
+
       // 사업자등록번호 컬럼은 텍스트 형식으로 설정
       if (colNumber === 4) {
         cell.numFmt = '@'
@@ -689,9 +698,9 @@ const downloadExcel = async () => {
 
   // 헤더행 고정 및 눈금선 숨기기
   worksheet.views = [
-    { 
-      state: 'frozen', 
-      xSplit: 0, 
+    {
+      state: 'frozen',
+      xSplit: 0,
       ySplit: 1,
       showGridLines: false
     }
@@ -706,6 +715,10 @@ const downloadExcel = async () => {
   link.download = generateExcelFileName('병의원-업체목록')
   link.click()
   window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('엑셀 다운로드 오류:', error)
+    alert('엑셀 다운로드 중 오류가 발생했습니다.')
+  }
 }
 
 onMounted(() => {
@@ -729,5 +742,19 @@ function goToCompanyDetail(companyId) {
     params: { id: companyId },
     query: { from: 'admin-clients-assign-companies' }
   })
+}
+
+// 사업자번호 형식 변환 함수
+function formatBusinessNumber(businessNumber) {
+  if (!businessNumber) return '-';
+
+  // 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+
+  // 형식 변환: ###-##-#####
+  return numbers.substring(0, 3) + '-' + numbers.substring(3, 5) + '-' + numbers.substring(5);
 }
 </script>

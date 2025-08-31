@@ -95,8 +95,22 @@ const allowOnlyNumbers = (event) => {
 
 const handleSubmit = async () => {
   // 필수 필드 검증
-  if (!baseMonth.value || !productName.value || !insuranceCode.value || !price.value || !standardCode.value) {
+  if (!baseMonth.value || !productName.value || !insuranceCode.value || !price.value) {
     alert('필수 항목을 모두 입력하세요.');
+    return;
+  }
+
+  // 기준월 형식 검증 (YYYY-MM)
+  const baseMonthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
+  if (!baseMonthRegex.test(baseMonth.value)) {
+    alert('기준월은 YYYY-MM 형식의 유효한 연월이어야 합니다.');
+    setTimeout(() => {
+      const baseMonthInput = document.querySelector('input[v-model="baseMonth"]');
+      if (baseMonthInput) {
+        baseMonthInput.focus();
+        baseMonthInput.select();
+      }
+    }, 100);
     return;
   }
 
@@ -113,18 +127,7 @@ const handleSubmit = async () => {
     return;
   }
 
-  // 표준코드 형식 검증 (13자리 숫자)
-  if (standardCode.value.length !== 13 || !/^\d{13}$/.test(standardCode.value)) {
-    alert('표준코드는 13자리 숫자여야 합니다.');
-    setTimeout(() => {
-      const standardCodeInput = document.getElementById('standardCode');
-      if (standardCodeInput) {
-        standardCodeInput.focus();
-        standardCodeInput.select();
-      }
-    }, 100);
-    return;
-  }
+
 
   // 약가 형식 검증 (0 이상의 숫자)
   if (price.value && (isNaN(Number(price.value)) || Number(price.value) < 0)) {
@@ -225,4 +228,4 @@ const handleSubmit = async () => {
 function goList() {
   router.push('/admin/products');
 }
-</script> 
+</script>

@@ -6,6 +6,11 @@
       <div v-if="loading" class="loading">
         처리 중입니다...
       </div>
+      <div v-else-if="error" class="error">
+        {{ error }}
+        <br><br>
+        <button @click="$router.push('/login')" class="btn-login">로그인 페이지로 이동</button>
+      </div>
       <form v-else @submit.prevent="handleResetPassword" class="reset-form">
         <div class="form-group">
           <label for="password">새 비밀번호</label>
@@ -56,7 +61,24 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { supabase } from '@/supabase';
+import { createClient } from '@supabase/supabase-js';
+import supabaseConfig from '@/config/supabase.js';
+import appConfig from '@/config/app.js';
+
+// 비밀번호 재설정 전용 Supabase 클라이언트 (detectSessionInUrl 활성화)
+const resetSupabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true, // 자동 세션 감지 활성화
+    flowType: 'pkce',
+    emailRedirectTo: appConfig.AUTH_CALLBACK_URL,
+    emailConfirm: false,
+    secureEmailChange: false,
+    emailValidation: false,
+    emailValidationRequired: false
+  }
+});
 
 const router = useRouter();
 const loading = ref(true);
@@ -71,25 +93,71 @@ const canSubmit = computed(() => {
          password.value === confirmPassword.value;
 });
 
+// 즉시 실행되는 초기화 코드 (페이지 로드 시점에 즉시 실행)
+console.log('=== 비밀번호 재설정 페이지 즉시 초기화 시작 ===');
+console.log('현재 URL:', window.location.href);
+console.log('현재 pathname:', window.location.pathname);
+console.log('현재 search:', window.location.search);
+console.log('현재 hash:', window.location.hash);
+
+// 라우터 가드 우회를 위한 글로벌 플래그 설정 (즉시)
+window.isPasswordResetPage = true;
+console.log('비밀번호 재설정 페이지 플래그 즉시 설정 완료');
+
+// URL이 비밀번호 재설정 페이지인지 확인
+if (window.location.pathname === '/reset-password') {
+  console.log('비밀번호 재설정 페이지 URL 확인됨');
+  window.isPasswordResetPage = true;
+  console.log('플래그 재설정 완료:', window.isPasswordResetPage);
+}
+
+// 비밀번호 재설정 페이지임을 표시
+console.log('비밀번호 재설정 페이지 감지됨');
+
+console.log('=== 즉시 초기화 완료 ===');
+
 onMounted(async () => {
   try {
-    // URL에서 access_token과 refresh_token 확인
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
+    console.log('비밀번호 재설정 페이지 초기화 시작');
+    console.log('현재 URL:', window.location.href);
     
-    if (!accessToken) {
-      throw new Error('유효하지 않은 재설정 링크입니다.');
-    }
+    // Supabase가 자동으로 설정한 세션 확인 (세션 제거 없이)
+    console.log('Supabase 자동 세션 확인 중...');
     
-    // 세션 설정
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
+    // Supabase가 자동으로 설정한 세션 확인
+    console.log('Supabase 자동 세션 확인 중...');
+    const { data: { session: autoSession }, error: sessionError } = await resetSupabase.auth.getSession();
     
     if (sessionError) {
-      throw new Error('세션 설정에 실패했습니다.');
+      console.error('세션 확인 오류:', sessionError);
+      throw new Error('비밀번호 재설정 링크가 유효하지 않습니다. 다시 시도해주세요.');
+    }
+    
+    if (!autoSession || !autoSession.user) {
+      console.log('자동 세션이 없음. URL에서 토큰 확인 중...');
+      
+      // URL에서 토큰 확인 (Supabase가 자동으로 처리하지 않은 경우)
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      
+      if (accessToken) {
+        console.log('URL에서 토큰 발견. 세션 설정 중...');
+        const { data: { user }, error: setSessionError } = await resetSupabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        
+        if (setSessionError || !user) {
+          throw new Error('비밀번호 재설정 링크가 유효하지 않습니다. 다시 시도해주세요.');
+        }
+        
+        console.log('토큰으로 세션 설정 성공:', user.email);
+      } else {
+        throw new Error('비밀번호 재설정 링크가 유효하지 않습니다. 다시 시도해주세요.');
+      }
+    } else {
+      console.log('자동 세션 발견:', autoSession.user.email);
     }
     
     loading.value = false;
@@ -106,7 +174,19 @@ async function handleResetPassword() {
   loading.value = true;
   
   try {
-    const { error: updateError } = await supabase.auth.updateUser({
+    console.log('비밀번호 변경 시작...');
+    
+    // 현재 세션의 사용자 정보 확인
+    const { data: { user }, error: userError } = await resetSupabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('비밀번호 재설정 링크가 유효하지 않습니다. 다시 시도해주세요.');
+    }
+    
+    console.log('비밀번호 변경 대상 사용자:', user.email);
+    
+    // 해당 사용자의 비밀번호 변경
+    const { error: updateError } = await resetSupabase.auth.updateUser({
       password: password.value
     });
     
@@ -114,10 +194,18 @@ async function handleResetPassword() {
       throw new Error(updateError.message);
     }
     
-    alert('비밀번호가 성공적으로 변경되었습니다.');
+    console.log('비밀번호 변경 성공. 즉시 로그아웃 처리 중...');
     
-    // 로그아웃 후 로그인 페이지로 이동
-    await supabase.auth.signOut();
+    // 비밀번호 변경 성공 후 즉시 로그아웃 (자동 로그인 방지)
+    await resetSupabase.auth.signOut();
+    console.log('로그아웃 완료');
+    
+    // 글로벌 플래그 제거
+    window.isPasswordResetPage = false;
+    
+    alert('비밀번호가 성공적으로 변경되었습니다.\n새 비밀번호로 로그인해주세요.');
+    
+    // 로그인 페이지로 이동
     router.push('/login');
     
   } catch (err) {
@@ -127,6 +215,8 @@ async function handleResetPassword() {
     let errorMessage = err.message;
     if (errorMessage.includes('New password should be different from the old password')) {
       errorMessage = '새 비밀번호는 기존 비밀번호와 달라야 합니다.';
+    } else if (errorMessage.includes('사용자 정보를 확인할 수 없습니다')) {
+      errorMessage = '비밀번호 재설정 링크가 유효하지 않습니다. 다시 시도해주세요.';
     }
     
     alert('비밀번호 변경 실패: ' + errorMessage);

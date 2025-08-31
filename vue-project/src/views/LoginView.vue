@@ -85,6 +85,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Button from 'primevue/button';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
+import config from '@/config/app.js';
 
 const email = ref('');
 const password = ref('');
@@ -103,38 +104,70 @@ const handleLogin = async () => {
   if (!canLogin.value) return;
   loading.value = true;
   try {
-    const { data: companyRow } = await supabase
+    // 1단계: 미등록 회원 확인 (companies 테이블에서 이메일 검색)
+    const { data: companyRow, error: companyError } = await supabase
       .from('companies')
       .select('id, approval_status, user_type')
       .eq('email', email.value.trim().toLowerCase())
       .maybeSingle();
-    if (!companyRow) {
-      alert('아이디(이메일) 정보가 없습니다. 다시 확인해주세요.');
+    
+    if (companyError) {
+      console.error('회사 정보 조회 오류:', companyError);
+      alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
       loading.value = false;
       return;
     }
+    
+    // 미등록 회원인 경우 로그인 차단
+    if (!companyRow) {
+      alert('미등록 회원입니다. 회원가입을 먼저 진행해주세요.');
+      loading.value = false;
+      return;
+    }
+    
+    // 2단계: 승인 상태 확인
+    if (companyRow.approval_status !== 'approved') {
+      alert('미승인 회원입니다. 관리자에게 승인을 요청해주세요.');
+      loading.value = false;
+      return;
+    }
+    
+    // 3단계: 인증 로그인 시도
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: email.value,
       password: password.value,
     });
+    
     if (authError) {
-      alert('비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+      console.error('Auth 오류:', authError);
+      
+      // 더 구체적인 오류 메시지 처리
+      if (authError.message && authError.message.includes('Invalid login credentials')) {
+        alert('비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+      } else if (authError.message && authError.message.includes('User not found')) {
+        alert('등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.');
+      } else if (authError.message && authError.message.includes('Email not confirmed')) {
+        // 이메일 미확인 오류는 무시하고 로그인 허용
+        console.log('이메일 미확인 상태이지만 로그인 허용');
+        // 오류를 무시하고 계속 진행
+      } else {
+        alert(`로그인 오류: ${authError.message || '알 수 없는 오류가 발생했습니다.'}`);
+        loading.value = false;
+        return;
+      }
       loading.value = false;
       return;
     }
-    if (companyRow.approval_status !== 'approved') {
-      alert('미승인 회원입니다. 관리자에게 승인을 요청해주세요.');
-      await supabase.auth.signOut();
-      loading.value = false;
-      return;
-    }
+    
+    // 4단계: 로그인 성공 시 페이지 이동
     if (companyRow.user_type === 'admin') {
       router.push('/admin/notices');
     } else {
       router.push('/notices');
     }
   } catch (error) {
-    alert('로그인 중 오류가 발생했습니다.');
+    console.error('로그인 처리 중 오류:', error);
+    alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
   } finally {
     loading.value = false;
   }
@@ -168,29 +201,50 @@ const handlePasswordReset = async () => {
   }
   
   loading.value = true;
-  console.log('비밀번호 재설정 요청:', resetEmail.value);
   
   try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail.value, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    // 1단계: 해당 이메일이 실제로 등록되어 있는지 확인
+    const { data: companyData, error: companyError } = await supabase
+      .from('companies')
+      .select('id, email, approval_status')
+      .eq('email', resetEmail.value.trim().toLowerCase())
+      .maybeSingle();
     
-    console.log('비밀번호 재설정 응답:', { data, error });
+    if (companyError) {
+      console.error('회사 정보 조회 오류:', companyError);
+      alert('이메일 확인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      return;
+    }
+    
+    // 2단계: 등록되지 않은 이메일인 경우
+    if (!companyData) {
+      alert('가입되지 않은 이메일입니다. 이메일 주소를 다시 확인해주세요.');
+      return;
+    }
+    
+    // 3단계: 승인되지 않은 계정인 경우
+    if (companyData.approval_status !== 'approved') {
+      alert('미승인 계정입니다. 관리자에게 승인을 요청해주세요.');
+      return;
+    }
+    
+          // 4단계: 비밀번호 재설정 메일 발송
+      const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail.value, {
+        redirectTo: config.RESET_PASSWORD_URL,
+      });
     
     if (error) {
-      console.error('비밀번호 재설정 오류:', error);
       if (error.message.includes('not found')) {
         alert('가입되지 않은 이메일입니다. 이메일 주소를 다시 확인해주세요.');
       } else {
         alert(`오류가 발생했습니다: ${error.message}`);
       }
     } else {
-      console.log('비밀번호 재설정 이메일 발송 성공');
       closePasswordResetModal();
       isConfirmationModalOpen.value = true;
     }
   } catch (err) {
-    console.error('비밀번호 재설정 예외:', err);
+    console.error('비밀번호 재설정 오류:', err);
     alert('예기치 않은 오류가 발생했습니다.');
   } finally {
     loading.value = false;

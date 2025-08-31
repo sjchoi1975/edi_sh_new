@@ -69,7 +69,7 @@ const handleRedirect = async (currentSession) => {
     }
   } else {
     // 사용자가 로그인되지 않은 상태
-    if (actualPath !== '/login' && actualPath !== '/signup') {
+    if (actualPath !== '/login' && actualPath !== '/signup' && actualPath !== '/reset-password') {
       console.log(`[App.vue] handleRedirect: User not logged in. Redirecting from ${actualPath} to /login`);
       try {
         await router.push('/login');
@@ -220,18 +220,42 @@ onMounted(async () => {
 const handleLogout = async () => {
   console.log('[App.vue] handleLogout: Attempting logout');
   try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error('[App.vue] handleLogout: Logout failed', error);
-        alert('로그아웃 실패: ' + error.message);
-    } else {
-        console.log('[App.vue] handleLogout: Logout successful. onAuthStateChange will handle redirect.');
-        // setUserState(null); // onAuthStateChange에서 처리
-        // router.push('/login'); // onAuthStateChange에서 처리
+    // 모든 Supabase 관련 스토리지 항목 삭제
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes('sb-')) {
+        keysToRemove.push(key);
+      }
     }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // sessionStorage도 정리
+    const sessionKeysToRemove = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.includes('sb-')) {
+        sessionKeysToRemove.push(key);
+      }
+    }
+    sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+    
+    // Supabase 로그아웃 시도 (에러 무시)
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.warn('[App.vue] handleLogout: Supabase signOut failed, but continuing with local cleanup:', signOutError);
+    }
+    
+    // 로컬 상태 정리
+    setUserState(null);
+    router.push('/login');
+    
   } catch (error) {
     console.error('[App.vue] handleLogout: Exception during logout', error);
-    alert('로그아웃 중 예외 발생: ' + error.message);
+    // 예외가 발생해도 로컬 상태는 정리
+    setUserState(null);
+    router.push('/login');
   }
 };
 

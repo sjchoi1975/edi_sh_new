@@ -59,7 +59,7 @@ const router = createRouter({
       path: '/reset-password',
       name: 'ResetPassword',
       component: () => import('@/views/ResetPasswordView.vue'),
-      meta: { layout: 'empty' }
+      meta: { layout: 'empty', requiresAuth: false }
     },
     {
       path: '/signup',
@@ -251,7 +251,7 @@ const router = createRouter({
       path: '/admin/settlement-month',
       name: 'admin-settlement-month',
       component: AdminSettlementMonthsView,
-      meta: { requiresAuth: true, role: 'admin' }
+      meta: { requiresAuth: true, isAdmin: true }
     },
     {
       path: '/admin/performance/register',
@@ -275,7 +275,7 @@ const router = createRouter({
       path: '/admin/performance-list',
       name: 'AdminPerformanceRegisterList',
       component: () => import('../views/admin/AdminPerformanceRegisterList.vue'),
-      meta: { requiresAuth: true, role: 'admin' },
+      meta: { requiresAuth: true, isAdmin: true },
       redirect: '/admin/performance/whole'
     },
     {
@@ -458,13 +458,25 @@ const router = createRouter({
 // (선택 사항) 네비게이션 가드 추가: requiresAuth 메타 필드가 있는 라우트에 대해 인증 여부 확인
 router.beforeEach(async (to, from, next) => {
   console.log(`[Router Guard] Navigating from: ${from.fullPath} to: ${to.fullPath}`);
+  console.log(`[Router Guard] To path: ${to.path}, To name: ${to.name}`);
+  console.log(`[Router Guard] Window isPasswordResetPage: ${window.isPasswordResetPage}`);
 
-  // 로그인 및 회원가입 페이지는 항상 접근 허용
+  // 비밀번호 재설정 페이지는 완전히 라우터 가드 우회 (가장 먼저 체크)
+  if (to.path === '/reset-password' || to.name === 'ResetPassword' || window.isPasswordResetPage) {
+    console.log('[Router Guard] Password reset page detected. Bypassing all guards.');
+    console.log('[Router Guard] Condition check:');
+    console.log(`  - to.path === '/reset-password': ${to.path === '/reset-password'}`);
+    console.log(`  - to.name === 'ResetPassword': ${to.name === 'ResetPassword'}`);
+    console.log(`  - window.isPasswordResetPage: ${window.isPasswordResetPage}`);
+    return next();
+  }
+
+  // 로그인, 회원가입 페이지는 항상 접근 허용
   if (to.name === 'login' || to.name === 'signup') {
     console.log('[Router Guard] Accessing login/signup page. Allowing.');
     return next();
   }
-
+  
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
   if (sessionError) {
@@ -483,26 +495,72 @@ router.beforeEach(async (to, from, next) => {
       return next({ name: 'login', query: { redirect: to.fullPath } }); // 로그인 후 원래 경로로 리디렉션하기 위한 query 추가
     }
 
-    // 세션이 있는 경우, 역할 검사
-    const userRole = session.user?.user_metadata?.user_type;
-    console.log(`[Router Guard] User role from session: ${userRole}`);
-
-    const requiredRole = to.meta.role; // 가장 일치하는 라우트의 role을 직접 사용
-    console.log(`[Router Guard] Required role for route: ${requiredRole}`);
-
-    if (requiredRole) {
-      if (userRole === requiredRole) {
-        console.log('[Router Guard] Role matched. Proceeding.');
-        return next();
-      } else {
-        console.log(`[Router Guard] Role mismatch. User role: ${userRole}, Required: ${requiredRole}. Redirecting to home.`);
-        alert('접근 권한이 없습니다. (역할 불일치)');
-        return next({ name: 'home' }); // 또는 사용자의 기본 대시보드나 로그인 페이지
+    // 세션이 있는 경우, 미등록 회원 확인
+    try {
+      const { data: companyRow, error: companyError } = await supabase
+        .from('companies')
+        .select('id, approval_status, user_type')
+        .eq('email', session.user.email)
+        .maybeSingle();
+      
+      if (companyError) {
+        console.error('[Router Guard] Error checking company registration:', companyError);
+        return next({ name: 'login', query: { redirect: to.fullPath } });
       }
-    } else {
-      // requiresAuth는 true이지만, 특정 role이 명시되지 않은 경우 (예: 로그인한 모든 사용자 접근 가능)
-      console.log('[Router Guard] Auth required, no specific role. Session exists. Proceeding.');
-      return next();
+      
+      // 미등록 회원인 경우 로그인 페이지로 리다이렉트
+      if (!companyRow) {
+        console.log('[Router Guard] User not registered in companies table. Redirecting to login.');
+        alert('미등록 회원입니다. 회원가입을 먼저 진행해주세요.');
+        await supabase.auth.signOut();
+        return next({ name: 'login', query: { redirect: to.fullPath } });
+      }
+      
+      // 미승인 회원인 경우 로그인 페이지로 리다이렉트
+      if (companyRow.approval_status !== 'approved') {
+        console.log('[Router Guard] User not approved. Redirecting to login.');
+        alert('미승인 회원입니다. 관리자에게 승인을 요청해주세요.');
+        await supabase.auth.signOut();
+        return next({ name: 'login', query: { redirect: to.fullPath } });
+      }
+      
+      // 사용자 역할을 데이터베이스에서 가져온 값으로 업데이트
+      const userRole = companyRow.user_type;
+      console.log(`[Router Guard] User role from database: ${userRole}`);
+
+      // 관리자 권한이 필요한 페이지인지 확인
+      const requiresAdmin = to.meta.isAdmin;
+      const requiredRole = to.meta.role;
+      console.log(`[Router Guard] Route requiresAdmin: ${requiresAdmin}, requiredRole: ${requiredRole}`);
+
+      if (requiresAdmin) {
+        // 관리자 권한이 필요한 페이지
+        if (userRole === 'admin') {
+          console.log('[Router Guard] Admin access granted. Proceeding.');
+          return next();
+        } else {
+          console.log(`[Router Guard] Admin access denied. User role: ${userRole}. Redirecting to home.`);
+          alert('관리자 권한이 필요한 페이지입니다.');
+          return next({ name: 'home' });
+        }
+      } else if (requiredRole) {
+        // 특정 역할이 필요한 페이지
+        if (userRole === requiredRole) {
+          console.log('[Router Guard] Role matched. Proceeding.');
+          return next();
+        } else {
+          console.log(`[Router Guard] Role mismatch. User role: ${userRole}, Required: ${requiredRole}. Redirecting to home.`);
+          alert('접근 권한이 없습니다. (역할 불일치)');
+          return next({ name: 'home' });
+        }
+      } else {
+        // requiresAuth는 true이지만, 특정 권한이 명시되지 않은 경우 (일반 사용자 접근 가능)
+        console.log('[Router Guard] Auth required, no specific role. Session exists. Proceeding.');
+        return next();
+      }
+    } catch (error) {
+      console.error('[Router Guard] Error in registration check:', error);
+      return next({ name: 'login', query: { redirect: to.fullPath } });
     }
   } else {
     // 인증이 필요 없는 페이지

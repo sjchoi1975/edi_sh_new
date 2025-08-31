@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue';
+import { ref, computed, onMounted, watch, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 
@@ -50,6 +50,21 @@ const emit = defineEmits(['logout']);
 const router = useRouter();
 const route = useRoute();
 const openMenu = ref(0); // 첫 번째 대메뉴 기본 오픈
+
+// 현재 페이지에 따라 해당 메뉴 섹션을 자동으로 열기
+const getCurrentMenuIndex = () => {
+  const currentPath = route.path;
+  
+  for (let i = 0; i < menuTree.value.length; i++) {
+    const menu = menuTree.value[i];
+    for (const child of menu.children) {
+      if (isActive(child)) {
+        return i;
+      }
+    }
+  }
+  return 0; // 기본값
+};
 
 const companyName = ref('');
 
@@ -119,7 +134,108 @@ function go(item) {
   if (item.path) router.push(item.path);
 }
 function isActive(item) {
-  return route.path === item.path;
+  // 정확한 경로 매칭 (가장 우선순위)
+  if (route.path === item.path) {
+    return true;
+  }
+  
+  // 특정 경로에 대한 정확한 매칭
+  const currentPath = route.path;
+  const itemPath = item.path;
+  
+  // /admin/companies/approved 또는 /admin/companies/pending과 같은 정확한 매칭
+  if (itemPath === '/admin/companies/approved' && currentPath.startsWith('/admin/companies/approved')) {
+    return true;
+  }
+  if (itemPath === '/admin/companies/pending' && currentPath.startsWith('/admin/companies/pending')) {
+    return true;
+  }
+  
+  // /admin/clients/assign-companies, /admin/clients/commission-grades, /admin/clients/assign-pharmacies
+  if (itemPath === '/admin/clients/assign-companies' && currentPath.startsWith('/admin/clients/assign-companies')) {
+    return true;
+  }
+  if (itemPath === '/admin/clients/commission-grades' && currentPath.startsWith('/admin/clients/commission-grades')) {
+    return true;
+  }
+  if (itemPath === '/admin/clients/assign-pharmacies' && currentPath.startsWith('/admin/clients/assign-pharmacies')) {
+    return true;
+  }
+  
+  // /admin/products/standard-code
+  if (itemPath === '/admin/products-standard-code' && currentPath.startsWith('/admin/products-standard-code')) {
+    return true;
+  }
+  
+  // /admin/performance/register, /admin/performance/companies, /admin/performance/whole, /admin/performance/review
+  if (itemPath === '/admin/performance/register' && currentPath.startsWith('/admin/performance/register')) {
+    return true;
+  }
+  if (itemPath === '/admin/performance/companies' && currentPath.startsWith('/admin/performance/companies')) {
+    return true;
+  }
+  if (itemPath === '/admin/performance/whole' && currentPath.startsWith('/admin/performance/whole')) {
+    return true;
+  }
+  if (itemPath === '/admin/performance/review' && currentPath.startsWith('/admin/performance/review')) {
+    return true;
+  }
+  
+  // /admin/wholesale-revenue, /admin/direct-revenue
+  if (itemPath === '/admin/wholesale-revenue' && currentPath.startsWith('/admin/wholesale-revenue')) {
+    return true;
+  }
+  if (itemPath === '/admin/direct-revenue' && currentPath.startsWith('/admin/direct-revenue')) {
+    return true;
+  }
+  
+  // 일반적인 목록 페이지들 (정확한 매칭만)
+  if (itemPath === '/admin/notices' && currentPath === '/admin/notices') {
+    return true;
+  }
+  if (itemPath === '/admin/clients' && currentPath === '/admin/clients') {
+    return true;
+  }
+  if (itemPath === '/admin/products' && currentPath === '/admin/products') {
+    return true;
+  }
+  if (itemPath === '/admin/pharmacies' && currentPath === '/admin/pharmacies') {
+    return true;
+  }
+  if (itemPath === '/admin/settlement-months' && currentPath === '/admin/settlement-months') {
+    return true;
+  }
+  if (itemPath === '/admin/absorption-analysis' && currentPath === '/admin/absorption-analysis') {
+    return true;
+  }
+  if (itemPath === '/admin/settlement-share' && currentPath === '/admin/settlement-share') {
+    return true;
+  }
+  
+  // 사용자 메뉴들
+  if (itemPath === '/notices' && currentPath === '/notices') {
+    return true;
+  }
+  if (itemPath === '/products' && currentPath === '/products') {
+    return true;
+  }
+  if (itemPath === '/clients' && currentPath === '/clients') {
+    return true;
+  }
+  if (itemPath === '/performance/register' && currentPath === '/performance/register') {
+    return true;
+  }
+  if (itemPath === '/performance/list' && currentPath === '/performance/list') {
+    return true;
+  }
+  if (itemPath === '/settlements' && currentPath === '/settlements') {
+    return true;
+  }
+  if (itemPath === '/my-info' && currentPath === '/my-info') {
+    return true;
+  }
+  
+  return false;
 }
 function toggleMenu(idx) {
   openMenu.value = openMenu.value === idx ? null : idx;
@@ -137,8 +253,39 @@ const breadcrumbSubMenu = computed(() => {
 });
 
 const handleLogout = async () => {
-  await supabase.auth.signOut();
-  router.push('/login');
+  try {
+    // 모든 Supabase 관련 스토리지 항목 삭제
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes('sb-')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // sessionStorage도 정리
+    const sessionKeysToRemove = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.includes('sb-')) {
+        sessionKeysToRemove.push(key);
+      }
+    }
+    sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+    
+    // Supabase 로그아웃 시도 (에러 무시)
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.warn('Supabase signOut failed, but continuing with local cleanup:', signOutError);
+    }
+    
+  } catch (error) {
+    console.error('로그아웃 중 오류:', error);
+  } finally {
+    router.push('/login');
+  }
 };
 
 const titleTemplate = (row) => {
@@ -182,6 +329,10 @@ onMounted(async () => {
   window.__goToNotice = (id) => {
     router.push(`/notices/${id}`);
   };
+  
+  // 현재 페이지에 따라 해당 메뉴 섹션 자동 열기
+  openMenu.value = getCurrentMenuIndex();
+  
   // ...기존 데이터 불러오기 코드...
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -196,6 +347,11 @@ onMounted(async () => {
       }
     }
   } catch {}
+});
+
+// 라우트 변경 시 메뉴 자동 업데이트
+watch(() => route.path, (newPath) => {
+  openMenu.value = getCurrentMenuIndex();
 });
 </script>
 

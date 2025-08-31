@@ -12,7 +12,7 @@
       </div>
       <div class="form-group">
         <label>사업자등록번호</label>
-        <input :value="company.business_registration_number || '-'" readonly disabled />
+        <input :value="formatBusinessNumber(company.business_registration_number)" readonly disabled />
       </div>
       <div class="form-group">
         <label>대표자</label>
@@ -96,6 +96,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import TopNavigationBar from '@/components/TopNavigationBar.vue'
+import config from '@/config/app.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,6 +124,20 @@ function formatKST(dateStr) {
   const displayHourStr = displayHour === 0 ? '12' : String(displayHour).padStart(2, '0');
   
   return `${yyyy}. ${mm}. ${dd}. ${ampm} ${displayHourStr}:${min}:${sec}`;
+}
+
+// 사업자번호 형식 변환 함수
+function formatBusinessNumber(businessNumber) {
+  if (!businessNumber) return '-';
+  
+  // 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+  
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+  
+  // 형식 변환: ###-##-#####
+  return numbers.substring(0, 3) + '-' + numbers.substring(3, 5) + '-' + numbers.substring(5);
 }
 
 const breadcrumbSubMenu = computed(() => {
@@ -215,12 +230,16 @@ async function handleResetPassword() {
   try {
     // Supabase 이메일 비밀번호 재설정 기능 사용
     const { error } = await supabase.auth.resetPasswordForEmail(company.value.email, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: config.RESET_PASSWORD_URL
     });
     
     if (error) {
       console.error('비밀번호 재설정 이메일 발송 오류:', error);
-      throw new Error(error.message || '이메일 발송에 실패했습니다.');
+      if (error.message.includes('21 seconds')) {
+        throw new Error('보안을 위해 21초 후에 다시 시도해주세요. 잠시 기다린 후 비밀번호 재설정을 다시 요청해주세요.');
+      } else {
+        throw new Error(error.message || '이메일 발송에 실패했습니다.');
+      }
     }
     
     alert(`${company.value.email}로 비밀번호 재설정 이메일이 발송되었습니다.\n해당 업체에서 이메일을 확인하여 비밀번호를 재설정하도록 안내해주세요.`);
