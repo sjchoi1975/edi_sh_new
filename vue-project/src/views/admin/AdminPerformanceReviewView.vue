@@ -21,15 +21,87 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>업체</label>
-          <select v-model="selectedCompanyId" class="select_200px">
-            <option v-for="company in companyOptions" :key="company.id" :value="company.id">{{ company.company_name }}</option>
-          </select>
+          <div class="company-search-container" style="position: relative;">
+            <input
+              v-model="companySearchText"
+              @input="handleCompanySearch"
+              @focus="handleCompanyFocus"
+              @blur="delayedHideCompanyDropdown"
+              @keydown="handleCompanyKeydown"
+              :placeholder="selectedCompanyId === null || selectedCompanyId === '' ? '업체명을 입력하세요...' : ''"
+              class="select_200px"
+              autocomplete="off"
+            />
+            <div v-if="showCompanyDropdown && filteredCompanies.length > 0" class="company-dropdown">
+              <!-- 전체 옵션 -->
+              <div
+                :class="['company-dropdown-item', { 
+                  selected: selectedCompanyId === null || selectedCompanyId === '', 
+                  highlighted: companyHighlightedIndex === 0 
+                }]"
+                @mousedown.prevent="selectCompany({ id: null, company_name: '전체' })"
+              >
+                전체
+              </div>
+              <!-- 업체 목록 -->
+              <div
+                v-for="(company, index) in filteredCompanies"
+                :key="company.id"
+                :class="['company-dropdown-item', { 
+                  selected: selectedCompanyId === company.id,
+                  highlighted: companyHighlightedIndex === index + 1
+                }]"
+                @mousedown.prevent="selectCompany(company)"
+              >
+                {{ company.company_name }}
+              </div>
+            </div>
+            <div v-if="showCompanyDropdown && filteredCompanies.length === 0 && companySearchText.trim()" class="company-dropdown">
+              <div class="company-dropdown-item no-results">검색 결과가 없습니다</div>
+            </div>
+          </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>병의원</label>
-          <select v-model="selectedHospitalId" class="select_240px">
-            <option v-for="hospital in hospitalOptions" :key="hospital.id" :value="hospital.id">{{ hospital.name }}</option>
-          </select>
+          <div class="hospital-search-container" style="position: relative;">
+            <input
+              v-model="hospitalSearchText"
+              @input="handleHospitalSearch"
+              @focus="handleHospitalFocus"
+              @blur="delayedHideHospitalDropdown"
+              @keydown="handleHospitalKeydown"
+              :placeholder="selectedHospitalId === null ? '병의원명을 입력하세요...' : ''"
+              class="select_240px"
+              autocomplete="off"
+            />
+            <div v-if="showHospitalDropdown && filteredHospitals.length > 0" class="hospital-dropdown">
+              <!-- 전체 옵션 -->
+              <div
+                :class="['hospital-dropdown-item', { 
+                  selected: selectedHospitalId === null, 
+                  highlighted: hospitalHighlightedIndex === 0 
+                }]"
+                @mousedown.prevent="selectHospital({ id: null, name: '전체' })"
+              >
+                전체
+              </div>
+              <!-- 병의원 목록 -->
+              <div
+                v-for="(hospital, index) in filteredHospitals"
+                :key="hospital.id"
+                :class="['hospital-dropdown-item', { 
+                  selected: selectedHospitalId === hospital.id,
+                  highlighted: hospitalHighlightedIndex === index + 1
+                }]"
+                @mousedown.prevent="selectHospital(hospital)"
+              >
+                {{ hospital.name }}
+              </div>
+            </div>
+            <div v-if="showHospitalDropdown && filteredHospitals.length === 0 && hospitalSearchText.trim()" class="hospital-dropdown">
+              <div class="hospital-dropdown-item no-results">검색 결과가 없습니다.</div>
+            </div>
+          </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>상태</label>
@@ -254,6 +326,32 @@
               <span v-else>{{ slotProps.data.payment_amount }}</span>
             </template>
           </Column>
+          <Column field="section_commission" header="구간수수료율" :headerStyle="{ width: columnWidths.section_commission }" :sortable="true">
+            <template #body="slotProps">
+              <input
+                v-if="slotProps.data.isEditing"
+                v-model="slotProps.data.section_commission_modify"
+                type="number"
+                step="0.01"
+                min="0"
+                max="1"
+                class="edit-mode-input"
+                style="text-align: center;"
+                @change="handleEditCalculations(slotProps.data, 'section_commission')"
+              />
+              <span v-else style="display: block; text-align: center;">{{ (() => {
+                const rate = slotProps.data.section_commission;
+                if (rate === null || rate === undefined) return '';
+                return `${(rate * 100).toFixed(1)}%`;
+              })() }}</span>
+            </template>
+          </Column>
+          <Column field="actual_payment" header="실지급액" :headerStyle="{ width: columnWidths.actual_payment }" :sortable="true">
+            <template #body="slotProps">
+              <span v-if="slotProps.data.isEditing" style="display: block; text-align: right;">{{ slotProps.data.actual_payment_modify?.toLocaleString() }}</span>
+              <span v-else style="display: block; text-align: right;">{{ slotProps.data.actual_payment }}</span>
+            </template>
+          </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
               <input
@@ -291,8 +389,11 @@
               <Column footer="" footerClass="footer-cell" :frozen="true" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
-              <Column footer="" footerClass="footer-cell" />
               <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column :footer="totalActualPayment" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
@@ -398,6 +499,8 @@ const columnWidths = {
   prescription_type: '6%',
   commission_rate: '5%',
   payment_amount: '6%',
+  section_commission: '6%',
+  actual_payment: '6%',
   remarks: '10%',
   created_date: '7%',
   created_by: '8%',
@@ -428,6 +531,21 @@ const totalPaymentAmount = computed(() => {
   return total.toLocaleString();
 });
 
+// 구간수수료율 합계는 표시하지 않음
+// const totalSectionCommission = computed(() => {
+//   const total = displayRows.value
+//     .filter(row => row.review_action !== '삭제') // 삭제 항목 제외
+//     .reduce((sum, row) => sum + (Number(String(row.section_commission || 0).replace(/,/g, '')) || 0), 0);
+//   return total.toLocaleString();
+// });
+
+const totalActualPayment = computed(() => {
+  const total = displayRows.value
+    .filter(row => row.review_action !== '삭제') // 삭제 항목 제외
+    .reduce((sum, row) => sum + (Number(String(row.actual_payment || 0).replace(/,/g, '')) || 0), 0);
+  return total.toLocaleString();
+});
+
 // --- 기존 데이터 및 필터 변수들 ---
 const availableMonths = ref([]);
 const selectedSettlementMonth = ref('');
@@ -446,7 +564,18 @@ const selectedStatus = ref('검수중');
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
 const monthlyHospitals = ref([]);
-const allApprovedCompanies = ref([]);
+const allHospitals = ref([]); // 전체 병의원 목록
+const hospitalSearchText = ref('');
+const showHospitalDropdown = ref(false);
+const filteredHospitals = ref([]);
+const hospitalHighlightedIndex = ref(-1); // 병의원 드롭다운 하이라이트 인덱스
+
+// 업체 검색 관련
+const allCompanies = ref([]); // 전체 업체 목록
+const companySearchText = ref(''); // 업체 검색 텍스트
+const showCompanyDropdown = ref(false); // 업체 드롭다운 표시 여부
+const filteredCompanies = ref([]); // 필터링된 업체 목록
+const companyHighlightedIndex = ref(-1); // 업체 드롭다운 하이라이트 인덱스
 
 // --- 상태 관리: 데이터 테이블 ---
 const loading = ref(true);
@@ -520,7 +649,7 @@ const bulkChangeOptions = computed(() => {
   switch (selectedBulkChangeType.value) {
     case 'company_name':
       // 전체 업체 목록 (user_type = user & approval_status = approved)
-      return allApprovedCompanies.value.map(company => company.company_name);
+      return monthlyCompanies.value.map(company => company.company_name);
     case 'prescription_type':
       return prescriptionTypeOptions;
     default:
@@ -565,16 +694,6 @@ const companyOptions = computed(() => {
     return [{ id: null, company_name: '- 전체 -' }, ...monthlyCompanies.value];
 });
 
-const hospitalOptions = computed(() => {
-    if (!selectedCompanyId.value) {
-        return [{ id: null, name: '- 전체 -' }, ...monthlyHospitals.value];
-    }
-    const relevantClientIds = monthlyPerformanceLinks.value
-        .filter(link => link.company_id === selectedCompanyId.value)
-        .map(link => link.client_id);
-    const filteredHospitals = monthlyHospitals.value.filter(hospital => relevantClientIds.includes(hospital.id));
-    return [{ id: null, name: '전체' }, ...filteredHospitals.sort((a, b) => a.name.localeCompare(b.name, 'ko'))];
-});
 
 // --- Watchers ---
 watch(selectedSettlementMonth, async (newMonth) => {
@@ -588,7 +707,16 @@ watch(selectedSettlementMonth, async (newMonth) => {
 });
 
 watch(selectedCompanyId, async () => {
-    selectedHospitalId.value = null;
+    // 업체가 변경되면 검색 텍스트도 업데이트
+    if (selectedCompanyId.value === null || selectedCompanyId.value === '') {
+        companySearchText.value = '';
+    } else {
+        const selectedCompany = allCompanies.value.find(c => c.id === selectedCompanyId.value);
+        if (selectedCompany) {
+            companySearchText.value = selectedCompany.company_name;
+        }
+    }
+    
     // 업체가 변경되면 자동으로 데이터 로드
     if (selectedSettlementMonth.value) {
         await loadPerformanceData();
@@ -617,11 +745,253 @@ watch(selectedStatus, async (newStatus, oldStatus) => {
 });
 
 watch(selectedHospitalId, async () => {
+    console.log('병의원 watcher 실행:', selectedHospitalId.value);
+    
+    // 병의원이 변경되면 검색 텍스트도 업데이트
+    if (selectedHospitalId.value === null) {
+        hospitalSearchText.value = '';
+    } else {
+        const selectedHospital = allHospitals.value.find(h => h.id === selectedHospitalId.value);
+        if (selectedHospital) {
+            hospitalSearchText.value = selectedHospital.name;
+        }
+    }
+    
     // 병의원이 변경되면 자동으로 데이터 로드
     if (selectedSettlementMonth.value) {
+        console.log('정산월이 있으므로 데이터 로드 시작');
         await loadPerformanceData();
+    } else {
+        console.log('정산월이 없어서 데이터 로드 안함');
     }
 });
+
+// --- 병의원 검색 관련 함수들 ---
+function handleHospitalFocus() {
+    // 포커스 시 항상 드롭다운 표시
+    if (allHospitals.value.length > 0) {
+        handleHospitalSearch();
+    }
+}
+
+function handleHospitalSearch() {
+    const searchTerm = hospitalSearchText.value.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        // 검색어가 없으면 모든 병의원 표시 (최대 100개)
+        filteredHospitals.value = allHospitals.value.slice(0, 100);
+    } else {
+        // 검색어가 있으면 필터링
+        filteredHospitals.value = allHospitals.value
+            .filter(hospital => 
+                hospital.name.toLowerCase().includes(searchTerm)
+            )
+            .slice(0, 100); // 최대 100개로 제한
+    }
+    
+    hospitalHighlightedIndex.value = -1; // 검색 시 하이라이트 초기화
+    showHospitalDropdown.value = true;
+}
+
+function selectHospital(hospital) {
+    console.log('병의원 선택:', hospital);
+    selectedHospitalId.value = hospital.id;
+    hospitalSearchText.value = hospital.id === null ? '' : hospital.name;
+    showHospitalDropdown.value = false;
+    hospitalHighlightedIndex.value = -1;
+    console.log('선택된 병의원 ID:', selectedHospitalId.value);
+    console.log('정산월:', selectedSettlementMonth.value);
+    // watcher가 자동으로 loadPerformanceData()를 호출함
+}
+
+// 병의원 키보드 네비게이션
+function handleHospitalKeydown(event) {
+  if (!showHospitalDropdown.value) return;
+  
+  const totalItems = filteredHospitals.value.length + 1; // +1 for "전체" option
+  
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      hospitalHighlightedIndex.value = Math.min(hospitalHighlightedIndex.value + 1, totalItems - 1);
+      scrollToHighlightedHospital();
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      hospitalHighlightedIndex.value = Math.max(hospitalHighlightedIndex.value - 1, -1);
+      scrollToHighlightedHospital();
+      break;
+    case 'Enter':
+      event.preventDefault();
+      if (hospitalHighlightedIndex.value === 0) {
+        // "전체" 선택
+        selectHospital({ id: null, name: '전체' });
+      } else if (hospitalHighlightedIndex.value > 0) {
+        // 병의원 선택
+        const hospitalIndex = hospitalHighlightedIndex.value - 1;
+        if (hospitalIndex < filteredHospitals.value.length) {
+          selectHospital(filteredHospitals.value[hospitalIndex]);
+        }
+      }
+      break;
+    case 'Escape':
+      event.preventDefault();
+      showHospitalDropdown.value = false;
+      hospitalHighlightedIndex.value = -1;
+      break;
+  }
+}
+
+// 병의원 드롭다운 스크롤 함수
+function scrollToHighlightedHospital() {
+  nextTick(() => {
+    const dropdown = document.querySelector('.hospital-dropdown');
+    if (!dropdown) return;
+    
+    const highlightedItem = dropdown.querySelector('.hospital-dropdown-item.highlighted');
+    if (!highlightedItem) return;
+    
+    const dropdownRect = dropdown.getBoundingClientRect();
+    const itemRect = highlightedItem.getBoundingClientRect();
+    
+    // 항목이 드롭다운 상단을 벗어나면 스크롤
+    if (itemRect.top < dropdownRect.top) {
+      highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    // 항목이 드롭다운 하단을 벗어나면 스크롤
+    else if (itemRect.bottom > dropdownRect.bottom) {
+      highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+}
+
+function delayedHideHospitalDropdown() {
+    setTimeout(() => {
+        showHospitalDropdown.value = false;
+    }, 200);
+}
+
+// === 업체 검색 관련 함수들 ===
+async function fetchAllCompanies() {
+  try {
+    const { data: companies, error } = await supabase
+      .from('companies')
+      .select('id, company_name, company_group, assigned_pharmacist_contact')
+      .eq('user_type', 'user')
+      .eq('approval_status', 'approved')
+      .order('company_name', { ascending: true });
+
+    if (error) throw error;
+    
+    allCompanies.value = companies || [];
+    console.log('전체 업체 목록 로드 완료:', allCompanies.value.length);
+  } catch (err) {
+    console.error('전체 업체 목록 로딩 실패:', err);
+    allCompanies.value = [];
+  }
+}
+
+function handleCompanySearch() {
+  const searchTerm = companySearchText.value.toLowerCase().trim();
+  
+  if (!searchTerm) {
+    // 검색어가 없으면 모든 업체 표시 (최대 100개)
+    filteredCompanies.value = allCompanies.value.slice(0, 100);
+  } else {
+    // 검색어가 있으면 필터링
+    filteredCompanies.value = allCompanies.value
+      .filter(company => 
+        company.company_name.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 100); // 최대 100개로 제한
+  }
+  
+  companyHighlightedIndex.value = -1; // 검색 시 하이라이트 초기화
+  showCompanyDropdown.value = true;
+}
+
+function selectCompany(company) {
+  selectedCompanyId.value = company.id;
+  companySearchText.value = (company.id === null || company.id === '') ? '' : company.company_name;
+  showCompanyDropdown.value = false;
+  companyHighlightedIndex.value = -1;
+  // watcher가 자동으로 loadPerformanceData()를 호출함
+}
+
+// 업체 키보드 네비게이션
+function handleCompanyKeydown(event) {
+  if (!showCompanyDropdown.value) return;
+  
+  const totalItems = filteredCompanies.value.length + 1; // +1 for "전체" option
+  
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      companyHighlightedIndex.value = Math.min(companyHighlightedIndex.value + 1, totalItems - 1);
+      scrollToHighlightedCompany();
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      companyHighlightedIndex.value = Math.max(companyHighlightedIndex.value - 1, -1);
+      scrollToHighlightedCompany();
+      break;
+    case 'Enter':
+      event.preventDefault();
+      if (companyHighlightedIndex.value === 0) {
+        // "전체" 선택
+        selectCompany({ id: null, company_name: '전체' });
+      } else if (companyHighlightedIndex.value > 0) {
+        // 업체 선택
+        const companyIndex = companyHighlightedIndex.value - 1;
+        if (companyIndex < filteredCompanies.value.length) {
+          selectCompany(filteredCompanies.value[companyIndex]);
+        }
+      }
+      break;
+    case 'Escape':
+      event.preventDefault();
+      showCompanyDropdown.value = false;
+      companyHighlightedIndex.value = -1;
+      break;
+  }
+}
+
+// 업체 드롭다운 스크롤 함수
+function scrollToHighlightedCompany() {
+  nextTick(() => {
+    const dropdown = document.querySelector('.company-dropdown');
+    if (!dropdown) return;
+    
+    const highlightedItem = dropdown.querySelector('.company-dropdown-item.highlighted');
+    if (!highlightedItem) return;
+    
+    const dropdownRect = dropdown.getBoundingClientRect();
+    const itemRect = highlightedItem.getBoundingClientRect();
+    
+    // 항목이 드롭다운 상단을 벗어나면 스크롤
+    if (itemRect.top < dropdownRect.top) {
+      highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    // 항목이 드롭다운 하단을 벗어나면 스크롤
+    else if (itemRect.bottom > dropdownRect.bottom) {
+      highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+}
+
+function handleCompanyFocus() {
+  // 포커스 시 드롭다운 표시
+  if (allCompanies.value.length > 0) {
+    handleCompanySearch();
+  }
+}
+
+function delayedHideCompanyDropdown() {
+  // 약간의 지연을 두어 클릭 이벤트가 처리되도록 함
+  setTimeout(() => {
+    showCompanyDropdown.value = false;
+  }, 200);
+}
 
 // 페이지 변경 시 선택된 행 상태 초기화
 watch(currentPageFirstIndex, () => {
@@ -635,7 +1005,8 @@ const route = useRoute();
 onMounted(async () => {
   console.log("1. onMounted 시작");
   await fetchAvailableMonths();
-  await fetchAllApprovedCompanies();
+  // 전체 업체 목록도 로드 (검색용)
+  await fetchAllCompanies();
   if (availableMonths.value.length > 0) {
     selectedSettlementMonth.value = availableMonths.value[0].settlement_month;
     console.log(`2. 기본 정산월 선택됨: ${selectedSettlementMonth.value}`);
@@ -679,44 +1050,95 @@ async function fetchAvailableMonths() {
   else availableMonths.value = data;
 }
 
-async function fetchAllApprovedCompanies() {
-  const { data, error } = await supabase
-    .from('companies')
-    .select('id, company_name')
-    .eq('user_type', 'user')
-    .eq('approval_status', 'approved')
-    .order('company_name', { ascending: true });
-
-  if (error) {
-    console.error('전체 승인된 업체 로딩 실패:', error);
-    allApprovedCompanies.value = [];
-  } else {
-    allApprovedCompanies.value = data || [];
-    console.log(`전체 승인된 업체 ${allApprovedCompanies.value.length}개 로드 완료`);
-  }
-}
 
 async function fetchFilterOptions(settlementMonth) {
     console.log(`3. fetchFilterOptions 시작: ${settlementMonth}월`);
     loading.value = true;
 
-    // === 1,000행 제한 해결: 전체 데이터 가져오기 ===
+    // === 업체 리스트: 모든 승인된 업체를 별도로 쿼리 ===
+    try {
+        const { data: companies, error: compError } = await supabase
+            .from('companies')
+            .select('id, company_name')
+            .eq('user_type', 'user')
+            .eq('approval_status', 'approved')
+            .order('company_name', { ascending: true });
+
+        if (compError) {
+            console.error('업체 필터 로딩 실패:', compError);
+            monthlyCompanies.value = [];
+        } else {
+            monthlyCompanies.value = companies || [];
+            console.log(`4. 전체 승인된 업체 ${monthlyCompanies.value.length}개 로드 완료`);
+        }
+    } catch (err) {
+        console.error('업체 데이터 로딩 오류:', err);
+        monthlyCompanies.value = [];
+    }
+
+    // === 전체 병의원 리스트: 모든 병의원을 별도로 쿼리 (중복 제거) ===
+    try {
+        const { data: hospitals, error: hospitalError } = await supabase
+            .from('clients')
+            .select('id, name, business_registration_number')
+            .order('name', { ascending: true });
+
+        if (hospitalError) {
+            console.error('전체 병의원 로딩 실패:', hospitalError);
+            allHospitals.value = [];
+        } else {
+            // 사업자등록번호 기준으로 중복 제거 (같은 사업자등록번호 중 가장 늦게 생성된 것만 유지)
+            const uniqueHospitals = [];
+            const businessNumberMap = new Map();
+            
+            hospitals.forEach(hospital => {
+                const businessNumber = hospital.business_registration_number;
+                if (!businessNumber || !businessNumberMap.has(businessNumber)) {
+                    businessNumberMap.set(businessNumber, hospital);
+                    uniqueHospitals.push(hospital);
+                }
+            });
+            
+            allHospitals.value = uniqueHospitals;
+            console.log(`5. 전체 병의원 ${hospitals.length}개 → 중복 제거 후 ${allHospitals.value.length}개 로드 완료`);
+            
+            // 같은 이름의 병의원이 있는지 확인 (디버깅용)
+            const nameCounts = {};
+            (hospitals || []).forEach(hospital => {
+                nameCounts[hospital.name] = (nameCounts[hospital.name] || 0) + 1;
+            });
+            
+            Object.entries(nameCounts).forEach(([name, count]) => {
+                if (count > 1) {
+                    console.log(`같은 이름의 병의원이 ${count}개 있습니다: ${name}`);
+                    const duplicates = (hospitals || []).filter(h => h.name === name);
+                    duplicates.forEach(h => {
+                        console.log(`  - ID: ${h.id}, Name: ${h.name}`);
+                    });
+                }
+            });
+        }
+    } catch (err) {
+        console.error('병의원 데이터 로딩 오류:', err);
+        allHospitals.value = [];
+    }
+
+    // === 해당 정산월에 실적이 있는 병의원만 (기존 로직 유지) ===
     let allPerformanceData = [];
     let from = 0;
     const batchSize = 1000;
 
     while (true) {
-    const { data: performanceData, error: perfError } = await supabase
-        .from('performance_records')
-        .select('company_id, client_id')
+        const { data: performanceData, error: perfError } = await supabase
+            .from('performance_records')
+            .select('company_id, client_id')
             .eq('settlement_month', settlementMonth)
             .range(from, from + batchSize - 1);
 
-    if (perfError) {
-        console.error('실적 기반 필터 데이터 로딩 실패:', perfError);
-        loading.value = false;
-        return;
-    }
+        if (perfError) {
+            console.error('실적 기반 병의원 필터 데이터 로딩 실패:', perfError);
+            break;
+        }
 
         if (!performanceData || performanceData.length === 0) {
             break;
@@ -732,20 +1154,11 @@ async function fetchFilterOptions(settlementMonth) {
         from += batchSize;
     }
 
-    console.log(`4. ${settlementMonth}월의 performance_records 데이터 ${allPerformanceData.length}건 확인`);
+    console.log(`6. ${settlementMonth}월의 performance_records 데이터 ${allPerformanceData.length}건 확인`);
 
     monthlyPerformanceLinks.value = allPerformanceData;
-    const companyIds = [...new Set(allPerformanceData.map(p => p.company_id).filter(id => id))];
     const clientIds = [...new Set(allPerformanceData.map(p => p.client_id).filter(id => id))];
-    console.log(`5. 고유 업체 ${companyIds.length}개, 고유 병원 ${clientIds.length}개 발견`);
-
-    if (companyIds.length > 0) {
-        const { data: companies, error: compError } = await supabase.from('companies').select('id, company_name').in('id', companyIds);
-        if (compError) console.error('업체 필터 로딩 실패:', compError);
-        else monthlyCompanies.value = companies.sort((a, b) => a.company_name.localeCompare(b.company_name, 'ko'));
-    } else {
-        monthlyCompanies.value = [];
-    }
+    console.log(`7. 고유 병원 ${clientIds.length}개 발견`);
 
     if (clientIds.length > 0) {
         const { data: clients, error: clientError } = await supabase.from('clients').select('id, name').in('id', clientIds);
@@ -754,7 +1167,7 @@ async function fetchFilterOptions(settlementMonth) {
     } else {
         monthlyHospitals.value = [];
     }
-    console.log(`6. 필터 옵션 로딩 완료: 업체 ${monthlyCompanies.value.length}개, 병원 ${monthlyHospitals.value.length}개`);
+    console.log(`8. 필터 옵션 로딩 완료: 업체 ${monthlyCompanies.value.length}개, 전체 병원 ${allHospitals.value.length}개, 해당월 병원 ${monthlyHospitals.value.length}개`);
     loading.value = false;
 }
 
@@ -942,10 +1355,17 @@ async function loadPerformanceData() {
       // 삭제 처리된 건은 처방액과 지급액을 0으로 표시
       let prescriptionAmount = 0;
       let paymentAmount = 0;
+      let sectionCommissionRate = 0;
+      let actualPayment = 0;
 
       if (item.review_action !== '삭제') {
         prescriptionAmount = Math.round(item.prescription_qty * (item.products?.price || 0));
         paymentAmount = Math.round(prescriptionAmount * (item.commission_rate || 0));
+        // 구간수수료율은 데이터베이스에서 가져온 값 사용 (기본값 0)
+        sectionCommissionRate = item.section_commission_rate || 0;
+        const sectionCommissionAmount = Math.round(prescriptionAmount * sectionCommissionRate);
+        // 실지급액은 지급액에 (처방액 × 구간수수료율)을 더한 금액
+        actualPayment = paymentAmount + sectionCommissionAmount;
       }
 
       return {
@@ -958,6 +1378,8 @@ async function loadPerformanceData() {
         price: item.products?.price ? Math.round(item.products.price).toLocaleString() : '0',
         prescription_amount: prescriptionAmount.toLocaleString(),
         payment_amount: paymentAmount.toLocaleString(),
+        section_commission: sectionCommissionRate,
+        actual_payment: actualPayment.toLocaleString(),
         registered_by_name: registrarMap.get(item.registered_by) || '관리자',
         updated_by_name: item.updated_by ? (updaterMap.get(item.updated_by) || '관리자') : '',
         display_status: item.review_status,
@@ -1004,6 +1426,7 @@ function startEdit(rowData) {
       prescription_qty_modify: originalRow.prescription_qty,
       prescription_type_modify: originalRow.prescription_type,
       commission_rate_modify: originalRow.commission_rate,
+      section_commission_modify: originalRow.section_commission,
       remarks_modify: originalRow.remarks,
       price_for_calc: parseFloat(String(originalRow.price || '0').replace(/,/g, '')) || 0,
       showProductSearchList: false,
@@ -1058,6 +1481,7 @@ async function saveEdit(rowData) {
       prescription_qty: Number(rowData.prescription_qty_modify) || 0,
       prescription_type: rowData.prescription_type_modify,
       commission_rate: Number(rowData.commission_rate_modify) || 0,
+      section_commission_rate: Number(rowData.section_commission_modify) || 0,
       remarks: rowData.remarks_modify,
       review_status: '완료',
       updated_at: new Date().toISOString(),
@@ -1134,6 +1558,7 @@ function addRowBelow(referenceRow) {
     insurance_code: '',
     prescription_qty_modify: null,
     commission_rate_modify: null,
+    section_commission_modify: 0,
     remarks_modify: '',
 
     // --- 계산을 위한 초기값 ---
@@ -1396,6 +1821,15 @@ async function handleEditCalculations(rowData, field) {
   const prescriptionAmount = Math.round(qty * price);
   rowData.prescription_amount_modify = prescriptionAmount;
   rowData.payment_amount_modify = Math.round(prescriptionAmount * rate);
+  
+  // 구간수수료율 변경 시 실지급액 재계산
+  if (field === 'section_commission' || field === 'qty' || field === 'rate') {
+    const sectionCommissionRate = Number(rowData.section_commission_modify) || 0;
+    const paymentAmount = rowData.payment_amount_modify;
+    const prescriptionAmount = rowData.prescription_amount_modify;
+    const sectionCommissionAmount = Math.round(prescriptionAmount * sectionCommissionRate);
+    rowData.actual_payment_modify = paymentAmount + sectionCommissionAmount;
+  }
 }
 
 function handleProductNameInput(rowData, event) {
@@ -1714,7 +2148,7 @@ async function handleBulkChange() {
     switch (selectedBulkChangeType.value) {
       case 'company_name':
         // 업체명 변경 시 company_id도 함께 업데이트
-        const selectedCompany = allApprovedCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
+        const selectedCompany = monthlyCompanies.value.find(company => company.company_name === selectedBulkChangeValue.value);
         if (selectedCompany) {
           updateData.company_id = selectedCompany.id;
 
@@ -1903,5 +2337,105 @@ async function handleBulkChange() {
 :deep(.p-datatable-tfoot > tr > td) {
     background: #f8f9fa !important;
     font-weight: bold;
+}
+
+/* 병의원 검색 드롭다운 스타일 */
+.hospital-search-container {
+  position: relative;
+}
+
+.hospital-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  z-index: 1000;
+}
+
+.hospital-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hospital-dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+.hospital-dropdown-item.selected {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.hospital-dropdown-item.highlighted {
+  background-color: #f0f8ff;
+  color: #1976d2;
+}
+
+.hospital-dropdown-item.no-results {
+  color: #999;
+  font-style: italic;
+  cursor: default;
+}
+
+.hospital-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+/* 업체 검색 드롭다운 스타일 */
+.company-search-container {
+  position: relative;
+}
+
+.company-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  z-index: 1000;
+}
+
+.company-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.company-dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+.company-dropdown-item.selected {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.company-dropdown-item.highlighted {
+  background-color: #f0f8ff;
+  color: #1976d2;
+}
+
+.company-dropdown-item.no-results {
+  color: #999;
+  font-style: italic;
+  cursor: default;
+}
+
+.company-dropdown-item:last-child {
+  border-bottom: none;
 }
 </style>
