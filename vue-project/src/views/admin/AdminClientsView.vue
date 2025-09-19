@@ -426,6 +426,25 @@ async function handleCreateSubmit() {
     return
   }
 
+  // 병의원 코드 중복 확인 (입력된 경우에만)
+  if (newClient.value.client_code && newClient.value.client_code.trim() !== '') {
+    const { data: existingClientByCode, error: codeCheckError } = await supabase
+      .from('clients')
+      .select('id, name')
+      .eq('client_code', newClient.value.client_code.trim())
+      .single()
+
+    if (codeCheckError && codeCheckError.code !== 'PGRST116') { // PGRST116은 데이터가 없을 때의 에러
+      alert('병의원 코드 중복 확인 중 오류가 발생했습니다: ' + codeCheckError.message)
+      return
+    }
+
+    if (existingClientByCode) {
+      alert(`이미 등록된 병의원 코드입니다.\n등록된 병의원: ${existingClientByCode.name}`)
+      return
+    }
+  }
+
   // 사업자등록번호 중복 확인
   const { data: existingClient, error: checkError } = await supabase
     .from('clients')
@@ -434,7 +453,7 @@ async function handleCreateSubmit() {
     .single()
 
   if (checkError && checkError.code !== 'PGRST116') { // PGRST116은 데이터가 없을 때의 에러
-    alert('중복 확인 중 오류가 발생했습니다: ' + checkError.message)
+    alert('사업자등록번호 중복 확인 중 오류가 발생했습니다: ' + checkError.message)
     return
   }
 
@@ -451,7 +470,7 @@ async function handleCreateSubmit() {
   }
 
   const dataToInsert = {
-    client_code: newClient.value.client_code,
+    client_code: newClient.value.client_code && newClient.value.client_code.trim() !== '' ? newClient.value.client_code.trim() : null,
     name: newClient.value.name,
     business_registration_number: newClient.value.business_registration_number,
     owner_name: newClient.value.owner_name,
@@ -481,7 +500,6 @@ const fetchClients = async () => {
       .select('*')
       .order('client_code', { ascending: true })
 
-    console.log('fetchClients result:', { data, error });
 
     if (!error && data) {
       // created_by와 updated_by에 해당하는 회사명을 별도로 조회
@@ -635,7 +653,6 @@ const saveEdit = async (row) => {
     // 병의원 코드 중복 체크 (변경된 경우에만)
     if (clientCodeChanged && row.client_code && row.client_code.trim() !== '') {
       try {
-        console.log('병의원 코드 중복 검사 시작...');
         const { data: existingClientByCode, error: codeCheckError } = await supabase
           .from('clients')
           .select('id, name, client_code')
@@ -646,7 +663,6 @@ const saveEdit = async (row) => {
         if (codeCheckError) {
           if (codeCheckError.code === 'PGRST116') {
             // 결과가 없는 경우 - 중복 없음
-            console.log('병의원 코드 중복 없음');
           } else {
             // 다른 모든 오류 (HTTP 406, 500 등) - 중단
             console.error('병의원 코드 중복 검사 실패:', codeCheckError);
@@ -664,7 +680,6 @@ const saveEdit = async (row) => {
           }, 100);
           return;
         }
-        console.log('병의원 코드 중복 검사 통과');
       } catch (codeDuplicateCheckError) {
         console.error('병의원 코드 중복 검사 중 예외 발생:', codeDuplicateCheckError);
         alert('병의원 코드 중복 검사 중 예상치 못한 오류가 발생했습니다. 다시 시도해주세요.');
@@ -675,7 +690,6 @@ const saveEdit = async (row) => {
     // 사업자등록번호 중복 체크 (변경된 경우에만)
     if (businessNumberChanged) {
       try {
-        console.log('사업자등록번호 중복 검사 시작...');
         const { data: existingClientByBusiness, error: businessCheckError } = await supabase
           .from('clients')
           .select('id, name, business_registration_number')
@@ -686,7 +700,6 @@ const saveEdit = async (row) => {
         if (businessCheckError) {
           if (businessCheckError.code === 'PGRST116') {
             // 결과가 없는 경우 - 중복 없음
-            console.log('사업자등록번호 중복 없음');
           } else {
             // 다른 모든 오류 (HTTP 406, 500 등) - 중단
             console.error('사업자등록번호 중복 검사 실패:', businessCheckError);
@@ -704,7 +717,6 @@ const saveEdit = async (row) => {
           }, 100);
           return;
         }
-        console.log('사업자등록번호 중복 검사 통과');
       } catch (businessDuplicateCheckError) {
         console.error('사업자등록번호 중복 검사 중 예외 발생:', businessDuplicateCheckError);
         alert('사업자등록번호 중복 검사 중 예상치 못한 오류가 발생했습니다. 다시 시도해주세요.');
@@ -979,8 +991,11 @@ const handleFileUpload = async (event) => {
         statusValue = 'active'
       }
 
+      // 병의원 코드 처리: 빈 값이면 null로 저장 (UNIQUE 제약조건 문제 방지)
+      const clientCode = row['병의원코드'] ? row['병의원코드'].toString().trim() : null
+      
       uploadData.push({
-        client_code: row['병의원코드'] || '',
+        client_code: clientCode,
         name: row['병의원명'],
         business_registration_number: formattedBusinessNumber, // 하이픈이 포함된 형식으로 저장
         owner_name: row['원장명'] || '',
@@ -998,7 +1013,6 @@ const handleFileUpload = async (event) => {
     }
 
     // 3단계: 데이터베이스 전체에서 중복 체크
-    console.log('데이터베이스 중복 체크 시작...')
     const duplicateErrors = []
     const duplicateClients = []
 
@@ -1026,10 +1040,11 @@ const handleFileUpload = async (event) => {
     )
 
     for (const newClient of uploadData) {
-      // 병의원 코드 중복 체크 (입력된 경우에만)
-      if (newClient.client_code && newClient.client_code.trim() !== '') {
-        if (existingClientCodes.has(newClient.client_code.trim())) {
-          const existingName = existingClientCodeMap.get(newClient.client_code.trim())
+      // 병의원 코드 중복 체크 (null이 아니고 빈 문자열이 아닌 경우에만)
+      if (newClient.client_code && newClient.client_code.toString().trim() !== '') {
+        const clientCodeStr = newClient.client_code.toString().trim()
+        if (existingClientCodes.has(clientCodeStr)) {
+          const existingName = existingClientCodeMap.get(clientCodeStr)
           duplicateErrors.push(`${newClient.rowNum}행: 동일한 병의원 코드(${newClient.client_code})로 이미 등록된 병의원이 있습니다. (${existingName})`)
           duplicateClients.push(newClient)
         }
@@ -1048,7 +1063,6 @@ const handleFileUpload = async (event) => {
 
     // 4단계: 중복 발견 시 처리
     if (duplicateErrors.length > 0) {
-      console.log('중복 오류 발견:', duplicateErrors)
       
       // 중복 발견 시 계속 진행 여부 확인
       const duplicateCount = duplicateErrors.length
@@ -1136,12 +1150,13 @@ const handleFileUpload = async (event) => {
         let shouldSkip = false
         let skipReason = ''
 
-        // 병의원 코드 중복 체크 (입력된 경우에만)
-        if (data.client_code && data.client_code.trim() !== '') {
+        // 병의원 코드 중복 체크 (null이 아니고 빈 문자열이 아닌 경우에만)
+        if (data.client_code && data.client_code.toString().trim() !== '') {
+          const clientCodeStr = data.client_code.toString().trim()
           const { data: existingByCode, error: codeCheckError } = await supabase
             .from('clients')
             .select('id, name')
-            .eq('client_code', data.client_code.trim())
+            .eq('client_code', clientCodeStr)
             .maybeSingle()
 
           if (codeCheckError) {
@@ -1177,7 +1192,6 @@ const handleFileUpload = async (event) => {
         if (shouldSkip) {
           // 이미 존재하는 경우 스킵
           skipCount++
-          console.log(`스킵: ${data.name} - ${skipReason}`)
           continue
         }
 
@@ -1190,7 +1204,6 @@ const handleFileUpload = async (event) => {
           insertErrors.push(`${data.name}: 등록 실패 - ${insertError.message}`)
         } else {
           successCount++
-          console.log(`등록 성공: ${data.name}`)
         }
       } catch (error) {
         insertErrors.push(`${data.name}: 처리 중 오류 - ${error.message}`)
@@ -1204,7 +1217,6 @@ const handleFileUpload = async (event) => {
     }
     if (insertErrors.length > 0) {
       message += `\n실패: ${insertErrors.length}건`
-      console.error('업로드 오류:', insertErrors)
     }
 
     alert(message)
@@ -1372,26 +1384,16 @@ const checkOverflow = (event) => {
   const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
   const isOverflowed = textWidth > availableWidth;
 
-  console.log('병의원 오버플로우 체크:', {
-    text: element.textContent,
-    textWidth,
-    availableWidth,
-    isOverflowed
-  });
-
   if (isOverflowed) {
     element.classList.add('overflowed');
-    console.log('병의원 오버플로우 클래스 추가됨');
   } else {
     element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
-    console.log('병의원 오버플로우 아님 - 클래스 제거됨');
   }
 }
 
 const removeOverflowClass = (event) => {
   const element = event.target;
   element.classList.remove('overflowed');
-  console.log('병의원 오버플로우 클래스 제거됨');
 }
 
 function doSearch() {
