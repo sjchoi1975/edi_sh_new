@@ -168,8 +168,26 @@ const breadcrumbSubMenu = computed(() => {
   return '';
 });
 
-onMounted(async () => {
+onMounted(() => {
+  initializeApp();
+});
+
+async function initializeApp() {
   console.log('[App.vue] onMounted: Component mounted. Registering onAuthStateChange.');
+  
+  // URL 파라미터에서 비밀번호 재설정 토큰 확인
+  const urlParams = new URLSearchParams(window.location.search);
+  const type = urlParams.get('type');
+  const token = urlParams.get('token');
+  
+  if (type === 'recovery' && token && window.location.pathname === '/') {
+    console.log('[App.vue] Password recovery token detected in URL. Redirecting to reset-password page.');
+    // 비밀번호 재설정 플래그 설정
+    window.isPasswordResetPage = true;
+    // 비밀번호 재설정 페이지로 리다이렉트
+    router.push('/reset-password');
+    return;
+  }
   
   // 초기 세션 로드 및 상태 설정
   // onAuthStateChange가 INITIAL_SESSION 이벤트를 통해 초기 상태를 처리하므로,
@@ -200,7 +218,15 @@ onMounted(async () => {
       await handleRedirect(session);
     } else if (event === 'SIGNED_IN') {
       console.log('[App.vue] Event: SIGNED_IN');
-      await handleRedirect(session); // 로그인 시 리디렉션
+      
+      // 비밀번호 재설정 페이지가 아닌 경우에만 자동 로그인 처리
+      if (!window.isPasswordResetPage) {
+        console.log('[App.vue] 일반 로그인 - 리디렉션 처리');
+        await handleRedirect(session); // 로그인 시 리디렉션
+      } else {
+        console.log('[App.vue] 비밀번호 재설정 페이지 - 자동 로그인 방지');
+        // 비밀번호 재설정 페이지에서는 자동 리디렉션하지 않음
+      }
     } else if (event === 'SIGNED_OUT') {
       console.log('[App.vue] Event: SIGNED_OUT');
       await handleRedirect(null); // 로그아웃 시 리디렉션 (세션 없음)
@@ -208,14 +234,17 @@ onMounted(async () => {
       console.log('[App.vue] Event: USER_UPDATED. User metadata might have changed.');
       // 필요하다면 handleRedirect(session) 호출
     } else if (event === 'PASSWORD_RECOVERY') {
-      console.log('[App.vue] Event: PASSWORD_RECOVERY. User may need to be redirected to a password reset page.');
-      // 필요한 경우 비밀번호 재설정 페이지로 리디렉션
+      console.log('[App.vue] Event: PASSWORD_RECOVERY. Redirecting to password reset page.');
+      // 비밀번호 재설정 플래그 설정
+      window.isPasswordResetPage = true;
+      // 비밀번호 재설정 페이지로 리디렉션
+      router.push('/reset-password');
     } else if (event === 'TOKEN_REFRESHED') {
       console.log('[App.vue] Event: TOKEN_REFRESHED. Session token has been refreshed.');
       // 특별한 조치 불필요
     }
   });
-});
+}
 
 const handleLogout = async () => {
   console.log('[App.vue] handleLogout: Attempting logout');
