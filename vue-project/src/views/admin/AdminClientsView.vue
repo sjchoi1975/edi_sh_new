@@ -48,7 +48,7 @@
             @change="handleFileUpload"
             style="display: none"
           />
-          <button class="btn-save" @click="goCreate">개별 등록</button>
+          <button class="btn-save" @click="openCreateModal">개별 등록</button>
         </div>
       </div>
       <DataTable
@@ -243,11 +243,71 @@
         <div class="loading-text">등록 진행중입니다...</div>
       </div>
     </div>
+
+    <!-- 병의원 등록 모달 -->
+    <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
+      <div class="modal-content modal-large" @click.stop>
+        <div class="modal-header">
+          <h2>병의원 등록</h2>
+          <button class="modal-close-btn" @click="closeCreateModal">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="handleCreateSubmit" class="form-grid">
+            <div class="form-group">
+              <label>병의원코드</label>
+              <input v-model="newClient.client_code" type="text" />
+            </div>
+            <div class="form-group">
+              <label>병의원명<span class="required">*</span></label>
+              <input v-model="newClient.name" type="text" required />
+            </div>
+            <div class="form-group">
+              <label>사업자등록번호<span class="required">*</span></label>
+              <input 
+                v-model="newClient.business_registration_number" 
+                type="text" 
+                required 
+                @input="formatBusinessNumberModal"
+                @keypress="allowOnlyNumbers"
+                @keydown="handleBackspace"
+              />
+            </div>
+            <div class="form-group">
+              <label>원장명</label>
+              <input v-model="newClient.owner_name" type="text" />
+            </div>
+            <div class="form-group">
+              <label>주소</label>
+              <input v-model="newClient.address" type="text" />
+            </div>
+            <div class="form-group">
+              <label>비고</label>
+              <input v-model="newClient.remarks" type="text" />
+            </div>
+            <div class="form-group">
+              <label>정산용 비고</label>
+              <input v-model="newClient.remarks_settlement" type="text" />
+            </div>
+            <div class="form-group">
+              <label>상태</label>
+              <select v-model="newClient.status">
+                <option value="active">활성</option>
+                <option value="inactive">비활성</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-save" @click="handleCreateSubmit" :disabled="!isCreateFormValid">등록</button>
+          <button class="btn-close" @click="closeCreateModal">취소</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -288,11 +348,147 @@ const isAnyEditing = ref(false); // 편집 중인 행이 있는지 확인
 const router = useRouter();
 const fileInput = ref(null)
 
+// 모달 관련 변수
+const showCreateModal = ref(false)
+const newClient = ref({
+  client_code: '',
+  name: '',
+  business_registration_number: '',
+  owner_name: '',
+  address: '',
+  remarks: '',
+  remarks_settlement: '',
+  status: 'active'
+})
+
 function goCreate() {
   router.push('/admin/clients/create')
 }
 function goToDetail(id) {
   router.push(`/admin/clients/${id}`)
+}
+
+// 모달 관련 함수들
+function openCreateModal() {
+  showCreateModal.value = true
+  // 폼 초기화
+  newClient.value = {
+    client_code: '',
+    name: '',
+    business_registration_number: '',
+    owner_name: '',
+    address: '',
+    remarks: '',
+    remarks_settlement: '',
+    status: 'active'
+  }
+}
+
+function closeCreateModal() {
+  showCreateModal.value = false
+}
+
+// 폼 유효성 검사
+const isCreateFormValid = computed(() => {
+  return newClient.value.name && newClient.value.name.trim() !== '' &&
+         newClient.value.business_registration_number && newClient.value.business_registration_number.trim() !== ''
+})
+
+// 모달에서 사업자등록번호 포맷팅
+function formatBusinessNumberModal(event) {
+  let value = event.target.value.replace(/[^0-9]/g, '')
+  if (value.length >= 3) {
+    value = value.substring(0, 3) + '-' + value.substring(3)
+  }
+  if (value.length >= 6) {
+    value = value.substring(0, 6) + '-' + value.substring(6)
+  }
+  newClient.value.business_registration_number = value
+}
+
+// 모달에서 등록 처리
+async function handleCreateSubmit() {
+  // 필수 필드 검증
+  if (!newClient.value.name || newClient.value.name.trim() === '') {
+    alert('병의원명은 필수 입력 항목입니다.')
+    return
+  }
+
+  if (!newClient.value.business_registration_number || newClient.value.business_registration_number.trim() === '') {
+    alert('사업자등록번호는 필수 입력 항목입니다.')
+    return
+  }
+
+  // 사업자등록번호 형식 검증 (10자리 숫자)
+  const businessNumberDigits = newClient.value.business_registration_number.replace(/[^0-9]/g, '')
+  if (businessNumberDigits.length !== 10) {
+    alert('사업자등록번호는 10자리여야 합니다.')
+    return
+  }
+
+  // 병의원 코드 중복 확인 (입력된 경우에만)
+  if (newClient.value.client_code && newClient.value.client_code.trim() !== '') {
+    const { data: existingClientByCode, error: codeCheckError } = await supabase
+      .from('clients')
+      .select('id, name')
+      .eq('client_code', newClient.value.client_code.trim())
+      .single()
+
+    if (codeCheckError && codeCheckError.code !== 'PGRST116') { // PGRST116은 데이터가 없을 때의 에러
+      alert('병의원 코드 중복 확인 중 오류가 발생했습니다: ' + codeCheckError.message)
+      return
+    }
+
+    if (existingClientByCode) {
+      alert(`이미 등록된 병의원 코드입니다.\n등록된 병의원: ${existingClientByCode.name}`)
+      return
+    }
+  }
+
+  // 사업자등록번호 중복 확인
+  const { data: existingClient, error: checkError } = await supabase
+    .from('clients')
+    .select('id, name')
+    .eq('business_registration_number', newClient.value.business_registration_number)
+    .single()
+
+  if (checkError && checkError.code !== 'PGRST116') { // PGRST116은 데이터가 없을 때의 에러
+    alert('사업자등록번호 중복 확인 중 오류가 발생했습니다: ' + checkError.message)
+    return
+  }
+
+  if (existingClient) {
+    alert(`이미 등록된 사업자등록번호입니다.\n등록된 병의원: ${existingClient.name}`)
+    return
+  }
+
+  // 현재 사용자 정보 가져오기
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.')
+    return
+  }
+
+  const dataToInsert = {
+    client_code: newClient.value.client_code && newClient.value.client_code.trim() !== '' ? newClient.value.client_code.trim() : null,
+    name: newClient.value.name,
+    business_registration_number: newClient.value.business_registration_number,
+    owner_name: newClient.value.owner_name,
+    address: newClient.value.address,
+    remarks: newClient.value.remarks,
+    remarks_settlement: newClient.value.remarks_settlement,
+    status: newClient.value.status,
+    created_by: user.id
+  }
+
+  const { error } = await supabase.from('clients').insert([dataToInsert])
+  if (error) {
+    alert('등록 실패: ' + error.message)
+  } else {
+    alert('등록되었습니다.')
+    closeCreateModal()
+    await fetchClients() // 목록 새로고침
+  }
 }
 
 const fetchClients = async () => {
@@ -304,7 +500,6 @@ const fetchClients = async () => {
       .select('*')
       .order('client_code', { ascending: true })
 
-    console.log('fetchClients result:', { data, error });
 
     if (!error && data) {
       // created_by와 updated_by에 해당하는 회사명을 별도로 조회
@@ -458,7 +653,6 @@ const saveEdit = async (row) => {
     // 병의원 코드 중복 체크 (변경된 경우에만)
     if (clientCodeChanged && row.client_code && row.client_code.trim() !== '') {
       try {
-        console.log('병의원 코드 중복 검사 시작...');
         const { data: existingClientByCode, error: codeCheckError } = await supabase
           .from('clients')
           .select('id, name, client_code')
@@ -469,7 +663,6 @@ const saveEdit = async (row) => {
         if (codeCheckError) {
           if (codeCheckError.code === 'PGRST116') {
             // 결과가 없는 경우 - 중복 없음
-            console.log('병의원 코드 중복 없음');
           } else {
             // 다른 모든 오류 (HTTP 406, 500 등) - 중단
             console.error('병의원 코드 중복 검사 실패:', codeCheckError);
@@ -487,7 +680,6 @@ const saveEdit = async (row) => {
           }, 100);
           return;
         }
-        console.log('병의원 코드 중복 검사 통과');
       } catch (codeDuplicateCheckError) {
         console.error('병의원 코드 중복 검사 중 예외 발생:', codeDuplicateCheckError);
         alert('병의원 코드 중복 검사 중 예상치 못한 오류가 발생했습니다. 다시 시도해주세요.');
@@ -498,7 +690,6 @@ const saveEdit = async (row) => {
     // 사업자등록번호 중복 체크 (변경된 경우에만)
     if (businessNumberChanged) {
       try {
-        console.log('사업자등록번호 중복 검사 시작...');
         const { data: existingClientByBusiness, error: businessCheckError } = await supabase
           .from('clients')
           .select('id, name, business_registration_number')
@@ -509,7 +700,6 @@ const saveEdit = async (row) => {
         if (businessCheckError) {
           if (businessCheckError.code === 'PGRST116') {
             // 결과가 없는 경우 - 중복 없음
-            console.log('사업자등록번호 중복 없음');
           } else {
             // 다른 모든 오류 (HTTP 406, 500 등) - 중단
             console.error('사업자등록번호 중복 검사 실패:', businessCheckError);
@@ -527,7 +717,6 @@ const saveEdit = async (row) => {
           }, 100);
           return;
         }
-        console.log('사업자등록번호 중복 검사 통과');
       } catch (businessDuplicateCheckError) {
         console.error('사업자등록번호 중복 검사 중 예외 발생:', businessDuplicateCheckError);
         alert('사업자등록번호 중복 검사 중 예상치 못한 오류가 발생했습니다. 다시 시도해주세요.');
@@ -802,10 +991,13 @@ const handleFileUpload = async (event) => {
         statusValue = 'active'
       }
 
+      // 병의원 코드 처리: 빈 값이면 null로 저장 (UNIQUE 제약조건 문제 방지)
+      const clientCode = row['병의원코드'] ? row['병의원코드'].toString().trim() : null
+      
       uploadData.push({
-        client_code: row['병의원코드'] || '',
+        client_code: clientCode,
         name: row['병의원명'],
-        business_registration_number: formattedBusinessNumber,
+        business_registration_number: formattedBusinessNumber, // 하이픈이 포함된 형식으로 저장
         owner_name: row['원장명'] || '',
         address: row['주소'] || '',
         remarks: row['비고'] || '',
@@ -821,55 +1013,49 @@ const handleFileUpload = async (event) => {
     }
 
     // 3단계: 데이터베이스 전체에서 중복 체크
-    console.log('데이터베이스 중복 체크 시작...')
     const duplicateErrors = []
     const duplicateClients = []
 
+    // 데이터베이스에서 모든 기존 데이터 조회
+    const { data: existingClients, error: fetchError } = await supabase
+      .from('clients')
+      .select('client_code, business_registration_number, name')
+
+    if (fetchError) {
+      alert('기존 데이터 조회 중 오류가 발생했습니다: ' + fetchError.message)
+      return
+    }
+
+    // 기존 데이터를 Set과 Map으로 변환하여 빠른 검색
+    const existingClientCodes = new Set(existingClients.map(c => c.client_code).filter(code => code && code.trim() !== ''))
+    const existingBusinessNumbers = new Set(
+      existingClients.map(c => c.business_registration_number?.toString().replace(/[^0-9]/g, '') || '').filter(num => num)
+    )
+    const existingClientCodeMap = new Map(existingClients.filter(c => c.client_code && c.client_code.trim() !== '').map(c => [c.client_code, c.name]))
+    const existingBusinessNumberMap = new Map(
+      existingClients.filter(c => c.business_registration_number).map(c => [
+        c.business_registration_number?.toString().replace(/[^0-9]/g, '') || '', 
+        c.name
+      ])
+    )
+
     for (const newClient of uploadData) {
-      // 병의원 코드 중복 체크 (입력된 경우에만)
-      if (newClient.client_code && newClient.client_code.trim() !== '') {
-        try {
-          const { data: existingClientByCode, error: codeCheckError } = await supabase
-            .from('clients')
-            .select('id, name, client_code')
-            .eq('client_code', newClient.client_code.trim())
-            .single();
-          
-          if (codeCheckError && codeCheckError.code !== 'PGRST116') {
-            // PGRST116이 아닌 오류는 실제 오류
-            duplicateErrors.push(`${newClient.rowNum}행: 병의원 코드 중복 검사 중 오류가 발생했습니다. (${codeCheckError.message})`)
-            duplicateClients.push(newClient)
-          } else if (existingClientByCode) {
-            // 중복 발견
-            duplicateErrors.push(`${newClient.rowNum}행: 동일한 병의원 코드(${newClient.client_code})로 이미 등록된 병의원이 있습니다. (${existingClientByCode.name})`)
-            duplicateClients.push(newClient)
-          }
-        } catch (codeError) {
-          duplicateErrors.push(`${newClient.rowNum}행: 병의원 코드 중복 검사 중 예외가 발생했습니다.`)
+      // 병의원 코드 중복 체크 (null이 아니고 빈 문자열이 아닌 경우에만)
+      if (newClient.client_code && newClient.client_code.toString().trim() !== '') {
+        const clientCodeStr = newClient.client_code.toString().trim()
+        if (existingClientCodes.has(clientCodeStr)) {
+          const existingName = existingClientCodeMap.get(clientCodeStr)
+          duplicateErrors.push(`${newClient.rowNum}행: 동일한 병의원 코드(${newClient.client_code})로 이미 등록된 병의원이 있습니다. (${existingName})`)
           duplicateClients.push(newClient)
         }
       }
 
-      // 사업자등록번호 중복 체크
+      // 사업자등록번호 중복 체크 (정규화된 값으로 비교)
       if (newClient.business_registration_number) {
-        try {
-          const { data: existingClientByBusiness, error: businessCheckError } = await supabase
-            .from('clients')
-            .select('id, name, business_registration_number')
-            .eq('business_registration_number', newClient.business_registration_number)
-            .single();
-          
-          if (businessCheckError && businessCheckError.code !== 'PGRST116') {
-            // PGRST116이 아닌 오류는 실제 오류
-            duplicateErrors.push(`${newClient.rowNum}행: 사업자등록번호 중복 검사 중 오류가 발생했습니다. (${businessCheckError.message})`)
-            duplicateClients.push(newClient)
-          } else if (existingClientByBusiness) {
-            // 중복 발견
-            duplicateErrors.push(`${newClient.rowNum}행: 동일한 사업자등록번호(${newClient.business_registration_number})로 이미 등록된 병의원이 있습니다. (${existingClientByBusiness.name})`)
-            duplicateClients.push(newClient)
-          }
-        } catch (businessError) {
-          duplicateErrors.push(`${newClient.rowNum}행: 사업자등록번호 중복 검사 중 예외가 발생했습니다.`)
+        const normalizedBusinessNumber = newClient.business_registration_number.toString().replace(/[^0-9]/g, '')
+        if (existingBusinessNumbers.has(normalizedBusinessNumber)) {
+          const existingName = existingBusinessNumberMap.get(normalizedBusinessNumber)
+          duplicateErrors.push(`${newClient.rowNum}행: 동일한 사업자등록번호(${newClient.business_registration_number})로 이미 등록된 병의원이 있습니다. (${existingName})`)
           duplicateClients.push(newClient)
         }
       }
@@ -877,10 +1063,10 @@ const handleFileUpload = async (event) => {
 
     // 4단계: 중복 발견 시 처리
     if (duplicateErrors.length > 0) {
-      console.log('중복 오류 발견:', duplicateErrors)
       
       // 중복 발견 시 계속 진행 여부 확인
-      if (!confirm('중복 오류가 발견되었습니다:\n\n' + duplicateErrors.join('\n') + '\n\n계속 등록 작업을 진행하시겠습니까?')) {
+      const duplicateCount = duplicateErrors.length
+      if (!confirm(`중복 오류가 ${duplicateCount}건 발견되었습니다:\n\n` + duplicateErrors.join('\n') + `\n\n계속 등록 작업을 진행하시겠습니까?`)) {
         return
       }
 
@@ -942,7 +1128,7 @@ const handleFileUpload = async (event) => {
       }
     }
 
-    // 최종 등록
+    // 최종 등록 - 개별 중복 체크 후 insert
     const insertData = uploadData.map(item => {
       const { rowNum, ...data } = item
       return data
@@ -953,15 +1139,88 @@ const handleFileUpload = async (event) => {
       return
     }
 
-    // 데이터베이스에 일괄 삽입
-    const { error } = await supabase.from('clients').insert(insertData)
+    // 개별 중복 체크 후 등록
+    let successCount = 0
+    let skipCount = 0
+    const insertErrors = []
 
-    if (error) {
-      alert('업로드 실패: ' + error.message)
-    } else {
-      alert(`${insertData.length}건의 병의원 정보가 업로드되었습니다.`)
-      await fetchClients() // 목록 새로고침
+    for (const data of insertData) {
+      try {
+        // 개별 중복 체크 (병의원 코드와 사업자등록번호 모두 확인)
+        let shouldSkip = false
+        let skipReason = ''
+
+        // 병의원 코드 중복 체크 (null이 아니고 빈 문자열이 아닌 경우에만)
+        if (data.client_code && data.client_code.toString().trim() !== '') {
+          const clientCodeStr = data.client_code.toString().trim()
+          const { data: existingByCode, error: codeCheckError } = await supabase
+            .from('clients')
+            .select('id, name')
+            .eq('client_code', clientCodeStr)
+            .maybeSingle()
+
+          if (codeCheckError) {
+            insertErrors.push(`${data.name}: 병의원 코드 중복 체크 실패 - ${codeCheckError.message}`)
+            continue
+          }
+
+          if (existingByCode) {
+            shouldSkip = true
+            skipReason = `병의원 코드 중복 (${existingByCode.name})`
+          }
+        }
+
+        // 사업자등록번호 중복 체크
+        if (!shouldSkip && data.business_registration_number) {
+          const { data: existingByBusiness, error: businessCheckError } = await supabase
+            .from('clients')
+            .select('id, name')
+            .eq('business_registration_number', data.business_registration_number)
+            .maybeSingle()
+
+          if (businessCheckError) {
+            insertErrors.push(`${data.name}: 사업자등록번호 중복 체크 실패 - ${businessCheckError.message}`)
+            continue
+          }
+
+          if (existingByBusiness) {
+            shouldSkip = true
+            skipReason = `사업자등록번호 중복 (${existingByBusiness.name})`
+          }
+        }
+
+        if (shouldSkip) {
+          // 이미 존재하는 경우 스킵
+          skipCount++
+          continue
+        }
+
+        // 존재하지 않는 경우에만 insert
+        const { error: insertError } = await supabase
+          .from('clients')
+          .insert([data])
+
+        if (insertError) {
+          insertErrors.push(`${data.name}: 등록 실패 - ${insertError.message}`)
+        } else {
+          successCount++
+        }
+      } catch (error) {
+        insertErrors.push(`${data.name}: 처리 중 오류 - ${error.message}`)
+      }
     }
+
+    // 결과 알림
+    let message = `업로드 완료!\n성공: ${successCount}건`
+    if (skipCount > 0) {
+      message += `\n스킵: ${skipCount}건 (이미 존재)`
+    }
+    if (insertErrors.length > 0) {
+      message += `\n실패: ${insertErrors.length}건`
+    }
+
+    alert(message)
+    await fetchClients() // 목록 새로고침
   } catch (error) {
     console.error('파일 처리 오류:', error)
     alert('파일 처리 중 오류가 발생했습니다.')
@@ -1125,26 +1384,16 @@ const checkOverflow = (event) => {
   const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
   const isOverflowed = textWidth > availableWidth;
 
-  console.log('병의원 오버플로우 체크:', {
-    text: element.textContent,
-    textWidth,
-    availableWidth,
-    isOverflowed
-  });
-
   if (isOverflowed) {
     element.classList.add('overflowed');
-    console.log('병의원 오버플로우 클래스 추가됨');
   } else {
     element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
-    console.log('병의원 오버플로우 아님 - 클래스 제거됨');
   }
 }
 
 const removeOverflowClass = (event) => {
   const element = event.target;
   element.classList.remove('overflowed');
-  console.log('병의원 오버플로우 클래스 제거됨');
 }
 
 function doSearch() {

@@ -156,6 +156,31 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 사업자등록번호 중복 확인 (정규화된 값으로 검색)
+  const { data: existingPharmacy, error: checkError } = await supabase
+    .from('pharmacies')
+    .select('id, name')
+    .eq('business_registration_number', businessNumberDigits)
+    .maybeSingle();
+
+  if (checkError) {
+    console.error('사업자등록번호 중복 검사 실패:', checkError);
+    alert(`사업자등록번호 중복 검사 중 오류가 발생했습니다.\n\n오류 코드: ${checkError.code}\n오류 메시지: ${checkError.message}\n\n관리자에게 문의해주세요.`);
+    return;
+  }
+
+  if (existingPharmacy) {
+    alert(`이미 등록된 사업자등록번호입니다.\n등록된 약국: ${existingPharmacy.name}`);
+    setTimeout(() => {
+      const businessNumberInput = document.getElementById('businessNumber');
+      if (businessNumberInput) {
+        businessNumberInput.focus();
+        businessNumberInput.select();
+      }
+    }, 100);
+    return;
+  }
+
   // 현재 사용자 정보 가져오기
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -166,7 +191,7 @@ const handleSubmit = async () => {
   const dataToInsert = {
     pharmacy_code: pharmacyCode.value,
     name: name.value,
-    business_registration_number: businessNumber.value,
+    business_registration_number: businessNumberDigits,
     address: address.value,
     status: status.value,
     remarks: remarks.value,
