@@ -78,7 +78,7 @@
             class="arrow-btn"
             :disabled="selectedAllCompaniesCount === 0"
             @click="assignCompanies"
-            title="업체 할당"
+            title="미할당"
           >
             →
           </button>
@@ -86,7 +86,7 @@
             class="arrow-btn"
             :disabled="selectedUnassignedCompaniesCount === 0"
             @click="unassignCompanies"
-            title="업체 해제"
+            title="할당"
           >
             ←
           </button>
@@ -425,10 +425,10 @@ export default {
         await loadAllCompanies()
         await loadUnassignedCompanies()
         
-        alert(`${companiesToAssign.length}개 업체가 할당되었습니다.`)
+        alert(`${companiesToAssign.length}개 업체가 미할당되었습니다.`)
       } catch (error) {
-        console.error('업체 할당 실패:', error)
-        alert('업체 할당 중 오류가 발생했습니다.')
+        console.error('업체 미할당 실패:', error)
+        alert('업체 미할당 중 오류가 발생했습니다.')
       } finally {
         loading.value = false
       }
@@ -458,10 +458,10 @@ export default {
         await loadAllCompanies()
         await loadUnassignedCompanies()
         
-        alert(`${companiesToUnassign.length}개 업체가 해제되었습니다.`)
+        alert(`${companiesToUnassign.length}개 업체가 할당되었습니다.`)
       } catch (error) {
-        console.error('업체 해제 실패:', error)
-        alert('업체 해제 중 오류가 발생했습니다.')
+        console.error('업체 할당 실패:', error)
+        alert('업체 할당 중 오류가 발생했습니다.')
       } finally {
         loading.value = false
       }
@@ -614,7 +614,7 @@ export default {
 }
 
 .table-content {
-  height: 740px;
+  height: 500px;
   overflow: hidden;
 }
 
@@ -640,23 +640,23 @@ export default {
 }
 
 .checkbox-cell {
-  width: 60px;
+  width: 50px;
   text-align: center;
 }
 
 .name-cell {
-  width: 160px;
+  width: 200px;
   justify-content: flex-start;
 }
 
 .number-cell {
-  width: 120px;
+  width: 140px;
   text-align: center !important;
   justify-content: center !important;
 }
 
 .rep-cell {
-  width: 80px;
+  width: 100px;
   text-align: center !important;
   justify-content: center !important;
 }
@@ -667,7 +667,7 @@ export default {
 }
 
 .table-body {
-  max-height: 400px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
