@@ -429,7 +429,25 @@ async function loadSettlementData() {
       from += batchSize;
     }
 
-    // 2. 회사별로 데이터를 집계합니다.
+    // 2. 반영 흡수율 데이터를 별도로 조회합니다.
+    const recordIds = allRecords.map(record => record.id);
+    let absorptionRates = {};
+    
+    if (recordIds.length > 0) {
+      const { data: absorptionData, error: absorptionError } = await supabase
+        .from('applied_absorption_rates')
+        .select('performance_record_id, applied_absorption_rate')
+        .in('performance_record_id', recordIds);
+      
+      if (!absorptionError && absorptionData) {
+        absorptionRates = absorptionData.reduce((acc, item) => {
+          acc[item.performance_record_id] = item.applied_absorption_rate;
+          return acc;
+        }, {});
+      }
+    }
+
+    // 3. 회사별로 데이터를 집계합니다.
     const summaryMap = new Map();
     for (const record of allRecords) {
       if (!record.company) continue;
@@ -479,7 +497,7 @@ async function loadSettlementData() {
           summary.payment_prescription_amount += prescriptionAmount;
         }
         
-        // 지급액: 정상 건의 수수료 합계
+        // 지급액: 정상 건의 수수료 합계 (반영 흡수율 적용)
         let paymentAmount;
         if (record.commission_rate && record.commission_rate > 1) {
           // 수수료율이 1보다 크면 퍼센트(%) 단위로 간주
@@ -488,7 +506,12 @@ async function loadSettlementData() {
           // 수수료율이 1 이하면 소수점 단위로 간주
           paymentAmount = Math.round(prescriptionAmount * (record.commission_rate || 0));
         }
-        summary.payment_amount += paymentAmount;
+        
+        // 반영 흡수율 적용하여 최종 지급액 계산
+        const appliedAbsorptionRate = absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined ? absorptionRates[record.id] : 1.0;
+        const finalPaymentAmount = Math.round(paymentAmount * appliedAbsorptionRate);
+        
+        summary.payment_amount += finalPaymentAmount;
       }
     }
 

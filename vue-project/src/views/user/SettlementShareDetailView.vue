@@ -392,22 +392,61 @@ async function fetchAllDataForMonth() {
   }
   */
 
-  // 2. 공유된 경우에만 performance_records 데이터 조회
-  const { data, error } = await supabase
-    .from('performance_records')
-    .select(`
-      *,
-      clients ( name ),
-      products ( product_name, insurance_code, price )
-    `)
-    .eq('settlement_month', selectedMonth.value)
-    .eq('company_id', companyId.value)
-    .eq('review_status', '완료'); // 검토 완료된 건만 조회
+  // 2. 공유된 경우에만 performance_records 데이터 조회 (관리자 페이지와 동일한 방식)
+  let allData = [];
+  let from = 0;
+  const batchSize = 1000;
   
+  while (true) {
+    const { data, error } = await supabase
+      .from('performance_records')
+      .select(`
+        *,
+        clients ( name ),
+        products ( product_name, insurance_code, price )
+      `)
+      .eq('settlement_month', selectedMonth.value)
+      .eq('company_id', companyId.value)
+      .range(from, from + batchSize - 1)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('데이터 조회 오류:', error);
+      allDataForMonth.value = [];
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      break;
+    }
+    
+    allData = allData.concat(data);
+    
+    if (data.length < batchSize) {
+      break;
+    }
+    
+    from += batchSize;
+  }
   
-  if (error) {
-    allDataForMonth.value = [];
-    return;
+  // 검토 완료된 건만 필터링 (사용자 페이지는 완료된 실적만 표시)
+  const data = allData.filter(record => record.review_status === '완료');
+  // 반영 흡수율 데이터를 별도로 조회합니다.
+  const recordIds = data.map(record => record.id);
+  let absorptionRates = {};
+  
+  if (recordIds.length > 0) {
+    const { data: absorptionData, error: absorptionError } = await supabase
+      .from('applied_absorption_rates')
+      .select('performance_record_id, applied_absorption_rate')
+      .in('performance_record_id', recordIds);
+    
+    if (!absorptionError && absorptionData) {
+      absorptionRates = absorptionData.reduce((acc, item) => {
+        acc[item.performance_record_id] = item.applied_absorption_rate;
+        return acc;
+      }, {});
+    }
   }
   
   allDataForMonth.value = data.map(row => {
@@ -416,7 +455,12 @@ async function fetchAllDataForMonth() {
     // review_action이 '삭제'인 경우 처방수량을 0으로 설정
     const finalQty = row.review_action === '삭제' ? 0 : qty;
     const prescriptionAmount = Math.round(finalQty * price);
-    const paymentAmount = Math.round(prescriptionAmount * (row.commission_rate || 0));
+    const commissionRate = row.commission_rate || 0;
+    const basePaymentAmount = Math.round(prescriptionAmount * commissionRate);
+    
+    // 반영 흡수율 적용하여 최종 지급액 계산
+    const appliedAbsorptionRate = absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined ? absorptionRates[row.id] : 1.0;
+    const finalPaymentAmount = Math.round(basePaymentAmount * appliedAbsorptionRate);
     
     return {
       ...row,
@@ -426,13 +470,13 @@ async function fetchAllDataForMonth() {
       price: price,
       prescription_qty: finalQty,
       prescription_amount: prescriptionAmount,
-      payment_amount: paymentAmount,
-      commission_rate: `${((row.commission_rate || 0) * 100).toFixed(1)}%`,
+      payment_amount: finalPaymentAmount, // 최종 지급액 사용
+      commission_rate: `${((commissionRate || 0) * 100).toFixed(1)}%`,
       // 원본 숫자 데이터 보존
       _raw_price: price,
       _raw_qty: finalQty,
       _raw_prescription_amount: prescriptionAmount,
-      _raw_payment_amount: paymentAmount,
+      _raw_payment_amount: finalPaymentAmount, // 최종 지급액 사용
     };
   });
   
