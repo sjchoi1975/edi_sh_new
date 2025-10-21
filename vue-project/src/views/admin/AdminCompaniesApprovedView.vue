@@ -14,6 +14,7 @@
               placeholder="구분, 업체명, 사업자등록번호, 대표자명"
               class="search-input"
               @keyup.enter="doSearch"
+              @input="onSearchInput"
               style="width:100%;"
             />
             <button
@@ -278,6 +279,14 @@ function doSearch() {
       (c.representative_name && c.representative_name.toLowerCase().includes(keyword)) ||
       (c.company_group && c.company_group.toLowerCase().includes(keyword))
     );
+  }
+}
+
+function onSearchInput() {
+  // 검색어가 2글자 미만이거나 비어있으면 전체 목록 표시
+  if (searchInput.value.length < 2) {
+    searchKeyword.value = '';
+    filteredCompanies.value = approvedCompanies.value;
   }
 }
 function clearSearch() {
@@ -593,19 +602,14 @@ const checkOverflow = (event) => {
   const availableWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
   const isOverflowed = textWidth > availableWidth;
   
-  console.log('업체 오버플로우 체크:', {
-    text: element.textContent,
-    textWidth,
-    availableWidth,
-    isOverflowed
-  });
+  // console.log('업체 오버플로우 체크:', { text: element.textContent, textWidth, availableWidth, isOverflowed });
   
   if (isOverflowed) {
     element.classList.add('overflowed');
-    console.log('업체 오버플로우 클래스 추가됨');
+    // console.log('업체 오버플로우 클래스 추가됨');
   } else {
     element.classList.remove('overflowed'); // Ensure class is removed if not overflowed
-    console.log('업체 오버플로우 아님 - 클래스 제거됨');
+    // console.log('업체 오버플로우 아님 - 클래스 제거됨');
   }
 }
 

@@ -167,8 +167,8 @@
           @unsort="onTableUnsort"
 
           :pt="{
-            wrapper: { style: 'min-width: 2900px;' },
-            table: { style: 'min-width: 2900px;' }
+            wrapper: { style: 'min-width: 3100px;' },
+            table: { style: 'min-width: 3100px;' }
           }"
         >
           <template #empty>
@@ -248,6 +248,30 @@
               </span>
             </template>
           </Column>
+          <Column field="applied_absorption_rate" header="반영 흡수율" :headerStyle="{ width: columnWidths.applied_absorption_rate }" :sortable="true">
+            <template #body="slotProps">
+              <div class="absorption-rate-cell">
+                <span :title="slotProps.data.review_action === '삭제' ? '0%' : slotProps.data.applied_absorption_rate">
+                  {{ slotProps.data.review_action === '삭제' ? '0%' : slotProps.data.applied_absorption_rate }}
+                </span>
+                <button 
+                  v-if="slotProps.data.review_action !== '삭제'"
+                  @click="editAbsorptionRate(slotProps.data)"
+                  class="edit-absorption-rate-btn"
+                  title="반영 흡수율 수정"
+                >
+                  ✎
+                </button>
+              </div>
+            </template>
+          </Column>
+          <Column field="final_payment_amount" header="최종 지급액" :headerStyle="{ width: columnWidths.final_payment_amount }" :sortable="true" :bodyStyle="{ textAlign: 'right !important' }">
+            <template #body="slotProps">
+              <span :title="slotProps.data.review_action === '삭제' ? '0' : slotProps.data.final_payment_amount">
+                {{ slotProps.data.review_action === '삭제' ? '0' : slotProps.data.final_payment_amount }}
+              </span>
+            </template>
+          </Column>
           <Column field="remarks" header="비고" :headerStyle="{ width: columnWidths.remarks }" :sortable="true">
             <template #body="slotProps">
               <span :title="slotProps.data.remarks">{{ slotProps.data.remarks }}</span>
@@ -291,7 +315,7 @@
               <Column :footer="averageCommissionRate" footerClass="footer-cell" footerStyle="text-align:center !important;" />
               <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column footer="" footerClass="footer-cell" />
-              <Column footer="" footerClass="footer-cell" />
+              <Column :footer="totalFinalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
@@ -307,6 +331,43 @@
         <div class="loading-spinner"></div>
         <div class="loading-text">목록을 불러오는 중입니다...</div>
         <div class="loading-subtext">대량 데이터 처리 중이므로 시간이 걸릴 수 있습니다.</div>
+      </div>
+    </div>
+
+    <!-- 반영 흡수율 수정 모달 -->
+    <div v-if="showAbsorptionRateModal" class="modal-overlay" @click="cancelAbsorptionRateEdit">
+      <div class="modal-content modal-center" @click.stop>
+        <div class="modal-header">
+          <h2>반영 흡수율 수정</h2>
+          <button class="modal-close-btn" @click="cancelAbsorptionRateEdit">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">지급액</label>
+            <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; font-weight: 600;">
+              {{ editingRowData ? Math.round(Number(String(editingRowData.payment_amount).replace(/,/g, '')) || 0).toLocaleString() : '0' }}원
+            </div>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">반영 흡수율 (%)</label>
+            <input
+              v-model="editingAbsorptionRate"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="반영 흡수율을 입력하세요 (0-100)"
+              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;"
+            />
+            <div style="margin-top: 8px; font-size: 13px; color: #666;">
+              지급액 × 반영 흡수율(%)로 최종 지급액이 계산됩니다.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-save" @click="saveAbsorptionRate">저장</button>
+          <button class="btn-close" @click="cancelAbsorptionRateEdit">닫기</button>
+        </div>
       </div>
     </div>
   </div>
@@ -344,7 +405,9 @@ const columnWidths = {
   absorption_rate: '5%',
   commission_rate: '5%',
   payment_amount: '6%',
-  remarks: '10%',
+  applied_absorption_rate: '6%',
+  final_payment_amount: '6%',
+  remarks: '8%',
   created_date: '7%',
   created_by: '8%',
   updated_date: '7%',
@@ -363,6 +426,11 @@ const dataTableRef = ref(null); // DataTable ref 추가
 const tableSortField = ref(''); // 테이블 정렬 필드
 const tableSortOrder = ref(1); // 테이블 정렬 순서 (1: 오름차순, -1: 내림차순)
 const isTableSorting = ref(false); // 테이블 헤더 정렬 사용 중인지 여부
+
+// 반영 흡수율 수정 모달 관련 변수들
+const showAbsorptionRateModal = ref(false);
+const editingAbsorptionRate = ref(100);
+const editingRowData = ref(null);
 
 // 병의원 검색 관련 변수들
 const allHospitals = ref([]); // 전체 병의원 목록
@@ -444,6 +512,16 @@ const totalPaymentAmount = computed(() => {
     // 삭제된 건은 지급액을 0으로 계산
     if (row.review_action === '삭제') return sum;
     return sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0);
+  }, 0);
+  return total.toLocaleString();
+});
+
+const totalFinalPaymentAmount = computed(() => {
+  if (!displayRows.value || displayRows.value.length === 0) return '0';
+  const total = displayRows.value.reduce((sum, row) => {
+    // 삭제된 건은 최종 지급액을 0으로 계산
+    if (row.review_action === '삭제') return sum;
+    return sum + (Number(String(row.final_payment_amount).replace(/,/g, '')) || 0);
   }, 0);
   return total.toLocaleString();
 });
@@ -662,7 +740,7 @@ async function fetchAllHospitals() {
             });
             
             allHospitals.value = uniqueHospitals;
-            console.log(`전체 병의원 ${hospitals.length}개 → 중복 제거 후 ${allHospitals.value.length}개 로드 완료`);
+            // console.log(`전체 병의원 ${hospitals.length}개 → 중복 제거 후 ${allHospitals.value.length}개 로드 완료`);
         }
     } catch (err) {
         console.error('병의원 데이터 로딩 오류:', err);
@@ -793,7 +871,7 @@ async function fetchAllCompanies() {
         if (error) throw error;
         
         allCompanies.value = companies || [];
-        console.log('전체 업체 목록 로드 완료:', allCompanies.value.length);
+        // console.log('전체 업체 목록 로드 완료:', allCompanies.value.length);
     } catch (err) {
         console.error('전체 업체 목록 로딩 실패:', err);
         allCompanies.value = [];
@@ -1081,6 +1159,24 @@ async function loadAbsorptionAnalysisResults() {
       }
     }
 
+    // 반영 흡수율 데이터를 별도로 조회합니다.
+    const recordIds = allData.map(record => record.id);
+    let absorptionRates = {};
+    
+    if (recordIds.length > 0) {
+      const { data: absorptionData, error: absorptionError } = await supabase
+        .from('applied_absorption_rates')
+        .select('performance_record_id, applied_absorption_rate')
+        .in('performance_record_id', recordIds);
+      
+      if (!absorptionError && absorptionData) {
+        absorptionRates = absorptionData.reduce((acc, item) => {
+          acc[item.performance_record_id] = item.applied_absorption_rate;
+          return acc;
+        }, {});
+      }
+    }
+
     // 데이터 매핑 최적화 (배치 처리)
     const mappedData = allData.map((row, i) => {
         try {
@@ -1092,6 +1188,19 @@ async function loadAbsorptionAnalysisResults() {
             
             const prescriptionAmount = Math.round(prescriptionQty * productPrice);
             const paymentAmount = Math.round(prescriptionAmount * commissionRate);
+            
+            // 반영 흡수율 계산: applied_absorption_rates 테이블에서 조회한 값 사용, 없으면 기본값 100%
+            let appliedAbsorptionRate = 100; // 기본값
+            if (absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined) {
+              const savedAppliedRate = Number(absorptionRates[row.id]);
+              if (!isNaN(savedAppliedRate) && savedAppliedRate > 0) {
+                // 데이터베이스에 소수점으로 저장되어 있으면 퍼센트로 변환
+                appliedAbsorptionRate = savedAppliedRate > 1 ? savedAppliedRate : savedAppliedRate * 100;
+              }
+            }
+            
+            // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율
+            const finalPaymentAmount = Math.round(prescriptionAmount * (appliedAbsorptionRate / 100) * commissionRate);
 
             return {
                 id: row.id || null,
@@ -1121,6 +1230,8 @@ async function loadAbsorptionAnalysisResults() {
                 price: productPrice ? Math.round(productPrice).toLocaleString() : '0',
                 prescription_amount: prescriptionAmount.toLocaleString(),
                 payment_amount: paymentAmount.toLocaleString(),
+                applied_absorption_rate: `${appliedAbsorptionRate.toFixed(1)}%`,
+                final_payment_amount: finalPaymentAmount.toLocaleString(),
                 commission_rate: `${(commissionRate * 100).toFixed(1)}%`,
                 absorption_rate: absorptionRate,
                 created_date: formatDateTime(row.created_at),
@@ -1159,6 +1270,8 @@ async function loadAbsorptionAnalysisResults() {
                 price: '0',
                 prescription_amount: '0',
                 payment_amount: '0',
+                applied_absorption_rate: '100.0%',
+                final_payment_amount: '0',
                 commission_rate: '0.0%',
                 absorption_rate: 0,
                 created_date: formatDateTime(row.created_at),
@@ -1288,19 +1401,26 @@ watch(sortCriteria, () => {
 });
 
 // --- 유틸리티 함수 ---
+const isCalculating = ref(false); // 중복 실행 방지 플래그
+
 const calculateAbsorptionRates = async () => {
   if (!selectedSettlementMonth.value) {
     alert('정산월을 선택해주세요.');
     return;
   }
 
-  // 2번 모달 제거 - 바로 분석 시작
+  // 중복 실행 방지
+  if (isCalculating.value) {
+    console.log('흡수율 분석이 이미 진행 중입니다.');
+    return;
+  }
 
+  isCalculating.value = true;
   loading.value = true;
   try {
     // 1단계: 필터 조건에 맞는 원본 데이터 복사
     
-    // 먼저 기존 분석 데이터에서 해당 조건의 데이터 삭제
+    // 먼저 기존 분석 데이터에서 해당 조건의 데이터 삭제 (반영 흡수율은 보존)
     let deleteQuery = supabase
       .from('performance_records_absorption')
       .delete()
@@ -1321,6 +1441,8 @@ const calculateAbsorptionRates = async () => {
     if (deleteError) {
       console.warn('기존 분석 데이터 삭제 중 오류 (무시):', deleteError);
     }
+    
+    // 반영 흡수율은 applied_absorption_rates 테이블에 별도로 보존되므로 삭제하지 않음
 
     // 필터 조건에 맞는 performance_records 데이터 조회
     let sourceQuery = supabase
@@ -1405,6 +1527,7 @@ const calculateAbsorptionRates = async () => {
             updated_at: isActuallyModified ? record.updated_at : null,
             updated_by: isActuallyModified ? record.updated_by : null,
             analysis_time: new Date().toISOString() // 데이터 복사 시점의 시간
+            // 반영 흡수율은 applied_absorption_rates 테이블에서 별도 관리
           };
         }));
 
@@ -1435,6 +1558,7 @@ const calculateAbsorptionRates = async () => {
     alert(`흡수율 분석 중 오류가 발생했습니다: ${err.message}`);
   } finally {
     loading.value = false;
+    isCalculating.value = false; // 플래그 리셋
   }
 }
 
@@ -1617,6 +1741,8 @@ async function downloadExcel() {
       '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) : 0),
       '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
+      '반영 흡수율': (row.applied_absorption_rate ? parseFloat(String(row.applied_absorption_rate).replace('%', '')) / 100 : 0),
+      '최종 지급액': Math.round(Number(String(row.final_payment_amount).replace(/,/g, '')) || 0),
       '비고': row.remarks,
       '등록일시': row.created_date,
       '등록자': row.created_by || '-',
@@ -1643,6 +1769,12 @@ async function downloadExcel() {
       return sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0);
     }, 0);
     
+    const totalFinalPaymentAmountForExcel = displayRows.value.reduce((sum, row) => {
+      // 삭제된 건은 최종 지급액을 0으로 계산
+      if (row.review_action === '삭제') return sum;
+      return sum + (Number(String(row.final_payment_amount).replace(/,/g, '')) || 0);
+    }, 0);
+    
     dataToExport.push({
       'No': '',
       '작업': '',
@@ -1662,6 +1794,8 @@ async function downloadExcel() {
       '흡수율': (totalPrescriptionAmountForExcel > 0 ? (totalCombinedRevenueForExcel / totalPrescriptionAmountForExcel) : 0),
       '수수료율': (totalPrescriptionAmountForExcel > 0 ? (totalPaymentAmountForExcel / totalPrescriptionAmountForExcel) : 0),
       '지급액': totalPaymentAmountForExcel,
+      '반영 흡수율': (totalPrescriptionAmountForExcel > 0 ? Math.min((totalCombinedRevenueForExcel / totalPrescriptionAmountForExcel), 1) : 1),
+      '최종 지급액': totalFinalPaymentAmountForExcel,
       '비고': '',
       '등록일시': '',
       '등록자': ''
@@ -1741,6 +1875,16 @@ async function downloadExcel() {
         if (colNumber === 18) {
           cell.numFmt = '#,##0'
         }
+        
+        // 반영 흡수율 (19번째 컬럼): 백분율, 소수점 한자리
+        if (colNumber === 19) {
+          cell.numFmt = '0.0%'
+        }
+        
+        // 최종 지급액 (20번째 컬럼): 천단위 콤마, 소수점 없음
+        if (colNumber === 20) {
+          cell.numFmt = '#,##0'
+        }
       })
     })
 
@@ -1773,6 +1917,8 @@ async function downloadExcel() {
     totalRow.getCell(16).numFmt = '0.000%'; // 흡수율
     totalRow.getCell(17).numFmt = '0.0%'; // 수수료율
     totalRow.getCell(18).numFmt = '#,##0'; // 지급액
+    totalRow.getCell(19).numFmt = '0.0%'; // 반영 흡수율
+    totalRow.getCell(20).numFmt = '#,##0'; // 최종 지급액
 
     // 테이블 테두리 설정 - 전체를 얇은 실선으로 통일
     worksheet.eachRow((row) => {
@@ -1806,7 +1952,9 @@ async function downloadExcel() {
       { width: 12 }, // 흡수율
       { width: 12 }, // 수수료율
       { width: 16 }, // 지급액
-      { width: 24 }, // 비고
+      { width: 12 }, // 반영 흡수율
+      { width: 16 }, // 최종 지급액
+      { width: 20 }, // 비고
       { width: 18 }, // 등록일시
       { width: 16 }, // 등록자
       { width: 18 }, // 수정일시
@@ -2023,6 +2171,105 @@ async function checkReanalysisNeeded() {
   }
 }
 
+// --- 반영 흡수율 수정 모달 관련 함수들 ---
+function editAbsorptionRate(rowData) {
+  editingRowData.value = rowData;
+  // 현재 반영 흡수율 값을 숫자로 변환 (예: "100.0%" -> 100.0)
+  let currentRate = 100; // 기본값
+  if (rowData.applied_absorption_rate) {
+    const rateString = String(rowData.applied_absorption_rate).replace('%', '').trim();
+    if (rateString && rateString !== '') {
+      const parsedRate = parseFloat(rateString);
+      if (!isNaN(parsedRate) && parsedRate >= 0 && parsedRate <= 100) {
+        currentRate = parsedRate;
+      }
+    }
+  }
+  editingAbsorptionRate.value = currentRate;
+  showAbsorptionRateModal.value = true;
+}
+
+function cancelAbsorptionRateEdit() {
+  showAbsorptionRateModal.value = false;
+  editingRowData.value = null;
+  editingAbsorptionRate.value = 100;
+}
+
+async function saveAbsorptionRate() {
+  if (!editingRowData.value) return;
+  
+  // 입력값 검증 - 안전한 파싱
+  let newRate = 0;
+  if (editingAbsorptionRate.value !== null && editingAbsorptionRate.value !== undefined && editingAbsorptionRate.value !== '') {
+    const rateString = String(editingAbsorptionRate.value).trim();
+    if (rateString) {
+      newRate = parseFloat(rateString);
+    }
+  }
+  
+  if (isNaN(newRate) || newRate < 0 || newRate > 100) {
+    alert('반영 흡수율은 0% ~ 100% 사이의 값이어야 합니다.');
+    return;
+  }
+  
+  try {
+    // applied_absorption_rates 테이블에 반영 흡수율 저장
+    const { error } = await supabase
+      .from('applied_absorption_rates')
+      .upsert({
+        performance_record_id: editingRowData.value.id,
+        settlement_month: selectedSettlementMonth.value,
+        company_id: editingRowData.value.company_id,
+        client_id: editingRowData.value.client_id,
+        product_id: editingRowData.value.product_id,
+        applied_absorption_rate: newRate / 100, // 퍼센트를 소수점으로 변환 (예: 85% -> 0.85)
+        updated_at: new Date().toISOString(),
+        updated_by: (await supabase.auth.getUser()).data.user?.id
+      }, {
+        onConflict: 'performance_record_id'
+      });
+    
+    if (error) throw error;
+    
+    // 해당 행의 데이터 업데이트
+    const rowIndex = displayRows.value.findIndex(row => row.id === editingRowData.value.id);
+    if (rowIndex !== -1) {
+      // 반영 흡수율 업데이트
+      displayRows.value[rowIndex].applied_absorption_rate = `${newRate.toFixed(1)}%`;
+      
+      // 최종 지급액 재계산: 처방액 × 반영 흡수율 × 수수료율
+      const prescriptionAmount = Number(String(displayRows.value[rowIndex].prescription_amount).replace(/,/g, '')) || 0;
+      
+      // 수수료율 안전한 파싱
+      let commissionRate = 0;
+      if (displayRows.value[rowIndex].commission_rate) {
+        const commissionString = String(displayRows.value[rowIndex].commission_rate).replace('%', '').trim();
+        if (commissionString) {
+          const parsedCommission = parseFloat(commissionString);
+          if (!isNaN(parsedCommission)) {
+            commissionRate = parsedCommission / 100;
+          }
+        }
+      }
+      
+      const finalPaymentAmount = Math.round(prescriptionAmount * (newRate / 100) * commissionRate);
+      
+      displayRows.value[rowIndex].final_payment_amount = finalPaymentAmount.toLocaleString();
+    }
+    
+    alert('반영 흡수율이 저장되었습니다.');
+    
+    // 모달 닫기
+    showAbsorptionRateModal.value = false;
+    editingRowData.value = null;
+    editingAbsorptionRate.value = 100;
+    
+  } catch (err) {
+    console.error('반영 흡수율 저장 오류:', err);
+    alert(`반영 흡수율 저장 중 오류가 발생했습니다: ${err.message}`);
+  }
+}
+
 </script>
 
 <style scoped>
@@ -2200,5 +2447,134 @@ async function checkReanalysisNeeded() {
 
 .company-dropdown-item.no-results:hover {
   background-color: transparent;
+}
+
+/* 반영 흡수율 수정 관련 스타일 */
+.absorption-rate-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.edit-absorption-rate-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.edit-absorption-rate-btn:hover {
+  background-color: #f8f9fa;
+  color: #0056b3;
+}
+
+
+/* 정산 분배 페이지와 동일한 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-center {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.modal-close-btn:hover {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-save {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-save:hover {
+  background-color: #0056b3;
+}
+
+.btn-close {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-close:hover {
+  background-color: #545b62;
 }
 </style> 
