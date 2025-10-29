@@ -566,7 +566,7 @@ const statusOptions = ref([
   { value: '검수중', label: '검수중' },
   { value: '대기', label: '대기' },
 ]);
-const selectedStatus = ref('검수중');
+const selectedStatus = ref(null); // 기본값을 전체(null)로 설정
 
 const monthlyPerformanceLinks = ref([]);
 const monthlyCompanies = ref([]);
@@ -759,6 +759,11 @@ watch(prescriptionOffset, async () => {
 });
 
 watch(selectedStatus, async (newStatus, oldStatus) => {
+    // 상태 필터 변경 시 자동으로 편집 모드 해제
+    if (activeEditingRowId.value !== null) {
+      activeEditingRowId.value = null;
+    }
+    
     // 상태가 변경되면 자동으로 데이터 로드
     if (selectedSettlementMonth.value) {
         await loadPerformanceData();
@@ -1576,7 +1581,6 @@ async function saveEdit(rowData) {
       prescription_type: rowData.prescription_type_modify,
       commission_rate: Number(rowData.commission_rate_modify) || 0,
       remarks: rowData.remarks_modify,
-      review_status: rowData.review_status, // 현재 상태 유지 (자동으로 완료로 변경하지 않음)
       updated_at: new Date().toISOString(),
       updated_by: adminUserId,
     };
@@ -1584,10 +1588,19 @@ async function saveEdit(rowData) {
     let error;
 
     if (isNewRecord) {
-      // 추가 (INSERT) - 새 레코드는 기본적으로 '대기' 상태로 설정
+      // 추가 (INSERT) - 신규 등록
+      let newRecordStatus;
+      if (selectedStatus.value === null) {
+        // 전체 상태일 때는 검수중으로 설정
+        newRecordStatus = '검수중';
+      } else {
+        // 특정 상태가 선택되었을 때는 해당 상태로 설정
+        newRecordStatus = selectedStatus.value;
+      }
+      
       saveData = {
         ...saveData,
-        review_status: '대기', // 새 레코드는 대기 상태로 시작
+        review_status: newRecordStatus,
         created_at: new Date().toISOString(),
         registered_by: adminUserId,
         review_action: '추가',
@@ -1595,9 +1608,19 @@ async function saveEdit(rowData) {
       const { error: insertError } = await supabase.from('performance_records').insert(saveData);
       error = insertError;
     } else {
-      // 수정 (UPDATE) - 기존 레코드는 현재 상태 유지
+      // 수정 (UPDATE) - 기존 레코드 수정
+      let updateStatus;
+      if (selectedStatus.value === null) {
+        // 전체 상태일 때는 현재 상태 유지
+        updateStatus = rowData.review_status;
+      } else {
+        // 특정 상태가 선택되었을 때는 해당 상태로 설정
+        updateStatus = selectedStatus.value;
+      }
+      
       saveData = {
         ...saveData,
+        review_status: updateStatus,
         review_action: '수정',
       };
       const { error: updateError } = await supabase.from('performance_records').update(saveData).eq('id', rowData.id);
@@ -1627,11 +1650,22 @@ function addRowBelow(referenceRow) {
   if (isAnyEditing.value) return;
 
   const refIndex = rows.value.findIndex(r => r.id === referenceRow.id);
+  
+  // 상태 필터에 따른 초기 상태 설정
+  let initialStatus;
+  if (selectedStatus.value === null) {
+    // 전체 상태일 때는 검수중으로 설정
+    initialStatus = '검수중';
+  } else {
+    // 특정 상태가 선택되었을 때는 해당 상태로 설정
+    initialStatus = selectedStatus.value;
+  }
+  
   const newRow = {
     id: uuidv4(),
     isEditing: true,
     review_action: '추가',
-    review_status: '검수중',
+    review_status: initialStatus, // 상태 필터에 따라 동적으로 설정
 
     // --- 복사되는 데이터 ---
     settlement_month: referenceRow.settlement_month,
@@ -1846,12 +1880,17 @@ async function confirmStatusChange() {
       alert(`${selectedRows.value.length}개 항목의 상태를 '${selectedNewStatus.value}'로 성공적으로 변경했습니다.`);
       await loadPerformanceData(); // 데이터 새로고침
       
+      // 상태 변경 완료 후 편집 모드 해제 유지
+      activeEditingRowId.value = null;
+      
       // 모달 닫기
       showStatusChangeModal.value = false;
       selectedNewStatus.value = '';
     } catch (error) {
       console.error('상태 변경 오류:', error);
       alert(error.message);
+      // 오류 발생 시에도 편집 모드 해제
+      activeEditingRowId.value = null;
     } finally {
       loading.value = false;
     }
