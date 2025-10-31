@@ -510,14 +510,8 @@ async function loadSettlementData() {
           commissionRateValue = (record.commission_rate || 0);
         }
         
-<<<<<<< HEAD
-        // 반영 흡수율 적용하여 최종 지급액 계산
-        const appliedAbsorptionRate = absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined ? absorptionRates[record.id] : 1.0;
-        const finalPaymentAmount = Math.round(paymentAmount * appliedAbsorptionRate);
-=======
         // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (정수 반올림)
         const finalPaymentAmount = Math.round(prescriptionAmount * appliedAbsorptionRate * commissionRateValue);
->>>>>>> 3f3ed30 (fix: 관리자 목록 뷰의 지급액 계산 방식을 다른 뷰와 동일하게 통일)
         
         summary.payment_amount += finalPaymentAmount;
       }

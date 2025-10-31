@@ -472,12 +472,8 @@ async function fetchAllDataForMonth() {
     const prescriptionAmount = Math.round(finalQty * price);
     const commissionRate = row.commission_rate || 0;
     
-<<<<<<< HEAD
-    // 반영 흡수율 적용하여 최종 지급액 계산
-=======
     // 반영 흡수율 적용하여 최종 지급액 계산 (정수 반올림)
     // 관리자 상세 뷰와 동일한 계산 방식: 처방액 × 반영 흡수율 × 수수료율
->>>>>>> 3f3ed30 (fix: 관리자 목록 뷰의 지급액 계산 방식을 다른 뷰와 동일하게 통일)
     const appliedAbsorptionRate = absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined ? absorptionRates[row.id] : 1.0;
     const finalPaymentAmount = Math.round(prescriptionAmount * appliedAbsorptionRate * commissionRate);
     
