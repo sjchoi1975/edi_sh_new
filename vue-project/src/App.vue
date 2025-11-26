@@ -84,7 +84,9 @@ const adminMenuTree = [
     { label: '승인 업체', path: '/admin/companies/approved' },
     { label: '미승인 업체', path: '/admin/companies/pending' }
   ] },
-  { label: '제품 관리', children: [ { label: '제품 목록', path: '/admin/products' } ] },
+  { label: '제품 관리', children: [ 
+    { label: '제품 목록', path: '/admin/products' }
+  ] },
   { label: '병의원 관리', children: [ 
     { label: '병의원 목록', path: '/admin/clients' },
     { label: '병의원 등록', path: '/admin/clients/create' },
