@@ -457,12 +457,12 @@ const closeMonthlyRegisterModal = (force = false) => {
   monthlyRegisterLoading.value = false // 로딩 상태도 초기화
 }
 
-// 이번달부터 6개월 후까지의 월 목록 생성
+// 이전달부터 6개월 후까지의 월 목록 생성
 const generateTargetMonths = () => {
   const months = []
   const currentDate = new Date()
   
-  for (let i = 0; i < 7; i++) { // 이번달 포함 7개월
+  for (let i = -1; i < 6; i++) { // 이전달 포함 7개월
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1)
     const year = targetDate.getFullYear()
     const month = String(targetDate.getMonth() + 1).padStart(2, '0')
