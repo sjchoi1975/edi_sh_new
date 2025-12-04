@@ -418,7 +418,7 @@ async function fetchAllDataForMonth() {
       .select(`
         *,
         clients ( name ),
-        products ( product_name, insurance_code, price )
+        products ( id, product_name, insurance_code, price )
       `)
       .eq('settlement_month', selectedMonth.value)
       .eq('company_id', companyId.value)
@@ -464,13 +464,144 @@ async function fetchAllDataForMonth() {
     }
   }
   
+  // 프로모션 수수료 정보 조회 (성능 최적화를 위해 한 번에 조회)
+  const productIds = [...new Set(data.map(r => r.products?.id).filter(id => id))];
+  const productInsuranceCodeMap = new Map();
+  
+  if (productIds.length > 0) {
+    const { data: productsData, error: productsError } = await supabase
+      .from('products')
+      .select('id, insurance_code')
+      .in('id', productIds);
+    
+    if (!productsError && productsData) {
+      productsData.forEach(p => {
+        if (p.insurance_code) {
+          // 보험코드를 문자열로 정규화 (앞뒤 공백 제거, 숫자도 문자열로 변환)
+          const normalizedCode = String(p.insurance_code).trim();
+          productInsuranceCodeMap.set(p.id, normalizedCode);
+        }
+      });
+    }
+  }
+
+  // 병원별 프로모션 실적 정보 조회
+  const hospitalIds = [...new Set(data.map(r => r.client_id).filter(id => id))];
+  const insuranceCodes = Array.from(productInsuranceCodeMap.values());
+  let hospitalPerformanceMap = new Map();
+  let promotionProductsMap = new Map();
+  
+  if (hospitalIds.length > 0 && companyId.value) {
+    // 1. promotion_product_hospital_performance에서 조회 (조인 없이, RLS 정책 수정 후 조회 가능)
+    // 관리자 페이지와 동일하게 has_performance = true 조건 추가
+    const { data: hospitalPerf, error: hospitalPerfError } = await supabase
+      .from('promotion_product_hospital_performance')
+      .select(`
+        hospital_id,
+        first_performance_cso_id,
+        has_performance,
+        promotion_product_id
+      `)
+      .in('hospital_id', hospitalIds)
+      .eq('first_performance_cso_id', companyId.value)
+      .eq('has_performance', true);
+    
+    if (!hospitalPerfError && hospitalPerf && hospitalPerf.length > 0) {
+      // 2. promotion_product_id 목록 추출
+      const promotionProductIds = [...new Set(hospitalPerf.map(hp => hp.promotion_product_id).filter(id => id))];
+      
+      // 3. promotion_product_list에서 상세 정보 조회 (id로 조회, RLS 제약 없음)
+      if (promotionProductIds.length > 0) {
+        const { data: promotionProducts, error: promotionError } = await supabase
+          .from('promotion_product_list')
+          .select('id, insurance_code, final_commission_rate, promotion_start_date, promotion_end_date')
+          .in('id', promotionProductIds);
+        
+        if (!promotionError && promotionProducts) {
+          // promotionProductsMap 구성
+          promotionProducts.forEach(pp => {
+            const key = String(pp.insurance_code).trim();
+            promotionProductsMap.set(key, pp);
+          });
+          
+          // hospitalPerformanceMap 구성
+          hospitalPerf.forEach(hp => {
+            const promotionProduct = promotionProducts.find(pp => pp.id === hp.promotion_product_id);
+            if (promotionProduct) {
+              const insuranceCode = String(promotionProduct.insurance_code).trim();
+              const hospitalId = hp.hospital_id;
+              const companyIdValue = hp.first_performance_cso_id;
+              const key = `${hospitalId}_${insuranceCode}_${companyIdValue}`;
+              
+              hospitalPerformanceMap.set(key, {
+                insurance_code: promotionProduct.insurance_code,
+                final_commission_rate: promotionProduct.final_commission_rate,
+                promotion_start_date: promotionProduct.promotion_start_date,
+                promotion_end_date: promotionProduct.promotion_end_date
+              });
+            }
+          });
+        }
+      }
+    }
+  }
+  
   allDataForMonth.value = data.map(row => {
     const price = row.products?.price || 0;
     const qty = row.prescription_qty || 0;
     // review_action이 '삭제'인 경우 처방수량을 0으로 설정
     const finalQty = row.review_action === '삭제' ? 0 : qty;
     const prescriptionAmount = Math.round(finalQty * price);
-    const commissionRate = row.commission_rate || 0;
+    
+    // 기본 수수료율 확인 (숫자로 변환)
+    let commissionRate = 0;
+    if (row.commission_rate !== null && row.commission_rate !== undefined) {
+      // 이미 숫자면 그대로 사용, 문자열이면 변환
+      commissionRate = typeof row.commission_rate === 'number' 
+        ? row.commission_rate 
+        : parseFloat(row.commission_rate) || 0;
+    }
+    
+    // 프로모션 수수료 적용 확인 (관리자 뷰와 동일한 로직)
+    const productId = row.products?.id;
+    if (productId) {
+      const insuranceCode = productInsuranceCodeMap.get(productId);
+      if (insuranceCode) {
+        const hospitalId = row.client_id;
+        const key = `${hospitalId}_${insuranceCode}_${companyId.value}`;
+        const promotionInfo = hospitalPerformanceMap.get(key);
+        
+        if (promotionInfo) {
+          // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+          let isWithinPromotionPeriod = true;
+          
+          const settlementDate = new Date(selectedMonth.value + '-01'); // 정산월의 첫 날
+          const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+          
+          if (promotionInfo.promotion_start_date) {
+            const startDate = new Date(promotionInfo.promotion_start_date);
+            // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+            if (settlementDate < startDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          if (promotionInfo.promotion_end_date) {
+            const endDate = new Date(promotionInfo.promotion_end_date);
+            // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+            if (lastDayOfSettlementMonth > endDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          // 프로모션 기간 내에 있는 경우에만 final_commission_rate 사용
+          if (isWithinPromotionPeriod && promotionInfo.final_commission_rate !== null && promotionInfo.final_commission_rate !== undefined) {
+            const finalRate = Number(promotionInfo.final_commission_rate);
+            commissionRate = finalRate;
+          }
+        }
+      }
+    }
     
     // 반영 흡수율 적용하여 최종 지급액 계산 (정수 반올림)
     // 관리자 상세 뷰와 동일한 계산 방식: 처방액 × 반영 흡수율 × 수수료율

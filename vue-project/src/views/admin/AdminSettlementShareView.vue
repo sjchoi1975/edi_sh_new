@@ -13,19 +13,32 @@
             <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">{{ month.settlement_month }}</option>
           </select>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label>구분</label>
+          <select v-model="selectedCompanyGroup" class="select_month">
+            <option value="">전체</option>
+            <option
+              v-for="group in availableCompanyGroups"
+              :key="group"
+              :value="group"
+            >
+              {{ group }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
     <!-- 데이터 카드 -->
     <div class="data-card" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
               <div class="data-card-header" style="flex-shrink: 0;">
-          <div class="total-count-display">전체 {{ companySummary.length }} 건</div>
+          <div class="total-count-display">전체 {{ filteredCompanySummary.length }} 건</div>
           <div class="action-buttons-group">
             <button class="btn-save" @click="saveShareStatus" :disabled="Object.keys(shareChanges).length === 0">저장</button>
           </div>
         </div>
       <div style="flex-grow: 1; overflow: auto;">
       <DataTable 
-        :value="companySummary" 
+        :value="filteredCompanySummary" 
         :loading="false"
         scrollable 
         scrollHeight="calc(100vh - 220px)"
@@ -280,10 +293,20 @@ function formatBusinessNumber(number) {
 // 필터
 const selectedMonth = ref('');
 const availableMonths = ref([]);
+const selectedCompanyGroup = ref('');
+const availableCompanyGroups = ref([]);
 
 // 데이터
 const companySummary = ref([]);
 const shareChanges = ref({}); // 공유 상태 변경 사항 추적
+
+// 필터링된 데이터
+const filteredCompanySummary = computed(() => {
+  if (!selectedCompanyGroup.value) {
+    return companySummary.value;
+  }
+  return companySummary.value.filter(company => company.company_group === selectedCompanyGroup.value);
+});
 
 // 전달사항 모달 관련
 const showNoticeModal = ref(false);
@@ -296,37 +319,37 @@ const commissionRate = ref('');
 
 // --- 계산된 속성 (합계) ---
 const totalClientCount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Number(item.client_count || 0), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Number(item.client_count || 0), 0);
   return total.toLocaleString();
 });
 
 const totalRecordsCount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Number(item.total_records || 0), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Number(item.total_records || 0), 0);
   return total.toLocaleString();
 });
 
 const totalPrescriptionAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_prescription_amount || 0)), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_prescription_amount || 0)), 0);
   return total.toLocaleString();
 });
 
 const totalPaymentPrescriptionAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.payment_prescription_amount || 0)), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Math.round(Number(item.payment_prescription_amount || 0)), 0);
   return total.toLocaleString();
 });
 
 const totalSectionCommissionAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.section_commission_amount || 0)), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Math.round(Number(item.section_commission_amount || 0)), 0);
   return total.toLocaleString();
 });
 
 const totalPaymentAmountOnly = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.payment_amount || 0)), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Math.round(Number(item.payment_amount || 0)), 0);
   return total.toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
-  const total = companySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_payment_amount || 0)), 0);
+  const total = filteredCompanySummary.value.reduce((sum, item) => sum + Math.round(Number(item.total_payment_amount || 0)), 0);
   return total.toLocaleString();
 });
 
@@ -335,14 +358,14 @@ const totalPaymentAmount = computed(() => {
 
 // --- 헤더 체크박스 상태 관리 ---
 const isAllShared = computed(() => {
-  if (companySummary.value.length === 0) return false;
-  return companySummary.value.every(company => company.is_shared);
+  if (filteredCompanySummary.value.length === 0) return false;
+  return filteredCompanySummary.value.every(company => company.is_shared);
 });
 
 const isIndeterminate = computed(() => {
-  if (companySummary.value.length === 0) return false;
-  const sharedCount = companySummary.value.filter(company => company.is_shared).length;
-  return sharedCount > 0 && sharedCount < companySummary.value.length;
+  if (filteredCompanySummary.value.length === 0) return false;
+  const sharedCount = filteredCompanySummary.value.filter(company => company.is_shared).length;
+  return sharedCount > 0 && sharedCount < filteredCompanySummary.value.length;
 });
 
 
@@ -350,6 +373,7 @@ const isIndeterminate = computed(() => {
 
 onMounted(async () => {
   await fetchAvailableMonths();
+  await fetchCompanyGroups();
 });
 
 watch(selectedMonth, async (newMonth) => {
@@ -383,6 +407,26 @@ async function fetchAvailableMonths() {
     }
 }
 
+async function fetchCompanyGroups() {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('company_group')
+      .eq('approval_status', 'approved')
+      .eq('status', 'active')
+      .eq('user_type', 'user')
+      .not('company_group', 'is', null);
+
+    if (!error && data) {
+      // 중복 제거 및 정렬
+      const uniqueGroups = [...new Set(data.map(item => item.company_group).filter(Boolean))];
+      availableCompanyGroups.value = uniqueGroups.sort();
+    }
+  } catch (err) {
+    console.error('구분 항목 조회 오류:', err);
+  }
+}
+
 async function loadSettlementData() {
   if (!selectedMonth.value) return;
   loading.value = true;
@@ -407,7 +451,7 @@ async function loadSettlementData() {
         commission_rate,
         review_action,
         company:companies(*),
-        product:products(price)
+        product:products(id, price, insurance_code)
       `)
         .eq('settlement_month', selectedMonth.value)
         .eq('review_status', '완료')
@@ -458,6 +502,71 @@ async function loadSettlementData() {
         from += batchSize;
       }
       
+    }
+
+    // 프로모션 수수료 정보 조회 (성능 최적화를 위해 한 번에 조회)
+    const productIds = [...new Set(allRecords.map(r => r.product?.id).filter(id => id))];
+    const productInsuranceCodeMap = new Map();
+    
+    if (productIds.length > 0) {
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, insurance_code')
+        .in('id', productIds);
+      
+      if (!productsError && productsData) {
+        productsData.forEach(p => {
+          if (p.insurance_code) {
+            productInsuranceCodeMap.set(p.id, String(p.insurance_code));
+          }
+        });
+      }
+    }
+
+    // 프로모션 제품 목록 조회
+    const insuranceCodes = Array.from(productInsuranceCodeMap.values());
+    let promotionProductsMap = new Map();
+    if (insuranceCodes.length > 0) {
+      const { data: promotionProducts, error: promotionError } = await supabase
+        .from('promotion_product_list')
+        .select('insurance_code, final_commission_rate, promotion_start_date, promotion_end_date')
+        .in('insurance_code', insuranceCodes);
+      
+      if (!promotionError && promotionProducts) {
+        promotionProducts.forEach(pp => {
+          const key = String(pp.insurance_code);
+          if (!promotionProductsMap.has(key)) {
+            promotionProductsMap.set(key, []);
+          }
+          promotionProductsMap.get(key).push(pp);
+        });
+      }
+    }
+
+    // 병원별 프로모션 실적 정보 조회
+    const hospitalIds = [...new Set(allRecords.map(r => r.client_id).filter(id => id))];
+    const promotionCompanyIds = [...new Set(allRecords.map(r => r.company_id).filter(id => id))];
+    let hospitalPerformanceMap = new Map();
+    
+    if (hospitalIds.length > 0 && promotionCompanyIds.length > 0) {
+      const { data: hospitalPerf, error: hospitalPerfError } = await supabase
+        .from('promotion_product_hospital_performance')
+        .select(`
+          hospital_id,
+          first_performance_cso_id,
+          promotion_product_list!inner(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)
+        `)
+        .in('hospital_id', hospitalIds)
+        .in('first_performance_cso_id', promotionCompanyIds)
+        .eq('has_performance', true);
+      
+      if (!hospitalPerfError && hospitalPerf) {
+        hospitalPerf.forEach(hp => {
+          const insuranceCode = String(hp.promotion_product_list?.insurance_code || '');
+          const key = `${hp.hospital_id}_${insuranceCode}_${hp.first_performance_cso_id}`;
+          hospitalPerformanceMap.set(key, hp.promotion_product_list);
+        });
+      }
     }
 
     // 3. 회사별로 데이터를 집계합니다.
@@ -523,8 +632,49 @@ async function loadSettlementData() {
           }
         }
         
-        // commission_rate는 데이터베이스에 항상 소수점 형식으로 저장됨 (예: 0.48 = 48%)
-        const commissionRate = record.commission_rate || 0;
+        // 프로모션 수수료 확인
+        let commissionRate = record.commission_rate || 0;
+        
+        // 프로모션 수수료 적용 확인
+        const productId = record.product?.id;
+        if (productId) {
+          const insuranceCode = productInsuranceCodeMap.get(productId);
+          if (insuranceCode) {
+            const hospitalId = record.client_id;
+            const companyId = record.company_id;
+            const key = `${hospitalId}_${insuranceCode}_${companyId}`;
+            const promotionInfo = hospitalPerformanceMap.get(key);
+            
+            if (promotionInfo) {
+              // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+              let isWithinPromotionPeriod = true;
+              
+              const settlementDate = new Date(record.settlement_month + '-01'); // 정산월의 첫 날
+              const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+              
+              if (promotionInfo.promotion_start_date) {
+                const startDate = new Date(promotionInfo.promotion_start_date);
+                // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+                if (settlementDate < startDate) {
+                  isWithinPromotionPeriod = false;
+                }
+              }
+              
+              if (promotionInfo.promotion_end_date) {
+                const endDate = new Date(promotionInfo.promotion_end_date);
+                // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+                if (lastDayOfSettlementMonth > endDate) {
+                  isWithinPromotionPeriod = false;
+                }
+              }
+              
+              // 프로모션 기간 내에 있는 경우에만 final_commission_rate 사용
+              if (isWithinPromotionPeriod && promotionInfo.final_commission_rate !== null && promotionInfo.final_commission_rate !== undefined) {
+                commissionRate = Number(promotionInfo.final_commission_rate);
+              }
+            }
+          }
+        }
         
         // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (정수 반올림)
         const finalPaymentAmount = Math.round(prescriptionAmount * appliedAbsorptionRate * commissionRate);
@@ -601,7 +751,7 @@ function onShareChange(companyData, isChecked) {
 // 전체 공유/해제 (헤더 체크박스용)
 function toggleAllShares() {
   const newShareState = !isAllShared.value;
-  companySummary.value.forEach(company => {
+  filteredCompanySummary.value.forEach(company => {
     company.is_shared = newShareState;
     onShareChange(company, newShareState);
   });

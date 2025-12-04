@@ -465,6 +465,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
+// 주석: updatePromotionProductHospitalPerformance는 트리거가 자동 처리하므로 불필요
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
@@ -1347,10 +1348,51 @@ async function loadPerformanceData() {
     // --- 데이터 조회 로직 ---
     let query = supabase.from('performance_records').select(`
       *,
-      companies(company_name),
+      companies(company_name, company_group),
       clients ( name ),
       products ( product_name, insurance_code, price )
     `);
+    
+    // promotion_product_list 조회 (보험코드로 매핑, 프로모션 기간 포함)
+    const { data: promotionProducts, error: promotionError } = await supabase
+      .from('promotion_product_list')
+      .select('insurance_code, final_commission_rate, promotion_start_date, promotion_end_date');
+    
+    const promotionProductMap = {};
+    if (!promotionError && promotionProducts) {
+      promotionProducts.forEach(p => {
+        promotionProductMap[String(p.insurance_code)] = {
+          final_commission_rate: p.final_commission_rate,
+          promotion_start_date: p.promotion_start_date,
+          promotion_end_date: p.promotion_end_date
+        };
+      });
+    }
+    
+    // promotion_product_hospital_performance 조회 (업체-병의원-제품 매핑)
+    const { data: hospitalPerformance, error: hospitalPerfError } = await supabase
+      .from('promotion_product_hospital_performance')
+      .select(`
+        hospital_id,
+        first_performance_cso_id,
+        promotion_product_list!inner(insurance_code)
+      `)
+      .eq('has_performance', true);
+    
+    // 병원-제품-업체 매핑: hospital_id_insurance_code_company_id 형식으로 저장
+    const hospitalPerformanceMap = new Map();
+    if (!hospitalPerfError && hospitalPerformance) {
+      hospitalPerformance.forEach(hp => {
+        const key = `${hp.hospital_id}_${hp.promotion_product_list?.insurance_code}`;
+        // 같은 키에 여러 업체가 있을 수 있으므로 Set으로 저장
+        if (!hospitalPerformanceMap.has(key)) {
+          hospitalPerformanceMap.set(key, new Set());
+        }
+        if (hp.first_performance_cso_id) {
+          hospitalPerformanceMap.get(key).add(hp.first_performance_cso_id);
+        }
+      });
+    }
 
     if (shouldFetchByIds) {
       if (!idsToFetch || idsToFetch.length === 0) {
@@ -1447,12 +1489,61 @@ async function loadPerformanceData() {
       // 삭제 처리된 건은 지급 처방액과 지급액을 0으로 표시
       let paymentPrescriptionAmount = 0;
       let paymentAmount = 0;
+      let commissionRate = item.commission_rate;
+      let isPromotionRateApplied = false; // 프로모션 수수료율 적용 여부 플래그
 
       if (item.review_action !== '삭제') {
+        // 프로모션 제품 확인:
+        // 1. 제품이 promotion_product_list에 있는지 확인 (보험코드로)
+        // 2. 해당 병원이 promotion_product_hospital_performance에 있는지 확인 (hospital_id로)
+        // 3. 업체가 first_performance_cso_id와 동일한지 확인
+        // 4. 정산월이 프로모션 기간 내에 있는지 확인
+        const insuranceCode = String(item.products?.insurance_code || '');
+        const hospitalId = item.client_id;
+        const companyId = item.company_id;
+        const performanceKey = `${hospitalId}_${insuranceCode}`;
+        const settlementMonth = item.settlement_month; // YYYY-MM 형식
+        
+        // 프로모션 제품 정보 확인
+        const promotionProduct = promotionProductMap[insuranceCode];
+        
+        if (promotionProduct && 
+            hospitalPerformanceMap.has(performanceKey) &&
+            hospitalPerformanceMap.get(performanceKey).has(companyId)) {
+          
+          // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+          let isWithinPromotionPeriod = true;
+          
+          const settlementDate = new Date(settlementMonth + '-01'); // 정산월의 첫 날
+          const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+          
+          if (promotionProduct.promotion_start_date) {
+            const startDate = new Date(promotionProduct.promotion_start_date);
+            // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+            if (settlementDate < startDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          if (promotionProduct.promotion_end_date) {
+            const endDate = new Date(promotionProduct.promotion_end_date);
+            // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+            if (lastDayOfSettlementMonth > endDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          // 프로모션 기간 내에 있는 경우에만 final_commission_rate 사용
+          if (isWithinPromotionPeriod) {
+            commissionRate = promotionProduct.final_commission_rate;
+            isPromotionRateApplied = true; // 프로모션 수수료율 적용됨
+          }
+        }
+        
         // 수수료율이 있고 0보다 클 때만 지급 처방액 계산
-        if (item.commission_rate !== null && item.commission_rate !== undefined && item.commission_rate > 0) {
+        if (commissionRate !== null && commissionRate !== undefined && commissionRate > 0) {
           paymentPrescriptionAmount = prescriptionAmount; // 지급 처방액: 수수료가 지급되는 제품의 처방액
-          paymentAmount = Math.round(prescriptionAmount * item.commission_rate);
+          paymentAmount = Math.round(prescriptionAmount * commissionRate);
         } else {
           // 수수료율이 없거나 0인 경우 지급 처방액과 지급액 모두 0
           paymentPrescriptionAmount = 0;
@@ -1468,6 +1559,8 @@ async function loadPerformanceData() {
         product_name_display: item.products?.product_name || 'N/A',
         insurance_code: item.products?.insurance_code || '',
         price: item.products?.price ? Math.round(item.products.price).toLocaleString() : '0',
+        commission_rate: commissionRate, // 프로모션 제품인 경우 final_commission_rate로 업데이트됨
+        isPromotionRateApplied: isPromotionRateApplied, // 프로모션 수수료율 적용 여부
         prescription_amount: prescriptionAmount.toLocaleString(),
         payment_prescription_amount: paymentPrescriptionAmount.toLocaleString(),
         payment_amount: paymentAmount.toLocaleString(),
@@ -1639,15 +1732,58 @@ async function saveEdit(rowData) {
       };
       const { error: updateError } = await supabase.from('performance_records').update(saveData).eq('id', rowData.id);
       error = updateError;
+      
+      // 주석: 트리거가 자동으로 promotion_product_hospital_performance를 업데이트하므로
+      // 프론트엔드에서 수동 호출 불필요
     }
 
     if (error) throw error;
 
-    alert(`성공적으로 저장되었습니다.`);
+    // 성공 알림
+    toast.add({ 
+      severity: 'success', 
+      summary: '저장 완료', 
+      detail: '실적이 성공적으로 저장되었습니다.', 
+      life: 3000 
+    });
+    
     await loadPerformanceData();
   } catch (err) {
-    console.error('저장 실패:', err);
-    alert(`저장 중 오류가 발생했습니다: ${err.message}`);
+    // 상세 에러 로깅
+    console.error('실적 저장 실패:', err);
+    console.error('에러 상세:', {
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint,
+      stack: err.stack
+    });
+    
+    // 사용자 친화적인 에러 메시지 생성
+    let errorMessage = '저장 중 오류가 발생했습니다.';
+    
+    if (err.message) {
+      if (err.message.includes('duplicate') || err.message.includes('중복')) {
+        errorMessage = '중복된 데이터가 있습니다. 다시 확인해주세요.';
+      } else if (err.message.includes('foreign key') || err.message.includes('참조')) {
+        errorMessage = '연관된 데이터가 없습니다. 제품, 업체, 병원 정보를 확인해주세요.';
+      } else if (err.message.includes('null') || err.message.includes('필수')) {
+        errorMessage = '필수 항목이 누락되었습니다. 모든 항목을 입력해주세요.';
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = '네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.';
+      } else {
+        errorMessage = `저장 실패: ${err.message}`;
+      }
+    }
+    
+    // Toast 알림으로 에러 표시
+    toast.add({ 
+      severity: 'error', 
+      summary: '저장 실패', 
+      detail: errorMessage, 
+      life: 5000 
+    });
+    
     // 실패 시, 편집모드로 되돌리거나 원본으로 복구하는 로직 추가 가능
   } finally {
     loading.value = false;
@@ -1947,20 +2083,83 @@ async function handleEditCalculations(rowData, field) {
       const product = products.value.find(p => p.id === rowData.product_id_modify);
       if (product) {
           rowData.price_for_calc = product.price;
-          // 회사-거래처 매핑에서 수수료율 등급 조회
-          const grade = await getCommissionGradeForClientCompany(rowData.company_id, rowData.client_id);
+          
+          // 프로모션 제품 확인:
+          // 1. 제품이 promotion_product_list에 있는지 확인 (보험코드로)
+          // 2. 해당 병원이 promotion_product_hospital_performance에 있는지 확인 (hospital_id로)
+          // 3. 업체가 first_performance_cso_id와 동일한지 확인
+          const insuranceCode = String(product.insurance_code || '');
+          const hospitalId = rowData.client_id;
+          const companyId = rowData.company_id;
+          
           let commissionRate = 0;
-          if (grade === 'A') {
-            commissionRate = product.commission_rate_a;
-          } else if (grade === 'B') {
-            commissionRate = product.commission_rate_b;
-          } else if (grade === 'C') {
-            commissionRate = product.commission_rate_c;
-          } else if (grade === 'D') {
-            commissionRate = product.commission_rate_d;
-          } else if (grade === 'E') {
-            commissionRate = product.commission_rate_e;
+          
+          // promotion_product_hospital_performance 조회
+          const { data: hospitalPerf, error: hospitalPerfError } = await supabase
+            .from('promotion_product_hospital_performance')
+            .select(`
+              first_performance_cso_id,
+              promotion_product_list!inner(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)
+            `)
+            .eq('hospital_id', hospitalId)
+            .eq('has_performance', true);
+          
+          // 프로모션 제품이고 해당 병원에 실적이 있으며, 현재 업체가 first_performance_cso_id와 동일한 경우 final_commission_rate 사용
+          if (!hospitalPerfError && hospitalPerf && hospitalPerf.length > 0) {
+            const promotionProduct = hospitalPerf.find(hp => 
+              String(hp.promotion_product_list?.insurance_code) === insuranceCode &&
+              hp.first_performance_cso_id === companyId
+            );
+            
+            if (promotionProduct && promotionProduct.promotion_product_list?.final_commission_rate !== undefined) {
+              // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+              const promotionInfo = promotionProduct.promotion_product_list;
+              const settlementMonth = rowData.settlement_month; // YYYY-MM 형식
+              let isWithinPromotionPeriod = true;
+              
+              const settlementDate = new Date(settlementMonth + '-01'); // 정산월의 첫 날
+              const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+              
+              if (promotionInfo.promotion_start_date) {
+                const startDate = new Date(promotionInfo.promotion_start_date);
+                // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+                if (settlementDate < startDate) {
+                  isWithinPromotionPeriod = false;
+                }
+              }
+              
+              if (promotionInfo.promotion_end_date) {
+                const endDate = new Date(promotionInfo.promotion_end_date);
+                // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+                if (lastDayOfSettlementMonth > endDate) {
+                  isWithinPromotionPeriod = false;
+                }
+              }
+              
+              // 프로모션 기간 내에 있는 경우에만 final_commission_rate 사용
+              if (isWithinPromotionPeriod) {
+                commissionRate = promotionInfo.final_commission_rate;
+              }
+            }
           }
+          
+          // 프로모션 제품이 아닌 경우 기존 로직 사용
+          if (commissionRate === 0) {
+            // 회사-거래처 매핑에서 수수료율 등급 조회
+            const grade = await getCommissionGradeForClientCompany(rowData.company_id, rowData.client_id);
+            if (grade === 'A') {
+              commissionRate = product.commission_rate_a;
+            } else if (grade === 'B') {
+              commissionRate = product.commission_rate_b;
+            } else if (grade === 'C') {
+              commissionRate = product.commission_rate_c;
+            } else if (grade === 'D') {
+              commissionRate = product.commission_rate_d;
+            } else if (grade === 'E') {
+              commissionRate = product.commission_rate_e;
+            }
+          }
+          
           rowData.commission_rate_modify = commissionRate;
       }
   }
@@ -2022,20 +2221,89 @@ async function applySelectedProduct(product, rowData) {
     reactiveRow.insurance_code = product.insurance_code;
     reactiveRow.price_for_calc = product.price;
 
-    // 회사-거래처 매핑에서 수수료율 등급 조회
-    const grade = await getCommissionGradeForClientCompany(reactiveRow.company_id, reactiveRow.client_id);
+    // 프로모션 제품 확인:
+    // 1. 제품이 promotion_product_list에 있는지 확인 (보험코드로)
+    // 2. 해당 병원이 promotion_product_hospital_performance에 있는지 확인 (hospital_id로)
+    // 3. 업체가 first_performance_cso_id와 동일한지 확인
+    const insuranceCode = String(product.insurance_code || '');
+    const hospitalId = reactiveRow.client_id;
+    const companyId = reactiveRow.company_id;
+    
     let commissionRate = 0;
-    if (grade === 'A') {
-      commissionRate = product.commission_rate_a;
-    } else if (grade === 'B') {
-      commissionRate = product.commission_rate_b;
-    } else if (grade === 'C') {
-      commissionRate = product.commission_rate_c;
-    } else if (grade === 'D') {
-      commissionRate = product.commission_rate_d;
-    } else if (grade === 'E') {
-      commissionRate = product.commission_rate_e;
+    
+    // promotion_product_hospital_performance 조회
+    const { data: hospitalPerf, error: hospitalPerfError } = await supabase
+      .from('promotion_product_hospital_performance')
+      .select(`
+        first_performance_cso_id,
+        promotion_product_list!inner(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)
+      `)
+      .eq('hospital_id', hospitalId)
+      .eq('has_performance', true);
+    
+    // 프로모션 제품이고 해당 병원에 실적이 있으며, 현재 업체가 first_performance_cso_id와 동일한 경우 final_commission_rate 사용
+    if (!hospitalPerfError && hospitalPerf && hospitalPerf.length > 0) {
+      const promotionProduct = hospitalPerf.find(hp => 
+        String(hp.promotion_product_list?.insurance_code) === insuranceCode &&
+        hp.first_performance_cso_id === companyId
+      );
+      
+      if (promotionProduct && promotionProduct.promotion_product_list?.final_commission_rate !== undefined) {
+        // 프로모션 기간 확인 (정산월 기준)
+        const promotionInfo = promotionProduct.promotion_product_list;
+        const settlementMonth = reactiveRow.settlement_month; // YYYY-MM 형식
+        
+        if (settlementMonth) {
+          // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+          let isWithinPromotionPeriod = true;
+          
+          const settlementDate = new Date(settlementMonth + '-01'); // 정산월의 첫 날
+          const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+          
+          if (promotionInfo.promotion_start_date) {
+            const startDate = new Date(promotionInfo.promotion_start_date);
+            // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+            if (settlementDate < startDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          if (promotionInfo.promotion_end_date) {
+            const endDate = new Date(promotionInfo.promotion_end_date);
+            // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+            if (lastDayOfSettlementMonth > endDate) {
+              isWithinPromotionPeriod = false;
+            }
+          }
+          
+          // 프로모션 기간 내에 있는 경우에만 final_commission_rate 사용
+          if (isWithinPromotionPeriod) {
+            commissionRate = promotionInfo.final_commission_rate;
+          }
+        } else {
+          // 정산월이 없으면 프로모션 기간 확인 없이 적용
+          commissionRate = promotionInfo.final_commission_rate;
+        }
+      }
     }
+    
+    // 프로모션 제품이 아닌 경우 기존 로직 사용
+    if (commissionRate === 0) {
+      // 회사-거래처 매핑에서 수수료율 등급 조회
+      const grade = await getCommissionGradeForClientCompany(reactiveRow.company_id, reactiveRow.client_id);
+      if (grade === 'A') {
+        commissionRate = product.commission_rate_a;
+      } else if (grade === 'B') {
+        commissionRate = product.commission_rate_b;
+      } else if (grade === 'C') {
+        commissionRate = product.commission_rate_c;
+      } else if (grade === 'D') {
+        commissionRate = product.commission_rate_d;
+      } else if (grade === 'E') {
+        commissionRate = product.commission_rate_e;
+      }
+    }
+    
     reactiveRow.commission_rate_modify = commissionRate;
 
     reactiveRow.showProductSearchList = false;
@@ -2050,7 +2318,8 @@ function getRowClass(data) {
     { 'editing-row': data.isEditing },
     { 'added-row': data.review_action === '추가' },
     { 'modified-row': data.review_action === '수정' },
-    { 'deleted-row': data.review_action === '삭제' }
+    { 'deleted-row': data.review_action === '삭제' },
+    { 'promotion-rate-row': data.isPromotionRateApplied } // 프로모션 수수료율 적용된 행
   ];
 }
 
@@ -2480,6 +2749,26 @@ async function handleBulkChange() {
 
 :deep(.p-datatable .p-datatable-tbody > tr.deleted-row > td) {
   background-color: #ffebee !important; /* 아주 연한 붉은색 */
+  color: #999 !important;
+  text-decoration: line-through !important;
+}
+
+/* 프로모션 수수료율 적용된 행 배경색 */
+:deep(.p-datatable .p-datatable-tbody > tr.promotion-rate-row > td) {
+  background-color: #f3e5f5 !important; /* 아주 연한 보라색 */
+}
+
+/* 프로모션 수수료율이 적용되고 추가/수정/삭제 작업이 있는 경우 우선순위 조정 */
+:deep(.p-datatable .p-datatable-tbody > tr.promotion-rate-row.added-row > td) {
+  background-color: #e1bee7 !important; /* 프로모션 + 추가: 약간 진한 보라색 */
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.promotion-rate-row.modified-row > td) {
+  background-color: #f1c0f7 !important; /* 프로모션 + 수정: 약간 진한 보라색 */
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.promotion-rate-row.deleted-row > td) {
+  background-color: #ffebee !important; /* 삭제 우선: 연한 붉은색 */
   color: #999 !important;
   text-decoration: line-through !important;
 }
