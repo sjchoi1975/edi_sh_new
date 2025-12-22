@@ -16,6 +16,9 @@
           <button class="btn-check" @click="checkStatistics" :disabled="checkingStatistics || resettingStatistics">
             {{ checkingStatistics ? '업데이트 중...' : '데이터 업데이트' }}
           </button>
+          <button class="btn-exclude-all" @click="openAddExcludedHospitalModal">
+            제외 병원 추가
+          </button>
         </div>
       </div>
 
@@ -55,7 +58,21 @@
         </Column>
         <Column field="hospital_count" header="적용 병의원" :headerStyle="{ width: '12%', textAlign: 'center' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
           <template #body="slotProps">
-            <div style="text-align: center;">{{ slotProps.data.hospital_count !== undefined ? slotProps.data.hospital_count : 0 }}</div>
+            <div style="text-align: center;">
+              {{ slotProps.data.cso_hospital_count !== undefined ? slotProps.data.cso_hospital_count : 0 }} / {{ slotProps.data.total_hospital_count !== undefined ? slotProps.data.total_hospital_count : 0 }}
+            </div>
+          </template>
+        </Column>
+        <Column field="excluded_hospital_count" header="제외 병의원" :headerStyle="{ width: '10%', textAlign: 'center' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+          <template #body="slotProps">
+            <div 
+              style="text-align: center; cursor: pointer; font-weight: 600; text-decoration: underline;"
+              :style="slotProps.data.excluded_hospital_count && slotProps.data.excluded_hospital_count > 0 ? 'color: #dc3545;' : 'color: #6c757d;'"
+              @click="openExcludedHospitalsListModal(slotProps.data)"
+              :title="slotProps.data.excluded_hospital_count && slotProps.data.excluded_hospital_count > 0 ? `제외 병원 ${slotProps.data.excluded_hospital_count}건 보기` : '제외 병원 관리'"
+            >
+              {{ slotProps.data.excluded_hospital_count || 0 }}
+            </div>
           </template>
         </Column>
         <Column field="commission_rate_b" header="기존 수수료율" :headerStyle="{ width: '12%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
@@ -230,6 +247,333 @@
         />
       </template>
     </Dialog>
+
+    <!-- 제외 병원 추가 모달 -->
+    <Dialog 
+      v-model:visible="showAddExcludedHospitalModal" 
+      header="제외 병원 추가 (전체 제품)" 
+      :modal="true"
+      :style="{ width: '800px', height: '700px' }"
+      @hide="closeAddExcludedHospitalModal"
+      class="excluded-hospital-modal"
+    >
+      <div class="excluded-hospital-modal-content">
+        <!-- 검색 섹션 -->
+        <div class="search-section">
+          <div class="search-header">
+            <div class="search-header-icon">
+              <i class="pi pi-search"></i>
+            </div>
+            <div class="search-header-text">
+              <h3 class="search-title">병의원 검색</h3>
+              <p class="search-subtitle">병의원명 또는 사업자등록번호로 검색하세요</p>
+            </div>
+          </div>
+          <div class="search-input-wrapper">
+            <i class="pi pi-search search-input-icon"></i>
+            <InputText 
+              v-model="hospitalSearchText" 
+              placeholder="예: 서울대학교병원 또는 123-45-67890"
+              class="search-input-enhanced"
+              @input="searchHospitals"
+            />
+            <div v-if="hospitalSearchText" class="search-clear" @click="hospitalSearchText = ''; searchResults = []">
+              <i class="pi pi-times"></i>
+            </div>
+          </div>
+          <div v-if="searchingHospitals" class="search-loading-enhanced">
+            <div class="loading-spinner"></div>
+            <span>검색 중...</span>
+          </div>
+        </div>
+        
+        <!-- 검색 결과 -->
+        <div v-if="searchResults.length > 0" class="search-results-enhanced">
+          <div class="search-results-header-enhanced">
+            <div class="results-count">
+              <i class="pi pi-list"></i>
+              <span>검색 결과 <strong>{{ searchResults.length }}</strong>건</span>
+            </div>
+          </div>
+          <div class="search-results-list-enhanced">
+            <!-- 처리 중 알림 -->
+            <div v-if="addingExcluded" class="adding-process-indicator">
+              <div class="process-indicator-content">
+                <div class="loading-spinner"></div>
+                <span>제외 병원 추가 중...</span>
+                <span class="process-hint">전체 제품에 병원을 추가하고 있습니다. 잠시만 기다려주세요.</span>
+              </div>
+            </div>
+            
+            <div 
+              v-for="(hospital, index) in searchResults" 
+              :key="hospital.id"
+              class="hospital-card"
+              :class="{ 'disabled': addingExcluded }"
+              :style="{ animationDelay: `${index * 0.05}s` }"
+              @click="!addingExcluded && addExcludedHospital(hospital.id)"
+            >
+              <div class="hospital-card-content">
+                <div class="hospital-card-icon">
+                  <i class="pi pi-building"></i>
+                </div>
+                <div class="hospital-card-info">
+                  <div class="hospital-card-name">{{ hospital.name }}</div>
+                  <div class="hospital-card-details">
+                    <div class="detail-item">
+                      <i class="pi pi-id-card"></i>
+                      <span class="detail-label">사업자등록번호</span>
+                      <span class="detail-value">{{ hospital.business_registration_number || '미등록' }}</span>
+                    </div>
+                    <div class="detail-item" v-if="hospital.address">
+                      <i class="pi pi-map-marker"></i>
+                      <span class="detail-label">주소</span>
+                      <span class="detail-value address-value">{{ hospital.address }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hospital-card-action">
+                <div class="action-button" :class="{ 'processing': addingExcluded }">
+                  <i v-if="!addingExcluded" class="pi pi-plus"></i>
+                  <i v-else class="pi pi-spin pi-spinner"></i>
+                  <span>{{ addingExcluded ? '처리 중...' : '추가' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 검색 결과 없음 -->
+        <div v-else-if="hospitalSearchText && !searchingHospitals" class="empty-state no-results">
+          <div class="empty-state-icon">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <div class="empty-state-text">검색 결과가 없습니다</div>
+          <div class="empty-state-hint">다른 검색어로 시도해보세요</div>
+        </div>
+        
+        <!-- 초기 상태 -->
+        <div v-else class="empty-state initial">
+          <div class="empty-state-icon">
+            <i class="pi pi-search"></i>
+          </div>
+          <div class="empty-state-text">병의원을 검색하세요</div>
+          <div class="empty-state-hint">병의원명 또는 사업자등록번호를 입력하여 검색하세요</div>
+        </div>
+      </div>
+    </Dialog>
+
+    <!-- 제외 병원 관리 모달 -->
+    <Dialog 
+      v-model:visible="showExcludedHospitalsListModal" 
+      header="제외 병원 관리" 
+      :modal="true"
+      :style="{ width: '800px', height: '650px' }"
+      @hide="closeExcludedHospitalsListModal"
+      class="excluded-hospitals-management-modal"
+    >
+      <div class="excluded-hospitals-modal-content">
+        <!-- 헤더 섹션 -->
+        <div class="management-header">
+          <div class="management-header-info">
+            <div class="management-header-icon">
+              <i class="pi pi-ban"></i>
+            </div>
+            <div class="management-header-text">
+              <h3 class="management-title">제외 병원 목록</h3>
+              <p class="management-subtitle">프로모션에서 제외된 병원을 관리합니다</p>
+            </div>
+          </div>
+          <div class="product-info-badge">
+            <i class="pi pi-box"></i>
+            <span class="product-name-text">{{ selectedProductForExcludedList?.product_name || '-' }}</span>
+            <span class="product-code-text">({{ selectedProductForExcludedList?.insurance_code || '-' }})</span>
+          </div>
+          <div class="management-count-badge">
+            <span class="count-number">{{ excludedHospitalsListForModal.length }}</span>
+            <span class="count-label">건</span>
+          </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="management-actions">
+          <button class="btn-add-exclude-enhanced" @click="openAddExcludedHospitalModalForProduct">
+            <i class="pi pi-plus-circle"></i>
+            <span>제외 병원 추가</span>
+          </button>
+        </div>
+
+        <!-- 제외 병원 목록 -->
+        <div class="excluded-hospitals-list-container">
+          <DataTable
+            :value="excludedHospitalsListForModal"
+            :loading="loadingExcludedList"
+            paginator
+            :rows="10"
+            scrollable
+            scrollHeight="400px"
+            class="excluded-hospitals-table"
+          >
+            <template #empty>
+              <div class="empty-excluded-list">
+                <div class="empty-icon">
+                  <i class="pi pi-inbox"></i>
+                </div>
+                <div class="empty-text">제외된 병원이 없습니다</div>
+                <div class="empty-hint">위의 "제외 병원 추가" 버튼을 클릭하여 병원을 추가하세요</div>
+              </div>
+            </template>
+            <Column header="No" :headerStyle="{ width: '8%', textAlign: 'center' }" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                <span class="row-number">{{ slotProps.index + 1 }}</span>
+              </template>
+            </Column>
+            <Column field="hospital_name" header="병의원명" :headerStyle="{ width: '45%' }">
+              <template #body="slotProps">
+                <div class="hospital-name-cell">
+                  <i class="pi pi-building"></i>
+                  <span>{{ slotProps.data.hospital_name }}</span>
+                </div>
+              </template>
+            </Column>
+            <Column field="business_registration_number" header="사업자등록번호" :headerStyle="{ width: '30%' }" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                <span class="business-number">{{ slotProps.data.business_registration_number || '-' }}</span>
+              </template>
+            </Column>
+            <Column header="작업" :headerStyle="{ width: '17%' }" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                <div style="display: flex; justify-content: center; align-items: center;">
+                  <button 
+                    class="btn-delete-exclude-enhanced" 
+                    @click="removeExcludedHospitalFromProduct(slotProps.data.hospital_id)"
+                    :disabled="removingExcluded"
+                  >
+                    <i class="pi pi-trash"></i>
+                    <span>삭제</span>
+                  </button>
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+      </div>
+    </Dialog>
+
+    <!-- 제품별 제외 병원 추가 모달 -->
+    <Dialog 
+      v-model:visible="showAddExcludedHospitalModalForProduct" 
+      header="제외 병원 추가" 
+      :modal="true"
+      :style="{ width: '800px', height: '700px' }"
+      @hide="closeAddExcludedHospitalModalForProduct"
+      class="excluded-hospital-modal"
+    >
+      <div class="excluded-hospital-modal-content">
+        <!-- 제품 정보 표시 -->
+        <div v-if="selectedProductForExcludedList" class="product-info-section">
+          <div class="product-info-badge">
+            <i class="pi pi-box"></i>
+            <span class="product-name-text">{{ selectedProductForExcludedList.product_name || '-' }}</span>
+            <span class="product-code-text">({{ selectedProductForExcludedList.insurance_code || '-' }})</span>
+          </div>
+        </div>
+        
+        <!-- 검색 섹션 -->
+        <div class="search-section">
+          <div class="search-header">
+            <div class="search-header-icon">
+              <i class="pi pi-search"></i>
+            </div>
+            <div class="search-header-text">
+              <h3 class="search-title">병의원 검색</h3>
+              <p class="search-subtitle">병의원명 또는 사업자등록번호로 검색하세요</p>
+            </div>
+          </div>
+          <div class="search-input-wrapper">
+            <i class="pi pi-search search-input-icon"></i>
+            <InputText 
+              v-model="hospitalSearchText" 
+              placeholder="예: 서울대학교병원 또는 123-45-67890"
+              class="search-input-enhanced"
+              @input="searchHospitalsForProduct"
+            />
+            <div v-if="hospitalSearchText" class="search-clear" @click="hospitalSearchText = ''; searchResults = []">
+              <i class="pi pi-times"></i>
+            </div>
+          </div>
+          <div v-if="searchingHospitals" class="search-loading-enhanced">
+            <div class="loading-spinner"></div>
+            <span>검색 중...</span>
+          </div>
+        </div>
+        
+        <!-- 검색 결과 -->
+        <div v-if="searchResults.length > 0" class="search-results-enhanced">
+          <div class="search-results-header-enhanced">
+            <div class="results-count">
+              <i class="pi pi-list"></i>
+              <span>검색 결과 <strong>{{ searchResults.length }}</strong>건</span>
+            </div>
+          </div>
+          <div class="search-results-list-enhanced">
+            <div 
+              v-for="(hospital, index) in searchResults" 
+              :key="hospital.id"
+              class="hospital-card"
+              :style="{ animationDelay: `${index * 0.05}s` }"
+              @click="addExcludedHospitalToProduct(hospital.id)"
+            >
+              <div class="hospital-card-content">
+                <div class="hospital-card-icon">
+                  <i class="pi pi-building"></i>
+                </div>
+                <div class="hospital-card-info">
+                  <div class="hospital-card-name">{{ hospital.name }}</div>
+                  <div class="hospital-card-details">
+                    <div class="detail-item">
+                      <i class="pi pi-id-card"></i>
+                      <span class="detail-label">사업자등록번호</span>
+                      <span class="detail-value">{{ hospital.business_registration_number || '미등록' }}</span>
+                    </div>
+                    <div class="detail-item" v-if="hospital.address">
+                      <i class="pi pi-map-marker"></i>
+                      <span class="detail-label">주소</span>
+                      <span class="detail-value address-value">{{ hospital.address }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hospital-card-action">
+                <div class="action-button">
+                  <i class="pi pi-plus"></i>
+                  <span>추가</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 검색 결과 없음 -->
+        <div v-else-if="hospitalSearchText && !searchingHospitals" class="empty-state no-results">
+          <div class="empty-state-icon">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <div class="empty-state-text">검색 결과가 없습니다</div>
+          <div class="empty-state-hint">다른 검색어로 시도해보세요</div>
+        </div>
+        
+        <!-- 초기 상태 -->
+        <div v-else class="empty-state initial">
+          <div class="empty-state-icon">
+            <i class="pi pi-search"></i>
+          </div>
+          <div class="empty-state-text">병의원을 검색하세요</div>
+          <div class="empty-state-hint">병의원명 또는 사업자등록번호를 입력하여 검색하세요</div>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -265,6 +609,21 @@ const statisticsCompleted = ref(false);
 // 기준년월 관련
 const selectedBaseMonth = ref('');
 const availableBaseMonths = ref([]);
+
+// 제외 병원 추가 관련
+const showAddExcludedHospitalModal = ref(false);
+const hospitalSearchText = ref('');
+const searchResults = ref([]);
+const searchingHospitals = ref(false);
+const addingExcluded = ref(false);
+
+// 제외 병원 목록 모달 관련
+const showExcludedHospitalsListModal = ref(false);
+const selectedProductForExcludedList = ref(null);
+const excludedHospitalsListForModal = ref([]);
+const loadingExcludedList = ref(false);
+const removingExcluded = ref(false);
+const showAddExcludedHospitalModalForProduct = ref(false);
 
     const formData = ref({
       insurance_code: '',
@@ -307,11 +666,12 @@ async function fetchBaseMonths() {
 // 기준년월 변경 시 제품의 commission_rate_b 조회
 async function fetchProductCommissionRateB() {
   if (!selectedBaseMonth.value) {
-    // 기준년월이 선택되지 않으면 commission_rate_b 제거 (hospital_count 유지)
+    // 기준년월이 선택되지 않으면 commission_rate_b 제거 (hospital_count, excluded_hospital_count 유지)
     promotionProducts.value = promotionProducts.value.map(p => ({
       ...p,
       commission_rate_b: null,
-      hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0
+      hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0,
+      excluded_hospital_count: p.excluded_hospital_count !== undefined ? p.excluded_hospital_count : 0
     }));
     return;
   }
@@ -350,13 +710,14 @@ async function fetchProductCommissionRateB() {
 
     console.log('수수료율 B 매핑:', commissionRateMap);
 
-    // promotionProducts에 commission_rate_b 추가 (hospital_count 유지)
+    // promotionProducts에 commission_rate_b 추가 (hospital_count, excluded_hospital_count 유지)
     promotionProducts.value = promotionProducts.value.map(p => {
       const key = String(p.insurance_code);
       return {
         ...p,
         commission_rate_b: commissionRateMap[key] || null,
-        hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0
+        hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0,
+        excluded_hospital_count: p.excluded_hospital_count !== undefined ? p.excluded_hospital_count : 0
       };
     });
 
@@ -374,35 +735,133 @@ async function fetchHospitalCounts() {
   try {
     const productIds = promotionProducts.value.map(p => p.id);
     
-    // 각 제품별로 병원 실적 개수 조회 (first_performance_cso_id가 null이 아닌 것만)
-    const { data, error } = await supabase
+    // 각 제품별로 전체 병원 실적 개수 조회 (has_performance가 true인 것)
+    const { data: totalData, error: totalError } = await supabase
       .from('promotion_product_hospital_performance')
       .select('promotion_product_id')
       .in('promotion_product_id', productIds)
-      .not('first_performance_cso_id', 'is', null);
+      .eq('has_performance', true);
 
-    if (error) throw error;
+    if (totalError) throw totalError;
 
-    // 제품별 개수 계산
-    const countMap = {};
-    if (data) {
-      data.forEach(item => {
+    // 각 제품별로 CSO 적용된 병원 실적 개수 조회 (first_performance_cso_id가 null이 아닌 것)
+    const { data: csoData, error: csoError } = await supabase
+      .from('promotion_product_hospital_performance')
+      .select('promotion_product_id')
+      .in('promotion_product_id', productIds)
+      .not('first_performance_cso_id', 'is', null)
+      .eq('has_performance', true);
+
+    if (csoError) throw csoError;
+
+    // 제품별 전체 개수 계산
+    const totalCountMap = {};
+    if (totalData) {
+      totalData.forEach(item => {
         const productId = item.promotion_product_id;
-        countMap[productId] = (countMap[productId] || 0) + 1;
+        totalCountMap[productId] = (totalCountMap[productId] || 0) + 1;
       });
     }
 
-    // promotionProducts에 hospital_count 추가
+    // 제품별 CSO 적용 개수 계산
+    const csoCountMap = {};
+    if (csoData) {
+      csoData.forEach(item => {
+        const productId = item.promotion_product_id;
+        csoCountMap[productId] = (csoCountMap[productId] || 0) + 1;
+      });
+    }
+
+    // promotionProducts에 hospital_count, cso_hospital_count, total_hospital_count 추가
     promotionProducts.value = promotionProducts.value.map(p => ({
       ...p,
-      hospital_count: countMap[p.id] || 0
+      hospital_count: csoCountMap[p.id] || 0, // 기존 호환성을 위해 유지
+      cso_hospital_count: csoCountMap[p.id] || 0,
+      total_hospital_count: totalCountMap[p.id] || 0
     }));
   } catch (error) {
     console.error('병원 실적 개수 조회 오류:', error);
     // 오류가 발생해도 기본값 0으로 설정
     promotionProducts.value = promotionProducts.value.map(p => ({
       ...p,
-      hospital_count: 0
+      hospital_count: 0,
+      cso_hospital_count: 0,
+      total_hospital_count: 0
+    }));
+  }
+}
+
+// 제외 병원 개수 조회
+async function fetchExcludedHospitalCounts() {
+  if (promotionProducts.value.length === 0) return;
+
+  try {
+    const insuranceCodes = promotionProducts.value
+      .map(p => p.insurance_code)
+      .filter(code => code)
+      .map(code => String(code));
+    
+    if (insuranceCodes.length === 0) {
+      promotionProducts.value = promotionProducts.value.map(p => ({
+        ...p,
+        excluded_hospital_count: 0
+      }));
+      return;
+    }
+
+    // 각 보험코드별로 제외 병원 개수 조회
+    // 먼저 보험코드에 해당하는 product_id 조회
+    const { data: productIdsData, error: productIdsError } = await supabase
+      .from('promotion_product_list')
+      .select('id, insurance_code')
+      .in('insurance_code', insuranceCodes);
+    
+    if (productIdsError) throw productIdsError;
+    
+    if (!productIdsData || productIdsData.length === 0) {
+      promotionProducts.value = promotionProducts.value.map(p => ({
+        ...p,
+        excluded_hospital_count: 0
+      }));
+      return;
+    }
+    
+    const productIds = productIdsData.map(p => p.id);
+    const productIdToInsuranceCode = new Map();
+    productIdsData.forEach(p => {
+      productIdToInsuranceCode.set(p.id, String(p.insurance_code));
+    });
+    
+    // 제외 병원 개수 조회
+    const { data, error } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .select('promotion_product_id')
+      .in('promotion_product_id', productIds);
+
+    if (error) throw error;
+
+    // 보험코드별 개수 계산
+    const excludedCountMap = {};
+    if (data) {
+      data.forEach(item => {
+        const insuranceCode = productIdToInsuranceCode.get(item.promotion_product_id);
+        if (insuranceCode) {
+          excludedCountMap[insuranceCode] = (excludedCountMap[insuranceCode] || 0) + 1;
+        }
+      });
+    }
+
+    // promotionProducts에 excluded_hospital_count 추가
+    promotionProducts.value = promotionProducts.value.map(p => ({
+      ...p,
+      excluded_hospital_count: excludedCountMap[String(p.insurance_code)] || 0
+    }));
+  } catch (error) {
+    console.error('제외 병원 개수 조회 오류:', error);
+    // 오류가 발생해도 기본값 0으로 설정
+    promotionProducts.value = promotionProducts.value.map(p => ({
+      ...p,
+      excluded_hospital_count: 0
     }));
   }
 }
@@ -527,6 +986,9 @@ async function fetchPromotionProducts() {
     // 병원 실적 개수 조회
     await fetchHospitalCounts();
     
+    // 제외 병원 개수 조회
+    await fetchExcludedHospitalCounts();
+    
     // 기존 수수료율 조회 (기준년월이 있으면 조회, 없으면 null)
     if (selectedBaseMonth.value) {
       await fetchProductCommissionRateB();
@@ -553,11 +1015,12 @@ async function onBaseMonthChange() {
   if (selectedBaseMonth.value) {
     await fetchProductCommissionRateB();
   } else {
-    // 기준년월이 선택 해제되면 commission_rate_b 제거 (hospital_count 유지)
+    // 기준년월이 선택 해제되면 commission_rate_b 제거 (hospital_count, excluded_hospital_count 유지)
     promotionProducts.value = promotionProducts.value.map(p => ({
       ...p,
       commission_rate_b: null,
-      hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0
+      hospital_count: p.hospital_count !== undefined ? p.hospital_count : 0,
+      excluded_hospital_count: p.excluded_hospital_count !== undefined ? p.excluded_hospital_count : 0
     }));
   }
 }
@@ -745,6 +1208,9 @@ async function resetStatistics() {
     
     // 병원 실적 개수도 초기화
     await fetchHospitalCounts();
+    
+    // 제외 병원 개수도 다시 조회
+    await fetchExcludedHospitalCounts();
   } catch (error) {
     console.error('데이터 초기화 오류:', error);
     alert('데이터 초기화 중 오류가 발생했습니다: ' + (error.message || error));
@@ -1518,9 +1984,24 @@ async function checkStatistics() {
             existingAfterAmountMap.set(hospitalId, currentAmount + prescriptionAmount);
             
             // 기준일 이후 데이터인데 first_performance_cso_id가 null이면 CSO ID로 수정
+            // 단, 프로모션 시작일 이전 데이터가 있으면 CSO ID는 null로 유지해야 함
             // existingDataMap만 업데이트하고, 실제 DB 업데이트는 나중에 일괄 처리 (1783-1807줄)
             if (existing && existing.first_performance_month && existing.first_performance_month >= baseMonth) {
-              if (existing.first_performance_cso_id === null) {
+              // 프로모션 시작일 이전 데이터가 있는지 확인
+              const hasBeforeStartDateData = beforeBaseMonthRecords.some(r => {
+                if (!r.client_id || r.review_action === '삭제') return false;
+                if (r.client_id !== hospitalId) return false;
+                if (promotionStartDate && r.prescription_month) {
+                  const prescriptionDate = new Date(r.prescription_month + '-01');
+                  return prescriptionDate < promotionStartDate;
+                } else if (!promotionStartDate && r.prescription_month) {
+                  return r.prescription_month < baseMonth;
+                }
+                return false;
+              });
+
+              // 프로모션 시작일 이전 데이터가 없을 때만 CSO ID 설정
+              if (!hasBeforeStartDateData && existing.first_performance_cso_id === null) {
                 existing.first_performance_cso_id = record.company_id;
                 // existingDataMap도 업데이트 (일괄 업데이트 시 사용)
                 existingDataMap.set(hospitalId, {
@@ -1537,9 +2018,23 @@ async function checkStatistics() {
             const existing = hospitalDataMap.get(hospitalId);
             // 기준일 이전 데이터인 경우 (first_performance_month < baseMonth) CSO ID는 null로 유지
             // 기준일 이후 데이터인 경우에만 CSO ID 업데이트
+            // 단, 프로모션 시작일 이전 데이터가 있으면 CSO ID는 null로 유지
             if (existing.first_performance_month && existing.first_performance_month >= baseMonth) {
-              // 기준일 이후 데이터인데 first_performance_cso_id가 null이면 CSO ID 업데이트
-              if (existing.first_performance_cso_id === null) {
+              // 프로모션 시작일 이전 데이터가 있는지 확인
+              const hasBeforeStartDateData = beforeBaseMonthRecords.some(r => {
+                if (!r.client_id || r.review_action === '삭제') return false;
+                if (r.client_id !== hospitalId) return false;
+                if (promotionStartDate && r.prescription_month) {
+                  const prescriptionDate = new Date(r.prescription_month + '-01');
+                  return prescriptionDate < promotionStartDate;
+                } else if (!promotionStartDate && r.prescription_month) {
+                  return r.prescription_month < baseMonth;
+                }
+                return false;
+              });
+
+              // 프로모션 시작일 이전 데이터가 없을 때만 CSO ID 업데이트
+              if (!hasBeforeStartDateData && existing.first_performance_cso_id === null) {
                 existing.first_performance_cso_id = record.company_id;
               }
             }
@@ -1557,13 +2052,39 @@ async function checkStatistics() {
             }
           } else {
             // 기준일 이전 데이터가 없는 경우에만 새로 추가
+            // 하지만 프로모션 시작일 이전 데이터가 있는지 확인 필요
             const productPrice = Number(record.products?.price) || 0;
             const prescriptionQty = Number(record.prescription_qty) || 0;
             const prescriptionAmount = prescriptionQty * productPrice;
 
+            // 프로모션 시작일 이전 데이터 확인
+            // 1. 현재 레코드의 prescription_month가 프로모션 시작일 이전인지 확인
+            let hasBeforeStartDateData = false;
+            if (promotionStartDate && record.prescription_month) {
+              const prescriptionDate = new Date(record.prescription_month + '-01');
+              hasBeforeStartDateData = prescriptionDate < promotionStartDate;
+            } else if (!promotionStartDate && record.prescription_month) {
+              hasBeforeStartDateData = record.prescription_month < baseMonth;
+            }
+            
+            // 2. beforeBaseMonthRecords에 해당 병원의 프로모션 시작일 이전 데이터가 있는지 확인
+            if (!hasBeforeStartDateData) {
+              hasBeforeStartDateData = beforeBaseMonthRecords.some(r => {
+                if (!r.client_id || r.review_action === '삭제') return false;
+                if (r.client_id !== hospitalId) return false;
+                if (promotionStartDate && r.prescription_month) {
+                  const prescriptionDate = new Date(r.prescription_month + '-01');
+                  return prescriptionDate < promotionStartDate;
+                } else if (!promotionStartDate && r.prescription_month) {
+                  return r.prescription_month < baseMonth;
+                }
+                return false;
+              });
+            }
+
             hospitalDataMap.set(hospitalId, {
               hospital_id: hospitalId,
-              first_performance_cso_id: record.company_id,
+              first_performance_cso_id: hasBeforeStartDateData ? null : record.company_id, // 프로모션 시작일 이전이면 null
               first_performance_month: record.prescription_month || null,
               total_performance_amount: prescriptionAmount,
               before_promotion_amount: 0,
@@ -1648,20 +2169,18 @@ async function checkStatistics() {
         console.log(`[통계 확인] 제품 ${promotionProduct.product_name} - hospitalDataMap 최종 크기:`, hospitalDataMap.size);
         console.log(`[통계 확인] 제품 ${promotionProduct.product_name} - hospitalDataMap 내용:`, Array.from(hospitalDataMap.entries()));
 
-        // 기존 데이터의 프로모션 전/후 금액 업데이트
+        // 기존 데이터의 프로모션 전/후 금액 업데이트 (덮어쓰기 방식으로 변경 - 중복 계산 방지)
         for (const [hospitalId, beforeAmount] of existingBeforeAmountMap.entries()) {
           const existing = existingDataMap.get(hospitalId);
           const afterAmount = existingAfterAmountMap.get(hospitalId) || 0;
-          const existingBefore = existing?.before_promotion_amount || 0;
-          const existingAfter = existing?.after_promotion_amount || 0;
           
-          const newBeforeAmount = existingBefore + beforeAmount;
-          const newAfterAmount = existingAfter + afterAmount;
-          const newTotalAmount = newBeforeAmount + newAfterAmount;
+          // 기존 값에 누적하지 않고, 새로 계산한 값으로 덮어쓰기
+          // total_performance_amount는 before + after로 계산
+          const newTotalAmount = beforeAmount + afterAmount;
           
           const updateData = {
-            before_promotion_amount: newBeforeAmount,
-            after_promotion_amount: newAfterAmount,
+            before_promotion_amount: beforeAmount,
+            after_promotion_amount: afterAmount,
             total_performance_amount: newTotalAmount,
             updated_by: user.id
           };
@@ -1743,28 +2262,72 @@ async function checkStatistics() {
         }
         
         // 기존 데이터 중 기준일 이후인데 CSO ID가 null인 경우 업데이트
+        // 단, 프로모션 시작일 이전 데이터가 있으면 CSO ID는 null로 유지해야 함
         for (const [hospitalId, afterAmount] of existingAfterAmountMap.entries()) {
           const existing = existingDataMap.get(hospitalId);
-          if (existing && existing.first_performance_month && existing.first_performance_month >= baseMonth) {
-            if (existing.first_performance_cso_id === null) {
-              // 기준일 이후 데이터 중 첫 번째 레코드의 company_id를 찾아서 업데이트
-              const firstAfterRecord = afterBaseMonthRecords.find(r => r.client_id === hospitalId);
-              if (firstAfterRecord && firstAfterRecord.company_id) {
-                const { error: updateError } = await supabase
-                  .from('promotion_product_hospital_performance')
-                  .update({ 
-                    first_performance_cso_id: firstAfterRecord.company_id,
-                    updated_by: user.id
-                  })
-                  .eq('promotion_product_id', promotionProduct.id)
-                  .eq('hospital_id', hospitalId);
-                
-                if (updateError) {
-                  console.error(`기존 데이터 CSO ID 업데이트 오류 (제품 ${promotionProduct.product_name}, 병원 ${hospitalId}):`, updateError);
-                  totalErrors++;
-                } else {
-                  totalUpdated++;
+          if (existing && existing.first_performance_month) {
+            // 프로모션 시작일 이전 데이터가 있는지 확인
+            let hasBeforeStartDateData = false;
+            if (promotionStartDate) {
+              // beforeBaseMonthRecords에서 해당 병원의 프로모션 시작일 이전 데이터 확인
+              hasBeforeStartDateData = beforeBaseMonthRecords.some(record => {
+                if (!record.client_id || record.review_action === '삭제') return false;
+                if (record.client_id !== hospitalId) return false;
+                if (record.prescription_month) {
+                  const prescriptionDate = new Date(record.prescription_month + '-01');
+                  return prescriptionDate < promotionStartDate;
                 }
+                return false;
+              });
+            } else {
+              // 프로모션 시작일이 없으면 baseMonth 이전 데이터 확인
+              hasBeforeStartDateData = beforeBaseMonthRecords.some(record => {
+                if (!record.client_id || record.review_action === '삭제') return false;
+                if (record.client_id !== hospitalId) return false;
+                return record.prescription_month && record.prescription_month < baseMonth;
+              });
+            }
+
+            // 프로모션 시작일 이전 데이터가 없고, first_performance_month가 기준일 이후인 경우에만 CSO ID 업데이트
+            if (!hasBeforeStartDateData && existing.first_performance_month >= baseMonth) {
+              if (existing.first_performance_cso_id === null) {
+                // 기준일 이후 데이터 중 첫 번째 레코드의 company_id를 찾아서 업데이트
+                const firstAfterRecord = afterBaseMonthRecords.find(r => r.client_id === hospitalId);
+                if (firstAfterRecord && firstAfterRecord.company_id) {
+                  const { error: updateError } = await supabase
+                    .from('promotion_product_hospital_performance')
+                    .update({ 
+                      first_performance_cso_id: firstAfterRecord.company_id,
+                      updated_by: user.id
+                    })
+                    .eq('promotion_product_id', promotionProduct.id)
+                    .eq('hospital_id', hospitalId);
+                  
+                  if (updateError) {
+                    console.error(`기존 데이터 CSO ID 업데이트 오류 (제품 ${promotionProduct.product_name}, 병원 ${hospitalId}):`, updateError);
+                    totalErrors++;
+                  } else {
+                    totalUpdated++;
+                  }
+                }
+              }
+            } else if (hasBeforeStartDateData && existing.first_performance_cso_id !== null) {
+              // 프로모션 시작일 이전 데이터가 있는데 CSO ID가 null이 아니면 null로 수정
+              const { error: updateError } = await supabase
+                .from('promotion_product_hospital_performance')
+                .update({ 
+                  first_performance_cso_id: null,
+                  updated_by: user.id
+                })
+                .eq('promotion_product_id', promotionProduct.id)
+                .eq('hospital_id', hospitalId);
+              
+              if (updateError) {
+                console.error(`프로모션 시작일 이전 데이터 존재로 CSO ID null 처리 오류 (제품 ${promotionProduct.product_name}, 병원 ${hospitalId}):`, updateError);
+                totalErrors++;
+              } else {
+                totalUpdated++;
+                console.log(`[통계 확인] 제품 ${promotionProduct.product_name} - 병원 ${hospitalId} 프로모션 시작일 이전 데이터 존재로 CSO ID null 처리 (first_performance_month: ${existing.first_performance_month})`);
               }
             }
           }
@@ -1825,6 +2388,7 @@ async function checkStatistics() {
     // 통계 확인 후 병원 실적 개수 다시 조회
     statisticsStatus.value = '병원 실적 개수 갱신 중...';
     await fetchHospitalCounts();
+    await fetchExcludedHospitalCounts();
     statisticsStatus.value = `완료! 처리된 제품: ${totalProcessed}개, 신규 입력: ${totalUpdated}개, 기존 데이터 스킵: ${totalSkipped}개, 오류: ${totalErrors}개`;
     
     // 마지막 업데이트 시간을 DB에 저장
@@ -1836,6 +2400,318 @@ async function checkStatistics() {
     alert('데이터 업데이트 중 오류가 발생했습니다: ' + (error.message || error));
   } finally {
     checkingStatistics.value = false;
+  }
+}
+
+// 제외 병원 추가 모달 열기
+function openAddExcludedHospitalModal() {
+  showAddExcludedHospitalModal.value = true;
+  hospitalSearchText.value = '';
+  searchResults.value = [];
+}
+
+// 제외 병원 추가 모달 닫기
+function closeAddExcludedHospitalModal() {
+  showAddExcludedHospitalModal.value = false;
+  hospitalSearchText.value = '';
+  searchResults.value = [];
+}
+
+// 병원 검색
+async function searchHospitals() {
+  const searchText = hospitalSearchText.value.trim();
+  if (!searchText || searchText.length < 2) {
+    searchResults.value = [];
+    return;
+  }
+  
+  searchingHospitals.value = true;
+  try {
+    // 병의원명 또는 사업자등록번호로 검색
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, business_registration_number, address')
+      .or(`name.ilike.%${searchText}%,business_registration_number.ilike.%${searchText}%`)
+      .eq('status', 'active')
+      .limit(20);
+    
+    if (error) throw error;
+    
+    searchResults.value = data || [];
+  } catch (error) {
+    console.error('병원 검색 오류:', error);
+    alert('병원 검색 중 오류가 발생했습니다: ' + (error.message || error));
+    searchResults.value = [];
+  } finally {
+    searchingHospitals.value = false;
+  }
+}
+
+// 제외 병원 추가 (전체 제품에 적용)
+async function addExcludedHospital(hospitalId) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('로그인 정보가 유효하지 않습니다.');
+    
+    addingExcluded.value = true;
+    
+    // 모든 프로모션 제품의 ID 조회
+    const { data: allProducts, error: productsError } = await supabase
+      .from('promotion_product_list')
+      .select('id');
+    
+    if (productsError) throw productsError;
+    
+    if (!allProducts || allProducts.length === 0) {
+      alert('프로모션 제품이 없습니다.');
+      return;
+    }
+    
+    // 모든 제품 ID에 대해 제외 병원 추가
+    const productIds = allProducts
+      .map(p => p.id)
+      .filter(id => id);
+    
+    // 이미 존재하는 제품 확인
+    const { data: existingData, error: existingError } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .select('promotion_product_id')
+      .eq('hospital_id', hospitalId)
+      .in('promotion_product_id', productIds);
+    
+    if (existingError) {
+      console.error('기존 제외 병원 조회 오류:', existingError);
+      // 조회 오류가 발생해도 계속 진행
+    }
+    
+    // 이미 존재하는 제품 ID Set 생성
+    const existingProductIds = new Set((existingData || []).map(item => item.promotion_product_id));
+    
+    // 존재하지 않는 제품만 필터링
+    const newProductIds = productIds.filter(productId => !existingProductIds.has(productId));
+    
+    if (newProductIds.length === 0) {
+      alert('이미 모든 제품에 제외된 병원입니다.');
+      closeAddExcludedHospitalModal();
+      return;
+    }
+    
+    // 존재하지 않는 제품에만 추가
+    const insertData = newProductIds.map(productId => ({
+      promotion_product_id: productId,
+      hospital_id: hospitalId,
+      created_by: user.id,
+      updated_by: user.id
+    }));
+    
+    const { error } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .insert(insertData);
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (existingProductIds.size > 0) {
+      alert(`제외 병원이 ${newProductIds.length}개 제품에 추가되었습니다. (${existingProductIds.size}개 제품에는 이미 제외되어 있었습니다.)`);
+    } else {
+      alert(`제외 병원이 전체 ${newProductIds.length}개 제품에 추가되었습니다.`);
+    }
+    
+    // 제외 병원 개수 다시 조회
+    await fetchExcludedHospitalCounts();
+    
+    closeAddExcludedHospitalModal();
+  } catch (error) {
+    console.error('제외 병원 추가 오류:', error);
+    if (error.code === '23505') {
+      alert('이미 제외된 병원입니다.');
+    } else {
+      alert('제외 병원 추가 중 오류가 발생했습니다: ' + (error.message || error));
+    }
+  } finally {
+    addingExcluded.value = false;
+  }
+}
+
+// 제외 병원 목록 모달 열기
+async function openExcludedHospitalsListModal(product) {
+  if (!product || !product.id) {
+    console.error('제품 정보가 없습니다.');
+    return;
+  }
+  
+  selectedProductForExcludedList.value = product;
+  showExcludedHospitalsListModal.value = true;
+  await fetchExcludedHospitalsListForModal(product.id);
+}
+
+// 제외 병원 목록 모달 닫기
+function closeExcludedHospitalsListModal() {
+  showExcludedHospitalsListModal.value = false;
+  selectedProductForExcludedList.value = null;
+  excludedHospitalsListForModal.value = [];
+}
+
+// 제외 병원 목록 조회 (모달용)
+async function fetchExcludedHospitalsListForModal(productId) {
+  if (!productId) return;
+  
+  loadingExcludedList.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .select(`
+        hospital_id,
+        clients:hospital_id (
+          id,
+          name,
+          business_registration_number
+        )
+      `)
+      .eq('promotion_product_id', productId);
+    
+    if (error) {
+      console.error('제외 병원 조회 오류:', error);
+      excludedHospitalsListForModal.value = [];
+      return;
+    }
+    
+    excludedHospitalsListForModal.value = (data || []).map(item => ({
+      hospital_id: item.hospital_id,
+      hospital_name: item.clients?.name || '-',
+      business_registration_number: item.clients?.business_registration_number || null
+    }));
+  } catch (error) {
+    console.error('제외 병원 조회 오류:', error);
+    excludedHospitalsListForModal.value = [];
+  } finally {
+    loadingExcludedList.value = false;
+  }
+}
+
+// 제품별 제외 병원 추가 모달 열기
+function openAddExcludedHospitalModalForProduct() {
+  showAddExcludedHospitalModalForProduct.value = true;
+  hospitalSearchText.value = '';
+  searchResults.value = [];
+}
+
+// 제품별 제외 병원 추가 모달 닫기
+function closeAddExcludedHospitalModalForProduct() {
+  showAddExcludedHospitalModalForProduct.value = false;
+  hospitalSearchText.value = '';
+  searchResults.value = [];
+}
+
+// 병원 검색 (제품별용)
+async function searchHospitalsForProduct() {
+  const searchText = hospitalSearchText.value.trim();
+  if (!searchText || searchText.length < 2) {
+    searchResults.value = [];
+    return;
+  }
+  
+  searchingHospitals.value = true;
+  try {
+    // 병의원명 또는 사업자등록번호로 검색
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, business_registration_number, address')
+      .or(`name.ilike.%${searchText}%,business_registration_number.ilike.%${searchText}%`)
+      .eq('status', 'active')
+      .limit(20);
+    
+    if (error) throw error;
+    
+    // 이미 제외된 병원은 제외
+    if (selectedProductForExcludedList.value && selectedProductForExcludedList.value.id) {
+      const excludedHospitalIds = new Set(excludedHospitalsListForModal.value.map(eh => eh.hospital_id));
+      searchResults.value = (data || []).filter(h => !excludedHospitalIds.has(h.id));
+    } else {
+      searchResults.value = data || [];
+    }
+  } catch (error) {
+    console.error('병원 검색 오류:', error);
+    alert('병원 검색 중 오류가 발생했습니다: ' + (error.message || error));
+    searchResults.value = [];
+  } finally {
+    searchingHospitals.value = false;
+  }
+}
+
+// 제품별 제외 병원 추가
+async function addExcludedHospitalToProduct(hospitalId) {
+  if (!selectedProductForExcludedList.value || !selectedProductForExcludedList.value.id) {
+    alert('제품 정보가 없습니다.');
+    return;
+  }
+  
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('로그인 정보가 유효하지 않습니다.');
+    
+    addingExcluded.value = true;
+    
+    const { error } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .insert({
+        promotion_product_id: selectedProductForExcludedList.value.id,
+        hospital_id: hospitalId,
+        created_by: user.id,
+        updated_by: user.id
+      });
+    
+    if (error) {
+      if (error.code === '23505') {
+        alert('이미 제외된 병원입니다.');
+      } else {
+        throw error;
+      }
+    } else {
+      alert('제외 병원이 추가되었습니다.');
+      await fetchExcludedHospitalsListForModal(selectedProductForExcludedList.value.id);
+      await fetchExcludedHospitalCounts();
+    }
+    
+    closeAddExcludedHospitalModalForProduct();
+  } catch (error) {
+    console.error('제외 병원 추가 오류:', error);
+    alert('제외 병원 추가 중 오류가 발생했습니다: ' + (error.message || error));
+  } finally {
+    addingExcluded.value = false;
+  }
+}
+
+// 제품별 제외 병원 삭제
+async function removeExcludedHospitalFromProduct(hospitalId) {
+  if (!confirm('이 병원을 제외 목록에서 제거하시겠습니까?')) {
+    return;
+  }
+  
+  if (!selectedProductForExcludedList.value || !selectedProductForExcludedList.value.id) {
+    alert('제품 정보가 없습니다.');
+    return;
+  }
+  
+  removingExcluded.value = true;
+  try {
+    const { error } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .delete()
+      .eq('promotion_product_id', selectedProductForExcludedList.value.id)
+      .eq('hospital_id', hospitalId);
+    
+    if (error) throw error;
+    
+    alert('제외 병원이 제거되었습니다.');
+    await fetchExcludedHospitalsListForModal(selectedProductForExcludedList.value.id);
+    await fetchExcludedHospitalCounts();
+  } catch (error) {
+    console.error('제외 병원 삭제 오류:', error);
+    alert('제외 병원 삭제 중 오류가 발생했습니다: ' + (error.message || error));
+  } finally {
+    removingExcluded.value = false;
   }
 }
 
@@ -1913,6 +2789,21 @@ onMounted(async () => {
   background-color: #6c757d;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.btn-exclude-all {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.btn-exclude-all:hover {
+  background-color: #c82333;
 }
 
 .btn-save {
@@ -2095,6 +2986,847 @@ onMounted(async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 제외 병원 추가 모달 스타일 */
+.excluded-hospital-modal :deep(.p-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.excluded-hospital-modal :deep(.p-dialog-content) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.excluded-hospital-modal :deep(.p-dialog-header) {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #bd2130 100%);
+  color: white;
+  padding: 24px 28px;
+  border-bottom: none;
+  position: relative;
+}
+
+.excluded-hospital-modal :deep(.p-dialog-header)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+}
+
+.excluded-hospital-modal :deep(.p-dialog-header .p-dialog-title) {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.excluded-hospital-modal :deep(.p-dialog-header-icon) {
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.excluded-hospital-modal :deep(.p-dialog-header-icon:hover) {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.excluded-hospital-modal-content {
+  padding: 0;
+  background: #f8f9fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 제품 정보 섹션 */
+.product-info-section {
+  padding: 20px 28px;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* 검색 섹션 */
+.search-section {
+  background: white;
+  padding: 28px;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.search-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.search-header-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  flex-shrink: 0;
+}
+
+.search-header-text {
+  flex: 1;
+}
+
+.search-title {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+  letter-spacing: -0.3px;
+}
+
+.search-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 16px;
+  color: #6c757d;
+  font-size: 16px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.search-input-enhanced {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.search-input-enhanced:focus {
+  outline: none;
+  border-color: #dc3545;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.search-clear:hover {
+  background: #dc3545;
+  color: white;
+  transform: rotate(90deg);
+}
+
+.search-loading-enhanced {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e3f2fd;
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* 검색 결과 */
+.search-results-enhanced {
+  padding: 24px 28px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.search-results-header-enhanced {
+  margin-bottom: 16px;
+}
+
+.results-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.results-count i {
+  color: #dc3545;
+  font-size: 16px;
+}
+
+.results-count strong {
+  color: #dc3545;
+  font-size: 16px;
+}
+
+.search-results-list-enhanced {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  min-height: 0;
+}
+
+.search-results-list-enhanced::-webkit-scrollbar {
+  width: 10px;
+}
+
+.search-results-list-enhanced::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 5px;
+}
+
+.search-results-list-enhanced::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 5px;
+}
+
+.search-results-list-enhanced::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
+}
+
+.hospital-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out backwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hospital-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.hospital-card:hover {
+  border-color: #dc3545;
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(220, 53, 69, 0.15);
+}
+
+.hospital-card:hover::before {
+  transform: scaleY(1);
+}
+
+.hospital-card-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.hospital-card-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+  font-size: 24px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.hospital-card:hover .hospital-card-icon {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #dc3545;
+  transform: scale(1.1);
+}
+
+.hospital-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hospital-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+
+.hospital-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.detail-item i {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.detail-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #495057;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.detail-value.address-value {
+  font-family: inherit;
+  color: #6c757d;
+  font-weight: 500;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.hospital-card-action {
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.hospital-card:hover .action-button:not(.processing) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.hospital-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.hospital-card.disabled:hover {
+  transform: none;
+  border-color: #e9ecef;
+  box-shadow: none;
+}
+
+.action-button.processing {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  cursor: wait;
+}
+
+.action-button i {
+  font-size: 14px;
+}
+
+/* 처리 중 알림 */
+.adding-process-indicator {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+}
+
+.process-indicator-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.process-indicator-content .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffc107;
+  border-top-color: #ff9800;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.process-indicator-content span:first-of-type {
+  font-weight: 600;
+  color: #856404;
+  font-size: 15px;
+}
+
+.process-hint {
+  font-size: 13px;
+  color: #856404;
+  opacity: 0.8;
+  margin-left: auto;
+}
+
+/* 빈 상태 */
+.empty-state {
+  padding: 60px 28px;
+  text-align: center;
+  background: white;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #adb5bd;
+  font-size: 36px;
+}
+
+.empty-state.initial .empty-state-icon {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+  color: #dc3545;
+}
+
+.empty-state-text {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.empty-state-hint {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.empty-state.no-results .empty-state-icon {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #adb5bd;
+}
+
+/* 제외 병원 관리 모달 스타일 */
+.excluded-hospitals-management-modal :deep(.p-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-content) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-header) {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 50%, #bd2130 100%);
+  color: white;
+  padding: 24px 28px;
+  border-bottom: none;
+  position: relative;
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-header)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-header .p-dialog-title) {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-header-icon) {
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.excluded-hospitals-management-modal :deep(.p-dialog-header-icon:hover) {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.excluded-hospitals-modal-content {
+  padding: 0;
+  background: #f8f9fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.management-header {
+  background: white;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 20px;
+}
+
+.management-header-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.management-header-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  flex-shrink: 0;
+}
+
+.management-header-text {
+  flex: 1;
+}
+
+.management-title {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+  letter-spacing: -0.3px;
+}
+
+.management-subtitle {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.product-info-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 8px;
+  font-size: 12px;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.product-info-badge i {
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.product-name-text {
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.product-code-text {
+  color: #6c757d;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.management-count-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+  flex-shrink: 0;
+}
+
+.count-number {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.count-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.management-actions {
+  padding: 20px 28px;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.btn-add-exclude-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.btn-add-exclude-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-add-exclude-enhanced i {
+  font-size: 16px;
+}
+
+.excluded-hospitals-list-container {
+  flex: 1;
+  padding: 20px 28px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.excluded-hospitals-table :deep(.p-datatable-wrapper) {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  background: white;
+}
+
+.excluded-hospitals-table :deep(.p-datatable-thead > tr > th) {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #495057;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.excluded-hospitals-table :deep(.p-datatable-tbody > tr) {
+  transition: all 0.2s ease;
+}
+
+.excluded-hospitals-table :deep(.p-datatable-tbody > tr:hover) {
+  background: #fff5f5;
+}
+
+.row-number {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #495057;
+  font-size: 13px;
+}
+
+.hospital-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hospital-name-cell i {
+  color: #dc3545;
+  font-size: 16px;
+}
+
+.business-number {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #495057;
+}
+
+.empty-excluded-list {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #adb5bd;
+  font-size: 36px;
+}
+
+.empty-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.btn-delete-exclude-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
+}
+
+.btn-delete-exclude-enhanced:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.btn-delete-exclude-enhanced:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-delete-exclude-enhanced i {
+  font-size: 14px;
 }
 
 </style>
