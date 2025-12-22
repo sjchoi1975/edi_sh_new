@@ -343,6 +343,25 @@ async function loadDetailData() {
       }
     }
     
+    // 제외 병원 목록 조회
+    const { data: excludedHospitals, error: excludedError } = await supabase
+      .from('promotion_product_excluded_hospitals')
+      .select(`
+        hospital_id,
+        promotion_product_list!inner(insurance_code)
+      `);
+    
+    const excludedHospitalsMap = new Set();
+    if (!excludedError && excludedHospitals) {
+      excludedHospitals.forEach(eh => {
+        const insuranceCode = eh.promotion_product_list?.insurance_code;
+        if (insuranceCode) {
+          const key = `${String(insuranceCode)}_${eh.hospital_id}`;
+          excludedHospitalsMap.add(key);
+        }
+      });
+    }
+    
     // 데이터 가공 (약가, 처방액, 지급액 계산)
     let mappedData = [];
     if (allData && allData.length > 0) {
@@ -366,7 +385,11 @@ async function loadDetailData() {
           const key = `${hospitalId}_${insuranceCode}_${companyId.value}`;
           const promotionInfo = hospitalPerformanceMap.get(key);
           
-          if (promotionInfo) {
+          // 제외 병원 확인
+          const excludedKey = `${insuranceCode}_${hospitalId}`;
+          const isExcluded = excludedHospitalsMap.has(excludedKey);
+          
+          if (promotionInfo && !isExcluded) {
             // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
             let isWithinPromotionPeriod = true;
             
