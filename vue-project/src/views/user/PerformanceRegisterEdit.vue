@@ -290,6 +290,10 @@ import { supabase } from '@/supabase';
 // 주석: updatePromotionProductHospitalPerformance는 트리거가 자동 처리하므로 불필요
 import Button from 'primevue/button';
 import { translateSupabaseError, translateGeneralError } from '@/utils/errorMessages';
+import { convertCommissionRateToDecimal } from '@/utils/formatUtils';
+import { useNotifications } from '@/utils/notifications';
+
+const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
 const route = useRoute();
 const router = useRouter();
@@ -1100,6 +1104,7 @@ function calculateAmounts(rowIdx) {
   calculatePaymentAmount(rowIdx);
 }
 
+
 // 수수료율 입력 시 지급액만 계산 (처방액은 변경하지 않음)
 function onCommissionRateInput(rowIdx) {
   const row = inputRows.value[rowIdx];
@@ -1117,47 +1122,29 @@ function onCommissionRateInput(rowIdx) {
 function calculatePaymentAmount(rowIdx) {
   const row = inputRows.value[rowIdx];
   const prescriptionAmount = Number(row.prescription_amount.toString().replace(/,/g, ''));
-  const commissionRate = Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, ''));
-  
-  // console.log(`지급액 계산 - 행 ${rowIdx}:`, { prescriptionAmount, commissionRate, commissionRateRaw: row.commission_rate });
+  // 수수료율을 소수점으로 변환 (퍼센트나 소수점 모두 처리)
+  const commissionRateDecimal = convertCommissionRateToDecimal(row.commission_rate);
   
   // 지급액 계산 (처방액과 수수료율이 모두 있을 때만)
-  if (!isNaN(prescriptionAmount) && prescriptionAmount !== 0 && !isNaN(commissionRate) && commissionRate >= 0) {
-    // commissionRate는 백분율 형태이므로 그대로 사용 (100배 계산)
-    const rateForCalculation = commissionRate;
-    const paymentAmount = (prescriptionAmount * rateForCalculation / 100);
+  if (!isNaN(prescriptionAmount) && prescriptionAmount !== 0 && !isNaN(commissionRateDecimal) && commissionRateDecimal >= 0) {
+    // commissionRateDecimal은 이미 소수점 형태이므로 그대로 사용
+    const paymentAmount = prescriptionAmount * commissionRateDecimal;
     row.payment_amount = paymentAmount.toLocaleString();
-    
-    // console.log(`지급액 계산 결과:`, { rateForCalculation, paymentAmount, formattedPaymentAmount: row.payment_amount });
   } else {
     row.payment_amount = '';
-    // console.log(`지급액 계산 실패:`, { prescriptionAmountValid: !isNaN(prescriptionAmount), commissionRateValid: !isNaN(commissionRate), prescriptionAmountNonZero: prescriptionAmount !== 0 });
   }
 }
 
-// 수수료율 포맷팅 함수 (백분율로 표시, 소수점 유지)
+// 수수료율 포맷팅 함수 (백분율로 표시, 소수점 1자리로 통일)
 function formatCommissionRate(rowIdx) {
   const row = inputRows.value[rowIdx];
   if (row.commission_rate) {
     const rateStr = row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '');
     const rate = Number(rateStr);
     if (!isNaN(rate)) {
-      // 입력된 값의 소수점 자릿수 확인
-      const decimalPlaces = rateStr.includes('.') ? rateStr.split('.')[1].length : 0;
-      
-      // 입력된 소수점 자릿수를 그대로 유지하면서 백분율로 표시
-      // 예: 42.5 -> 42.5%, 42.55 -> 42.55%, 42 -> 42%
-      let displayRate;
-      if (decimalPlaces > 0) {
-        // 소수점이 있는 경우 입력된 자릿수 그대로 유지
-        displayRate = rate.toFixed(decimalPlaces);
-        // 불필요한 뒤의 0 제거 (예: 42.50 -> 42.5)
-        displayRate = parseFloat(displayRate).toString();
-      } else {
-        // 정수인 경우 그대로 표시
-        displayRate = rate.toString();
-      }
-      
+      // 항상 소수점 1자리로 표시 (50 -> 50.0%, 0.5 -> 50.0%)
+      const commissionRateDecimal = convertCommissionRateToDecimal(rateStr);
+      const displayRate = (commissionRateDecimal * 100).toFixed(1);
       row.commission_rate = displayRate + '%';
     }
   }
@@ -1343,8 +1330,10 @@ async function savePerformanceData() {
       registered_by: currentUserUid, // 실제 등록한 사용자 ID (관리자 또는 일반사용자)
         review_status: reviewStatus,
         commission_rate: (() => {
-          const calculatedRate = Number((Number(row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '')) / 100).toFixed(3));
-          return isNaN(calculatedRate) ? commissionRate : calculatedRate;
+          const calculatedRate = convertCommissionRateToDecimal(row.commission_rate);
+          // 소수점 3자리로 반올림
+          const roundedRate = Math.round(calculatedRate * 1000) / 1000;
+          return isNaN(roundedRate) || roundedRate === 0 ? commissionRate : roundedRate;
         })()
       };
     });
@@ -1458,7 +1447,7 @@ async function onSave() {
   const clientId = route.query?.clientId;
   const settlementMonth = route.query?.settlementMonth;
   if (!settlementMonth || !clientId) {
-    alert('정산월이나 병원이 선택되지 않았습니다.');
+    showWarning('정산월이나 병원이 선택되지 않았습니다.');
     return;
   }
 
@@ -1486,7 +1475,7 @@ async function onSave() {
     // 3. 저장 처리 (기존 데이터 삭제 후 새로 저장)
     const savedCount = await savePerformanceData();
     // 4. 성공 메시지
-    alert(`${savedCount}건의 실적이 저장되었습니다.`);
+    showSuccess(`${savedCount}건의 실적이 저장되었습니다.`);
     // 5. 저장 후 실적 목록 화면으로 이동
     if (route.query?.companyId) {
       // 관리자가 대신 등록한 경우
@@ -1539,7 +1528,7 @@ async function onSave() {
       }
     }
     
-    alert(errorMessage);
+    showError(errorMessage);
   }
 
   // 저장 후에는 originalRows를 inputRows에서 입력된 행만 복사해서 동기화
