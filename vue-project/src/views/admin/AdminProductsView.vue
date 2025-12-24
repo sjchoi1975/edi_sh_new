@@ -133,8 +133,8 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_a"
-              type="number"
-              step="0.001"
+              type="text"
+              placeholder="예: 36, 36%"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
               :id="`commission_rate_a_${slotProps.data.id}`"
             />
@@ -146,8 +146,8 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_b"
-              type="number"
-              step="0.001"
+              type="text"
+              placeholder="예: 36, 36%"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
               :id="`commission_rate_b_${slotProps.data.id}`"
             />
@@ -159,8 +159,8 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_c"
-              type="number"
-              step="0.001"
+              type="text"
+              placeholder="예: 36, 36%"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
               :id="`commission_rate_c_${slotProps.data.id}`"
             />
@@ -172,8 +172,8 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_d"
-              type="number"
-              step="0.001"
+              type="text"
+              placeholder="예: 36, 36%"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
               :id="`commission_rate_d_${slotProps.data.id}`"
             />
@@ -185,8 +185,8 @@
             <input
               v-if="slotProps.data.isEditing"
               v-model="slotProps.data.commission_rate_e"
-              type="number"
-              step="0.001"
+              type="text"
+              placeholder="예: 36, 36%"
               class="p-inputtext p-component p-inputtext-sm text-right inline-edit-input"
               :id="`commission_rate_e_${slotProps.data.id}`"
             />
@@ -321,7 +321,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -336,7 +335,10 @@ import ExcelJS from 'exceljs'
 import * as XLSX from 'xlsx'
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils'
 import { translateSupabaseError, translateGeneralError } from '@/utils/errorMessages'
+import { convertCommissionRateToDecimal } from '@/utils/formatUtils'
+import { useNotifications } from '@/utils/notifications'
 
+const { showSuccess, showError, showWarning, showInfo, showConfirm } = useNotifications();
 
 // 컬럼 너비 한 곳에서 관리
 const columnWidths = {
@@ -482,12 +484,12 @@ const isMonthlyRegisterValid = computed(() => {
 // 월별 등록 실행
 const executeMonthlyRegister = async () => {
   if (!isMonthlyRegisterValid.value) {
-    alert('복사할 기준월과 적용할 월을 모두 선택해주세요.')
+    showWarning('복사할 기준월과 적용할 월을 모두 선택해주세요.')
     return
   }
 
   if (selectedSourceMonth.value === selectedTargetMonth.value) {
-    alert('복사할 기준월과 적용할 월이 같을 수 없습니다.')
+    showWarning('복사할 기준월과 적용할 월이 같을 수 없습니다.')
     return
   }
 
@@ -501,7 +503,7 @@ const executeMonthlyRegister = async () => {
     // 현재 사용자 정보 가져오기
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      alert('로그인 정보가 없습니다.')
+      showError('로그인 정보가 없습니다.')
       return
     }
 
@@ -517,7 +519,7 @@ const executeMonthlyRegister = async () => {
     }
 
     if (!sourceProducts || sourceProducts.length === 0) {
-      alert(`${selectedSourceMonth.value}월에 복사할 제품 데이터가 없습니다.`)
+      showWarning(`${selectedSourceMonth.value}월에 복사할 제품 데이터가 없습니다.`)
       return
     }
 
@@ -592,7 +594,7 @@ const executeMonthlyRegister = async () => {
       }
     }
 
-    alert(`${insertedProducts.length}개의 제품이 ${selectedTargetMonth.value}월로 복사되었습니다.`)
+    showSuccess(`${insertedProducts.length}개의 제품이 ${selectedTargetMonth.value}월로 복사되었습니다.`)
     
     // 6. 모달 닫기 및 데이터 새로고침
     closeMonthlyRegisterModal(true) // 강제로 모달 닫기
@@ -609,7 +611,7 @@ const executeMonthlyRegister = async () => {
   } catch (error) {
     console.error('월별 등록 오류:', error);
     const errorMessage = translateGeneralError(error, '월별 등록');
-    alert(errorMessage);
+    showError(errorMessage);
     monthlyRegisterLoading.value = false // 오류 시에만 로딩 상태 해제
   }
 }
@@ -914,7 +916,7 @@ const handleFileUpload = async (event) => {
     // 현재 사용자 정보 가져오기
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      alert('로그인이 필요합니다.')
+      showError('로그인이 필요합니다.')
       return
     }
 
@@ -924,7 +926,7 @@ const handleFileUpload = async (event) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
     if (jsonData.length === 0) {
-      alert('엑셀 파일에 데이터가 없습니다.')
+      showWarning('엑셀 파일에 데이터가 없습니다.')
       return
     }
 
@@ -980,59 +982,64 @@ const handleFileUpload = async (event) => {
         return
       }
 
-      // 수수료율 A 검증 (0~1, 소수점 3자리)
+      // 수수료율 A 변환 및 검증
+      let commissionRateA = 0;
       if (row['수수료A'] !== undefined && row['수수료A'] !== null && row['수수료A'] !== '') {
-        const commissionA = Number(row['수수료A'])
-        if (isNaN(commissionA) || commissionA < 0 || commissionA > 1) {
-          errors.push(`${rowNum}행: 수수료율 A는 0~1 사이의 숫자여야 합니다.`)
+        commissionRateA = convertCommissionRateToDecimal(row['수수료A']);
+        if (commissionRateA < 0 || commissionRateA > 1) {
+          errors.push(`${rowNum}행: 수수료율 A는 0~100% 사이의 숫자여야 합니다.`)
           return
         }
         // 소수점 3자리로 반올림
-        row['수수료A'] = Math.round(commissionA * 1000) / 1000
+        commissionRateA = Math.round(commissionRateA * 1000) / 1000
       }
 
-      // 수수료율 B 검증 (0~1, 소수점 3자리)
+      // 수수료율 B 변환 및 검증
+      let commissionRateB = 0;
       if (row['수수료B'] !== undefined && row['수수료B'] !== null && row['수수료B'] !== '') {
-        const commissionB = Number(row['수수료B'])
-        if (isNaN(commissionB) || commissionB < 0 || commissionB > 1) {
-          errors.push(`${rowNum}행: 수수료율 B는 0~1 사이의 숫자여야 합니다.`)
+        commissionRateB = convertCommissionRateToDecimal(row['수수료B']);
+        if (commissionRateB < 0 || commissionRateB > 1) {
+          errors.push(`${rowNum}행: 수수료율 B는 0~100% 사이의 숫자여야 합니다.`)
           return
         }
         // 소수점 3자리로 반올림
-        row['수수료B'] = Math.round(commissionB * 1000) / 1000
+        commissionRateB = Math.round(commissionRateB * 1000) / 1000
       }
 
-      // 수수료율 C 검증 (0~1, 소수점 3자리)
+      // 수수료율 C 변환 및 검증
+      let commissionRateC = 0;
       if (row['수수료C'] !== undefined && row['수수료C'] !== null && row['수수료C'] !== '') {
-        const commissionC = Number(row['수수료C'])
-        if (isNaN(commissionC) || commissionC < 0 || commissionC > 1) {
-          errors.push(`${rowNum}행: 수수료율 C는 0~1 사이의 숫자여야 합니다.`)
+        commissionRateC = convertCommissionRateToDecimal(row['수수료C']);
+        if (commissionRateC < 0 || commissionRateC > 1) {
+          errors.push(`${rowNum}행: 수수료율 C는 0~100% 사이의 숫자여야 합니다.`)
           return
         }
         // 소수점 3자리로 반올림
-        row['수수료C'] = Math.round(commissionC * 1000) / 1000
+        commissionRateC = Math.round(commissionRateC * 1000) / 1000
       }
 
-      // 수수료율 D 검증 (0~1, 소수점 3자리)
+      // 수수료율 D 변환 및 검증
+      let commissionRateD = 0;
       if (row['수수료D'] !== undefined && row['수수료D'] !== null && row['수수료D'] !== '') {
-        const commissionD = Number(row['수수료D'])
-        if (isNaN(commissionD) || commissionD < 0 || commissionD > 1) {
-          errors.push(`${rowNum}행: 수수료율 D는 0~1 사이의 숫자여야 합니다.`)
+        commissionRateD = convertCommissionRateToDecimal(row['수수료D']);
+        if (commissionRateD < 0 || commissionRateD > 1) {
+          errors.push(`${rowNum}행: 수수료율 D는 0~100% 사이의 숫자여야 합니다.`)
           return
         }
         // 소수점 3자리로 반올림
-        row['수수료D'] = Math.round(commissionD * 1000) / 1000
+        commissionRateD = Math.round(commissionRateD * 1000) / 1000
       }
 
-      // 수수료율 E 검증 (0~1, 소수점 3자리)
+      // 수수료율 E 변환 및 검증
+      let commissionRateE = 0;
       if (row['수수료E'] !== undefined && row['수수료E'] !== null && row['수수료E'] !== '') {
-        const commissionE = Number(row['수수료E'])
-        if (isNaN(commissionE) || commissionE < 0 || commissionE > 1) {
-          errors.push(`${rowNum}행: 수수료율 E는 0~1 사이의 숫자여야 합니다.`)
+        commissionRateE = convertCommissionRateToDecimal(row['수수료E']);
+        if (commissionRateE < 0 || commissionRateE > 1) {
+          errors.push(`${rowNum}행: 수수료율 E는 0~100% 사이의 숫자여야 합니다.`)
           return
         }
         // 소수점 3자리로 반올림
-        row['수수료E'] = Math.round(commissionE * 1000) / 1000
+        commissionRateE = Math.round(commissionRateE * 1000) / 1000
       }
 
       const monthRegex = /^\d{4}-\d{2}$/
@@ -1060,11 +1067,11 @@ const handleFileUpload = async (event) => {
         product_name: row['제품명'],
         insurance_code: row['보험코드'],
         price: Number(row['약가']) || 0,
-        commission_rate_a: Number(row['수수료A']) || 0,
-        commission_rate_b: Number(row['수수료B']) || 0,
-        commission_rate_c: Number(row['수수료C']) || 0,
-        commission_rate_d: Number(row['수수료D']) || 0,
-        commission_rate_e: Number(row['수수료E']) || 0,
+        commission_rate_a: commissionRateA,
+        commission_rate_b: commissionRateB,
+        commission_rate_c: commissionRateC,
+        commission_rate_d: commissionRateD,
+        commission_rate_e: commissionRateE,
         remarks: row['비고'] || '',
         status: statusValue,
         created_by: user.id, // 등록자 ID 추가
@@ -1073,7 +1080,7 @@ const handleFileUpload = async (event) => {
     })
 
     if (errors.length > 0) {
-      alert('데이터 오류:\n' + errors.join('\n'))
+      showError('데이터 오류:\n' + errors.join('\n'))
       return
     }
 
@@ -1099,7 +1106,8 @@ const handleFileUpload = async (event) => {
 
       if (duplicateErrors.length > 0) {
         // 4단계: 중복 발견 시 계속 진행 여부 확인
-        if (!confirm('중복 오류:\n' + duplicateErrors.join('\n') + '\n\n계속 등록 작업을 진행하시겠습니까?')) {
+        const confirmed = await showConfirm('중복 오류:\n' + duplicateErrors.join('\n') + '\n\n계속 등록 작업을 진행하시겠습니까?', '중복 확인');
+        if (!confirmed) {
           return
         }
 
@@ -1124,7 +1132,7 @@ const handleFileUpload = async (event) => {
     })
 
     if (insertData.length === 0) {
-      alert('등록할 데이터가 없습니다.')
+      showWarning('등록할 데이터가 없습니다.')
       return
     }
 
@@ -1132,15 +1140,15 @@ const handleFileUpload = async (event) => {
 
     if (error) {
       const errorMessage = translateSupabaseError(error, '엑셀 등록');
-      alert(`업로드 실패: ${errorMessage}`);
+      showError(`업로드 실패: ${errorMessage}`);
     } else {
-      alert(`${insertData.length}건의 제품 데이터가 업로드되었습니다.`)
+      showSuccess(`${insertData.length}건의 제품 데이터가 업로드되었습니다.`)
       await fetchProducts()
     }
   } catch (error) {
     console.error('파일 처리 오류:', error);
     const errorMessage = translateGeneralError(error, '파일 처리');
-    alert(errorMessage);
+    showError(errorMessage);
   } finally {
     // 엑셀 등록 로딩 종료
     excelLoading.value = false
@@ -1149,8 +1157,8 @@ const handleFileUpload = async (event) => {
 }
 
 const downloadExcel = async () => {
-  if (filteredProducts.value.length === 0) {
-    alert('다운로드할 데이터가 없습니다.')
+    if (filteredProducts.value.length === 0) {
+    showWarning('다운로드할 데이터가 없습니다.')
     return
   }
 
@@ -1310,6 +1318,7 @@ const downloadExcel = async () => {
   window.URL.revokeObjectURL(url)
 }
 
+
 const startEdit = (row) => {
   products.value.forEach((item) => {
     if (item.isEditing && item.id !== row.id) {
@@ -1318,6 +1327,24 @@ const startEdit = (row) => {
   })
 
   row.originalData = { ...row }
+  
+  // 수수료율을 퍼센트로 변환해서 표시 (소수점 0.36 -> 36.0)
+  if (row.commission_rate_a !== null && row.commission_rate_a !== undefined) {
+    row.commission_rate_a = (row.commission_rate_a * 100).toFixed(1);
+  }
+  if (row.commission_rate_b !== null && row.commission_rate_b !== undefined) {
+    row.commission_rate_b = (row.commission_rate_b * 100).toFixed(1);
+  }
+  if (row.commission_rate_c !== null && row.commission_rate_c !== undefined) {
+    row.commission_rate_c = (row.commission_rate_c * 100).toFixed(1);
+  }
+  if (row.commission_rate_d !== null && row.commission_rate_d !== undefined) {
+    row.commission_rate_d = (row.commission_rate_d * 100).toFixed(1);
+  }
+  if (row.commission_rate_e !== null && row.commission_rate_e !== undefined) {
+    row.commission_rate_e = (row.commission_rate_e * 100).toFixed(1);
+  }
+  
   row.isEditing = true
 }
 
@@ -1356,7 +1383,7 @@ const saveEdit = async (row) => {
   try {
     // 필수 필드 검증
     if (!row.product_name || row.product_name.trim() === '') {
-      alert('제품명은 필수 입력 항목입니다.');
+      showWarning('제품명은 필수 입력 항목입니다.');
       setTimeout(() => {
         const productNameInput = document.getElementById(`product_name_${row.id}`);
         if (productNameInput) {
@@ -1368,7 +1395,7 @@ const saveEdit = async (row) => {
     }
 
     if (!row.insurance_code || row.insurance_code.toString().trim() === '') {
-      alert('보험코드는 필수 입력 항목입니다.');
+      showWarning('보험코드는 필수 입력 항목입니다.');
       setTimeout(() => {
         const insuranceCodeInput = document.getElementById(`insurance_code_${row.id}`);
         if (insuranceCodeInput) {
@@ -1380,7 +1407,7 @@ const saveEdit = async (row) => {
     }
 
     if (!row.price || row.price.toString().trim() === '') {
-      alert('약가는 필수 입력 항목입니다.');
+      showWarning('약가는 필수 입력 항목입니다.');
       setTimeout(() => {
         const priceInput = document.getElementById(`price_${row.id}`);
         if (priceInput) {
@@ -1395,7 +1422,7 @@ const saveEdit = async (row) => {
 
     // 보험코드 형식 검증 (9자리 숫자)
     if (row.insurance_code.toString().length !== 9 || !/^\d{9}$/.test(row.insurance_code.toString())) {
-      alert('보험코드는 9자리 숫자여야 합니다.');
+      showWarning('보험코드는 9자리 숫자여야 합니다.');
       setTimeout(() => {
         const insuranceCodeInput = document.getElementById(`insurance_code_${row.id}`);
         if (insuranceCodeInput) {
@@ -1410,7 +1437,7 @@ const saveEdit = async (row) => {
 
     // 약가 형식 검증 (0 이상의 숫자)
     if (row.price && (isNaN(Number(row.price)) || Number(row.price) < 0)) {
-      alert('약가는 0 이상의 숫자여야 합니다.');
+      showWarning('약가는 0 이상의 숫자여야 합니다.');
       setTimeout(() => {
         const priceInput = document.getElementById(`price_${row.id}`);
         if (priceInput) {
@@ -1421,11 +1448,12 @@ const saveEdit = async (row) => {
       return;
     }
 
-    // 수수료율 A 검증 (0~1, 소수점 3자리)
+    // 수수료율 A 변환 및 검증
+    let commissionRateA = 0;
     if (row.commission_rate_a && row.commission_rate_a.toString().trim() !== '') {
-      const commissionAValue = Number(row.commission_rate_a);
-      if (isNaN(commissionAValue) || commissionAValue < 0 || commissionAValue > 1) {
-        alert('수수료율 A는 0~1 사이의 숫자여야 합니다.');
+      commissionRateA = convertCommissionRateToDecimal(row.commission_rate_a);
+      if (commissionRateA < 0 || commissionRateA > 1) {
+        showWarning('수수료율 A는 0~100% 사이의 숫자여야 합니다.');
         setTimeout(() => {
           const commissionAInput = document.getElementById(`commission_rate_a_${row.id}`);
           if (commissionAInput) {
@@ -1436,14 +1464,15 @@ const saveEdit = async (row) => {
         return;
       }
       // 소수점 3자리로 반올림
-      row.commission_rate_a = Math.round(commissionAValue * 1000) / 1000;
+      commissionRateA = Math.round(commissionRateA * 1000) / 1000;
     }
 
-    // 수수료율 B 검증 (0~1, 소수점 3자리)
+    // 수수료율 B 변환 및 검증
+    let commissionRateB = 0;
     if (row.commission_rate_b && row.commission_rate_b.toString().trim() !== '') {
-      const commissionBValue = Number(row.commission_rate_b);
-      if (isNaN(commissionBValue) || commissionBValue < 0 || commissionBValue > 1) {
-        alert('수수료율 B는 0~1 사이의 숫자여야 합니다.');
+      commissionRateB = convertCommissionRateToDecimal(row.commission_rate_b);
+      if (commissionRateB < 0 || commissionRateB > 1) {
+        showWarning('수수료율 B는 0~100% 사이의 숫자여야 합니다.');
         setTimeout(() => {
           const commissionBInput = document.getElementById(`commission_rate_b_${row.id}`);
           if (commissionBInput) {
@@ -1454,14 +1483,15 @@ const saveEdit = async (row) => {
         return;
       }
       // 소수점 3자리로 반올림
-      row.commission_rate_b = Math.round(commissionBValue * 1000) / 1000;
+      commissionRateB = Math.round(commissionRateB * 1000) / 1000;
     }
 
-    // 수수료율 C 검증 (0~1, 소수점 3자리)
+    // 수수료율 C 변환 및 검증
+    let commissionRateC = 0;
     if (row.commission_rate_c && row.commission_rate_c.toString().trim() !== '') {
-      const commissionCValue = Number(row.commission_rate_c);
-      if (isNaN(commissionCValue) || commissionCValue < 0 || commissionCValue > 1) {
-        alert('수수료율 C는 0~1 사이의 숫자여야 합니다.');
+      commissionRateC = convertCommissionRateToDecimal(row.commission_rate_c);
+      if (commissionRateC < 0 || commissionRateC > 1) {
+        showWarning('수수료율 C는 0~100% 사이의 숫자여야 합니다.');
         setTimeout(() => {
           const commissionCInput = document.getElementById(`commission_rate_c_${row.id}`);
           if (commissionCInput) {
@@ -1472,14 +1502,15 @@ const saveEdit = async (row) => {
         return;
       }
       // 소수점 3자리로 반올림
-      row.commission_rate_c = Math.round(commissionCValue * 1000) / 1000;
+      commissionRateC = Math.round(commissionRateC * 1000) / 1000;
     }
 
-    // 수수료율 D 검증 (0~1, 소수점 3자리)
+    // 수수료율 D 변환 및 검증
+    let commissionRateD = 0;
     if (row.commission_rate_d && row.commission_rate_d.toString().trim() !== '') {
-      const commissionDValue = Number(row.commission_rate_d);
-      if (isNaN(commissionDValue) || commissionDValue < 0 || commissionDValue > 1) {
-        alert('수수료율 D는 0~1 사이의 숫자여야 합니다.');
+      commissionRateD = convertCommissionRateToDecimal(row.commission_rate_d);
+      if (commissionRateD < 0 || commissionRateD > 1) {
+        showWarning('수수료율 D는 0~100% 사이의 숫자여야 합니다.');
         setTimeout(() => {
           const commissionDInput = document.getElementById(`commission_rate_d_${row.id}`);
           if (commissionDInput) {
@@ -1490,14 +1521,15 @@ const saveEdit = async (row) => {
         return;
       }
       // 소수점 3자리로 반올림
-      row.commission_rate_d = Math.round(commissionDValue * 1000) / 1000;
+      commissionRateD = Math.round(commissionRateD * 1000) / 1000;
     }
 
-    // 수수료율 E 검증 (0~1, 소수점 3자리)
+    // 수수료율 E 변환 및 검증
+    let commissionRateE = 0;
     if (row.commission_rate_e && row.commission_rate_e.toString().trim() !== '') {
-      const commissionEValue = Number(row.commission_rate_e);
-      if (isNaN(commissionEValue) || commissionEValue < 0 || commissionEValue > 1) {
-        alert('수수료율 E는 0~1 사이의 숫자여야 합니다.');
+      commissionRateE = convertCommissionRateToDecimal(row.commission_rate_e);
+      if (commissionRateE < 0 || commissionRateE > 1) {
+        showWarning('수수료율 E는 0~100% 사이의 숫자여야 합니다.');
         setTimeout(() => {
           const commissionEInput = document.getElementById(`commission_rate_e_${row.id}`);
           if (commissionEInput) {
@@ -1508,11 +1540,11 @@ const saveEdit = async (row) => {
         return;
       }
       // 소수점 3자리로 반올림
-      row.commission_rate_e = Math.round(commissionEValue * 1000) / 1000;
+      commissionRateE = Math.round(commissionRateE * 1000) / 1000;
     }
 
     if (!['active', 'inactive'].includes(row.status)) {
-      alert('상태는 active 또는 inactive여야 합니다.')
+      showWarning('상태는 active 또는 inactive여야 합니다.')
       return
     }
 
@@ -1520,11 +1552,11 @@ const saveEdit = async (row) => {
       product_name: row.product_name,
       insurance_code: row.insurance_code,
       price: Number(row.price) || 0,
-      commission_rate_a: row.commission_rate_a === '' ? 0 : Number(row.commission_rate_a),
-      commission_rate_b: row.commission_rate_b === '' ? 0 : Number(row.commission_rate_b),
-      commission_rate_c: row.commission_rate_c === '' ? 0 : Number(row.commission_rate_c),
-      commission_rate_d: row.commission_rate_d === '' ? 0 : Number(row.commission_rate_d),
-      commission_rate_e: row.commission_rate_e === '' ? 0 : Number(row.commission_rate_e),
+      commission_rate_a: commissionRateA,
+      commission_rate_b: commissionRateB,
+      commission_rate_c: commissionRateC,
+      commission_rate_d: commissionRateD,
+      commission_rate_e: commissionRateE,
       remarks: row.remarks || '',
       status: row.status,
     }
@@ -1533,23 +1565,31 @@ const saveEdit = async (row) => {
 
     if (error) {
       const errorMessage = translateSupabaseError(error, '제품 수정');
-      alert(`수정 실패: ${errorMessage}`);
+      showError(`수정 실패: ${errorMessage}`);
       return
     }
 
+    // 저장 후 row 객체의 수수료율을 변환된 소수점 값으로 업데이트
+    row.commission_rate_a = commissionRateA
+    row.commission_rate_b = commissionRateB
+    row.commission_rate_c = commissionRateC
+    row.commission_rate_d = commissionRateD
+    row.commission_rate_e = commissionRateE
+    
     row.isEditing = false
     row.originalData = { ...row }
 
-    alert('수정되었습니다.')
+    showSuccess('수정되었습니다.')
   } catch (error) {
     console.error('수정 오류:', error);
     const errorMessage = translateGeneralError(error, '제품 수정');
-    alert(errorMessage);
+    showError(errorMessage);
   }
 }
 
 const deleteProduct = async (row) => {
-  if (!confirm('정말 삭제하시겠습니까?')) {
+  const confirmed = await showConfirm('정말 삭제하시겠습니까?', '삭제 확인');
+  if (!confirmed) {
     return
   }
 
@@ -1562,12 +1602,12 @@ const deleteProduct = async (row) => {
 
     if (rpcError) {
       const errorMessage = translateSupabaseError(rpcError, '제품 참조 확인');
-      alert(`삭제 확인 중 오류: ${errorMessage}`);
+      showError(`삭제 확인 중 오류: ${errorMessage}`);
       return;
     }
 
     if (isReferenceExist != 0) {
-      alert(`이 제품(${row.product_name})은 이미 사용되고 있어 삭제할 수 없습니다.`);
+      showWarning(`이 제품(${row.product_name})은 이미 사용되고 있어 삭제할 수 없습니다.`);
       return;
     }
 
@@ -1575,7 +1615,7 @@ const deleteProduct = async (row) => {
 
     if (error) {
       const errorMessage = translateSupabaseError(error, '제품 삭제');
-      alert(`삭제 실패: ${errorMessage}`);
+      showError(`삭제 실패: ${errorMessage}`);
       return;
     }
 
@@ -1584,11 +1624,11 @@ const deleteProduct = async (row) => {
       products.value.splice(index, 1)
     }
 
-    alert('삭제되었습니다.')
+    showSuccess('삭제되었습니다.')
   } catch (error) {
     console.error('삭제 오류:', error);
     const errorMessage = translateGeneralError(error, '제품 삭제');
-    alert(errorMessage);
+    showError(errorMessage);
   }
 }
 
@@ -2308,5 +2348,6 @@ function showUploadChoiceModal() {
     font-size: 18px;
   }
 }
+
 
 </style>
