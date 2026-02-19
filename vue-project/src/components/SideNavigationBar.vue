@@ -122,6 +122,11 @@ const adminMenuTree = [
     { label: '실적 검수', path: '/admin/performance/review' },
     { label: '흡수율 분석', path: '/admin/absorption-analysis' },
     { label: '정산내역서 공유', path: '/admin/settlement-share' }
+  ]},
+  { label: '실적 통계', icon: 'pi pi-chart-line', children: [
+    { label: '업체별 통계', path: '/admin/statistics/company' },
+    { label: '병원별 통계', path: '/admin/statistics/hospital' },
+    { label: '제품별 통계', path: '/admin/statistics/product' }
   ]}
 ];
 const userMenuTree = [
@@ -234,6 +239,17 @@ function isActive(item) {
     return true;
   }
   if (itemPath === '/admin/settlement-share' && currentPath === '/admin/settlement-share') {
+    return true;
+  }
+  
+  // 통계 메뉴들
+  if (itemPath === '/admin/statistics/company' && currentPath === '/admin/statistics/company') {
+    return true;
+  }
+  if (itemPath === '/admin/statistics/hospital' && currentPath === '/admin/statistics/hospital') {
+    return true;
+  }
+  if (itemPath === '/admin/statistics/product' && currentPath === '/admin/statistics/product') {
     return true;
   }
   

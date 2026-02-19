@@ -298,6 +298,24 @@ const router = createRouter({
       meta: { menu: '정산 관리', submenu: '실적 검수', requiresAuth: true, isAdmin: true },
     },
     {
+      path: '/admin/statistics/company',
+      name: 'AdminPerformanceStatisticsCompany',
+      component: () => import('@/views/admin/AdminPerformanceStatisticsCompanyView.vue'),
+      meta: { menu: '정산 관리', submenu: '업체별 통계', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/statistics/hospital',
+      name: 'AdminPerformanceStatisticsHospital',
+      component: () => import('@/views/admin/AdminPerformanceStatisticsHospitalView.vue'),
+      meta: { menu: '정산 관리', submenu: '병원별 통계', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/statistics/product',
+      name: 'AdminPerformanceStatisticsProduct',
+      component: () => import('@/views/admin/AdminPerformanceStatisticsProductView.vue'),
+      meta: { menu: '정산 관리', submenu: '제품별 통계', requiresAuth: true, isAdmin: true },
+    },
+    {
       path: '/admin/absorption-analysis',
       name: 'AdminAbsorptionAnalysis',
       component: () => import('@/views/admin/AdminAbsorptionAnalysisView.vue'),
