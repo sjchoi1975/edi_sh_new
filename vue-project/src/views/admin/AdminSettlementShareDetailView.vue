@@ -841,7 +841,7 @@ function formatAppliedAbsorptionRate(value) {
     
     const numValue = Number(value);
     if (isNaN(numValue)) {
-      return '100.0%';
+      return '0%';
     }
     
     // 값이 1보다 크면 이미 퍼센트 형태로 저장된 것
@@ -864,7 +864,7 @@ function formatAppliedAbsorptionRateForExcel(value) {
     
     const numValue = Number(value);
     if (isNaN(numValue)) {
-      return 1.0;
+      return 0;
     }
     
     // 값이 1보다 크면 이미 퍼센트 형태로 저장된 것 -> 소수점으로 변환
