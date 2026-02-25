@@ -243,81 +243,91 @@
           
           <!-- 업체별 통계 테이블 -->
           <template v-if="statisticsType === 'company' && drillDownLevel === 0">
-            <Column header="No" :headerStyle="{ width: '4%' }" :bodyStyle="{ textAlign: 'center' }">
+            <Column header="No" frozen :headerStyle="{ width: '50px', minWidth: '50px' }" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ slotProps.index + currentPageFirstIndex + 1 }}
               </template>
             </Column>
-            <Column field="company_group" header="구분" :headerStyle="{ width: '6%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+            <Column field="company_group" header="구분" frozen :headerStyle="{ width: '70px', minWidth: '70px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ slotProps.data.company_group || '-' }}
               </template>
             </Column>
-            <Column field="company_name" header="업체명" :headerStyle="{ width: companyStatisticsFilter === 'all' ? '15%' : '12%' }" :sortable="true">
+            <Column field="company_name" header="업체명" frozen :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
               <template #body="slotProps">
                 {{ slotProps.data.company_name }}
               </template>
             </Column>
             <!-- 병의원별 필터일 때 병의원명 컬럼 추가 -->
-            <Column v-if="companyStatisticsFilter === 'hospital'" field="hospital_name" header="병의원명" :headerStyle="{ width: '15%' }" :sortable="true">
+            <Column v-if="companyStatisticsFilter === 'hospital'" field="hospital_name" header="병의원명" frozen :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
               <template #body="slotProps">
                 {{ slotProps.data.hospital_name || '-' }}
               </template>
             </Column>
             <!-- 제품별 필터일 때 제품명 컬럼 추가 -->
-            <Column v-if="companyStatisticsFilter === 'product'" field="product_name" header="제품명" :headerStyle="{ width: '15%' }" :sortable="true">
+            <Column v-if="companyStatisticsFilter === 'product'" field="product_name" header="제품명" frozen :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
               <template #body="slotProps">
                 {{ slotProps.data.product_name || '-' }}
               </template>
             </Column>
-            <Column field="business_registration_number" header="사업자번호" :headerStyle="{ width: '10%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+            <Column field="business_registration_number" header="사업자번호" frozen :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ formatBusinessNumber(slotProps.data.business_registration_number) }}
               </template>
             </Column>
-            <Column field="representative_name" header="대표자" :headerStyle="{ width: '8%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+            <Column field="representative_name" header="대표자" frozen :headerStyle="{ width: '80px', minWidth: '80px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ slotProps.data.representative_name || '-' }}
               </template>
             </Column>
-            <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: '110px', minWidth: '110px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.prescription_qty, true) }}
               </template>
             </Column>
-            <Column field="prescription_amount" header="처방액" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="prescription_amount" header="처방액" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.prescription_amount) }}
               </template>
             </Column>
-            <Column field="payment_amount" header="최종 지급액" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="payment_amount" header="최종 지급액" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.payment_amount) }}
               </template>
             </Column>
-            <Column field="direct_revenue" header="직거래매출" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="direct_revenue" header="직거래매출" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.direct_revenue) }}
               </template>
             </Column>
-            <Column field="wholesale_revenue" header="도매매출" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="wholesale_revenue" header="도매매출" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.wholesale_revenue) }}
               </template>
             </Column>
-            <Column field="total_revenue" header="매출액" :headerStyle="{ width: '9%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="total_revenue" header="매출액" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.total_revenue) }}
               </template>
             </Column>
-            <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: '8%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+            <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: '80px', minWidth: '80px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ formatAbsorptionRate(slotProps.data.absorption_rate) }}
               </template>
             </Column>
+            <Column field="section_commission_amount" header="구간 수수료" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ formatNumber(slotProps.data.section_commission_amount) }}
+              </template>
+            </Column>
+            <Column field="total_payment_amount" header="총 지급액" :headerStyle="{ width: '130px', minWidth: '130px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ formatNumber(slotProps.data.total_payment_amount) }}
+              </template>
+            </Column>
             <ColumnGroup type="footer">
               <Row>
-                <Column footer="합계" :colspan="companyStatisticsFilter === 'all' ? 5 : 6" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+                <Column footer="합계" :colspan="companyStatisticsFilter === 'all' ? 5 : 6" footerClass="footer-cell" footerStyle="text-align:center !important;" :frozen="true" />
                 <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
                 <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
                 <Column :footer="totalPaymentAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
@@ -325,6 +335,8 @@
                 <Column :footer="totalWholesaleRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />
                 <Column :footer="totalRevenue" footerClass="footer-cell" footerStyle="text-align:right !important;" />
                 <Column :footer="totalAbsorptionRate" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+                <Column :footer="totalSectionCommission" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="totalTotalPayment" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               </Row>
             </ColumnGroup>
           </template>
@@ -999,7 +1011,6 @@ const productHighlightedIndex = ref(-1);
 // 통계 데이터
 const statisticsData = ref([]);
 const currentPageFirstIndex = ref(0);
-const forceRealTimeCalculation = ref(false); // 통계 갱신 버튼을 눌렀을 때 실시간 계산 강제
 
 // 표시할 데이터
 const displayRows = computed(() => {
@@ -1029,6 +1040,9 @@ const totals = computed(() => {
   let productCount = 0;
   let companyCount = 0;
   
+  let sectionCommission = 0;
+  let totalPayment = 0;
+
   displayRows.value.forEach(row => {
     qty += Number(row.prescription_qty) || 0;
     amount += Number(row.prescription_amount) || 0;
@@ -1039,6 +1053,8 @@ const totals = computed(() => {
     hospitalCount += Number(row.hospital_count) || 0;
     productCount += Number(row.product_count) || 0;
     companyCount += Number(row.company_count) || 0;
+    sectionCommission += Number(row.section_commission_amount) || 0;
+    totalPayment += Number(row.total_payment_amount) || 0;
   });
   
   // 흡수율 계산: 매출액 기반 (total_revenue / prescription_amount)
@@ -1062,7 +1078,9 @@ const totals = computed(() => {
     hospitalCount,
     productCount,
     companyCount,
-    absorptionRate: amount > 0 ? formatAbsorptionRate(absorptionRate) : '-'
+    absorptionRate: amount > 0 ? formatAbsorptionRate(absorptionRate) : '-',
+    sectionCommission: formatNumber(sectionCommission),
+    totalPayment: formatNumber(totalPayment)
   };
 });
 
@@ -1076,6 +1094,8 @@ const totalHospitalCount = computed(() => totals.value.hospitalCount);
 const totalProductCount = computed(() => totals.value.productCount);
 const totalCompanyCount = computed(() => totals.value.companyCount);
 const totalAbsorptionRate = computed(() => totals.value.absorptionRate);
+const totalSectionCommission = computed(() => totals.value.sectionCommission);
+const totalTotalPayment = computed(() => totals.value.totalPayment);
 
 // 현재 드릴다운 라벨
 const currentDrillDownLabel = computed(() => {
@@ -1200,6 +1220,27 @@ async function fetchAvailableCompanyGroups() {
   }
 }
 
+// 프로모션 데이터 조회 (공통)
+async function fetchPromotionData(filteredRecords) {
+  const productInsuranceCodeMap = new Map();
+  filteredRecords.forEach(r => { if (r.products?.insurance_code) productInsuranceCodeMap.set(r.product_id, r.products.insurance_code); });
+
+  const { data: hospitalPerfs } = await supabase.from('promotion_product_hospital_performance').select('hospital_id, first_performance_cso_id, has_performance, promotion_product_list(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)');
+  const hospitalPerformanceMap = new Map();
+  (hospitalPerfs || []).forEach(hp => {
+    if (hp.has_performance && hp.promotion_product_list) {
+      const ic = hp.promotion_product_list.insurance_code;
+      if (ic) hospitalPerformanceMap.set(`${hp.hospital_id}_${ic}_${hp.first_performance_cso_id}`, hp.promotion_product_list);
+    }
+  });
+
+  const { data: excludedData } = await supabase.from('promotion_product_excluded_hospitals').select('hospital_id, insurance_code');
+  const excludedHospitalsSet = new Set();
+  (excludedData || []).forEach(e => excludedHospitalsSet.add(`${e.insurance_code}_${e.hospital_id}`));
+
+  return { productInsuranceCodeMap, hospitalPerformanceMap, excludedHospitalsSet };
+}
+
 // 통계 데이터 조회
 async function fetchStatistics() {
   if (!selectedSettlementMonth.value) {
@@ -1213,362 +1254,7 @@ async function fetchStatistics() {
   try {
     devLog('데이터 조회 시작, 정산월:', selectedSettlementMonth.value);
 
-    // 업체별 통계 1단계(전체): 실적 검수와 동일 소스(performance_records)로 집계 → 수량 1,603.8 일치
-    // 통계=병의원별/제품별이 아니면 항상 performance_records 사용 (전체·미설정 포함)
-    const isCompanyMainList = statisticsType.value === 'company' && drillDownLevel.value === 0 && companyStatisticsFilter.value !== 'hospital' && companyStatisticsFilter.value !== 'product';
-    if (isCompanyMainList) {
-      devLog('업체별 통계: performance_records 경로 사용 (삭제 제외, 반영 흡수율 적용)');
-      let recordsFrom = 0;
-      const recordsBatchSize = 1000;
-      let rawRecords = [];
-      while (true) {
-        let recordsQuery = supabase
-          .from('performance_records')
-          .select(`
-            id, company_id, client_id, product_id, prescription_qty, commission_rate, review_action, settlement_month,
-            companies!inner(company_name, company_group, business_registration_number, representative_name),
-            products(price, insurance_code)
-          `)
-          .eq('settlement_month', selectedSettlementMonth.value)
-          .eq('review_status', '완료')
-          .range(recordsFrom, recordsFrom + recordsBatchSize - 1)
-          .order('id', { ascending: true });
-        if (selectedCompanyId.value) recordsQuery = recordsQuery.eq('company_id', selectedCompanyId.value);
-        const { data: batch, error: recordsError } = await recordsQuery;
-        if (recordsError) {
-          console.error('업체별 실시간 집계(performance_records) 조회 오류:', recordsError);
-          break;
-        }
-        if (!batch || batch.length === 0) break;
-        rawRecords = rawRecords.concat(batch);
-        if (batch.length < recordsBatchSize) break;
-        recordsFrom += recordsBatchSize;
-      }
-      const filtered = (rawRecords || []).filter(r => r.review_action !== '삭제');
-      const recordIds = filtered.map(r => r.id);
-
-      // 프로모션 데이터 조회
-      const productInsuranceCodeMapCompany = new Map();
-      filtered.forEach(r => { if (r.products?.insurance_code) productInsuranceCodeMapCompany.set(r.product_id, r.products.insurance_code); });
-
-      const { data: hospitalPerfsCompany } = await supabase.from('promotion_product_hospital_performance').select('hospital_id, first_performance_cso_id, has_performance, promotion_product_list(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)');
-      const hospitalPerformanceMapCompany = new Map();
-      (hospitalPerfsCompany || []).forEach(hp => {
-        if (hp.has_performance && hp.promotion_product_list) {
-          const ic = hp.promotion_product_list.insurance_code;
-          if (ic) hospitalPerformanceMapCompany.set(`${hp.hospital_id}_${ic}_${hp.first_performance_cso_id}`, hp.promotion_product_list);
-        }
-      });
-
-      const { data: excludedDataCompany } = await supabase.from('promotion_product_excluded_hospitals').select('hospital_id, insurance_code');
-      const excludedHospitalsSetCompany = new Set();
-      (excludedDataCompany || []).forEach(e => excludedHospitalsSetCompany.add(`${e.insurance_code}_${e.hospital_id}`));
-
-      const promotionDataCompany = { productInsuranceCodeMap: productInsuranceCodeMapCompany, hospitalPerformanceMap: hospitalPerformanceMapCompany, excludedHospitalsSet: excludedHospitalsSetCompany };
-      const absorptionRatesMap = {};
-      if (recordIds.length > 0) {
-        const rateBatchSize = 500;
-        for (let i = 0; i < recordIds.length; i += rateBatchSize) {
-          const batchIds = recordIds.slice(i, i + rateBatchSize);
-          const { data: rates } = await supabase
-            .from('applied_absorption_rates')
-            .select('performance_record_id, applied_absorption_rate')
-            .in('performance_record_id', batchIds);
-          (rates || []).forEach(item => { absorptionRatesMap[item.performance_record_id] = item.applied_absorption_rate; });
-        }
-      }
-      const revenueByRecordIdCompany = {};
-      if (recordIds.length > 0) {
-        for (let i = 0; i < recordIds.length; i += 500) {
-          const part = recordIds.slice(i, i + 500);
-          const { data: absRows } = await supabase
-            .from('performance_records_absorption')
-            .select('id, direct_revenue, wholesale_revenue, total_revenue')
-            .eq('settlement_month', selectedSettlementMonth.value)
-            .in('id', part);
-          (absRows || []).forEach((row) => {
-            revenueByRecordIdCompany[row.id] = {
-              direct_revenue: Number(row.direct_revenue) || 0,
-              wholesale_revenue: Number(row.wholesale_revenue) || 0,
-              total_revenue: Number(row.total_revenue) != null && !isNaN(Number(row.total_revenue)) ? Number(row.total_revenue) : null
-            };
-          });
-        }
-      }
-      const mapped = filtered.map(r => {
-        const price = Number(r.products?.price) || 0;
-        const amount = (Number(r.prescription_qty) || 0) * price;
-        const rev = revenueByRecordIdCompany[r.id];
-        const direct = rev ? rev.direct_revenue : 0;
-        const wholesale = rev ? rev.wholesale_revenue : 0;
-        const totalRev = rev && rev.total_revenue != null ? rev.total_revenue : amount;
-        return {
-          ...r,
-          companies: r.companies,
-          products: r.products,
-          total_revenue: totalRev,
-          wholesale_revenue: wholesale,
-          direct_revenue: direct
-        };
-      });
-      const aggregated = aggregateByCompany(mapped, absorptionRatesMap, promotionDataCompany);
-      let result = aggregated;
-      if (selectedCompanyGroup.value) {
-        result = aggregated.filter(c => c.company_group === selectedCompanyGroup.value);
-      }
-      statisticsData.value = result;
-      loading.value = false;
-      return;
-    }
-
-    // 병원별 통계 1단계: 실적 검수와 동일 소스(performance_records)로 집계 → 수량 일치
-    if (statisticsType.value === 'hospital' && drillDownLevel.value === 0) {
-      let recFrom = 0;
-      const recBatchSize = 1000;
-      let rawRecs = [];
-      while (true) {
-        let q = supabase
-          .from('performance_records')
-          .select(`
-            id, company_id, client_id, product_id, prescription_qty, commission_rate, review_action,
-            companies!inner(company_name, company_group),
-            products(price),
-            clients!inner(name, business_registration_number, address)
-          `)
-          .eq('settlement_month', selectedSettlementMonth.value)
-          .eq('review_status', '완료')
-          .range(recFrom, recFrom + recBatchSize - 1)
-          .order('id', { ascending: true });
-        if (selectedCompanyId.value) q = q.eq('company_id', selectedCompanyId.value);
-        if (selectedHospitalId.value) q = q.eq('client_id', selectedHospitalId.value);
-        const { data: batch, error: e } = await q;
-        if (e) { console.error('병원별 실시간 집계 조회 오류:', e); break; }
-        if (!batch || batch.length === 0) break;
-        rawRecs = rawRecs.concat(batch);
-        if (batch.length < recBatchSize) break;
-        recFrom += recBatchSize;
-      }
-      let filteredH = (rawRecs || []).filter(r => r.review_action !== '삭제');
-      if (selectedCompanyGroup.value) {
-        filteredH = filteredH.filter(r => r.companies?.company_group === selectedCompanyGroup.value);
-      }
-      const idsH = filteredH.map(r => r.id);
-      const ratesH = {};
-      if (idsH.length > 0) {
-        for (let i = 0; i < idsH.length; i += 500) {
-          const part = idsH.slice(i, i + 500);
-          const { data: dr } = await supabase.from('applied_absorption_rates').select('performance_record_id, applied_absorption_rate').in('performance_record_id', part);
-          (dr || []).forEach(item => { ratesH[item.performance_record_id] = item.applied_absorption_rate; });
-        }
-      }
-      // 직거래/도매매출: performance_records_absorption 테이블에서 조회
-      const revenueByRecordIdHospital = {};
-      if (idsH.length > 0) {
-        for (let i = 0; i < idsH.length; i += 500) {
-          const part = idsH.slice(i, i + 500);
-          const { data: absRows } = await supabase
-            .from('performance_records_absorption')
-            .select('id, direct_revenue, wholesale_revenue, total_revenue')
-            .eq('settlement_month', selectedSettlementMonth.value)
-            .in('id', part);
-          (absRows || []).forEach((row) => {
-            revenueByRecordIdHospital[row.id] = {
-              direct_revenue: Number(row.direct_revenue) || 0,
-              wholesale_revenue: Number(row.wholesale_revenue) || 0,
-              total_revenue: Number(row.total_revenue) != null && !isNaN(Number(row.total_revenue)) ? Number(row.total_revenue) : null
-            };
-          });
-        }
-      }
-      const mappedH = filteredH.map(r => {
-        const price = Number(r.products?.price) || 0;
-        const amount = (Number(r.prescription_qty) || 0) * price;
-        const rev = revenueByRecordIdHospital[r.id];
-        const direct = rev ? rev.direct_revenue : 0;
-        const wholesale = rev ? rev.wholesale_revenue : 0;
-        const totalRev = rev && rev.total_revenue != null ? rev.total_revenue : amount;
-        return {
-          ...r,
-          companies: r.companies,
-          products: r.products,
-          clients: r.clients,
-          total_revenue: totalRev,
-          wholesale_revenue: wholesale,
-          direct_revenue: direct
-        };
-      });
-      const aggH = aggregateByHospital(mappedH, ratesH);
-      statisticsData.value = aggH;
-      loading.value = false;
-      return;
-    }
-
-    // 제품별 통계 1단계(전체): 실적 검수와 동일 소스(performance_records)로 집계 → 수량 일치
-    if (statisticsType.value === 'product' && drillDownLevel.value === 0 && productStatisticsFilter.value === 'all') {
-      let recFrom = 0;
-      const recBatchSize = 1000;
-      let rawRecs = [];
-      while (true) {
-        let q = supabase
-          .from('performance_records')
-          .select(`
-            id, company_id, client_id, product_id, prescription_qty, commission_rate, review_action,
-            companies!inner(company_name, company_group),
-            products!inner(product_name, insurance_code, price)
-          `)
-          .eq('settlement_month', selectedSettlementMonth.value)
-          .eq('review_status', '완료')
-          .range(recFrom, recFrom + recBatchSize - 1)
-          .order('id', { ascending: true });
-        if (selectedCompanyId.value) q = q.eq('company_id', selectedCompanyId.value);
-        if (selectedProductId.value) q = q.eq('product_id', selectedProductId.value);
-        const { data: batch, error: e } = await q;
-        if (e) { console.error('제품별 실시간 집계 조회 오류:', e); break; }
-        if (!batch || batch.length === 0) break;
-        rawRecs = rawRecs.concat(batch);
-        if (batch.length < recBatchSize) break;
-        recFrom += recBatchSize;
-      }
-      let filteredP = (rawRecs || []).filter(r => r.review_action !== '삭제');
-      if (selectedCompanyGroup.value) {
-        filteredP = filteredP.filter(r => r.companies?.company_group === selectedCompanyGroup.value);
-      }
-      const idsP = filteredP.map(r => r.id);
-      const ratesP = {};
-      if (idsP.length > 0) {
-        for (let i = 0; i < idsP.length; i += 500) {
-          const part = idsP.slice(i, i + 500);
-          const { data: dr } = await supabase.from('applied_absorption_rates').select('performance_record_id, applied_absorption_rate').in('performance_record_id', part);
-          (dr || []).forEach(item => { ratesP[item.performance_record_id] = item.applied_absorption_rate; });
-        }
-      }
-      // 직거래/도매매출: performance_records_absorption 테이블에 있으면 사용 (id = performance_records.id)
-      const revenueByRecordId = {};
-      if (idsP.length > 0) {
-        for (let i = 0; i < idsP.length; i += 500) {
-          const part = idsP.slice(i, i + 500);
-          const { data: absRows } = await supabase
-            .from('performance_records_absorption')
-            .select('id, direct_revenue, wholesale_revenue, total_revenue')
-            .eq('settlement_month', selectedSettlementMonth.value)
-            .in('id', part);
-          (absRows || []).forEach((row) => {
-            revenueByRecordId[row.id] = {
-              direct_revenue: Number(row.direct_revenue) || 0,
-              wholesale_revenue: Number(row.wholesale_revenue) || 0,
-              total_revenue: Number(row.total_revenue) != null && !isNaN(Number(row.total_revenue)) ? Number(row.total_revenue) : null
-            };
-          });
-        }
-      }
-      const mappedP = filteredP.map(r => {
-        const price = Number(r.products?.price) || 0;
-        const amount = (Number(r.prescription_qty) || 0) * price;
-        const rev = revenueByRecordId[r.id];
-        const direct = rev ? rev.direct_revenue : 0;
-        const wholesale = rev ? rev.wholesale_revenue : 0;
-        const totalRev = rev && rev.total_revenue != null ? rev.total_revenue : amount;
-        return {
-          ...r,
-          companies: r.companies,
-          products: r.products,
-          total_revenue: totalRev,
-          wholesale_revenue: wholesale,
-          direct_revenue: direct
-        };
-      });
-      const aggP = aggregateByProduct(mappedP, ratesP);
-      statisticsData.value = aggP;
-      loading.value = false;
-      return;
-    }
-
-    // 제품 → 업체별 드릴다운: 메인 페이지와 동일한 소스(performance_records + performance_records_absorption)로 집계
-    if (statisticsType.value === 'product' && drillDownLevel.value === 1 && drillDownType.value === 'company') {
-      const productId = drillDownData.value?.product_id;
-      if (!productId) {
-        statisticsData.value = [];
-        loading.value = false;
-        return;
-      }
-      let recFrom = 0;
-      const recBatchSize = 1000;
-      let rawRecs = [];
-      while (true) {
-        let q = supabase
-          .from('performance_records')
-          .select(`
-            id, company_id, client_id, product_id, prescription_qty, commission_rate, review_action,
-            companies!inner(company_name, company_group, business_registration_number, representative_name),
-            products!inner(product_name, insurance_code, price)
-          `)
-          .eq('settlement_month', selectedSettlementMonth.value)
-          .eq('review_status', '완료')
-          .eq('product_id', productId)
-          .range(recFrom, recFrom + recBatchSize - 1)
-          .order('id', { ascending: true });
-        if (selectedCompanyId.value) q = q.eq('company_id', selectedCompanyId.value);
-        const { data: batch, error: e } = await q;
-        if (e) { console.error('제품→업체별 드릴다운 조회 오류:', e); break; }
-        if (!batch || batch.length === 0) break;
-        rawRecs = rawRecs.concat(batch);
-        if (batch.length < recBatchSize) break;
-        recFrom += recBatchSize;
-      }
-      let filteredD = (rawRecs || []).filter(r => r.review_action !== '삭제');
-      if (selectedCompanyGroup.value) {
-        filteredD = filteredD.filter(r => r.companies?.company_group === selectedCompanyGroup.value);
-      }
-      const idsD = filteredD.map(r => r.id);
-      const ratesD = {};
-      if (idsD.length > 0) {
-        for (let i = 0; i < idsD.length; i += 500) {
-          const part = idsD.slice(i, i + 500);
-          const { data: dr } = await supabase.from('applied_absorption_rates').select('performance_record_id, applied_absorption_rate').in('performance_record_id', part);
-          (dr || []).forEach(item => { ratesD[item.performance_record_id] = item.applied_absorption_rate; });
-        }
-      }
-      const revenueByRecordIdD = {};
-      if (idsD.length > 0) {
-        for (let i = 0; i < idsD.length; i += 500) {
-          const part = idsD.slice(i, i + 500);
-          const { data: absRows } = await supabase
-            .from('performance_records_absorption')
-            .select('id, direct_revenue, wholesale_revenue, total_revenue')
-            .eq('settlement_month', selectedSettlementMonth.value)
-            .in('id', part);
-          (absRows || []).forEach((row) => {
-            revenueByRecordIdD[row.id] = {
-              direct_revenue: Number(row.direct_revenue) || 0,
-              wholesale_revenue: Number(row.wholesale_revenue) || 0,
-              total_revenue: Number(row.total_revenue) != null && !isNaN(Number(row.total_revenue)) ? Number(row.total_revenue) : null
-            };
-          });
-        }
-      }
-      const mappedD = filteredD.map(r => {
-        const price = Number(r.products?.price) || 0;
-        const amount = (Number(r.prescription_qty) || 0) * price;
-        const rev = revenueByRecordIdD[r.id];
-        const direct = rev ? rev.direct_revenue : 0;
-        const wholesale = rev ? rev.wholesale_revenue : 0;
-        const totalRev = rev && rev.total_revenue != null ? rev.total_revenue : amount;
-        return {
-          ...r,
-          companies: r.companies,
-          products: r.products,
-          total_revenue: totalRev,
-          wholesale_revenue: wholesale,
-          direct_revenue: direct
-        };
-      });
-      const aggD = aggregateByCompany(mappedD, ratesD);
-      statisticsData.value = aggD;
-      loading.value = false;
-      return;
-    }
-
-    // 그 외: 통계 테이블(performance_statistics)에서 조회
+    // 통계 테이블(performance_statistics)에서 조회
     // 새로운 구조: (company_id, client_id, product_id) 조합별로 저장되어 있음
     let statisticsDataFromTable = [];
     let from = 0;
@@ -1597,15 +1283,8 @@ async function fetchStatistics() {
       from += batchSize;
     }
 
-    // 통계 테이블에 데이터가 있으면 사용 (업체별 통계일 때는 모든 업체 포함)
-    // ⚠️ 주의: 통계 갱신 버튼을 누르면 실시간 계산하므로, 통계 테이블은 초기 로드 시에만 사용
-    // 병원별 통계와 제품별 드릴다운, 제품별 통계에서 업체별 필터는 항상 performance_statistics 테이블 사용
-    const useStatisticsTable = statisticsDataFromTable && statisticsDataFromTable.length > 0 && 
-      (statisticsType.value === 'hospital' || 
-       (statisticsType.value === 'product' && drillDownLevel.value === 1) ||
-       (statisticsType.value === 'product' && drillDownLevel.value === 0 && productStatisticsFilter.value === 'company') ||
-       (statisticsType.value === 'product' && drillDownLevel.value === 0 && productStatisticsFilter.value === 'hospital') ||
-       !forceRealTimeCalculation.value);
+    // 통계 테이블에 데이터가 있으면 항상 사용
+    const useStatisticsTable = statisticsDataFromTable && statisticsDataFromTable.length > 0;
     if (useStatisticsTable) {
       devLog('통계 테이블에서 데이터 조회 성공:', statisticsDataFromTable.length, '건');
       
@@ -1643,7 +1322,9 @@ async function fetchStatistics() {
                 total_revenue: 0,
                 computed_revenue: 0,
                 total_absorption_rate: 0,
-                total_prescription_amount: 0
+                total_prescription_amount: 0,
+                section_commission_amount: 0,
+                total_payment_amount: 0
               });
             }
 
@@ -1657,6 +1338,8 @@ async function fetchStatistics() {
             companyHospital.computed_revenue += combinedRevenueDisplay(item);
             companyHospital.total_absorption_rate += (item.prescription_amount || 0) * (item.absorption_rate || 0);
             companyHospital.total_prescription_amount += item.prescription_amount || 0;
+            companyHospital.section_commission_amount += Number(item.section_commission_amount) || 0;
+            companyHospital.total_payment_amount += Number(item.total_payment_amount) || 0;
 
             // hospital_name이 없으면 현재 항목의 hospital_name으로 업데이트
             if (!companyHospital.hospital_name && item.hospital_name) {
@@ -1742,7 +1425,9 @@ async function fetchStatistics() {
                 total_revenue: 0,
                 computed_revenue: 0,
                 total_absorption_rate: 0,
-                total_prescription_amount: 0
+                total_prescription_amount: 0,
+                section_commission_amount: 0,
+                total_payment_amount: 0
               });
             }
 
@@ -1756,6 +1441,8 @@ async function fetchStatistics() {
             companyProduct.computed_revenue += combinedRevenueDisplay(item);
             companyProduct.total_absorption_rate += (item.prescription_amount || 0) * (item.absorption_rate || 0);
             companyProduct.total_prescription_amount += item.prescription_amount || 0;
+            companyProduct.section_commission_amount += Number(item.section_commission_amount) || 0;
+            companyProduct.total_payment_amount += Number(item.total_payment_amount) || 0;
 
             // product_name이 없으면 현재 항목의 product_name으로 업데이트
             if (!companyProduct.product_name && item.product_name) {
@@ -1814,7 +1501,9 @@ async function fetchStatistics() {
                 total_revenue: 0,
                 computed_revenue: 0,
                 total_absorption_rate: 0,
-                total_prescription_amount: 0
+                total_prescription_amount: 0,
+                section_commission_amount: 0,
+                total_payment_amount: 0
               });
             }
 
@@ -1828,6 +1517,8 @@ async function fetchStatistics() {
             company.computed_revenue += combinedRevenueDisplay(item);
             company.total_absorption_rate += (item.prescription_amount || 0) * (item.absorption_rate || 0);
             company.total_prescription_amount += item.prescription_amount || 0;
+            company.section_commission_amount += Number(item.section_commission_amount) || 0;
+            company.total_payment_amount += Number(item.total_payment_amount) || 0;
           });
 
           // 평균 흡수율 계산 및 배열로 변환
@@ -1846,7 +1537,7 @@ async function fetchStatistics() {
               absorption_rate: absorptionRate
             };
           });
-          
+
           // 모든 승인된 업체 조회하여 실적이 없는 업체도 포함 (업체 필터가 없을 때만)
           if (!selectedCompanyId.value) {
             const { data: allCompanies } = await supabase
@@ -1877,7 +1568,9 @@ async function fetchStatistics() {
                   wholesale_revenue: 0,
                   direct_revenue: 0,
                   total_revenue: 0,
-                  absorption_rate: 0
+                  absorption_rate: 0,
+                  section_commission_amount: 0,
+                  total_payment_amount: 0
                 }));
               
               aggregatedData = [...aggregatedData, ...missingCompanies];
@@ -2529,13 +2222,13 @@ function aggregateByCompany(data, absorptionRates = {}, promotionData = null) {
   });
 }
 
-function aggregateByHospital(data, absorptionRates = {}) {
+function aggregateByHospital(data, absorptionRates = {}, promotionData = null) {
   const map = new Map();
-  
+
   data.forEach(record => {
     // 삭제 처리된 건은 제외
     if (record.review_action === '삭제') return;
-    
+
     const hospitalId = record.client_id;
     const hospitalName = record.clients?.name || '';
     const businessRegistrationNumber = record.clients?.business_registration_number || '';
@@ -2546,8 +2239,29 @@ function aggregateByHospital(data, absorptionRates = {}) {
     const price = Number(record.products?.price) || 0;
     const amount = qty * price;
     const productId = record.product_id;
-    const commissionRate = Number(record.commission_rate) || 0;
-    
+    let commissionRate = Number(record.commission_rate) || 0;
+
+    // 프로모션 수수료율 적용
+    if (promotionData) {
+      const insuranceCode = promotionData.productInsuranceCodeMap.get(record.product_id);
+      if (insuranceCode) {
+        const key = `${record.client_id}_${insuranceCode}_${record.company_id}`;
+        const promotionInfo = promotionData.hospitalPerformanceMap.get(key);
+        const excludedKey = `${insuranceCode}_${record.client_id}`;
+        const isExcluded = promotionData.excludedHospitalsSet.has(excludedKey);
+        if (promotionInfo && !isExcluded) {
+          let isWithinPeriod = true;
+          const sd = new Date(record.settlement_month + '-01');
+          const ld = new Date(sd.getFullYear(), sd.getMonth() + 1, 0);
+          if (promotionInfo.promotion_start_date && sd < new Date(promotionInfo.promotion_start_date)) isWithinPeriod = false;
+          if (promotionInfo.promotion_end_date && ld > new Date(promotionInfo.promotion_end_date)) isWithinPeriod = false;
+          if (isWithinPeriod && promotionInfo.final_commission_rate != null) {
+            commissionRate = Number(promotionInfo.final_commission_rate);
+          }
+        }
+      }
+    }
+
     // 반영 흡수율 가져오기 (기본값 1.0)
     let appliedAbsorptionRate = 1.0;
     if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
@@ -2556,9 +2270,8 @@ function aggregateByHospital(data, absorptionRates = {}) {
         appliedAbsorptionRate = rateValue;
       }
     }
-    
+
     // 지급액 계산: 처방액 × 반영 흡수율 × 수수료율
-    // commission_rate는 소수점 형태 (예: 0.36 = 36%)
     const paymentAmount = Math.round(amount * appliedAbsorptionRate * commissionRate);
 
     if (!map.has(hospitalId)) {
@@ -2637,13 +2350,13 @@ function aggregateByHospital(data, absorptionRates = {}) {
   });
 }
 
-function aggregateByProduct(data, absorptionRates = {}) {
+function aggregateByProduct(data, absorptionRates = {}, promotionData = null) {
   const map = new Map();
-  
+
   data.forEach(record => {
     // 삭제 처리된 건은 제외
     if (record.review_action === '삭제') return;
-    
+
     const productId = record.product_id;
     const productName = record.products?.product_name || '';
     const insuranceCode = record.products?.insurance_code || '';
@@ -2652,8 +2365,29 @@ function aggregateByProduct(data, absorptionRates = {}) {
     const amount = qty * price;
     const companyId = record.company_id;
     const hospitalId = record.client_id;
-    const commissionRate = Number(record.commission_rate) || 0;
-    
+    let commissionRate = Number(record.commission_rate) || 0;
+
+    // 프로모션 수수료율 적용
+    if (promotionData) {
+      const ic = promotionData.productInsuranceCodeMap.get(record.product_id);
+      if (ic) {
+        const key = `${record.client_id}_${ic}_${record.company_id}`;
+        const promotionInfo = promotionData.hospitalPerformanceMap.get(key);
+        const excludedKey = `${ic}_${record.client_id}`;
+        const isExcluded = promotionData.excludedHospitalsSet.has(excludedKey);
+        if (promotionInfo && !isExcluded) {
+          let isWithinPeriod = true;
+          const sd = new Date(record.settlement_month + '-01');
+          const ld = new Date(sd.getFullYear(), sd.getMonth() + 1, 0);
+          if (promotionInfo.promotion_start_date && sd < new Date(promotionInfo.promotion_start_date)) isWithinPeriod = false;
+          if (promotionInfo.promotion_end_date && ld > new Date(promotionInfo.promotion_end_date)) isWithinPeriod = false;
+          if (isWithinPeriod && promotionInfo.final_commission_rate != null) {
+            commissionRate = Number(promotionInfo.final_commission_rate);
+          }
+        }
+      }
+    }
+
     // 반영 흡수율 가져오기 (기본값 1.0)
     let appliedAbsorptionRate = 1.0;
     if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
@@ -2745,210 +2479,170 @@ function aggregateByProductForHospital(data, hospitalId) {
 }
 
 // 업체 + 병의원별 집계
-function aggregateByCompanyAndHospital(data, absorptionRates = {}) {
+function aggregateByCompanyAndHospital(data, absorptionRates = {}, promotionData = null) {
   const map = new Map();
-  
-  if (!data || data.length === 0) {
-    console.warn('aggregateByCompanyAndHospital: 데이터가 없습니다.');
-    return [];
-  }
-  
-  devLog('aggregateByCompanyAndHospital 시작, 입력 데이터 개수:', data.length);
-  let processedCount = 0;
-  let skippedCount = 0;
-  
-  data.forEach((record, index) => {
-    try {
-      // 흡수율 분석과 동일: 삭제 처리된 건 제외
-      if (record.review_action === '삭제') return;
 
-      const companyId = record.company_id;
-      const hospitalId = record.client_id;
-      if (!companyId || !hospitalId) {
-        return;
-      }
-      
-      // 키: companyId_hospitalId
-      const key = `${companyId}_${hospitalId}`;
-      
-      const companyName = record.companies?.company_name || '';
-      const companyGroup = record.companies?.company_group || '';
-      const businessRegistrationNumber = record.companies?.business_registration_number || '';
-      const representativeName = record.companies?.representative_name || '';
-      const hospitalName = record.clients?.name || '';
-      const commissionRate = Number(record.commission_rate) || 0;
-      const qty = Number(record.prescription_qty) || 0;
-      const price = Number(record.products?.price) || 0;
-      const amount = qty * price;
-      
-      // 반영 흡수율 가져오기 (기본값 1.0)
-      let appliedAbsorptionRate = 1.0;
-      if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
-        const rateValue = Number(absorptionRates[record.id]);
-        if (!isNaN(rateValue)) {
-          appliedAbsorptionRate = rateValue;
+  if (!data || data.length === 0) return [];
+
+  data.forEach(record => {
+    if (record.review_action === '삭제') return;
+    const companyId = record.company_id;
+    const hospitalId = record.client_id;
+    if (!companyId || !hospitalId) return;
+
+    const key = `${companyId}_${hospitalId}`;
+    const qty = Number(record.prescription_qty) || 0;
+    const price = Number(record.products?.price) || 0;
+    const amount = qty * price;
+    let commissionRate = Number(record.commission_rate) || 0;
+
+    if (promotionData) {
+      const insuranceCode = promotionData.productInsuranceCodeMap.get(record.product_id);
+      if (insuranceCode) {
+        const pKey = `${record.client_id}_${insuranceCode}_${record.company_id}`;
+        const promotionInfo = promotionData.hospitalPerformanceMap.get(pKey);
+        const excludedKey = `${insuranceCode}_${record.client_id}`;
+        const isExcluded = promotionData.excludedHospitalsSet.has(excludedKey);
+        if (promotionInfo && !isExcluded) {
+          let isWithinPeriod = true;
+          const sd = new Date(record.settlement_month + '-01');
+          const ld = new Date(sd.getFullYear(), sd.getMonth() + 1, 0);
+          if (promotionInfo.promotion_start_date && sd < new Date(promotionInfo.promotion_start_date)) isWithinPeriod = false;
+          if (promotionInfo.promotion_end_date && ld > new Date(promotionInfo.promotion_end_date)) isWithinPeriod = false;
+          if (isWithinPeriod && promotionInfo.final_commission_rate != null) {
+            commissionRate = Number(promotionInfo.final_commission_rate);
+          }
         }
       }
-      
-      // 지급액 계산: 처방액 × 반영 흡수율 × 수수료율
-      const paymentAmount = Math.round(amount * appliedAbsorptionRate * commissionRate);
-
-      if (!map.has(key)) {
-        map.set(key, {
-          company_id: companyId,
-          company_name: companyName,
-          company_group: companyGroup,
-          business_registration_number: businessRegistrationNumber,
-          representative_name: representativeName,
-          hospital_id: hospitalId,
-          hospital_name: hospitalName,
-          prescription_qty: 0,
-          prescription_amount: 0,
-          payment_amount: 0,
-          total_absorption_rate: 0,
-          total_prescription_amount: 0
-        });
-      }
-
-      const item = map.get(key);
-      item.prescription_qty += qty;
-      item.prescription_amount += amount;
-      item.payment_amount += paymentAmount;
-      // 흡수율 계산을 위한 누적값
-      item.total_absorption_rate += amount * appliedAbsorptionRate;
-      item.total_prescription_amount += amount;
-      processedCount++;
-    } catch (err) {
-      console.error(`레코드 ${index} 처리 중 오류:`, err, record);
-      skippedCount++;
     }
+
+    let appliedAbsorptionRate = 1.0;
+    if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
+      const rateValue = Number(absorptionRates[record.id]);
+      if (!isNaN(rateValue)) appliedAbsorptionRate = rateValue;
+    }
+
+    const paymentAmount = Math.round(amount * appliedAbsorptionRate * commissionRate);
+
+    if (!map.has(key)) {
+      map.set(key, {
+        company_id: companyId,
+        company_name: record.companies?.company_name || '',
+        company_group: record.companies?.company_group || '',
+        business_registration_number: record.companies?.business_registration_number || '',
+        representative_name: record.companies?.representative_name || '',
+        hospital_id: hospitalId,
+        hospital_name: record.clients?.name || '',
+        prescription_qty: 0, prescription_amount: 0, payment_amount: 0,
+        wholesale_revenue: 0, direct_revenue: 0, total_revenue: 0, computed_revenue: 0,
+        total_absorption_rate: 0, total_prescription_amount: 0
+      });
+    }
+
+    const item = map.get(key);
+    item.prescription_qty += qty;
+    item.prescription_amount += amount;
+    item.payment_amount += paymentAmount;
+    item.wholesale_revenue += Number(record.wholesale_revenue) || 0;
+    item.direct_revenue += Number(record.direct_revenue) || 0;
+    item.total_revenue += Number(record.total_revenue) || 0;
+    item.computed_revenue += combinedRevenueDisplay(record);
+    item.total_absorption_rate += amount * appliedAbsorptionRate;
+    item.total_prescription_amount += amount;
   });
-  
-  console.log(`aggregateByCompanyAndHospital 집계 완료: 처리됨 ${processedCount}개, 건너뜀 ${skippedCount}개`);
 
   return Array.from(map.values()).map(item => {
-    // 평균 흡수율 계산: (처방액 × 흡수율의 합) / 처방액 합
-    const absorptionRate = item.total_prescription_amount > 0 
-      ? item.total_absorption_rate / item.total_prescription_amount 
-      : 0;
-    
-    return {
-      company_id: item.company_id,
-      company_name: item.company_name,
-      company_group: item.company_group,
-      business_registration_number: item.business_registration_number,
-      representative_name: item.representative_name,
-      hospital_id: item.hospital_id,
-      hospital_name: item.hospital_name,
-      prescription_qty: item.prescription_qty,
-      prescription_amount: item.prescription_amount,
-      payment_amount: item.payment_amount,
-      absorption_rate: absorptionRate
-    };
+    const revenue = item.computed_revenue;
+    let absorptionRate = 0;
+    if (revenue > 0 && item.prescription_amount > 0) {
+      absorptionRate = revenue / item.prescription_amount;
+    }
+    const { total_absorption_rate, total_prescription_amount, computed_revenue, ...cleanItem } = item;
+    return { ...cleanItem, total_revenue: computed_revenue, absorption_rate: absorptionRate };
   });
 }
 
 // 업체 + 제품별 집계
-function aggregateByCompanyAndProduct(data, absorptionRates = {}) {
+function aggregateByCompanyAndProduct(data, absorptionRates = {}, promotionData = null) {
   const map = new Map();
-  
-  if (!data || data.length === 0) {
-    console.warn('aggregateByCompanyAndProduct: 데이터가 없습니다.');
-    return [];
-  }
-  
-  devLog('aggregateByCompanyAndProduct 시작, 입력 데이터 개수:', data.length);
-  let processedCount = 0;
-  let skippedCount = 0;
-  
-  data.forEach((record, index) => {
-    try {
-      // 흡수율 분석과 동일: 삭제 처리된 건 제외
-      if (record.review_action === '삭제') return;
 
-      const companyId = record.company_id;
-      const productId = record.product_id;
-      if (!companyId || !productId) {
-        return;
-      }
-      
-      // 키: companyId_productId
-      const key = `${companyId}_${productId}`;
-      
-      const companyName = record.companies?.company_name || '';
-      const companyGroup = record.companies?.company_group || '';
-      const businessRegistrationNumber = record.companies?.business_registration_number || '';
-      const representativeName = record.companies?.representative_name || '';
-      const productName = record.products?.product_name || '';
-      const commissionRate = Number(record.commission_rate) || 0;
-      const qty = Number(record.prescription_qty) || 0;
-      const price = Number(record.products?.price) || 0;
-      const amount = qty * price;
-      
-      // 반영 흡수율 가져오기 (기본값 1.0)
-      let appliedAbsorptionRate = 1.0;
-      if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
-        const rateValue = Number(absorptionRates[record.id]);
-        if (!isNaN(rateValue)) {
-          appliedAbsorptionRate = rateValue;
+  if (!data || data.length === 0) return [];
+
+  data.forEach(record => {
+    if (record.review_action === '삭제') return;
+    const companyId = record.company_id;
+    const productId = record.product_id;
+    if (!companyId || !productId) return;
+
+    const key = `${companyId}_${productId}`;
+    const qty = Number(record.prescription_qty) || 0;
+    const price = Number(record.products?.price) || 0;
+    const amount = qty * price;
+    let commissionRate = Number(record.commission_rate) || 0;
+
+    if (promotionData) {
+      const insuranceCode = promotionData.productInsuranceCodeMap.get(record.product_id);
+      if (insuranceCode) {
+        const pKey = `${record.client_id}_${insuranceCode}_${record.company_id}`;
+        const promotionInfo = promotionData.hospitalPerformanceMap.get(pKey);
+        const excludedKey = `${insuranceCode}_${record.client_id}`;
+        const isExcluded = promotionData.excludedHospitalsSet.has(excludedKey);
+        if (promotionInfo && !isExcluded) {
+          let isWithinPeriod = true;
+          const sd = new Date(record.settlement_month + '-01');
+          const ld = new Date(sd.getFullYear(), sd.getMonth() + 1, 0);
+          if (promotionInfo.promotion_start_date && sd < new Date(promotionInfo.promotion_start_date)) isWithinPeriod = false;
+          if (promotionInfo.promotion_end_date && ld > new Date(promotionInfo.promotion_end_date)) isWithinPeriod = false;
+          if (isWithinPeriod && promotionInfo.final_commission_rate != null) {
+            commissionRate = Number(promotionInfo.final_commission_rate);
+          }
         }
       }
-      
-      // 지급액 계산: 처방액 × 반영 흡수율 × 수수료율
-      const paymentAmount = Math.round(amount * appliedAbsorptionRate * commissionRate);
-
-      if (!map.has(key)) {
-        map.set(key, {
-          company_id: companyId,
-          company_name: companyName,
-          company_group: companyGroup,
-          business_registration_number: businessRegistrationNumber,
-          representative_name: representativeName,
-          product_id: productId,
-          product_name: productName,
-          prescription_qty: 0,
-          prescription_amount: 0,
-          payment_amount: 0,
-          total_absorption_rate: 0,
-          total_prescription_amount: 0
-        });
-      }
-
-      const item = map.get(key);
-      item.prescription_qty += qty;
-      item.prescription_amount += amount;
-      item.payment_amount += paymentAmount;
-      // 흡수율 계산을 위한 누적값
-      item.total_absorption_rate += amount * appliedAbsorptionRate;
-      item.total_prescription_amount += amount;
-      processedCount++;
-    } catch (err) {
-      console.error(`레코드 ${index} 처리 중 오류:`, err, record);
-      skippedCount++;
     }
+
+    let appliedAbsorptionRate = 1.0;
+    if (absorptionRates[record.id] !== null && absorptionRates[record.id] !== undefined) {
+      const rateValue = Number(absorptionRates[record.id]);
+      if (!isNaN(rateValue)) appliedAbsorptionRate = rateValue;
+    }
+
+    const paymentAmount = Math.round(amount * appliedAbsorptionRate * commissionRate);
+
+    if (!map.has(key)) {
+      map.set(key, {
+        company_id: companyId,
+        company_name: record.companies?.company_name || '',
+        company_group: record.companies?.company_group || '',
+        business_registration_number: record.companies?.business_registration_number || '',
+        representative_name: record.companies?.representative_name || '',
+        product_id: productId,
+        product_name: record.products?.product_name || '',
+        prescription_qty: 0, prescription_amount: 0, payment_amount: 0,
+        wholesale_revenue: 0, direct_revenue: 0, total_revenue: 0, computed_revenue: 0,
+        total_absorption_rate: 0, total_prescription_amount: 0
+      });
+    }
+
+    const item = map.get(key);
+    item.prescription_qty += qty;
+    item.prescription_amount += amount;
+    item.payment_amount += paymentAmount;
+    item.wholesale_revenue += Number(record.wholesale_revenue) || 0;
+    item.direct_revenue += Number(record.direct_revenue) || 0;
+    item.total_revenue += Number(record.total_revenue) || 0;
+    item.computed_revenue += combinedRevenueDisplay(record);
+    item.total_absorption_rate += amount * appliedAbsorptionRate;
+    item.total_prescription_amount += amount;
   });
-  
-  console.log(`aggregateByCompanyAndProduct 집계 완료: 처리됨 ${processedCount}개, 건너뜀 ${skippedCount}개`);
 
   return Array.from(map.values()).map(item => {
-    // 평균 흡수율 계산: (처방액 × 흡수율의 합) / 처방액 합
-    const absorptionRate = item.total_prescription_amount > 0 
-      ? item.total_absorption_rate / item.total_prescription_amount 
-      : 0;
-    
-    return {
-      company_id: item.company_id,
-      company_name: item.company_name,
-      company_group: item.company_group,
-      business_registration_number: item.business_registration_number,
-      representative_name: item.representative_name,
-      product_id: item.product_id,
-      product_name: item.product_name,
-      prescription_qty: item.prescription_qty,
-      prescription_amount: item.prescription_amount,
-      payment_amount: item.payment_amount,
-      absorption_rate: absorptionRate
-    };
+    const revenue = item.computed_revenue;
+    let absorptionRate = 0;
+    if (revenue > 0 && item.prescription_amount > 0) {
+      absorptionRate = revenue / item.prescription_amount;
+    }
+    const { total_absorption_rate, total_prescription_amount, computed_revenue, ...cleanItem } = item;
+    return { ...cleanItem, total_revenue: computed_revenue, absorption_rate: absorptionRate };
   });
 }
 
@@ -3705,7 +3399,13 @@ async function downloadExcel() {
   // 헤더 정의
   let headers = [];
   if (statisticsType.value === 'company' && drillDownLevel.value === 0) {
-    headers = ['No', '구분', '업체명', '사업자번호', '대표자', '처방수량', '처방액', '최종 지급액', '직거래매출', '도매매출', '매출액', '흡수율'];
+    if (companyStatisticsFilter.value === 'hospital') {
+      headers = ['No', '구분', '업체명', '병의원명', '사업자번호', '대표자', '처방수량', '처방액', '최종 지급액', '직거래매출', '도매매출', '매출액', '흡수율', '구간 수수료', '총 지급액'];
+    } else if (companyStatisticsFilter.value === 'product') {
+      headers = ['No', '구분', '업체명', '제품명', '사업자번호', '대표자', '처방수량', '처방액', '최종 지급액', '직거래매출', '도매매출', '매출액', '흡수율', '구간 수수료', '총 지급액'];
+    } else {
+      headers = ['No', '구분', '업체명', '사업자번호', '대표자', '처방수량', '처방액', '최종 지급액', '직거래매출', '도매매출', '매출액', '흡수율', '구간 수수료', '총 지급액'];
+    }
   } else if (statisticsType.value === 'company' && drillDownType.value === 'hospital') {
     headers = ['No', '병의원명', '처방수량', '처방액', '제품 수'];
   } else if (statisticsType.value === 'company' && drillDownType.value === 'product') {
@@ -3742,20 +3442,60 @@ async function downloadExcel() {
   displayRows.value.forEach((row, index) => {
     let rowData = [];
     if (statisticsType.value === 'company' && drillDownLevel.value === 0) {
-      rowData = [
-        index + 1,
-        row.company_group || '',
-        row.company_name || '',
-        row.business_registration_number || '',
-        row.representative_name || '',
-        Number(row.prescription_qty) || 0,
-        Number(row.prescription_amount) || 0,
-        Number(row.payment_amount) || 0,
-        Number(row.direct_revenue) || 0,
-        Number(row.wholesale_revenue) || 0,
-        Number(row.total_revenue) || 0,
-        formatAbsorptionRate(row.absorption_rate)
-      ];
+      if (companyStatisticsFilter.value === 'hospital') {
+        rowData = [
+          index + 1,
+          row.company_group || '',
+          row.company_name || '',
+          row.hospital_name || '',
+          row.business_registration_number || '',
+          row.representative_name || '',
+          Number(row.prescription_qty) || 0,
+          Number(row.prescription_amount) || 0,
+          Number(row.payment_amount) || 0,
+          Number(row.direct_revenue) || 0,
+          Number(row.wholesale_revenue) || 0,
+          Number(row.total_revenue) || 0,
+          formatAbsorptionRate(row.absorption_rate),
+          Number(row.section_commission_amount) || 0,
+          Number(row.total_payment_amount) || 0
+        ];
+      } else if (companyStatisticsFilter.value === 'product') {
+        rowData = [
+          index + 1,
+          row.company_group || '',
+          row.company_name || '',
+          row.product_name || '',
+          row.business_registration_number || '',
+          row.representative_name || '',
+          Number(row.prescription_qty) || 0,
+          Number(row.prescription_amount) || 0,
+          Number(row.payment_amount) || 0,
+          Number(row.direct_revenue) || 0,
+          Number(row.wholesale_revenue) || 0,
+          Number(row.total_revenue) || 0,
+          formatAbsorptionRate(row.absorption_rate),
+          Number(row.section_commission_amount) || 0,
+          Number(row.total_payment_amount) || 0
+        ];
+      } else {
+        rowData = [
+          index + 1,
+          row.company_group || '',
+          row.company_name || '',
+          row.business_registration_number || '',
+          row.representative_name || '',
+          Number(row.prescription_qty) || 0,
+          Number(row.prescription_amount) || 0,
+          Number(row.payment_amount) || 0,
+          Number(row.direct_revenue) || 0,
+          Number(row.wholesale_revenue) || 0,
+          Number(row.total_revenue) || 0,
+          formatAbsorptionRate(row.absorption_rate),
+          Number(row.section_commission_amount) || 0,
+          Number(row.total_payment_amount) || 0
+        ];
+      }
     } else if (statisticsType.value === 'company' && drillDownType.value === 'hospital') {
       rowData = [
         index + 1,
@@ -3869,13 +3609,18 @@ async function downloadExcel() {
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       }
       // 구분, 사업자번호, 대표자 컬럼 (업체별 통계일 때만)
-      if (statisticsType.value === 'company' && drillDownLevel.value === 0 && (colNumber === 2 || colNumber === 4 || colNumber === 5)) {
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      if (statisticsType.value === 'company' && drillDownLevel.value === 0) {
+        const hasSub = companyStatisticsFilter.value !== 'all';
+        const bizCol = hasSub ? 5 : 4;
+        const repCol = hasSub ? 6 : 5;
+        if (colNumber === 2 || colNumber === bizCol || colNumber === repCol) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
       }
       // 숫자 컬럼 정렬
       let numStartCol = 3;
       if (statisticsType.value === 'company' && drillDownLevel.value === 0) {
-        numStartCol = 6; // 업체별 통계: 6번째부터 (처방수량)
+        numStartCol = companyStatisticsFilter.value === 'all' ? 6 : 7; // 서브필터 시 컬럼 1개 추가
       } else if (statisticsType.value === 'hospital' && drillDownLevel.value === 0) {
         numStartCol = 7; // 병원별 통계: 7번째부터 (처방수량)
       }
@@ -3883,8 +3628,9 @@ async function downloadExcel() {
       if (colNumber >= numStartCol) {
         cell.alignment = { horizontal: 'right', vertical: 'middle' };
         // 흡수율 컬럼은 숫자 포맷 적용 제외(문자열 '0.0%' 등이 숫자로 해석되어 100%로 보이는 현상 방지)
+        const companyAbsorptionCol = companyStatisticsFilter.value === 'all' ? 12 : 13;
         const isAbsorptionCol =
-          (statisticsType.value === 'company' && drillDownLevel.value === 0 && colNumber === 12) ||
+          (statisticsType.value === 'company' && drillDownLevel.value === 0 && colNumber === companyAbsorptionCol) ||
           (statisticsType.value === 'hospital' && drillDownLevel.value === 0 && colNumber === 12) ||
           (statisticsType.value === 'product' && drillDownLevel.value === 0 && productStatisticsFilter.value === 'all' && colNumber === 10) ||
           (statisticsType.value === 'product' && drillDownType.value === 'company' && colNumber === 8);
@@ -3934,14 +3680,17 @@ async function downloadExcel() {
     const totalRevenue = displayRows.value.reduce((sum, row) => sum + (Number(row.total_revenue) || 0), 0);
     const avgAbsorptionRate = totalPrescriptionAmount > 0 ? (totalRevenue / totalPrescriptionAmount) : 0;
     
-    totalRowData = ['합계', '', '', '', '', 
+    const emptyColCount = companyStatisticsFilter.value === 'all' ? 4 : 5;
+    totalRowData = ['합계', ...Array(emptyColCount).fill(''),
       Number((totalQty.value || '0').toString().replace(/,/g, '').replace('.0', '')),
       Number((totalAmount.value || '0').toString().replace(/,/g, '')),
       Number((totalPaymentAmount.value || '0').toString().replace(/,/g, '')),
       Number((totalDirectRevenue.value || '0').toString().replace(/,/g, '')),
       Number((totalWholesaleRevenue.value || '0').toString().replace(/,/g, '')),
       Number((totalRevenue.value || '0').toString().replace(/,/g, '')),
-      (avgAbsorptionRate * 100).toFixed(1) + '%'
+      (avgAbsorptionRate * 100).toFixed(1) + '%',
+      Number((totalSectionCommission.value || '0').toString().replace(/,/g, '')),
+      Number((totalTotalPayment.value || '0').toString().replace(/,/g, ''))
     ];
   } else if (statisticsType.value === 'company' && drillDownType.value === 'hospital') {
     totalRowData = ['합계', '', 
@@ -4124,6 +3873,11 @@ onUnmounted(() => {
 <style scoped>
 .performance-detail-view {
   padding: 0px;
+}
+
+/* frozen 컬럼 경계 그림자 */
+:deep(.p-datatable-frozen-column:last-of-type) {
+  border-right: 2px solid #dee2e6 !important;
 }
 
 .data-card-buttons {
