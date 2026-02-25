@@ -4072,7 +4072,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 20px 0;
   color: #333;
   width: 100%;
   background: #ffffff;
@@ -4331,6 +4331,10 @@ onUnmounted(() => {
   border: none !important;
   border-radius: 0 !important;
   border-bottom: 1px solid #e9ecef !important;
+}
+
+:deep(.statistics-complete-dialog .p-dialog-header .p-dialog-header-icon) {
+  display: none !important;
 }
 
 :deep(.statistics-complete-dialog .p-dialog-content) {
