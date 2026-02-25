@@ -425,7 +425,7 @@
                 {{ slotProps.data.address || '-' }}
               </template>
             </Column>
-            <Column field="company_groups" header="담당업체 구분" :headerStyle="{ width: '10%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+            <Column field="company_groups" header="구분" :headerStyle="{ width: '10%' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ slotProps.data.company_groups || '-' }}
               </template>
