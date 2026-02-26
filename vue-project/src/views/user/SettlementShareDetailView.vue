@@ -632,8 +632,8 @@ async function fetchAllDataForMonth() {
     }
     
     // 반영 흡수율 적용하여 최종 지급액 계산 (정수 반올림)
-    // 관리자 상세 뷰와 동일한 계산 방식: 처방액 × 반영 흡수율 × 수수료율
-    const appliedAbsorptionRate = absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined ? absorptionRates[row.id] : 1.0;
+    // 관리자 상세 뷰와 동일한 계산 방식: 처방액 × 반영 흡수율 × 수수료율. 미설정 시 100% (기본값 1)
+    const appliedAbsorptionRate = absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined ? absorptionRates[row.id] : 1;
     const finalPaymentAmount = Math.round(prescriptionAmount * appliedAbsorptionRate * commissionRate);
     
     return {
@@ -975,8 +975,9 @@ async function downloadExcel() {
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
     
-    // 데이터 추가
+    // 데이터 추가 (삭제 행은 화면과 동일하게 상태 '삭제', 처방액·지급액·반영 흡수율 0으로 표시)
     detailRows.value.forEach((row, index) => {
+      const isDeleted = row.review_action === '삭제';
       const dataRow = detailSheet.addRow([
         index + 1,
         row.review_action || '정상',
@@ -986,10 +987,10 @@ async function downloadExcel() {
         row.insurance_code,
         row._raw_price || 0,
         row._raw_qty || 0,
-        row._raw_prescription_amount || 0,
+        isDeleted ? 0 : (row._raw_prescription_amount || 0),
         Number(String(row.commission_rate).replace('%', '')) / 100,
-        row.applied_absorption_rate || 1.0,
-        row._raw_payment_amount || 0,
+        isDeleted ? 0 : appliedAbsorptionRateForExcel(row.applied_absorption_rate),
+        isDeleted ? 0 : (row._raw_payment_amount || 0),
         row.remarks || ''
       ]);
       

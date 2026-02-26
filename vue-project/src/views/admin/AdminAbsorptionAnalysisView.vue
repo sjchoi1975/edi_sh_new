@@ -196,7 +196,7 @@
           <Column field="price" header="약가" :headerStyle="{ width: columnWidths.price }" :sortable="true" />
           <Column field="prescription_qty" header="수량" :headerStyle="{ width: columnWidths.prescription_qty }" :sortable="true">
             <template #body="slotProps">
-              {{ Number(slotProps.data.prescription_qty).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+              {{ formatNumber(slotProps.data.prescription_qty, true) }}
             </template>
           </Column>
           <Column field="prescription_amount" header="처방액" :headerStyle="{ width: columnWidths.prescription_amount }" :sortable="true">
@@ -223,9 +223,9 @@
             </template>
           </Column>
           <Column field="total_revenue" header="합산액" :headerStyle="{ width: columnWidths.total_revenue }" :sortable="true">
-             <template #body="slotProps">
-              <span :title="Math.round(slotProps.data.total_revenue || 0).toLocaleString()">
-                {{ Math.round(slotProps.data.total_revenue || 0).toLocaleString() }}
+            <template #body="slotProps">
+              <span :title="combinedRevenueDisplay(slotProps.data).toLocaleString()">
+                {{ combinedRevenueDisplay(slotProps.data).toLocaleString() }}
               </span>
             </template>
           </Column>
@@ -384,7 +384,7 @@ import { supabase } from '@/supabase';
 import ExcelJS from 'exceljs';
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 import { useNotifications } from '@/utils/notifications';
-import { convertCommissionRateToDecimal } from '@/utils/formatUtils';
+import { convertCommissionRateToDecimal, formatNumber } from '@/utils/formatUtils';
 
 const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
@@ -492,20 +492,29 @@ const totalPrescriptionAmount = computed(() => {
 
 const totalWholesaleRevenue = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '0';
-  const total = displayRows.value.reduce((sum, row) => sum + (row.wholesale_revenue || 0), 0);
+  const total = displayRows.value.reduce((sum, row) => {
+    if (row.review_action === '삭제') return sum;
+    return sum + (row.wholesale_revenue || 0);
+  }, 0);
   return Math.round(total).toLocaleString();
 });
 
 const totalDirectRevenue = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '0';
-  const total = displayRows.value.reduce((sum, row) => sum + (row.direct_revenue || 0), 0);
+  const total = displayRows.value.reduce((sum, row) => {
+    if (row.review_action === '삭제') return sum;
+    return sum + (row.direct_revenue || 0);
+  }, 0);
   return Math.round(total).toLocaleString();
 });
 
 const totalCombinedRevenue = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '0';
-  const total = displayRows.value.reduce((sum, row) => sum + (row.total_revenue || 0), 0);
-  return Math.round(total).toLocaleString();
+  const total = displayRows.value.reduce((sum, row) => {
+    if (row.review_action === '삭제') return sum;
+    return sum + Math.round((row.wholesale_revenue || 0) + (row.direct_revenue || 0));
+  }, 0);
+  return total.toLocaleString();
 });
 
 const totalPaymentAmount = computed(() => {
@@ -538,13 +547,14 @@ const totalQuantity = computed(() => {
     if (row.review_action === '삭제') return sum;
     return sum + (Number(row.prescription_qty) || 0);
   }, 0);
-  return total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  // 소수점 1자리로 통일 (업체별 통계와 동일한 formatNumber 사용)
+  return formatNumber(total, true);
 });
 
 const averageAbsorptionRate = computed(() => {
   if (!displayRows.value || displayRows.value.length === 0) return '- %';
 
-  // 합계 처방액과 합계 합산액 계산
+  // 합계 처방액과 합계 합산액 계산 (합산액 = 반올림 도매매출 + 반올림 직거래매출)
   const totalPrescriptionAmount = displayRows.value.reduce((sum, row) => {
     // 삭제된 건은 처방액을 0으로 계산
     if (row.review_action === '삭제') return sum;
@@ -553,7 +563,7 @@ const averageAbsorptionRate = computed(() => {
   const totalCombinedRevenue = displayRows.value.reduce((sum, row) => {
     // 삭제된 건은 합산액을 0으로 계산
     if (row.review_action === '삭제') return sum;
-    return sum + (row.total_revenue || 0);
+    return sum + Math.round((row.wholesale_revenue || 0) + (row.direct_revenue || 0));
   }, 0);
 
   if (totalPrescriptionAmount === 0) return '- %';
@@ -1280,12 +1290,54 @@ async function loadAbsorptionAnalysisResults() {
             // null 체크 및 기본값 설정
             const prescriptionQty = Number(row.prescription_qty) || 0;
             const productPrice = Number(row.product?.price) || 0;
-            const commissionRate = Number(row.commission_rate) || 0;
+            let commissionRate = Number(row.commission_rate) || 0;
             const absorptionRate = Number(row.absorption_rate) || 0;
-            
+
             const prescriptionAmount = Math.round(prescriptionQty * productPrice);
+
+            // 프로모션 수수료율 적용 여부 확인 (계산 전에 수수료율 교체)
+            let isPromotionRateApplied = false;
+            const insuranceCode = productInsuranceCodeMap.get(row.product_id);
+            if (insuranceCode) {
+              const hospitalId = row.client_id;
+              const companyId = row.company_id;
+              const key = `${hospitalId}_${insuranceCode}_${companyId}`;
+              const promotionInfo = hospitalPerformanceMap.get(key);
+
+              if (promotionInfo) {
+                // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
+                let isWithinPromotionPeriod = true;
+
+                const settlementDate = new Date(row.settlement_month + '-01'); // 정산월의 첫 날
+                const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
+
+                if (promotionInfo.promotion_start_date) {
+                  const startDate = new Date(promotionInfo.promotion_start_date);
+                  // 정산월의 첫 날이 시작일 이후 또는 같아야 함
+                  if (settlementDate < startDate) {
+                    isWithinPromotionPeriod = false;
+                  }
+                }
+
+                if (promotionInfo.promotion_end_date) {
+                  const endDate = new Date(promotionInfo.promotion_end_date);
+                  // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
+                  if (lastDayOfSettlementMonth > endDate) {
+                    isWithinPromotionPeriod = false;
+                  }
+                }
+
+                // 프로모션 기간 내에 있는 경우 프로모션 수수료율 적용
+                if (isWithinPromotionPeriod && promotionInfo.final_commission_rate !== null && promotionInfo.final_commission_rate !== undefined) {
+                  isPromotionRateApplied = true;
+                  commissionRate = Number(promotionInfo.final_commission_rate);
+                }
+              }
+            }
+
+            // 지급액 계산: 처방액 × 수수료율 (프로모션 수수료율 반영)
             const paymentAmount = Math.round(prescriptionAmount * commissionRate);
-            
+
             // 반영 흡수율 계산: applied_absorption_rates 테이블에서 조회한 값 사용, 없으면 기본값 100%
             let appliedAbsorptionRate = 100; // 기본값
             if (absorptionRates[row.id] !== null && absorptionRates[row.id] !== undefined) {
@@ -1296,48 +1348,9 @@ async function loadAbsorptionAnalysisResults() {
                 appliedAbsorptionRate = savedAppliedRate > 1 ? savedAppliedRate : savedAppliedRate * 100;
               }
             }
-            
-            // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (정수 반올림)
-            const finalPaymentAmount = Math.round(prescriptionAmount * (appliedAbsorptionRate / 100) * commissionRate);
 
-            // 프로모션 수수료율 적용 여부 확인
-            let isPromotionRateApplied = false;
-            const insuranceCode = productInsuranceCodeMap.get(row.product_id);
-            if (insuranceCode) {
-              const hospitalId = row.client_id;
-              const companyId = row.company_id;
-              const key = `${hospitalId}_${insuranceCode}_${companyId}`;
-              const promotionInfo = hospitalPerformanceMap.get(key);
-              
-              if (promotionInfo) {
-                // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
-                let isWithinPromotionPeriod = true;
-                
-                const settlementDate = new Date(row.settlement_month + '-01'); // 정산월의 첫 날
-                const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
-                
-                if (promotionInfo.promotion_start_date) {
-                  const startDate = new Date(promotionInfo.promotion_start_date);
-                  // 정산월의 첫 날이 시작일 이후 또는 같아야 함
-                  if (settlementDate < startDate) {
-                    isWithinPromotionPeriod = false;
-                  }
-                }
-                
-                if (promotionInfo.promotion_end_date) {
-                  const endDate = new Date(promotionInfo.promotion_end_date);
-                  // 정산월의 마지막 날이 종료일 이전 또는 같아야 함
-                  if (lastDayOfSettlementMonth > endDate) {
-                    isWithinPromotionPeriod = false;
-                  }
-                }
-                
-                // 프로모션 기간 내에 있는 경우에만 프로모션 적용으로 표시
-                if (isWithinPromotionPeriod && promotionInfo.final_commission_rate !== null && promotionInfo.final_commission_rate !== undefined) {
-                  isPromotionRateApplied = true;
-                }
-              }
-            }
+            // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (프로모션 수수료율 반영, 정수 반올림)
+            const finalPaymentAmount = Math.round(prescriptionAmount * (appliedAbsorptionRate / 100) * commissionRate);
 
             return {
                 id: row.id || null,
@@ -1972,6 +1985,11 @@ function applySorting() {
   }
 }
 
+/** 합산액 표시용: 반올림한 도매매출 + 반올림한 직거래매출 (1 차이 방지) */
+function combinedRevenueDisplay(row) {
+  return Math.round((row?.wholesale_revenue || 0) + (row?.direct_revenue || 0));
+}
+
 function formatAbsorptionRate(value) {
   try {
     if (value === null || value === undefined || isNaN(value)) {
@@ -2032,7 +2050,7 @@ async function downloadExcel() {
       '처방구분': row.prescription_type,
       '도매매출': Math.round(row.wholesale_revenue || 0),
       '직거래매출': Math.round(row.direct_revenue || 0),
-      '합산액': Math.round(row.total_revenue || 0),
+      '합산액': Math.round((row.wholesale_revenue || 0) + (row.direct_revenue || 0)),
       '흡수율': (row.absorption_rate ? parseFloat(row.absorption_rate) : 0),
       '수수료율': (row.commission_rate ? parseFloat(String(row.commission_rate).replace('%', '')) / 100 : 0),
       '지급액': Math.round(Number(String(row.payment_amount).replace(/,/g, '')) || 0),
@@ -2053,9 +2071,9 @@ async function downloadExcel() {
     }, 0);
     
     const totalCombinedRevenueForExcel = displayRows.value.reduce((sum, row) => {
-      // 삭제된 건은 합산액을 0으로 계산
+      // 삭제된 건은 합산액을 0으로 계산 (합산액 = 반올림 도매매출 + 반올림 직거래매출)
       if (row.review_action === '삭제') return sum;
-      return sum + (row.total_revenue || 0);
+      return sum + Math.round((row.wholesale_revenue || 0) + (row.direct_revenue || 0));
     }, 0);
     
     const totalPaymentAmountForExcel = displayRows.value.reduce((sum, row) => {

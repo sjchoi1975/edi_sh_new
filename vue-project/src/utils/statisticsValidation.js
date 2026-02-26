@@ -3,8 +3,23 @@
  */
 
 /**
+ * 화면 표시와 동일한 매출액 계산 (직거래+도매 합계 후 반올림). 검증 시 UI와 일치시키기 위함.
+ * @param {Object} row - 통계 행
+ * @returns {number}
+ */
+function combinedRevenueForValidation(row) {
+  if (!row) return 0;
+  const hasDirectOrWholesale = row.direct_revenue != null || row.wholesale_revenue != null;
+  if (hasDirectOrWholesale) {
+    return Math.round((Number(row.wholesale_revenue) || 0) + (Number(row.direct_revenue) || 0));
+  }
+  return Number(row.total_revenue) || 0;
+}
+
+/**
  * 흡수율 계산 검증
  * 개별 행의 흡수율(가중 평균)과 합계 행의 흡수율(단순 나눗셈)이 일치하는지 확인
+ * (매출액은 화면과 동일하게 직거래+도매 합계 후 반올림으로 계산)
  * 
  * @param {Array} rows - 통계 데이터 행 배열
  * @returns {Object} 검증 결과
@@ -30,10 +45,10 @@ export function validateAbsorptionRate(rows) {
     ? totalWeightedAbsorption / totalPrescriptionAmount 
     : 0;
 
-  // 방법 2: 매출액 기반 흡수율 계산 (총 매출액 / 총 처방액) - 올바른 방식
+  // 방법 2: 매출액 기반 흡수율 (총 매출액 / 총 처방액). 화면과 동일하게 직거래+도매 합계 후 반올림 사용
   let totalRevenue = 0;
   rows.forEach(row => {
-    totalRevenue += Number(row.total_revenue) || 0;
+    totalRevenue += combinedRevenueForValidation(row);
   });
   
   // 매출액이 없으면 지급액 기반으로 계산 (하위 호환성)
@@ -304,10 +319,11 @@ export function validateDataIntegrity(rows, statisticsType = null) {
  * 평균 대비 크게 벗어난 값 감지
  * 
  * @param {Array} rows - 통계 데이터 행 배열
- * @param {number} threshold - 임계값 (기본값: 3, 3 표준편차)
+ * @param {number} threshold - 임계값 (기본값: 3, 3 표준편차). 처방액은 amountThreshold 사용
+ * @param {number} amountThreshold - 처방액 이상치 임계값 (기본값: 20 표준편차, 큰 거래 허용)
  * @returns {Object} 검증 결과 및 이상치 목록
  */
-export function detectOutliers(rows, threshold = 3) {
+export function detectOutliers(rows, threshold = 3, amountThreshold = 20) {
   if (!rows || rows.length === 0) {
     return { isValid: true, outliers: [], message: '데이터가 없습니다.' };
   }
@@ -326,8 +342,8 @@ export function detectOutliers(rows, threshold = 3) {
     rows.forEach((row, index) => {
       const amount = Number(row.prescription_amount) || 0;
       const zScore = stdDev > 0 ? Math.abs((amount - avgAmount) / stdDev) : 0;
-
-      if (zScore > threshold) {
+      // 처방액은 업무상 큰 거래가 있을 수 있어 임계값 완화 (기본 20 표준편차)
+      if (zScore > amountThreshold) {
         outliers.push({
           row: index + 1,
           type: '처방액 이상치',
