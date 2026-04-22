@@ -13,8 +13,14 @@
       <div class="filter-row" style="justify-content: flex-start; align-items: flex-end; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label>정산월</label>
-          <select v-model="selectedSettlementMonth" class="select_month" @change="onSettlementMonthChange">
-            <option v-for="month in availableMonths" :key="month.settlement_month" :value="month.settlement_month">
+          <select v-model="startSettlementMonth" class="select_month" @change="onStartMonthChange">
+            <option v-for="month in availableMonths" :key="`s-${month.settlement_month}`" :value="month.settlement_month">
+              {{ month.settlement_month }}
+            </option>
+          </select>
+          <span style="color: #888;">~</span>
+          <select v-model="endSettlementMonth" class="select_month" @change="onEndMonthChange">
+            <option v-for="month in availableMonths" :key="`e-${month.settlement_month}`" :value="month.settlement_month">
               {{ month.settlement_month }}
             </option>
           </select>
@@ -214,10 +220,10 @@
           <button
             class="btn-excell-download"
             @click="calculateStatistics"
-            :disabled="!selectedSettlementMonth || calculatingStatistics"
+            :disabled="!startSettlementMonth || !endSettlementMonth || calculatingStatistics"
             style="margin-right: 8px;"
           >
-            {{ calculatingStatistics ? '통계 계산 중...' : '통계 갱신' }}
+            {{ calculatingStatistics ? (calculatingProgress ? `통계 계산 중... ${calculatingProgress}` : '통계 계산 중...') : '통계 갱신' }}
           </button>
           <button class="btn-excell-download" @click="downloadExcel" :disabled="displayRows.length === 0">
             엑셀 다운로드
@@ -257,7 +263,10 @@
             </Column>
             <Column field="company_name" header="업체명" frozen :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
               <template #body="slotProps">
-                {{ slotProps.data.company_name }}
+                <a v-if="companyStatisticsFilter === 'all'" href="#" class="drill-down-link" @click.prevent="drillDownToHospital(slotProps.data)">
+                  {{ slotProps.data.company_name }}
+                </a>
+                <span v-else>{{ slotProps.data.company_name }}</span>
               </template>
             </Column>
             <!-- 병의원별 필터일 때 병의원명 컬럼 추가 -->
@@ -343,35 +352,90 @@
             </ColumnGroup>
           </template>
 
-          <!-- 업체 → 병원별 드릴다운 -->
+          <!-- 업체 → 병원별 드릴다운 (건별 상세) -->
           <template v-if="statisticsType === 'company' && drillDownLevel === 1 && drillDownType === 'hospital'">
-            <Column header="No" :headerStyle="{ width: '5%' }" :bodyStyle="{ textAlign: 'center' }">
+            <Column header="No" frozen :headerStyle="{ width: '50px', minWidth: '50px' }" :bodyStyle="{ textAlign: 'center' }">
               <template #body="slotProps">
                 {{ slotProps.index + currentPageFirstIndex + 1 }}
               </template>
             </Column>
-            <Column field="hospital_name" header="병의원명" :headerStyle="{ width: '30%' }" :sortable="true" />
-            <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: '20%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="hospital_name" header="병의원명" frozen :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
+              <template #body="slotProps">
+                <span class="ellipsis-cell" :title="slotProps.data.hospital_name">{{ slotProps.data.hospital_name }}</span>
+              </template>
+            </Column>
+            <Column field="product_name" header="제품명" :headerStyle="{ width: '160px', minWidth: '160px' }" :sortable="true">
+              <template #body="slotProps">
+                <span class="ellipsis-cell" :title="slotProps.data.product_name">{{ slotProps.data.product_name }}</span>
+              </template>
+            </Column>
+            <Column field="insurance_code" header="보험코드" :headerStyle="{ width: '110px', minWidth: '110px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                {{ slotProps.data.insurance_code }}
+              </template>
+            </Column>
+            <Column field="price" header="약가" :headerStyle="{ width: '100px', minWidth: '100px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ Math.round(slotProps.data.price || 0).toLocaleString() }}
+              </template>
+            </Column>
+            <Column field="prescription_qty" header="처방수량" :headerStyle="{ width: '100px', minWidth: '100px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.prescription_qty, true) }}
               </template>
             </Column>
-            <Column field="prescription_amount" header="처방액" :headerStyle="{ width: '25%' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="prescription_amount" header="처방액" :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
                 {{ formatNumber(slotProps.data.prescription_amount) }}
               </template>
             </Column>
-            <Column header="제품 수" :headerStyle="{ width: '20%' }" :bodyStyle="{ textAlign: 'right' }">
+            <Column field="wholesale_revenue" header="도매매출" :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
               <template #body="slotProps">
-                {{ slotProps.data.product_count || 0 }}
+                {{ formatNumber(slotProps.data.wholesale_revenue) }}
+              </template>
+            </Column>
+            <Column field="direct_revenue" header="직거래매출" :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ formatNumber(slotProps.data.direct_revenue) }}
+              </template>
+            </Column>
+            <Column field="combined_revenue" header="합산액" :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ formatNumber(slotProps.data.combined_revenue) }}
+              </template>
+            </Column>
+            <Column field="absorption_rate" header="흡수율" :headerStyle="{ width: '80px', minWidth: '80px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                {{ formatAbsorptionRate(slotProps.data.absorption_rate) }}
+              </template>
+            </Column>
+            <Column field="commission_rate" header="수수료율" :headerStyle="{ width: '90px', minWidth: '90px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                {{ ((slotProps.data.commission_rate || 0) * 100).toFixed(1) }}%
+              </template>
+            </Column>
+            <Column field="applied_absorption_rate" header="반영흡수율" :headerStyle="{ width: '100px', minWidth: '100px' }" :sortable="true" :bodyStyle="{ textAlign: 'center' }">
+              <template #body="slotProps">
+                {{ ((slotProps.data.applied_absorption_rate || 0) * 100).toFixed(1) }}%
+              </template>
+            </Column>
+            <Column field="payment_amount" header="지급액" :headerStyle="{ width: '120px', minWidth: '120px' }" :sortable="true" :bodyStyle="{ textAlign: 'right' }">
+              <template #body="slotProps">
+                {{ formatNumber(slotProps.data.payment_amount) }}
               </template>
             </Column>
             <ColumnGroup type="footer">
               <Row>
-                <Column footer="합계" :colspan="2" footerClass="footer-cell" footerStyle="text-align:center !important;" />
-                <Column :footer="totalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-                <Column :footer="totalAmount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
-                <Column :footer="totalProductCount" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column footer="합계" :colspan="5" footerClass="footer-cell" footerStyle="text-align:center !important;" :frozen="true" />
+                <Column :footer="drillDownTotalQty" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="drillDownTotalPrescription" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="drillDownTotalWholesale" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="drillDownTotalDirect" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="drillDownTotalCombined" footerClass="footer-cell" footerStyle="text-align:right !important;" />
+                <Column :footer="drillDownAvgAbsorption" footerClass="footer-cell" footerStyle="text-align:center !important;" />
+                <Column footer="" footerClass="footer-cell" />
+                <Column footer="" footerClass="footer-cell" />
+                <Column :footer="drillDownTotalPayment" footerClass="footer-cell" footerStyle="text-align:right !important;" />
               </Row>
             </ColumnGroup>
           </template>
@@ -745,7 +809,7 @@
               <i class="pi pi-calculator"></i>
             </div>
             <div class="dialog-title-message">
-              <strong>{{ selectedSettlementMonth }}</strong> 정산월의 통계를 계산하시겠습니까?
+              <strong>{{ periodLabel }}</strong> 기간의 통계를 계산하시겠습니까?
             </div>
           </div>
           <button 
@@ -832,7 +896,7 @@
       <div class="dialog-content">
         <div class="dialog-message">
           <div class="success-message">
-            <p><strong>{{ statisticsResult.settlement_month }}</strong> 정산월의 통계 계산이 완료되었습니다.</p>
+            <p><strong>{{ statisticsResult.settlement_month }}</strong> 기간의 통계 계산이 완료되었습니다.</p>
           </div>
           
           <div class="statistics-summary">
@@ -959,7 +1023,36 @@ const isMounted = ref(true);
 
 // 반응형 데이터
 const availableMonths = ref([]);
-const selectedSettlementMonth = ref('');
+const startSettlementMonth = ref('');
+const endSettlementMonth = ref('');
+// 단일월일 때 = 해당 월, 범위면 종료월 반환 (단일월 전용 로직 호환용)
+const selectedSettlementMonth = computed(() => endSettlementMonth.value);
+// 기간 라벨: 단일이면 "26-03", 범위면 "26-01 ~ 26-03"
+const periodLabel = computed(() => {
+  if (!startSettlementMonth.value && !endSettlementMonth.value) return '';
+  if (!startSettlementMonth.value) return endSettlementMonth.value;
+  if (!endSettlementMonth.value) return startSettlementMonth.value;
+  if (startSettlementMonth.value === endSettlementMonth.value) return startSettlementMonth.value;
+  return `${startSettlementMonth.value} ~ ${endSettlementMonth.value}`;
+});
+// 기간 내 정산월 목록 (오름차순) — start/end가 정렬되어 있지 않더라도 올바르게 처리
+const monthsInRange = computed(() => {
+  if (!startSettlementMonth.value || !endSettlementMonth.value) return [];
+  const lo = startSettlementMonth.value <= endSettlementMonth.value ? startSettlementMonth.value : endSettlementMonth.value;
+  const hi = startSettlementMonth.value <= endSettlementMonth.value ? endSettlementMonth.value : startSettlementMonth.value;
+  return availableMonths.value
+    .map(m => m.settlement_month)
+    .filter(m => m >= lo && m <= hi)
+    .sort();
+});
+const rangeLow = computed(() => {
+  if (!startSettlementMonth.value || !endSettlementMonth.value) return startSettlementMonth.value || endSettlementMonth.value || '';
+  return startSettlementMonth.value <= endSettlementMonth.value ? startSettlementMonth.value : endSettlementMonth.value;
+});
+const rangeHigh = computed(() => {
+  if (!startSettlementMonth.value || !endSettlementMonth.value) return endSettlementMonth.value || startSettlementMonth.value || '';
+  return startSettlementMonth.value <= endSettlementMonth.value ? endSettlementMonth.value : startSettlementMonth.value;
+});
 const fixedStatisticsType = computed(() => props.fixedStatisticsType);
 const statisticsType = ref(props.fixedStatisticsType || 'company'); // 'company', 'hospital', 'product'
 const prescriptionOffset = ref(0);
@@ -982,6 +1075,7 @@ const productStatisticsFilter = ref('all'); // 'all', 'company', 'hospital'
 
 // 통계 계산 상태
 const calculatingStatistics = ref(false);
+const calculatingProgress = ref('');
 const lastCalculatedAt = ref('');
 
 // 드릴다운 관련
@@ -1098,11 +1192,53 @@ const totalAbsorptionRate = computed(() => totals.value.absorptionRate);
 const totalSectionCommission = computed(() => totals.value.sectionCommission);
 const totalTotalPayment = computed(() => totals.value.totalPayment);
 
+// 업체→병원 드릴다운 상세 합계
+const drillDownTotalQty = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (r.prescription_qty || 0), 0);
+  return formatNumber(sum, true);
+});
+const drillDownTotalPrescription = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (r.prescription_amount || 0), 0);
+  return formatNumber(sum);
+});
+const drillDownTotalWholesale = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (Number(r.wholesale_revenue) || 0), 0);
+  return formatNumber(sum);
+});
+const drillDownTotalDirect = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (Number(r.direct_revenue) || 0), 0);
+  return formatNumber(sum);
+});
+const drillDownTotalCombined = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (r.combined_revenue || 0), 0);
+  return formatNumber(sum);
+});
+const drillDownAvgAbsorption = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const totalPrescription = statisticsData.value.reduce((s, r) => s + (r.prescription_amount || 0), 0);
+  const totalCombined = statisticsData.value.reduce((s, r) => s + (r.combined_revenue || 0), 0);
+  if (totalPrescription <= 0) return '-';
+  return formatAbsorptionRate(totalCombined / totalPrescription);
+});
+const drillDownTotalPayment = computed(() => {
+  if (statisticsType.value !== 'company' || drillDownLevel.value !== 1 || drillDownType.value !== 'hospital') return '';
+  const sum = statisticsData.value.reduce((s, r) => s + (r.payment_amount || 0), 0);
+  return formatNumber(sum);
+});
+
 // 현재 드릴다운 라벨
 const currentDrillDownLabel = computed(() => {
   if (drillDownLevel.value === 0) return '';
   if (statisticsType.value === 'company' && drillDownType.value === 'hospital') {
-    return `업체: ${drillDownData.value?.company_name || ''}`;
+    const d = drillDownData.value;
+    const brn = d?.business_registration_number ? ` / ${formatBusinessNumber(d.business_registration_number)}` : '';
+    const rep = d?.representative_name ? ` / ${d.representative_name}` : '';
+    return `업체: ${d?.company_name || ''}${brn}${rep}`;
   }
   if (statisticsType.value === 'company' && drillDownType.value === 'product') {
     return `업체: ${drillDownData.value?.company_name || ''}`;
@@ -1147,8 +1283,11 @@ async function fetchAvailableMonths() {
       .order('settlement_month', { ascending: false });
     if (!error && data && data.length > 0) {
       availableMonths.value = data;
-      if (!selectedSettlementMonth.value) {
-        selectedSettlementMonth.value = data[0].settlement_month;
+      if (!endSettlementMonth.value) {
+        endSettlementMonth.value = data[0].settlement_month;
+      }
+      if (!startSettlementMonth.value) {
+        startSettlementMonth.value = data[0].settlement_month;
       }
     }
   } catch (err) {
@@ -1250,7 +1389,7 @@ async function fetchPromotionData(filteredRecords) {
 
 // 통계 데이터 조회
 async function fetchStatistics() {
-  if (!selectedSettlementMonth.value) {
+  if (!startSettlementMonth.value || !endSettlementMonth.value) {
     statisticsData.value = [];
     return;
   }
@@ -1259,42 +1398,66 @@ async function fetchStatistics() {
   statisticsData.value = [];
 
   try {
-    devLog('데이터 조회 시작, 정산월:', selectedSettlementMonth.value);
+    devLog('데이터 조회 시작, 정산월 범위:', rangeLow.value, '~', rangeHigh.value);
 
     // 통계 테이블(performance_statistics)에서 조회
     // 새로운 구조: (company_id, client_id, product_id) 조합별로 저장되어 있음
     let statisticsDataFromTable = [];
-    let from = 0;
     const batchSize = 1000;
-    let batchCount = 0;
 
-    while (true) {
-      batchCount++;
-      let query = supabase
+    // 필터 공통 적용 (매번 쿼리 빌더 생성 — supabase 체이닝은 mutable)
+    const buildStatsQuery = (withCount) => {
+      const selectOpts = withCount ? { count: 'exact' } : {};
+      let q = supabase
         .from('performance_statistics')
-        .select('*')
-        .eq('settlement_month', selectedSettlementMonth.value);
-      if (selectedCompanyId.value) query = query.eq('company_id', selectedCompanyId.value);
-      if (selectedHospitalId.value) query = query.eq('client_id', selectedHospitalId.value);
-      if (selectedProductName.value) query = query.eq('product_name', selectedProductName.value);
-      query = query.range(from, from + batchSize - 1).order('id', { ascending: true });
+        .select('*', selectOpts)
+        .gte('settlement_month', rangeLow.value)
+        .lte('settlement_month', rangeHigh.value);
+      if (selectedCompanyId.value) q = q.eq('company_id', selectedCompanyId.value);
+      if (selectedHospitalId.value) q = q.eq('client_id', selectedHospitalId.value);
+      if (selectedProductName.value) q = q.eq('product_name', selectedProductName.value);
+      return q.order('id', { ascending: true });
+    };
 
-      const { data: batchData, error: batchError } = await query;
-      if (batchError) {
-        console.error(`통계 테이블 배치 ${batchCount} 조회 오류:`, batchError);
-        break;
+    // 1) 첫 배치 + 총 건수 조회
+    const { data: firstBatch, error: firstError, count: totalCount } = await buildStatsQuery(true)
+      .range(0, batchSize - 1);
+    if (firstError) {
+      console.error('통계 테이블 첫 배치 조회 오류:', firstError);
+    } else if (firstBatch) {
+      statisticsDataFromTable = firstBatch;
+    }
+
+    // 2) 남은 페이지 병렬 조회
+    const total = totalCount || 0;
+    if (total > batchSize) {
+      const pagePromises = [];
+      for (let from = batchSize; from < total; from += batchSize) {
+        pagePromises.push(buildStatsQuery(false).range(from, from + batchSize - 1));
       }
-      if (!batchData || batchData.length === 0) break;
-      statisticsDataFromTable = statisticsDataFromTable.concat(batchData);
-      if (batchData.length < batchSize) break;
-      from += batchSize;
+      const pageResults = await Promise.all(pagePromises);
+      for (const { data, error } of pageResults) {
+        if (error) {
+          console.error('통계 테이블 배치 조회 오류:', error);
+          continue;
+        }
+        if (data && data.length > 0) {
+          statisticsDataFromTable = statisticsDataFromTable.concat(data);
+        }
+      }
     }
 
     // 통계 테이블에 데이터가 있으면 항상 사용
     const useStatisticsTable = statisticsDataFromTable && statisticsDataFromTable.length > 0;
     if (useStatisticsTable) {
-      // 갱신 시간 추출
-      const calcAt = statisticsDataFromTable[0]?.calculated_at;
+      // 갱신 시간 추출 — 범위 내 최신 calculated_at 사용
+      let latestCalcAt = null;
+      for (const r of statisticsDataFromTable) {
+        if (r.calculated_at && (!latestCalcAt || r.calculated_at > latestCalcAt)) {
+          latestCalcAt = r.calculated_at;
+        }
+      }
+      const calcAt = latestCalcAt;
       if (calcAt) {
         const d = new Date(calcAt);
         lastCalculatedAt.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -2074,10 +2237,13 @@ async function fetchStatistics() {
             absorption_rate: absorptionRate
           };
         });
+      } else if (statisticsType.value === 'company' && drillDownLevel.value === 1 && drillDownType.value === 'hospital') {
+        // 업체 → 병원별 드릴다운: 건별 상세 표시
+        await loadCompanyDrillDownDetail(statisticsDataFromTable);
       } else {
         statisticsData.value = statisticsDataFromTable;
       }
-      
+
       loading.value = false;
       return;
     }
@@ -2978,6 +3144,165 @@ function aggregateByHospitalAndProduct(data, absorptionRates = {}) {
   });
 }
 
+// 업체 → 병원별 드릴다운: 건별 상세 로드
+async function loadCompanyDrillDownDetail(statisticsDataFromTable) {
+  const companyId = drillDownData.value?.company_id;
+  if (!companyId) {
+    statisticsData.value = [];
+    return;
+  }
+
+  // performance_statistics에서 해당 업체 건별 데이터 필터링
+  const companyItems = statisticsDataFromTable.filter(item => item.company_id === companyId);
+
+  // performance_records에서 수수료율 조회 — 병렬 페이징
+  const batchSize = 1000;
+  const buildRecordsQuery = (withCount) => {
+    const selectOpts = withCount ? { count: 'exact' } : {};
+    return supabase
+      .from('performance_records')
+      .select('id, client_id, product_id, commission_rate, prescription_qty', selectOpts)
+      .gte('settlement_month', rangeLow.value)
+      .lte('settlement_month', rangeHigh.value)
+      .eq('company_id', companyId)
+      .eq('review_status', '완료')
+      .order('id', { ascending: true });
+  };
+
+  let allRecords = [];
+  const { data: firstRecBatch, error: firstRecError, count: recTotal } =
+    await buildRecordsQuery(true).range(0, batchSize - 1);
+  if (firstRecError) {
+    console.error('performance_records 첫 배치 조회 오류:', firstRecError);
+  } else if (firstRecBatch) {
+    allRecords = firstRecBatch;
+  }
+  const total = recTotal || 0;
+  if (total > batchSize) {
+    const promises = [];
+    for (let offset = batchSize; offset < total; offset += batchSize) {
+      promises.push(buildRecordsQuery(false).range(offset, offset + batchSize - 1));
+    }
+    const results = await Promise.all(promises);
+    for (const { data, error } of results) {
+      if (error) {
+        console.error('performance_records 배치 조회 오류:', error);
+        continue;
+      }
+      if (data && data.length > 0) {
+        allRecords = allRecords.concat(data);
+      }
+    }
+  }
+
+  // client_id + product_id 기준으로 수수료율 매핑 (같은 조합의 첫 번째 값 사용)
+  const commissionMap = new Map();
+  const recordIdsByKey = new Map();
+  for (const rec of allRecords) {
+    const key = `${rec.client_id}_${rec.product_id}`;
+    if (!commissionMap.has(key)) {
+      commissionMap.set(key, rec.commission_rate || 0);
+    }
+    if (!recordIdsByKey.has(key)) {
+      recordIdsByKey.set(key, []);
+    }
+    recordIdsByKey.get(key).push(rec.id);
+  }
+
+  // 반영 흡수율 조회 — 병렬 배치
+  const allRecordIds = allRecords.map(r => r.id);
+  let absorptionRates = {};
+  if (allRecordIds.length > 0) {
+    const absPromises = [];
+    for (let i = 0; i < allRecordIds.length; i += batchSize) {
+      const batchIds = allRecordIds.slice(i, i + batchSize);
+      absPromises.push(
+        supabase
+          .from('applied_absorption_rates')
+          .select('performance_record_id, applied_absorption_rate')
+          .in('performance_record_id', batchIds)
+      );
+    }
+    const absResults = await Promise.all(absPromises);
+    for (const { data: absData } of absResults) {
+      if (absData) {
+        for (const item of absData) {
+          absorptionRates[item.performance_record_id] = item.applied_absorption_rate;
+        }
+      }
+    }
+  }
+
+  // client_id + product_id 기준으로 평균 반영 흡수율 계산
+  const appliedAbsorptionMap = new Map();
+  for (const [key, ids] of recordIdsByKey.entries()) {
+    let totalRate = 0;
+    let count = 0;
+    for (const id of ids) {
+      const rate = absorptionRates[id];
+      if (rate !== null && rate !== undefined) {
+        totalRate += rate;
+        count++;
+      }
+    }
+    appliedAbsorptionMap.set(key, count > 0 ? totalRate / count : 1.0);
+  }
+
+  // (client_id, product_id) 조합별 집계 — 범위 조회 시 여러 월 합산
+  const hpMap = new Map();
+  for (const item of companyItems) {
+    const key = `${item.client_id}_${item.product_id}`;
+    if (!hpMap.has(key)) {
+      hpMap.set(key, {
+        client_id: item.client_id,
+        product_id: item.product_id,
+        hospital_name: item.hospital_name || '',
+        product_name: item.product_name || '',
+        insurance_code: item.insurance_code || '',
+        price: item.price || 0,
+        business_registration_number: item.business_registration_number || '',
+        representative_name: item.representative_name || '',
+        company_name: item.company_name || '',
+        company_group: item.company_group || '',
+        prescription_qty: 0,
+        prescription_amount: 0,
+        payment_amount: 0,
+        wholesale_revenue: 0,
+        direct_revenue: 0,
+        total_revenue: 0,
+        combined_revenue: 0,
+      });
+    }
+    const agg = hpMap.get(key);
+    agg.prescription_qty += Number(item.prescription_qty) || 0;
+    agg.prescription_amount += Number(item.prescription_amount) || 0;
+    agg.payment_amount += Number(item.payment_amount) || 0;
+    agg.wholesale_revenue += Number(item.wholesale_revenue) || 0;
+    agg.direct_revenue += Number(item.direct_revenue) || 0;
+    agg.total_revenue += Number(item.total_revenue) || 0;
+    agg.combined_revenue += combinedRevenueDisplay(item);
+    if (!agg.hospital_name && item.hospital_name) agg.hospital_name = item.hospital_name;
+    if (!agg.product_name && item.product_name) agg.product_name = item.product_name;
+    if (!agg.insurance_code && item.insurance_code) agg.insurance_code = item.insurance_code;
+    if (!agg.price && item.price) agg.price = item.price;
+  }
+
+  // 데이터 매핑 — 집계 결과에 흡수율/수수료/반영흡수율 부착
+  statisticsData.value = Array.from(hpMap.values()).map(item => {
+    const key = `${item.client_id}_${item.product_id}`;
+    const commissionRate = commissionMap.get(key) || 0;
+    const appliedAbsorptionRate = appliedAbsorptionMap.get(key) ?? 1.0;
+    const absorption_rate = item.prescription_amount > 0 ? item.combined_revenue / item.prescription_amount : 0;
+
+    return {
+      ...item,
+      absorption_rate,
+      commission_rate: commissionRate,
+      applied_absorption_rate: appliedAbsorptionRate,
+    };
+  });
+}
+
 // 드릴다운 함수들
 function drillDownToHospital(data) {
   drillDownLevel.value = 1;
@@ -3264,6 +3589,22 @@ function onSettlementMonthChange() {
   fetchStatistics();
 }
 
+// 시작월 변경 시: 종료월이 시작월보다 이전이면 종료월을 시작월로 보정
+function onStartMonthChange() {
+  if (startSettlementMonth.value && endSettlementMonth.value && startSettlementMonth.value > endSettlementMonth.value) {
+    endSettlementMonth.value = startSettlementMonth.value;
+  }
+  onSettlementMonthChange();
+}
+
+// 종료월 변경 시: 시작월이 종료월보다 이후면 시작월을 종료월로 보정
+function onEndMonthChange() {
+  if (startSettlementMonth.value && endSettlementMonth.value && startSettlementMonth.value > endSettlementMonth.value) {
+    startSettlementMonth.value = endSettlementMonth.value;
+  }
+  onSettlementMonthChange();
+}
+
 function onStatisticsTypeChange() {
   // 고정된 타입이면 변경 불가
   if (fixedStatisticsType.value) {
@@ -3315,7 +3656,7 @@ function onProductStatisticsFilterChange() {
 
 // 통계 계산 함수 (모든 타입 한 번에 계산하여 테이블에 저장)
 async function calculateStatistics() {
-  if (!selectedSettlementMonth.value) {
+  if (!startSettlementMonth.value || !endSettlementMonth.value) {
     showWarning('정산월을 선택해주세요.');
     return;
   }
@@ -3331,7 +3672,8 @@ async function handleConfirmStatistics() {
 }
 
 async function executeCalculateStatistics() {
-  if (!selectedSettlementMonth.value) {
+  const months = monthsInRange.value;
+  if (months.length === 0) {
     showWarning('정산월을 선택해주세요.');
     return;
   }
@@ -3340,27 +3682,34 @@ async function executeCalculateStatistics() {
   loading.value = true;
 
   try {
-    // 통계 계산 (RPC 함수 호출) - performance_records에서 직접 데이터를 가져와서 독립적으로 동작
-    const { error: statisticsError } = await supabase.rpc('calculate_statistics', {
-      p_settlement_month: selectedSettlementMonth.value
-    });
+    // 기간 내 각 정산월에 대해 순차적으로 RPC 호출
+    for (let i = 0; i < months.length; i++) {
+      const month = months[i];
+      calculatingProgress.value = months.length > 1 ? `${i + 1}/${months.length} (${month})` : '';
+      devLog(`통계 계산: ${month} (${i + 1}/${months.length})`);
 
-    if (statisticsError) {
-      console.error('통계 계산 오류:', statisticsError);
-      throw new Error(`통계 계산 실패: ${statisticsError.message}`);
+      const { error: statisticsError } = await supabase.rpc('calculate_statistics', {
+        p_settlement_month: month
+      });
+
+      if (statisticsError) {
+        console.error(`통계 계산 오류 [${month}]:`, statisticsError);
+        throw new Error(`통계 계산 실패 [${month}]: ${statisticsError.message}`);
+      }
     }
 
     devLog('통계 계산 완료');
 
-    // 통계 계산 결과 저장
+    // 통계 계산 결과: 범위 내 전체 저장 건수 집계
     const { count } = await supabase
       .from('performance_statistics')
       .select('id', { count: 'exact', head: true })
-      .eq('settlement_month', selectedSettlementMonth.value);
+      .gte('settlement_month', rangeLow.value)
+      .lte('settlement_month', rangeHigh.value);
 
     statisticsResult.value = {
       count: count || 0,
-      settlement_month: selectedSettlementMonth.value,
+      settlement_month: periodLabel.value,
       inserted: count || 0,
       updated: count || 0
     };
@@ -3377,6 +3726,7 @@ async function executeCalculateStatistics() {
     showError('통계 계산 중 오류가 발생했습니다: ' + (err.message || err));
   } finally {
     calculatingStatistics.value = false;
+    calculatingProgress.value = '';
     loading.value = false;
   }
 }
@@ -3853,7 +4203,15 @@ async function downloadExcel() {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const monthInfo = selectedSettlementMonth.value ? formatMonthToKorean(selectedSettlementMonth.value) : null;
+  // 단일월이면 "YYYY년M월", 범위면 "YYYY년M월~YYYY년M월" 로 파일명 구성
+  let monthInfo = null;
+  if (rangeLow.value && rangeHigh.value) {
+    if (rangeLow.value === rangeHigh.value) {
+      monthInfo = formatMonthToKorean(rangeLow.value);
+    } else {
+      monthInfo = `${formatMonthToKorean(rangeLow.value)}~${formatMonthToKorean(rangeHigh.value)}`;
+    }
+  }
   link.download = generateExcelFileName('실적상세현황', monthInfo);
   link.click();
   window.URL.revokeObjectURL(url);
@@ -3889,6 +4247,15 @@ onUnmounted(() => {
 <style scoped>
 .performance-detail-view {
   padding: 0px;
+}
+
+.drill-down-link {
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+}
+.drill-down-link:hover {
+  text-decoration: underline;
 }
 
 /* frozen 컬럼 경계 그림자 */
