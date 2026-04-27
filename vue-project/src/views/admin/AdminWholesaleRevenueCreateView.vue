@@ -3,6 +3,15 @@
     <div class="form-title">도매매출 등록</div>
     <form @submit.prevent="handleSubmit" class="form-grid">
       <div class="form-group">
+        <label>도매 업체</label>
+        <select v-model="selectedDistributorId" class="select_month">
+          <option value="">- 선택 -</option>
+          <option v-for="d in distributorList" :key="d.id" :value="d.id">
+            {{ distributorOptionLabel(d) }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>약국코드</label>
         <input v-model="pharmacyCode" type="text" />
       </div>
@@ -68,12 +77,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
 import { useNotifications } from '@/utils/notifications';
 
-const { showSuccess, showError, showWarning, showInfo } = useNotifications();
+const { showSuccess, showError, showWarning } = useNotifications();
 
 // console.log('supabase:', supabase);
 
@@ -87,10 +96,31 @@ const salesAmount = ref('');
 const salesDate = ref('');
 const router = useRouter();
 
-(async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  // console.log('userId:', user?.id);
-})();
+const distributorList = ref([])
+const selectedDistributorId = ref('')
+
+const fetchDistributorList = async () => {
+  const { data, error } = await supabase
+    .from('distributors')
+    .select('id, name, business_registration_number')
+    .order('name')
+  if (error) {
+    showError('도매 업체 목록을 불러오지 못했습니다: ' + error.message)
+    distributorList.value = []
+    return
+  }
+  distributorList.value = data || []
+}
+
+function distributorOptionLabel(d) {
+  const name = d?.name || ''
+  const brn = d?.business_registration_number || ''
+  return brn ? `${name} (${brn})` : name
+}
+
+onMounted(async () => {
+  await fetchDistributorList()
+})
 
 // 필수 필드 검증
 const isFormValid = computed(() => {
@@ -260,6 +290,7 @@ const handleSubmit = async () => {
     product_name: productName.value,
     sales_amount: salesAmount.value === '' ? null : Number(salesAmount.value),
     sales_date: salesDate.value,
+    distributor_id: selectedDistributorId.value || null,
     created_by: userId,
     updated_by: userId
   };

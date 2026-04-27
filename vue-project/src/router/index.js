@@ -16,6 +16,7 @@ import AdminClientsView from '../views/admin/AdminClientsView.vue'
 import AdminClientsCreateView from '../views/admin/AdminClientsCreateView.vue'
 import AdminPharmaciesView from '../views/admin/AdminPharmaciesView.vue'
 import AdminPharmaciesCreateView from '../views/admin/AdminPharmaciesCreateView.vue'
+import AdminDistributorsView from '../views/admin/AdminDistributorsView.vue'
 import AdminWholesaleRevenueView from '../views/admin/AdminWholesaleRevenueView.vue'
 import AdminWholesaleRevenueCreateView from '../views/admin/AdminWholesaleRevenueCreateView.vue'
 
@@ -237,6 +238,12 @@ const router = createRouter({
       meta: { menu: '문전약국 관리', submenu: '문전약국 수정', requiresAuth: true, isAdmin: true }
     },
     {
+      path: '/admin/distributors',
+      name: 'AdminDistributors',
+      component: AdminDistributorsView,
+      meta: { menu: '매출 관리', submenu: '도매 업체 관리', requiresAuth: true, isAdmin: true }
+    },
+    {
       path: '/admin/wholesale-revenue',
       name: 'AdminWholesaleRevenue',
       component: () => import('@/views/admin/AdminWholesaleRevenueView.vue'),
@@ -283,6 +290,12 @@ const router = createRouter({
       name: 'AdminPerformanceWhole',
       component: () => import('@/views/admin/AdminPerformanceWholeView.vue'),
       meta: { menu: '실적 관리', submenu: '전체 등록 현황', requiresAuth: true, isAdmin: true },
+    },
+    {
+      path: '/admin/performance/detail',
+      name: 'AdminPerformanceDetail',
+      component: () => import('@/views/admin/AdminPerformanceDetailView.vue'),
+      meta: { menu: '실적 관리', submenu: '실적 상세 현황', requiresAuth: true, isAdmin: true },
     },
     {
       path: '/admin/performance-list',

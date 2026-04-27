@@ -108,6 +108,7 @@ const adminMenuTree = [
     { label: '문전약국 목록', path: '/admin/pharmacies' }
   ]},
   { label: '매출 관리', icon: 'pi pi-chart-bar', children: [
+    { label: '도매 업체 관리', path: '/admin/distributors' },
     { label: '도매매출 목록', path: '/admin/wholesale-revenue' },
     { label: '직거래매출 목록', path: '/admin/direct-revenue' }
   ]},
@@ -115,7 +116,8 @@ const adminMenuTree = [
     { label: '정산월 관리', path: '/admin/settlement-months' },
     { label: '실적 등록', path: '/admin/performance/register' },
     { label: '업체별 등록 현황', path: '/admin/performance/companies' },
-    { label: '전체 등록 현황', path: '/admin/performance/whole' }
+    { label: '전체 등록 현황', path: '/admin/performance/whole' },
+    { label: '실적 상세 현황', path: '/admin/performance/detail' }
   ]},
   { label: '정산 관리', icon: 'pi pi-file', children: [
     { label: '프로모션 관리', path: '/admin/products/promotion' },
