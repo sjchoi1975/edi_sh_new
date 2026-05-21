@@ -584,7 +584,9 @@ const averageAbsorptionRate = computed(() => {
     return sum + Math.round((row.wholesale_revenue || 0) + (row.direct_revenue || 0));
   }, 0);
 
-  if (totalPrescriptionAmount === 0) return '- %';
+  // 음수 처방수량(반품/정정)이 섞여 합계 처방액이 0 이하가 되면
+  // 비율이 부호 반전·폭주(예: -4500%, 수만%)하므로 무의미값으로 표시
+  if (totalPrescriptionAmount <= 0) return '- %';
 
   // 흡수율 = (합계 합산액 ÷ 합계 처방액) × 100
   const absorptionRate = (totalCombinedRevenue / totalPrescriptionAmount) * 100;
@@ -607,7 +609,9 @@ const averageCommissionRate = computed(() => {
     return sum + (Number(String(row.payment_amount).replace(/,/g, '')) || 0);
   }, 0);
 
-  if (totalPrescriptionAmount === 0) return '- %';
+  // 음수 처방수량(반품/정정)이 섞여 합계 처방액이 0 이하가 되면
+  // 비율이 부호 반전·폭주하므로 무의미값으로 표시
+  if (totalPrescriptionAmount <= 0) return '- %';
 
   // 수수료율 = (합계 지급액 ÷ 합계 처방액) × 100
   const commissionRate = (totalPaymentAmount / totalPrescriptionAmount) * 100;
@@ -2142,7 +2146,8 @@ async function downloadExcel() {
       '흡수율': (totalPrescriptionAmountForExcel > 0 ? (totalCombinedRevenueForExcel / totalPrescriptionAmountForExcel) : 0),
       '수수료율': (totalPrescriptionAmountForExcel > 0 ? (totalPaymentAmountForExcel / totalPrescriptionAmountForExcel) : 0),
       '지급액': totalPaymentAmountForExcel,
-      '반영 흡수율': (totalPrescriptionAmountForExcel > 0 ? Math.min((totalCombinedRevenueForExcel / totalPrescriptionAmountForExcel), 1) : 1),
+      // 합계 처방액이 0 이하(음수 반품 합산 포함)면 비율이 무의미하므로 0 (흡수율·수수료율 셀과 일관)
+      '반영 흡수율': (totalPrescriptionAmountForExcel > 0 ? Math.min((totalCombinedRevenueForExcel / totalPrescriptionAmountForExcel), 1) : 0),
       '최종 지급액': totalFinalPaymentAmountForExcel,
       '비고': '',
       '등록일시': '',
