@@ -978,8 +978,8 @@ function formatPrescriptionQty(rowIdx) {
   
   const qtyStr = row.prescription_qty.toString().replace(/,/g, '');
   const qty = parseFloat(qtyStr);
-  
-  if (isNaN(qty) || qty < 0) {
+
+  if (isNaN(qty)) {
     row.prescription_qty = '';
     return;
   }
@@ -1108,37 +1108,41 @@ function onQtyInput(rowIdx, event) {
   // 실제 입력된 값을 가져옴 (v-model보다 정확함)
   let qtyValue = event ? event.target.value : row.prescription_qty.toString();
   qtyValue = qtyValue.replace(/,/g, '');
-  
-  // 숫자와 소수점만 허용 (소수점은 하나만 허용)
-  // 먼저 소수점이 여러 개인 경우 첫 번째 소수점만 유지
+
+  // 숫자, 소수점, 마이너스만 허용
+  qtyValue = qtyValue.replace(/[^0-9.\-]/g, '');
+
+  // 마이너스는 맨 앞 한 개만 허용
+  const isNegative = qtyValue.startsWith('-');
+  qtyValue = qtyValue.replace(/-/g, '');
+  if (isNegative) qtyValue = '-' + qtyValue;
+
+  // 소수점은 하나만 허용 (앞쪽 소수점 유지)
   const parts = qtyValue.split('.');
   if (parts.length > 2) {
     qtyValue = parts[0] + '.' + parts.slice(1).join('');
   }
-  
-  // 숫자와 소수점만 허용
-  qtyValue = qtyValue.replace(/[^0-9.]/g, '');
-  
+
   // 빈 문자열이면 그대로 유지
-  if (qtyValue === '' || qtyValue === '.') {
+  if (qtyValue === '' || qtyValue === '.' || qtyValue === '-' || qtyValue === '-.') {
     row.prescription_qty = qtyValue;
     row.prescription_amount = '';
     row.payment_amount = '';
     return;
   }
-  
+
   // 숫자로 변환하여 유효성 검사 (소수점 포함)
   const qty = parseFloat(qtyValue);
-  if (isNaN(qty) || qty < 0) {
+  if (isNaN(qty)) {
     row.prescription_qty = '';
     row.prescription_amount = '';
     row.payment_amount = '';
     return;
   }
-  
+
   // 소수점이 있으면 그대로 유지, 없으면 숫자로 저장
   row.prescription_qty = qtyValue;
-  
+
   const price = Number(row.price.toString().replace(/,/g, ''));
   if (!isNaN(qty) && !isNaN(price) && price > 0) {
     row.prescription_amount = (qty * price).toLocaleString();
@@ -1150,11 +1154,11 @@ function onQtyInput(rowIdx, event) {
   }
 }
 
-// 처방수량 입력 필드 keypress 핸들러 (소수점 입력 허용)
+// 처방수량 입력 필드 keypress 핸들러 (소수점·음수 입력 허용)
 function onQtyKeypress(event) {
-  // 숫자, 소수점, 백스페이스, Delete, 화살표 키만 허용
+  // 숫자, 소수점, 마이너스, 백스페이스, Delete, 화살표 키만 허용
   const char = String.fromCharCode(event.which || event.keyCode);
-  if (!/[0-9.]/.test(char) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(event.key)) {
+  if (!/[0-9.\-]/.test(char) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(event.key)) {
     // 이미 소수점이 있으면 추가 소수점 입력 방지
     if (char === '.' && event.target.value.includes('.')) {
       event.preventDefault();
@@ -1185,11 +1189,18 @@ function calculateAmounts(rowIdx) {
 // 수수료율 입력 시 지급액만 계산 (처방액은 변경하지 않음)
 function onCommissionRateInput(rowIdx) {
   const row = inputRows.value[rowIdx];
+  // 마이너스(-) 부호만 제거하고 기존 입력값(자릿수)은 유지 (0으로 초기화하지 않음)
+  let rawValue = row.commission_rate.toString();
+  if (rawValue.includes('-')) {
+    showWarning('수수료율에는 음수를 입력할 수 없습니다.');
+    rawValue = rawValue.replace(/-/g, '');
+    row.commission_rate = rawValue;
+  }
   // 백분율 기호 제거하고 숫자만 추출
-  let rate = row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '');
+  let rate = rawValue.replace(/,/g, '').replace(/%/g, '');
   if (rate && !isNaN(Number(rate))) {
     const rateNum = Number(rate);
-    // 수수료율이 100을 초과하면 100으로 제한
+    // 수수료율은 100%를 초과할 수 없음
     if (rateNum > 100) {
       showWarning('수수료율은 100%를 초과할 수 없습니다.');
       row.commission_rate = '100';
@@ -1226,9 +1237,12 @@ function formatCommissionRate(rowIdx) {
     const rateStr = row.commission_rate.toString().replace(/,/g, '').replace(/%/g, '');
     const rate = Number(rateStr);
     if (!isNaN(rate)) {
-      // 수수료율이 100을 초과하면 100으로 제한
+      // 수수료율은 0~100% 범위로 제한
       let finalRate = rate;
-      if (rate > 100) {
+      if (rate < 0) {
+        // 음수는 부호만 제거하고 절댓값으로 유지 (0으로 초기화하지 않음)
+        finalRate = Math.abs(rate);
+      } else if (rate > 100) {
         showWarning('수수료율은 100%를 초과할 수 없습니다.');
         finalRate = 100;
       }
@@ -1377,8 +1391,8 @@ async function savePerformanceData() {
       const qtyStr = String(row.prescription_qty || '').replace(/,/g, '');
       const qtyNum = Number(qtyStr);
       
-      if (!qtyStr || qtyStr.trim() === '' || isNaN(qtyNum) || qtyNum < 0) {
-        throw new Error(`처방 수량은 0 이상의 숫자여야 합니다. (${i + 1}번째 행)`);
+      if (!qtyStr || qtyStr.trim() === '' || isNaN(qtyNum)) {
+        throw new Error(`처방 수량을 숫자로 입력해주세요. (${i + 1}번째 행)`);
       }
     }
     
@@ -1387,7 +1401,7 @@ async function savePerformanceData() {
     // 관리자가 입력하는 경우 바로 완료 상태로 저장
     const reviewStatus = (route.query?.companyId && isAdminUser.value) ? '완료' : '대기';
     
-    const       dataToInsert = rowsToInsert.map(row => {
+    const dataToInsert = rowsToInsert.map((row, i) => {
       let commissionRate = 0;
       if (grade === 'A') {
         commissionRate = row.commission_rate_a;
@@ -1404,19 +1418,19 @@ async function savePerformanceData() {
       const qtyStr = String(row.prescription_qty || '').replace(/,/g, '');
       const qtyNum = parseFloat(qtyStr);
       
-      if (isNaN(qtyNum) || qtyNum < 0) {
-        throw new Error('처방 수량은 0 이상의 숫자여야 합니다.');
+      if (isNaN(qtyNum)) {
+        throw new Error('처방 수량을 숫자로 입력해주세요.');
       }
 
-      // 수수료율 검증 (100% 초과 방지)
+      // 수수료율 검증 (0~100% 범위)
       const commissionRateStr = String(row.commission_rate || '').replace(/,/g, '').replace(/%/g, '');
       const commissionRateNum = Number(commissionRateStr);
-      if (!isNaN(commissionRateNum) && commissionRateNum > 100) {
-        throw new Error(`수수료율은 100%를 초과할 수 없습니다. (${i + 1}번째 행)`);
+      if (!isNaN(commissionRateNum) && (commissionRateNum < 0 || commissionRateNum > 100)) {
+        throw new Error(`수수료율은 0~100% 사이의 숫자여야 합니다. (${i + 1}번째 행)`);
       }
       const calculatedRate = convertCommissionRateToDecimal(row.commission_rate);
-      if (calculatedRate > 1) {
-        throw new Error(`수수료율은 100%를 초과할 수 없습니다. (${i + 1}번째 행)`);
+      if (calculatedRate < 0 || calculatedRate > 1) {
+        throw new Error(`수수료율은 0~100% 사이의 숫자여야 합니다. (${i + 1}번째 행)`);
       }
       
       return {
@@ -1476,15 +1490,15 @@ async function savePerformanceData() {
         commissionRate = row.commission_rate_e;
       }
       
-      // 수수료율 검증 (100% 초과 방지)
+      // 수수료율 검증 (0~100% 범위)
       const commissionRateStr = String(row.commission_rate || '').replace(/,/g, '').replace(/%/g, '');
       const commissionRateNum = Number(commissionRateStr);
-      if (!isNaN(commissionRateNum) && commissionRateNum > 100) {
-        throw new Error(`수수료율은 100%를 초과할 수 없습니다. (${index + 1}번째 행)`);
+      if (!isNaN(commissionRateNum) && (commissionRateNum < 0 || commissionRateNum > 100)) {
+        throw new Error(`수수료율은 0~100% 사이의 숫자여야 합니다. (${index + 1}번째 행)`);
       }
       const calculatedRate = convertCommissionRateToDecimal(row.commission_rate);
-      if (calculatedRate > 1) {
-        throw new Error(`수수료율은 100%를 초과할 수 없습니다. (${index + 1}번째 행)`);
+      if (calculatedRate < 0 || calculatedRate > 1) {
+        throw new Error(`수수료율은 0~100% 사이의 숫자여야 합니다. (${index + 1}번째 행)`);
       }
       
       return supabase
