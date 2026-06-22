@@ -401,6 +401,7 @@ import ExcelJS from 'exceljs';
 import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 import { useNotifications } from '@/utils/notifications';
 import { convertCommissionRateToDecimal, formatNumber } from '@/utils/formatUtils';
+import { isPromotionApplicableToCompany, isAssignedForMonth } from '@/utils/promotion';
 
 const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
@@ -1090,6 +1091,8 @@ async function loadAbsorptionAnalysisResults() {
           commission_rate,
           remarks,
           review_action,
+          registered_by,
+          updated_by,
           wholesale_revenue,
           direct_revenue,
           total_revenue,
@@ -1270,6 +1273,9 @@ async function loadAbsorptionAnalysisResults() {
     const productInsuranceCodeMap = new Map();
     let hospitalPerformanceMap = new Map();
     let excludedHospitalsMap = new Set();
+    let assignmentHistoryMap = new Map();
+    // NEWCSO 그룹 여부 맵: cutoff 이후 분기에서 담당 업체가 NEWCSO일 때만 프로모션 적용
+    let companyGroupMap = new Map();
 
     if (productIds.length > 0) {
       // 제품 정보 조회
@@ -1290,7 +1296,24 @@ async function loadAbsorptionAnalysisResults() {
       const insuranceCodes = Array.from(productInsuranceCodeMap.values());
       const hospitalIds = [...new Set(allData.map(r => r.client_id).filter(id => id))];
       const companyIds = [...new Set(allData.map(r => r.company_id).filter(id => id))];
-      
+      // 이관 연속성: 병원-업체 배정 이력 (월 기간) → 정산월별 담당 판정
+      if (hospitalIds.length > 0) {
+        const { data: histories } = await supabase
+          .from('client_company_assignment_history')
+          .select('client_id, company_id, effective_from_month, effective_to_month')
+          .in('client_id', hospitalIds);
+        (histories || []).forEach(h => {
+          const k = `${h.client_id}_${h.company_id}`;
+          if (!assignmentHistoryMap.has(k)) assignmentHistoryMap.set(k, []);
+          assignmentHistoryMap.get(k).push({ effective_from_month: h.effective_from_month, effective_to_month: h.effective_to_month });
+        });
+      }
+      if (companyIds.length > 0) {
+        const { data: companyRows } = await supabase
+          .from('companies').select('id, company_group').in('id', companyIds);
+        (companyRows || []).forEach(c => companyGroupMap.set(c.id, c.company_group));
+      }
+
       if (insuranceCodes.length > 0 && hospitalIds.length > 0 && companyIds.length > 0) {
         const { data: hospitalPerf, error: hospitalPerfError } = await supabase
           .from('promotion_product_hospital_performance')
@@ -1300,14 +1323,15 @@ async function loadAbsorptionAnalysisResults() {
             promotion_product_list!inner(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)
           `)
           .in('hospital_id', hospitalIds)
-          .in('first_performance_cso_id', companyIds)
+          // 이관 연속성: 업체로 한정하지 않고 병원+제품 단위 대상 자격 행을 모두 조회
+          .not('first_performance_cso_id', 'is', null)
           .eq('has_performance', true);
-        
+
         if (!hospitalPerfError && hospitalPerf) {
           hospitalPerf.forEach(hp => {
             const insuranceCode = String(hp.promotion_product_list?.insurance_code || '');
-            const key = `${hp.hospital_id}_${insuranceCode}_${hp.first_performance_cso_id}`;
-            hospitalPerformanceMap.set(key, hp.promotion_product_list);
+            const key = `${hp.hospital_id}_${insuranceCode}`;
+            hospitalPerformanceMap.set(key, { ...hp.promotion_product_list, first_performance_cso_id: hp.first_performance_cso_id });
           });
         }
       }
@@ -1348,14 +1372,19 @@ async function loadAbsorptionAnalysisResults() {
             if (insuranceCode) {
               const hospitalId = row.client_id;
               const companyId = row.company_id;
-              const key = `${hospitalId}_${insuranceCode}_${companyId}`;
+              const key = `${hospitalId}_${insuranceCode}`;
               const promotionInfo = hospitalPerformanceMap.get(key);
 
               // 제외 병원 확인 (실적검수·정산 화면과 동일하게 적용)
               const excludedKey = `${insuranceCode}_${hospitalId}`;
               const isExcluded = excludedHospitalsMap.has(excludedKey);
 
-              if (promotionInfo && !isExcluded) {
+              // 이관 연속성: 그 정산월에 담당이던 업체에게만 적용 (cutoff 이전 월은 기존 최초업체 로직 유지)
+              const isAssigned = isAssignedForMonth(assignmentHistoryMap.get(`${hospitalId}_${companyId}`), row.settlement_month);
+              const isPromotionApplicable = promotionInfo
+                && isPromotionApplicableToCompany(promotionInfo.first_performance_cso_id, companyId, row.settlement_month, isAssigned, companyGroupMap.get(companyId) === 'NEWCSO');
+
+              if (isPromotionApplicable && !isExcluded) {
                 // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
                 let isWithinPromotionPeriod = true;
 
@@ -1436,9 +1465,9 @@ async function loadAbsorptionAnalysisResults() {
                 commission_rate: `${(commissionRate * 100).toFixed(1)}%`,
                 absorption_rate: absorptionRate,
                 created_date: formatDateTime(row.created_at),
-                created_by: userMap.get(row.registered_by) || '-',
+                created_by: userMap.get(row.registered_by) || '관리자',
                 updated_date: row.updated_at ? formatDateTime(row.updated_at) : null,
-                updated_by: row.updated_by ? userMap.get(row.updated_by) || '-' : null,
+                updated_by: row.updated_by ? userMap.get(row.updated_by) || '관리자' : null,
                 isPromotionRateApplied: isPromotionRateApplied, // 프로모션 수수료율 적용 여부
             };
         } catch (error) {
@@ -1675,6 +1704,8 @@ const calculateAbsorptionRates = async () => {
         remarks,
         review_status,
         review_action,
+        registered_by,
+        updated_by,
         created_at,
         updated_at
       `)
@@ -1766,7 +1797,27 @@ const calculateAbsorptionRates = async () => {
     const hospitalIds = [...new Set(allSourceData.map(r => r.client_id).filter(id => id))];
     const companyIds = [...new Set(allSourceData.map(r => r.company_id).filter(id => id))];
     let hospitalPerformanceMap = new Map();
-    
+    // 이관 연속성: 병원-업체 배정 이력 (월 기간) → 정산월별 담당 판정
+    let assignmentHistoryMap = new Map();
+    if (hospitalIds.length > 0) {
+      const { data: histories } = await supabase
+        .from('client_company_assignment_history')
+        .select('client_id, company_id, effective_from_month, effective_to_month')
+        .in('client_id', hospitalIds);
+      (histories || []).forEach(h => {
+        const k = `${h.client_id}_${h.company_id}`;
+        if (!assignmentHistoryMap.has(k)) assignmentHistoryMap.set(k, []);
+        assignmentHistoryMap.get(k).push({ effective_from_month: h.effective_from_month, effective_to_month: h.effective_to_month });
+      });
+    }
+    // NEWCSO 그룹 여부 맵: cutoff 이후 분기에서 담당 업체가 NEWCSO일 때만 프로모션 적용
+    const companyGroupMap = new Map();
+    if (companyIds.length > 0) {
+      const { data: companyRows } = await supabase
+        .from('companies').select('id, company_group').in('id', companyIds);
+      (companyRows || []).forEach(c => companyGroupMap.set(c.id, c.company_group));
+    }
+
     if (hospitalIds.length > 0 && companyIds.length > 0) {
       const { data: hospitalPerf, error: hospitalPerfError } = await supabase
         .from('promotion_product_hospital_performance')
@@ -1776,14 +1827,15 @@ const calculateAbsorptionRates = async () => {
           promotion_product_list!inner(insurance_code, final_commission_rate, promotion_start_date, promotion_end_date)
         `)
         .in('hospital_id', hospitalIds)
-        .in('first_performance_cso_id', companyIds)
+        // 이관 연속성: 업체로 한정하지 않고 병원+제품 단위 대상 자격 행을 모두 조회
+        .not('first_performance_cso_id', 'is', null)
         .eq('has_performance', true);
-      
+
       if (!hospitalPerfError && hospitalPerf) {
         hospitalPerf.forEach(hp => {
           const insuranceCode = String(hp.promotion_product_list?.insurance_code || '');
-          const key = `${hp.hospital_id}_${insuranceCode}_${hp.first_performance_cso_id}`;
-          hospitalPerformanceMap.set(key, hp.promotion_product_list);
+          const key = `${hp.hospital_id}_${insuranceCode}`;
+          hospitalPerformanceMap.set(key, { ...hp.promotion_product_list, first_performance_cso_id: hp.first_performance_cso_id });
         });
       }
     }
@@ -1833,17 +1885,22 @@ const calculateAbsorptionRates = async () => {
           if (insuranceCode) {
             const hospitalId = record.client_id;
             const companyId = record.company_id;
-            const key = `${hospitalId}_${insuranceCode}_${companyId}`;
+            const key = `${hospitalId}_${insuranceCode}`;
             const promotionInfo = hospitalPerformanceMap.get(key);
-            
+
             // 제외 병원 확인
             const excludedKey = `${insuranceCode}_${hospitalId}`;
             const isExcluded = excludedHospitalsMap.has(excludedKey);
-            
-            if (promotionInfo && !isExcluded) {
+
+            // 이관 연속성: 그 정산월에 담당이던 업체에게만 적용 (cutoff 이전 월은 기존 최초업체 로직 유지)
+            const isAssigned = isAssignedForMonth(assignmentHistoryMap.get(`${hospitalId}_${companyId}`), record.settlement_month);
+            const isPromotionApplicable = promotionInfo
+              && isPromotionApplicableToCompany(promotionInfo.first_performance_cso_id, companyId, record.settlement_month, isAssigned, companyGroupMap.get(companyId) === 'NEWCSO');
+
+            if (isPromotionApplicable && !isExcluded) {
               // 프로모션 기간 확인: 정산월이 프로모션 시작일과 종료일 사이에 포함되어야 함
               let isWithinPromotionPeriod = true;
-              
+
               const settlementDate = new Date(record.settlement_month + '-01'); // 정산월의 첫 날
               const lastDayOfSettlementMonth = new Date(settlementDate.getFullYear(), settlementDate.getMonth() + 1, 0); // 정산월의 마지막 날
               
@@ -2174,7 +2231,9 @@ async function downloadExcel() {
       '최종 지급액': totalFinalPaymentAmountForExcel,
       '비고': '',
       '등록일시': '',
-      '등록자': ''
+      '등록자': '',
+      '수정일시': '',
+      '수정자': ''
     });
 
     // ExcelJS 워크북 생성
