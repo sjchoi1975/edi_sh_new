@@ -336,6 +336,8 @@
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
               <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
+              <Column footer="" footerClass="footer-cell" />
             </Row>
           </ColumnGroup>
         </DataTable>
@@ -402,6 +404,7 @@ import { generateExcelFileName, formatMonthToKorean } from '@/utils/excelUtils';
 import { useNotifications } from '@/utils/notifications';
 import { convertCommissionRateToDecimal, formatNumber } from '@/utils/formatUtils';
 import { isPromotionApplicableToCompany, isAssignedForMonth } from '@/utils/promotion';
+import { isSmallClientZeroApplicable, fetchClientFirstMonths } from '@/utils/smallClient';
 
 const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
@@ -1355,6 +1358,17 @@ async function loadAbsorptionAnalysisResults() {
       }
     }
 
+    // 소액처 0원: 병의원 첫 실적월(신규처 보호) + (업체,병의원)별 처방액 합계 선계산
+    const scClientIds = [...new Set(allData.map(r => r.client_id).filter(Boolean))];
+    const clientFirstMonthMap = await fetchClientFirstMonths(supabase, scClientIds);
+    const ccPrescriptionTotalMap = new Map(); // key: `${company_id}_${client_id}` (삭제 제외)
+    for (const r of allData) {
+      if (r.review_action === '삭제') continue;
+      const amt = Math.round((Number(r.prescription_qty) || 0) * (Number(r.product?.price) || 0));
+      const k = `${r.company_id}_${r.client_id}`;
+      ccPrescriptionTotalMap.set(k, (ccPrescriptionTotalMap.get(k) || 0) + amt);
+    }
+
     // 데이터 매핑 최적화 (배치 처리)
     const mappedData = allData.map((row, i) => {
         try {
@@ -1365,6 +1379,10 @@ async function loadAbsorptionAnalysisResults() {
             const absorptionRate = Number(row.absorption_rate) || 0;
 
             const prescriptionAmount = Math.round(prescriptionQty * productPrice);
+
+            // 소액처 0원 판정: (업체,병의원) 처방액 합계<10만 & cutoff(2026-06)이상 & 신규처 보호 아님
+            const _scTotal = ccPrescriptionTotalMap.get(`${row.company_id}_${row.client_id}`) || 0;
+            const isSmallZero = isSmallClientZeroApplicable(row.settlement_month, _scTotal, clientFirstMonthMap.get(row.client_id));
 
             // 프로모션 수수료율 적용 여부 확인 (계산 전에 수수료율 교체)
             let isPromotionRateApplied = false;
@@ -1415,8 +1433,8 @@ async function loadAbsorptionAnalysisResults() {
               }
             }
 
-            // 지급액 계산: 처방액 × 수수료율 (프로모션 수수료율 반영)
-            const paymentAmount = Math.round(prescriptionAmount * commissionRate);
+            // 지급액 계산: 처방액 × 수수료율 (프로모션 수수료율 반영). 소액처는 0원
+            const paymentAmount = isSmallZero ? 0 : Math.round(prescriptionAmount * commissionRate);
 
             // 반영 흡수율 계산: applied_absorption_rates 테이블에서 조회한 값 사용, 없으면 기본값 100%
             let appliedAbsorptionRate = 100; // 기본값
@@ -1429,8 +1447,8 @@ async function loadAbsorptionAnalysisResults() {
               }
             }
 
-            // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (프로모션 수수료율 반영, 정수 반올림)
-            const finalPaymentAmount = Math.round(prescriptionAmount * (appliedAbsorptionRate / 100) * commissionRate);
+            // 최종 지급액 계산: 처방액 × 반영 흡수율 × 수수료율 (프로모션 수수료율 반영, 정수 반올림). 소액처는 0원
+            const finalPaymentAmount = isSmallZero ? 0 : Math.round(prescriptionAmount * (appliedAbsorptionRate / 100) * commissionRate);
 
             return {
                 id: row.id || null,
@@ -1452,7 +1470,7 @@ async function loadAbsorptionAnalysisResults() {
                 direct_revenue: Number(row.direct_revenue) || 0,
                 total_revenue: Number(row.total_revenue) || 0,
                 absorption_rate: absorptionRate,
-                company_type: row.company?.company_group || 'N/A',
+                company_type: row.company?.company_group || '',
                 company_name: row.company?.company_name || 'N/A',
                 client_name: row.client?.name || 'N/A',
                 product_name_display: row.product?.product_name || 'N/A',
