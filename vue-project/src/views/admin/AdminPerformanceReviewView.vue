@@ -554,7 +554,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { supabase } from '@/supabase';
 // 주석: updatePromotionProductHospitalPerformance는 트리거가 자동 처리하므로 불필요
@@ -570,6 +570,7 @@ import { convertCommissionRateToDecimal } from '@/utils/formatUtils';
 import { isTransferContinuityMonth, isAssignedForMonth } from '@/utils/promotion';
 import { isSmallClientZeroApplicable, fetchClientFirstMonths, getClientFirstMonth, companyClientRxMonthKey } from '@/utils/smallClient';
 import { useNotifications } from '@/utils/notifications';
+import { translateSupabaseError } from '@/utils/errorMessages';
 
 const { showSuccess, showError, showWarning, showConfirm } = useNotifications();
 
@@ -1888,6 +1889,12 @@ async function saveEdit(rowData) {
     showWarning('제품명과 수량은 필수 입력 항목입니다.');
     return;
   }
+  // 수량 검증: 비숫자면 NaN→0 저장 또는 null 위반이 나므로 저장 전에 차단
+  const qtyNum = Number(String(rowData.prescription_qty_modify).replace(/,/g, ''));
+  if (isNaN(qtyNum)) {
+    showWarning('수량은 숫자로 입력해주세요.');
+    return;
+  }
 
   loading.value = true;
   activeEditingRowId.value = null;
@@ -1941,7 +1948,7 @@ async function saveEdit(rowData) {
       client_id: rowData.client_id,
       product_id: rowData.product_id_modify,
       prescription_month: rowData.prescription_month_modify,
-      prescription_qty: Number(rowData.prescription_qty_modify) || 0,
+      prescription_qty: qtyNum,
       prescription_type: rowData.prescription_type_modify,
       commission_rate: finalCommissionRate,
       remarks: rowData.remarks_modify,
@@ -2024,10 +2031,10 @@ async function saveEdit(rowData) {
       } else if (err.message.includes('network') || err.message.includes('fetch')) {
         errorMessage = '네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.';
       } else {
-        errorMessage = `저장 실패: ${err.message}`;
+        errorMessage = translateSupabaseError(err, '실적 저장');
       }
     }
-    
+
     // Toast 알림으로 에러 표시
     showError(errorMessage);
     
@@ -2142,7 +2149,7 @@ const confirmDeleteRow = async (row) => {
 
     } catch (error) {
       console.error('삭제 처리 중 오류:', error);
-      showError(`오류가 발생했습니다: ${error.message}`);
+      showError(translateSupabaseError(error, '작업'));
     }
   }
 };
@@ -2176,7 +2183,7 @@ const restoreRow = async (row) => {
     await loadPerformanceData();
   } catch(error) {
     console.error('복원 중 오류:', error);
-    showError(`복원 중 오류가 발생했습니다: ${error.message}`);
+    showError(translateSupabaseError(error, '복원'));
   }
 };
 
@@ -2277,7 +2284,7 @@ async function confirmStatusChange() {
       selectedNewStatus.value = '';
     } catch (error) {
       console.error('상태 변경 오류:', error);
-      showError(error.message);
+      showError(translateSupabaseError(error, '작업'));
       // 오류 발생 시에도 편집 모드 해제
       activeEditingRowId.value = null;
     } finally {
@@ -2546,7 +2553,7 @@ async function checkPromotionStatistics() {
     console.error('프로모션 데이터 업데이트 오류:', error);
     statisticsStatus.value = `오류 발생: ${error.message || error}`;
     statisticsCompleted.value = true;
-    showError('데이터 업데이트 중 오류가 발생했습니다: ' + (error.message || error));
+    showError(translateSupabaseError(error, '데이터 업데이트'));
   } finally {
     checkingStatistics.value = false;
   }
@@ -3189,24 +3196,62 @@ function delayedHideProductSearchList(rowData) {
   }, 200);
 }
 
+// 가장 가까운 스크롤 가능한 조상 요소(테이블 스크롤 컨테이너) 탐색
+function getScrollParent(el) {
+  let p = el?.parentElement;
+  while (p) {
+    const s = window.getComputedStyle(p);
+    if (/(auto|scroll)/.test(s.overflowY) || /(auto|scroll)/.test(s.overflow)) return p;
+    p = p.parentElement;
+  }
+  return null;
+}
+
+// 동기 위치 계산 + 스크롤 영역 밖이면 닫기(부유 방지)
+function positionReviewDropdown(reactiveRow) {
+  const inputEl = productInputRefs.value[reactiveRow.id];
+  if (!inputEl) return;
+  const rect = inputEl.getBoundingClientRect();
+  // 아직 레이아웃되지 않은/분리된 요소면 스킵(닫지 않음 → 선택 유지)
+  if (!rect.width && !rect.height) return;
+
+  const scrollEl = getScrollParent(inputEl);
+  if (scrollEl) {
+    const cRect = scrollEl.getBoundingClientRect();
+    if (rect.bottom <= cRect.top || rect.top >= cRect.bottom) {
+      reactiveRow.showProductSearchList = false;
+      return;
+    }
+  }
+
+  reactiveRow.productDropdownStyle = {
+    position: 'fixed',
+    top: `${rect.bottom}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    zIndex: 1000
+  };
+}
+
 function updateProductDropdownPosition(rowData) {
   const reactiveRow = rows.value.find(r => r.id === rowData.id);
   if (!reactiveRow) return;
+  nextTick(() => positionReviewDropdown(reactiveRow));
+}
 
-  nextTick(() => {
-    const inputEl = productInputRefs.value[reactiveRow.id];
-    if (inputEl) {
-      const rect = inputEl.getBoundingClientRect();
-      reactiveRow.productDropdownStyle = {
-        position: 'fixed',
-        top: `${rect.bottom}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        zIndex: 1000
-      };
-    }
+// 스크롤 시 열린 드롭다운 재배치(rAF 스로틀 + 동기 계산 → 떨림 방지, 벗어나면 닫힘)
+let reviewDropdownScrollRaf = null;
+function handleReviewScroll() {
+  const openRow = rows.value.find(r => r.showProductSearchList);
+  if (!openRow) return;
+  if (reviewDropdownScrollRaf != null) return;
+  reviewDropdownScrollRaf = requestAnimationFrame(() => {
+    reviewDropdownScrollRaf = null;
+    positionReviewDropdown(openRow);
   });
 }
+onMounted(() => window.addEventListener('scroll', handleReviewScroll, true));
+onUnmounted(() => window.removeEventListener('scroll', handleReviewScroll, true));
 
 // --- 제품 검색 헬퍼 ---
 function getFilteredProductList(prescriptionMonth) {
@@ -3348,13 +3393,13 @@ async function handleBulkChange() {
       .in('id', ids);
 
     if (error) {
-      showError(`${getBulkChangeTypeLabel()} 변경 실패: ${error.message}`);
+      showError(`${getBulkChangeTypeLabel()} 변경에 실패했습니다. ` + translateSupabaseError(error, '일괄 변경'));
     } else {
       showSuccess(`${getBulkChangeTypeLabel()}이 성공적으로 변경되었습니다.`);
       await loadPerformanceData();
     }
   } catch (e) {
-    showError(`${getBulkChangeTypeLabel()} 변경 중 오류 발생: ${e.message}`);
+    showError(`${getBulkChangeTypeLabel()} 변경 중 오류가 발생했습니다. ` + translateSupabaseError(e, '일괄 변경'));
   } finally {
     closeBulkChangeValueModal();
     closeBulkChangeModal();

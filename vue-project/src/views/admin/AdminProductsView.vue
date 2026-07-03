@@ -1061,9 +1061,10 @@ const handleFileUpload = async (event) => {
         commissionRateE = Math.round(commissionRateE * 1000) / 1000
       }
 
-      const monthRegex = /^\d{4}-\d{2}$/
-      if (!monthRegex.test(row['기준월'])) {
-        errors.push(`${rowNum}행: 기준월은 YYYY-MM 형식이어야 합니다.`)
+      const baseMonth = String(row['기준월']).trim();
+      const baseMonthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
+      if (!baseMonthRegex.test(baseMonth)) {
+        errors.push(`${rowNum}행: 기준월은 YYYY-MM 형식의 유효한 연월(01~12)이어야 합니다.`)
         return
       }
 
@@ -1082,7 +1083,7 @@ const handleFileUpload = async (event) => {
       }
 
       uploadData.push({
-        base_month: row['기준월'],
+        base_month: baseMonth,
         product_name: row['제품명'],
         insurance_code: row['보험코드'],
         price: Number(row['약가']) || 0,
@@ -1184,8 +1185,8 @@ const handleFileUpload = async (event) => {
     }
   } catch (error) {
     console.error('파일 처리 오류:', error);
-    const errorMessage = translateGeneralError(error, '파일 처리');
-    showError(errorMessage);
+    // 정의되지 않은 예외는 원본(영문) 메시지를 노출하지 않고 공통 오류 메시지로 안내
+    showError('일괄 등록에 실패했습니다. 파일 형식을 확인 후 다시 시도해주세요. 문제가 계속되면 관리자에게 문의해주세요.');
   } finally {
     // 엑셀 등록 로딩 종료
     excelLoading.value = false
