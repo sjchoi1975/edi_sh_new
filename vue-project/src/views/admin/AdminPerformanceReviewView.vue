@@ -562,17 +562,16 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
-import Checkbox from 'primevue/checkbox';
 import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
-import ProgressBar from 'primevue/progressbar';
 import { v4 as uuidv4 } from 'uuid';
 import { convertCommissionRateToDecimal } from '@/utils/formatUtils';
 import { isTransferContinuityMonth, isAssignedForMonth } from '@/utils/promotion';
+import { isSmallClientZeroApplicable, fetchClientFirstMonths, getClientFirstMonth, companyClientRxMonthKey } from '@/utils/smallClient';
 import { useNotifications } from '@/utils/notifications';
 
-const { showSuccess, showError, showWarning, showInfo, showConfirm } = useNotifications();
+const { showSuccess, showError, showWarning, showConfirm } = useNotifications();
 
 // --- 고정 변수 ---
 const columnWidths = {
@@ -806,11 +805,6 @@ const prescriptionMonthOptionsForEdit = computed(() => {
     return [1, 2, 3, 4, 5, 6].map(offset => getPrescriptionMonth(selectedSettlementMonth.value, offset));
 });
 
-const companyOptions = computed(() => {
-    return [{ id: null, company_name: '- 전체 -' }, ...monthlyCompanies.value];
-});
-
-
 // --- Watchers ---
 watch(selectedSettlementMonth, async (newMonth) => {
     if (newMonth) {
@@ -866,7 +860,7 @@ watch(prescriptionOffset, async () => {
     }
 });
 
-watch(selectedStatus, async (newStatus, oldStatus) => {
+watch(selectedStatus, async () => {
     // 상태 필터 변경 시 자동으로 편집 모드 해제
     if (activeEditingRowId.value !== null) {
       activeEditingRowId.value = null;
@@ -1235,20 +1229,6 @@ async function fetchFilterOptions(settlementMonth) {
             });
             
             allHospitals.value = uniqueHospitals;
-            
-            // 같은 이름의 병의원이 있는지 확인 (디버깅용)
-            const nameCounts = {};
-            (hospitals || []).forEach(hospital => {
-                nameCounts[hospital.name] = (nameCounts[hospital.name] || 0) + 1;
-            });
-            
-            Object.entries(nameCounts).forEach(([name, count]) => {
-                if (count > 1) {
-                    const duplicates = (hospitals || []).filter(h => h.name === name);
-                    duplicates.forEach(h => {
-                    });
-                }
-            });
         }
     } catch (err) {
         console.error('병의원 데이터 로딩 오류:', err);
@@ -1436,8 +1416,6 @@ async function loadPerformanceData() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("로그인이 필요합니다.");
-    const adminUserId = user.id;
-    const currentTimestamp = new Date().toISOString();
 
     let idsToFetch = [];
     let shouldFetchByIds = false;
@@ -1456,7 +1434,7 @@ async function loadPerformanceData() {
     let query = supabase.from('performance_records').select(`
       *,
       companies(company_name, company_group),
-      clients ( name ),
+      clients ( name, created_at ),
       products ( product_name, insurance_code, price )
     `);
     
@@ -1605,6 +1583,28 @@ async function loadPerformanceData() {
       (companyGroupRows || []).forEach(c => companyGroupMap.set(c.id, c.company_group));
     }
 
+    // 소액처 0원: (업체×병의원×처방월)별 처방액 합계 선계산(삭제 제외)
+    const ccPrescriptionTotalMap = new Map();
+    for (const item of allData) {
+      if (item.review_action === '삭제') continue;
+      const amt = Math.round((item.prescription_qty || 0) * (item.products?.price || 0));
+      const k = companyClientRxMonthKey(item.company_id, item.client_id, item.prescription_month);
+      ccPrescriptionTotalMap.set(k, (ccPrescriptionTotalMap.get(k) || 0) + amt);
+    }
+    // 신규처 보호: 병의원별 첫 실적월 조회
+    const clientFirstMonthMap = await fetchClientFirstMonths(supabase, allData.map(i => i.client_id));
+    // 흡수율: 반영 흡수율(applied_absorption_rates) 배치 조회 (미설정 시 100%)
+    const appliedAbsorptionMap = {};
+    const reviewRecordIds = allData.map(i => i.id).filter(Boolean);
+    for (let af = 0; af < reviewRecordIds.length; af += 100) {
+      const batchIds = reviewRecordIds.slice(af, af + 100);
+      const { data: arData } = await supabase
+        .from('applied_absorption_rates')
+        .select('performance_record_id, applied_absorption_rate')
+        .in('performance_record_id', batchIds);
+      (arData || []).forEach(a => { appliedAbsorptionMap[a.performance_record_id] = a.applied_absorption_rate; });
+    }
+
     if (registrarIds.length > 0) {
       const { data: registrars, error: registrarError } = await supabase
         .from('companies')
@@ -1748,12 +1748,18 @@ async function loadPerformanceData() {
           }
         }
         
-        // 수수료율이 있고 0보다 클 때만 지급 처방액 계산
-        if (commissionRate !== null && commissionRate !== undefined && commissionRate > 0) {
+        // 소액처 0원 판정: (업체×병의원×처방월) 처방액 합계<10만 & cutoff 이상 & 신규처 보호 아님
+        const ccTotal = ccPrescriptionTotalMap.get(companyClientRxMonthKey(companyId, hospitalId, item.prescription_month)) || 0;
+        const isSmallZero = isSmallClientZeroApplicable(settlementMonth, item.prescription_month, ccTotal, getClientFirstMonth(clientFirstMonthMap, item.client_id));
+        // 반영 흡수율 (미설정 시 100%) — 정산내역서와 동일하게 지급액에 반영
+        const appliedAbsorptionRate = (appliedAbsorptionMap[item.id] !== null && appliedAbsorptionMap[item.id] !== undefined) ? appliedAbsorptionMap[item.id] : 1.0;
+
+        // 수수료율이 있고 0보다 크며 소액처가 아닐 때만 지급 처방액·지급액 계산
+        if (!isSmallZero && commissionRate !== null && commissionRate !== undefined && commissionRate > 0) {
           paymentPrescriptionAmount = prescriptionAmount; // 지급 처방액: 수수료가 지급되는 제품의 처방액
-          paymentAmount = Math.round(prescriptionAmount * commissionRate);
+          paymentAmount = Math.round(prescriptionAmount * appliedAbsorptionRate * commissionRate); // 흡수율 반영
         } else {
-          // 수수료율이 없거나 0인 경우 지급 처방액과 지급액 모두 0
+          // 수수료율 없음/0 또는 소액처면 지급 처방액·지급액 0
           paymentPrescriptionAmount = 0;
           paymentAmount = 0;
         }
@@ -2032,7 +2038,7 @@ async function saveEdit(rowData) {
 }
 
 // DataTable의 row-edit-save 이벤트 핸들러
-function onRowEditSave(event) {
+function onRowEditSave() {
   // DataTable의 기본 편집 기능은 사용하지 않고 커스텀 편집을 사용하므로
   // 이 함수는 빈 함수로 두거나 기본 동작을 정의할 수 있습니다.
 }
@@ -2101,21 +2107,6 @@ function addRowBelow(referenceRow) {
 }
 
 // --- 처방월 변경 이벤트 핸들러 ---
-async function handlePrescriptionMonthChange(rowData) {
-  const reactiveRow = rows.value.find(r => r.id === rowData.id);
-  if (!reactiveRow) return;
-
-  // 처방월이 변경되었고 제품이 선택되어 있으면 정보 업데이트
-  if (reactiveRow.product_id_modify) {
-    await updateProductInfoForMonthChange(rowData);
-  }
-
-  // 해당 월의 제품 목록이 로드되어 있지 않으면 로드
-  if (reactiveRow.prescription_month_modify && !products.value.some(p => p.base_month === reactiveRow.prescription_month_modify)) {
-    await fetchProducts(reactiveRow.prescription_month_modify);
-  }
-}
-
 const confirmDeleteRow = async (row) => {
   if (isAnyEditing.value) return;
 
@@ -3235,99 +3226,6 @@ function getFilteredProductList(prescriptionMonth) {
 }
 
 // --- 처방월 변경 시 제품 정보 업데이트 ---
-async function updateProductInfoForMonthChange(rowData) {
-  const reactiveRow = rows.value.find(r => r.id === rowData.id);
-  if (!reactiveRow || !reactiveRow.insurance_code || !reactiveRow.prescription_month_modify) return;
-
-  try {
-    // 보험코드로 새 처방월에서 해당 제품 정보 조회
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('insurance_code', reactiveRow.insurance_code)
-      .eq('base_month', reactiveRow.prescription_month_modify)
-      .eq('status', 'active')
-      .limit(1);
-
-    if (error) {
-      console.error('제품 조회 오류:', error);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      // 새 처방월에 해당 제품이 없으면 제품 선택 해제
-      reactiveRow.product_id_modify = null;
-      reactiveRow.product_name_search = '';
-      reactiveRow.product_name_display = '';
-      reactiveRow.insurance_code = '';
-      reactiveRow.price_for_calc = 0;
-      reactiveRow.commission_rate_modify = null;
-      reactiveRow.prescription_amount_modify = 0;
-      reactiveRow.payment_amount_modify = 0;
-      return;
-    }
-
-    const productData = data[0]; // 첫 번째 결과 사용
-
-    // 새 처방월에 해당 제품이 있으면 정보 업데이트
-
-    reactiveRow.product_id_modify = productData.id;
-    reactiveRow.product_name_search = productData.product_name;
-    reactiveRow.product_name_display = productData.product_name;
-    reactiveRow.insurance_code = productData.insurance_code;
-    reactiveRow.price_for_calc = productData.price || 0;
-
-    // 회사-거래처 매핑에서 수수료율 등급 조회 (등록 화면과 동일하게 A~E 전체 등급 처리)
-    const grade = await getCommissionGradeForClientCompany(reactiveRow.company_id, reactiveRow.client_id);
-    let commissionRate = 0;
-    if (grade === 'A') commissionRate = productData.commission_rate_a;
-    else if (grade === 'B') commissionRate = productData.commission_rate_b;
-    else if (grade === 'C') commissionRate = productData.commission_rate_c;
-    else if (grade === 'D') commissionRate = productData.commission_rate_d;
-    else if (grade === 'E') commissionRate = productData.commission_rate_e;
-    // 수수료율을 퍼센트로 변환해서 표시 (소수점 0.36 -> 36)
-    reactiveRow.commission_rate_modify = commissionRate !== null && commissionRate !== undefined
-      ? (commissionRate * 100).toFixed(1)
-      : null;
-
-    // 처방수량이 있으면 처방액 재계산
-    if (reactiveRow.prescription_qty_modify) {
-      const qty = Number(reactiveRow.prescription_qty_modify);
-      const price = Number(productData.price) || 0;
-      if (!isNaN(qty) && !isNaN(price) && price > 0) {
-        // commissionRate는 소수(0.36) 단위이므로 그대로 곱한다 (/100 아님)
-        const rate = Number(commissionRate) || 0;
-        const prescriptionAmount = Math.round(qty * price);
-        const paymentPrescriptionAmount = (rate > 0) ? prescriptionAmount : 0;
-        const paymentAmount = Math.round(prescriptionAmount * rate);
-
-        // 화면 표시용 값 업데이트
-        reactiveRow.prescription_amount_modify = prescriptionAmount;
-        reactiveRow.payment_prescription_amount_modify = paymentPrescriptionAmount;
-        reactiveRow.payment_amount_modify = paymentAmount;
-        
-        // 원본 데이터도 업데이트
-        reactiveRow._raw_prescription_qty = qty;
-        reactiveRow._raw_prescription_amount = prescriptionAmount;
-        reactiveRow._raw_payment_prescription_amount = paymentPrescriptionAmount;
-        reactiveRow._raw_payment_amount = paymentAmount;
-      }
-    }
-  } catch (err) {
-    console.error('제품 정보 업데이트 오류:', err);
-  }
-}
-
-
-const prescriptionTypeOptionsForBulk = [
-  'EDI',
-  'ERP직거래자료',
-  '매출자료',
-  '약국조제',
-  '원내매출',
-  '원외매출',
-  '차감'
-];
 
 // --- 일괄 변경 관련 함수들 ---
 function openBulkChangeModal() {
