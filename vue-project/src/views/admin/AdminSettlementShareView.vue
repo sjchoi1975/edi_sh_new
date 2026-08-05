@@ -257,6 +257,7 @@ import { formatBusinessNumber, convertCommissionRateToDecimal } from '@/utils/fo
 import { useNotifications } from '@/utils/notifications';
 import { isPromotionApplicableToCompany, isAssignedForMonth } from '@/utils/promotion';
 import { isSmallClientZeroApplicable, fetchClientFirstMonths, getClientFirstMonth, companyClientRxMonthKey } from '@/utils/smallClient';
+import { translateSupabaseError } from '@/utils/errorMessages';
 
 const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
@@ -659,9 +660,9 @@ async function loadSettlementData() {
       
       // 삭제되지 않은 건만 지급 처방액과 지급액 계산에 포함
       if (record.review_action !== '삭제') {
-        // 소액처 0원 판정: (업체,병의원) 처방액 합계<10만 & cutoff(2026-06)이상 & 신규처 보호 아님
+        // 소액처 0원 판정: 적용 대상 업체그룹 & (업체,병의원) 처방액 합계<10만 & cutoff 이상 & 신규처 보호 아님
         const ccTotal = ccPrescriptionTotalMap.get(companyClientRxMonthKey(record.company_id, record.client_id, record.prescription_month)) || 0;
-        const isSmallZero = isSmallClientZeroApplicable(record.settlement_month, record.prescription_month, ccTotal, getClientFirstMonth(clientFirstMonthMap, record.client_id));
+        const isSmallZero = isSmallClientZeroApplicable(record.settlement_month, record.prescription_month, ccTotal, getClientFirstMonth(clientFirstMonthMap, record.client_id), record.company?.company_group ?? null);
 
         // 지급 처방액: 수수료율이 있는 정상 건의 처방액만 합계 (소액처도 지급처방액·구간수수료는 유지, 지급액만 0)
         if (record.commission_rate !== null && record.commission_rate !== undefined && record.commission_rate > 0) {
@@ -902,7 +903,7 @@ async function saveShareStatus() {
 
   } catch (err) {
     console.error('공유 상태 저장 오류:', err);
-    showError(`공유 상태 저장 중 오류가 발생했습니다: ${err.message}`);
+    showError(translateSupabaseError(err, '공유 상태 저장'));
   } finally {
     loading.value = false;
   }
@@ -950,7 +951,7 @@ async function saveNotice() {
     closeNoticeModal();
   } catch (err) {
     console.error('전달사항 저장 오류:', err);
-    showError(`전달사항 저장 중 오류가 발생했습니다: ${err.message}`);
+    showError(translateSupabaseError(err, '전달사항 저장'));
   }
 }
 
@@ -1032,7 +1033,7 @@ async function saveCommission() {
     closeCommissionModal();
   } catch (err) {
     console.error('구간 수수료율 저장 오류:', err);
-    showError(`구간 수수료율 저장 중 오류가 발생했습니다: ${err.message}`);
+    showError(translateSupabaseError(err, '구간 수수료율 저장'));
   }
 }
 

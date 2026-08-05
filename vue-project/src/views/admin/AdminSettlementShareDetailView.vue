@@ -188,6 +188,7 @@ import ExcelJS from 'exceljs';
 import { useNotifications } from '@/utils/notifications';
 import { isPromotionApplicableToCompany, isAssignedForMonth } from '@/utils/promotion';
 import { isSmallClientZeroApplicable, fetchClientFirstMonths, getClientFirstMonth, companyClientRxMonthKey } from '@/utils/smallClient';
+import { translateSupabaseError } from '@/utils/errorMessages';
 
 const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
@@ -340,12 +341,14 @@ async function loadDetailData() {
         assignmentHistoryMap.get(k).push({ effective_from_month: h.effective_from_month, effective_to_month: h.effective_to_month });
       });
     }
-    // NEWCSO 그룹 여부: cutoff 이후 분기에서 담당 업체가 NEWCSO일 때만 프로모션 적용
+    // 업체 그룹: 프로모션(NEWCSO만 적용) + 소액처 0원(대상 그룹만 적용) 판정에 사용
     let isNewCsoCompany = false;
+    let companyGroup = null;
     if (companyId.value) {
       const { data: companyRow } = await supabase
         .from('companies').select('company_group').eq('id', companyId.value).maybeSingle();
-      isNewCsoCompany = companyRow?.company_group === 'NEWCSO';
+      companyGroup = companyRow?.company_group ?? null;
+      isNewCsoCompany = companyGroup === 'NEWCSO';
     }
 
     if (hospitalIds.length > 0 && companyId.value) {
@@ -462,9 +465,9 @@ async function loadDetailData() {
         }
       }
       
-      // 소액처 0원 판정: 병의원 처방액 합계<10만 & cutoff(2026-06)이상 & 신규처 보호 아님
+      // 소액처 0원 판정: 적용 대상 업체그룹 & 병의원 처방액 합계<10만 & cutoff 이상 & 신규처 보호 아님
       const ccTotal = clientPrescriptionTotalMap.get(companyClientRxMonthKey(companyId.value, row.client_id, row.prescription_month)) || 0;
-      const isSmallZero = isSmallClientZeroApplicable(month.value, row.prescription_month, ccTotal, getClientFirstMonth(clientFirstMonthMap, row.client_id));
+      const isSmallZero = isSmallClientZeroApplicable(month.value, row.prescription_month, ccTotal, getClientFirstMonth(clientFirstMonthMap, row.client_id), companyGroup);
 
       const paymentAmount = isSmallZero ? 0 : Math.round(prescriptionAmount * commissionRate);
 
@@ -563,7 +566,7 @@ async function loadDetailData() {
       details: err.details,
       hint: err.hint 
     });
-    showError('상세 데이터를 불러오는 중 오류가 발생했습니다: ' + err.message);
+    showError(translateSupabaseError(err, '상세 데이터 조회'));
     detailRows.value = [];
   } finally {
     loading.value = false;
